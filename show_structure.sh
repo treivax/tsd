@@ -1,0 +1,58 @@
+#!/bin/bash
+
+echo "🎯 NOUVELLE STRUCTURE DU PROJET TSD"
+echo "=================================="
+echo ""
+
+echo "📁 Structure complète:"
+echo ""
+tree . || find . -type d | sed 's|[^/]*/|  |g;s|^  ||'
+
+echo ""
+echo "📦 Modules disponibles:"
+echo ""
+
+echo "🔧 CLIENT ETCD"
+echo "  ├── main.go              # Client principal"  
+echo "  ├── operations.go        # Opérations de base"
+echo "  ├── put.go              # Opérations PUT"
+echo "  ├── take.go             # Opérations TAKE"
+echo "  └── go.mod              # Dépendances etcd"
+echo ""
+
+echo "📝 MODULE CONSTRAINT"
+echo "  ├── constraint/"
+echo "  │   ├── api.go                    # API publique"
+echo "  │   ├── constraint_types.go       # Types d'AST" 
+echo "  │   ├── constraint_utils.go       # Utilitaires"
+echo "  │   ├── parser.go                 # Parser généré"
+echo "  │   ├── build.sh                  # Build du module"
+echo "  │   ├── go.mod                    # Config module"
+echo "  │   ├── cmd/main.go               # Exécutable"
+echo "  │   ├── grammar/constraint.peg    # Grammaire PEG"
+echo "  │   ├── tests/test_*.txt          # Fichiers de test"
+echo "  │   └── docs/*.md                 # Documentation"
+echo ""
+
+echo "🚀 Commandes principales:"
+echo ""
+echo "  ./build.sh                              # Build complet du projet"
+echo "  cd constraint && ./build.sh             # Build du module constraint"  
+echo "  cd constraint/cmd && ./constraint-parser ../tests/test_input.txt"
+echo "  go build -o etcd-client main.go ...     # Build client etcd"
+echo ""
+
+echo "📚 Documentation:"
+echo "  • README.md                             # Ce fichier"
+echo "  • constraint/README.md                  # Doc du module"
+echo "  • constraint/docs/GUIDE_CONTRAINTES.md # Guide complet"
+echo "  • constraint/docs/TUTORIEL_CONTRAINTES.md # Tutoriel"
+echo ""
+
+echo "✅ Avantages de cette restructuration:"
+echo "  ✓ Module constraint réutilisable et autonome"
+echo "  ✓ Séparation claire des responsabilités" 
+echo "  ✓ Documentation complète et accessible"
+echo "  ✓ Tests organisés et maintenables"
+echo "  ✓ API Go publique pour intégration"
+echo "  ✓ Scripts de build séparés et ciblés"

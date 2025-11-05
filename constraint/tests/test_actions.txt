@@ -1,0 +1,4 @@
+type Personne : < nom: string, age: number, adulte: bool >
+type Animal : < espece: string, domestique: bool, age: number >
+
+{ client: Personne, pet: Animal } / client.adulte = true AND pet.domestique = true ==> adoption(client)

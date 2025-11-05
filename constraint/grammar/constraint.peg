@@ -1,0 +1,283 @@
+// Grammaire PEG pour Go utilisant pigeon
+// Commande pour générer: pigeon -o parser.go constraint.peg
+
+{
+package constraint
+
+import (
+    "fmt"
+    "strconv"
+    "strings"
+)
+
+}
+
+Start <- types:TypeDefinition* exprs:ExpressionList EOF {
+    return map[string]interface{}{
+        "types": types,
+        "expressions": exprs,
+    }, nil
+}
+
+ExpressionList <- first:Expression rest:(_ Expression)* {
+    expressions := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            expressions = append(expressions, item.([]interface{})[1])
+        }
+    }
+    return expressions, nil
+}
+
+TypeDefinition <- "type" _ name:Identifier _ ":" _ "<" _ fields:FieldList _ ">" _ {
+    return map[string]interface{}{
+        "type": "typeDefinition",
+        "name": name,
+        "fields": fields,
+    }, nil
+}
+
+FieldList <- first:Field rest:(_ "," _ Field)* {
+    fields := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            fields = append(fields, item.([]interface{})[3])
+        }
+    }
+    return fields, nil
+}
+
+Field <- name:Identifier _ ":" _ fieldType:AtomicType {
+    return map[string]interface{}{
+        "name": name,
+        "type": fieldType,
+    }, nil
+}
+
+AtomicType <- "string" { return "string", nil } /
+              "number" { return "number", nil } /
+              "bool"   { return "bool", nil }
+
+Expression <- set:Set _ "/" _ constraints:Constraints _ action:Action? {
+    expr := map[string]interface{}{
+        "type": "expression",
+        "set": set,
+        "constraints": constraints,
+    }
+    if action != nil {
+        expr["action"] = action
+    }
+    return expr, nil
+}
+
+Set <- "{" _ variables:TypedVariableList _ "}" {
+    return map[string]interface{}{
+        "type": "set",
+        "variables": variables,
+    }, nil
+}
+
+TypedVariableList <- first:TypedVariable rest:(_ "," _ TypedVariable)* {
+    variables := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            variables = append(variables, item.([]interface{})[3])
+        }
+    }
+    return variables, nil
+}
+
+TypedVariable <- name:Identifier _ ":" _ dataType:Identifier {
+    return map[string]interface{}{
+        "type": "typedVariable",
+        "name": name,
+        "dataType": dataType,
+    }, nil
+}
+
+Constraints <- first:Constraint rest:(_ LogicalOp _ Constraint)* {
+    if rest == nil || len(rest.([]interface{})) == 0 {
+        return first, nil
+    }
+    
+    operations := []map[string]interface{}{}
+    for _, item := range rest.([]interface{}) {
+        op := item.([]interface{})[1]
+        right := item.([]interface{})[3]
+        operations = append(operations, map[string]interface{}{
+            "op": op,
+            "right": right,
+        })
+    }
+    
+    return map[string]interface{}{
+        "type": "logicalExpr",
+        "left": first,
+        "operations": operations,
+    }, nil
+}
+
+Constraint <- "(" _ expr:Constraints _ ")" { return expr, nil } /
+              left:ArithmeticExpr _ op:ComparisonOp _ right:ArithmeticExpr {
+    return map[string]interface{}{
+        "type": "comparison",
+        "left": left,
+        "operator": op,
+        "right": right,
+    }, nil
+}
+
+ArithmeticExpr <- first:Term rest:(_ ("+" / "-") _ Term)* {
+    if rest == nil || len(rest.([]interface{})) == 0 {
+        return first, nil
+    }
+    
+    result := first
+    for _, item := range rest.([]interface{}) {
+        op := item.([]interface{})[1]
+        right := item.([]interface{})[3]
+        result = map[string]interface{}{
+            "type": "binaryOp",
+            "left": result,
+            "operator": op,
+            "right": right,
+        }
+    }
+    return result, nil
+}
+
+Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
+    if rest == nil || len(rest.([]interface{})) == 0 {
+        return first, nil
+    }
+    
+    result := first
+    for _, item := range rest.([]interface{}) {
+        op := item.([]interface{})[1]
+        right := item.([]interface{})[3]
+        result = map[string]interface{}{
+            "type": "binaryOp",
+            "left": result,
+            "operator": op,
+            "right": right,
+        }
+    }
+    return result, nil
+}
+
+Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
+          FieldAccess /
+          Variable /
+          Number /
+          StringLiteral /
+          BooleanLiteral
+
+FieldAccess <- object:Identifier "." field:Identifier {
+    return map[string]interface{}{
+        "type": "fieldAccess",
+        "object": object,
+        "field": field,
+    }, nil
+}
+
+Variable <- name:Identifier {
+    return map[string]interface{}{
+        "type": "variable",
+        "name": name,
+    }, nil
+}
+
+ComparisonOp <- "==" { return "==", nil } /
+                "!=" { return "!=", nil } /
+                "<=" { return "<=", nil } /
+                ">=" { return ">=", nil } /
+                "="  { return "=", nil } /
+                "<"  { return "<", nil } /
+                ">"  { return ">", nil }
+
+LogicalOp <- "AND" { return "AND", nil } /
+             "OR"  { return "OR", nil } /
+             "&&"  { return "&&", nil } /
+             "||"  { return "||", nil } /
+             "&"   { return "&", nil } /
+             "|"   { return "|", nil }
+
+Action <- "==>" _ job:JobCall {
+    return map[string]interface{}{
+        "type": "action",
+        "job": job,
+    }, nil
+}
+
+JobCall <- name:Identifier _ "(" _ args:ArgumentList? _ ")" {
+    if args == nil {
+        args = []interface{}{}
+    }
+    return map[string]interface{}{
+        "type": "jobCall",
+        "name": name,
+        "args": args,
+    }, nil
+}
+
+ArgumentList <- first:Identifier rest:(_ "," _ Identifier)* {
+    arguments := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            arguments = append(arguments, item.([]interface{})[3])
+        }
+    }
+    return arguments, nil
+}
+
+BooleanLiteral <- "true"  { 
+        return map[string]interface{}{
+            "type": "boolean", 
+            "value": true,
+        }, nil 
+    } /
+    "false" { 
+        return map[string]interface{}{
+            "type": "boolean", 
+            "value": false,
+        }, nil 
+    }
+
+Number <- [0-9]+ ("." [0-9]+)? {
+    val, err := strconv.ParseFloat(string(c.text), 64)
+    if err != nil {
+        return nil, err
+    }
+    return map[string]interface{}{
+        "type": "number",
+        "value": val,
+    }, nil
+}
+
+StringLiteral <- "\"" chars:DoubleStringChar* "\"" {
+        return map[string]interface{}{
+            "type": "string",
+            "value": strings.Join(chars.([]string), ""),
+        }, nil
+    } /
+    "'" chars:SingleStringChar* "'" {
+        return map[string]interface{}{
+            "type": "string", 
+            "value": strings.Join(chars.([]string), ""),
+        }, nil
+    }
+
+DoubleStringChar <- !'"' char:. { return string(char.([]byte)), nil }
+
+SingleStringChar <- !'\'' char:. { return string(char.([]byte)), nil }
+
+Identifier <- [a-zA-Z][a-zA-Z0-9_]* {
+    return string(c.text), nil
+}
+
+_ <- [ \t\r\n]* / Comment*
+
+Comment <- "//" [^\r\n]* /
+           "/*" (!"*/" .)* "*/"
+
+EOF <- !.

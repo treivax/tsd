@@ -1,0 +1,7 @@
+type Personne : < nom: string, age: number, adulte: bool >
+type Animal : < espece: string, domestique: bool, age: number >
+type Voiture : < marque: string, annee: number, electrique: bool >
+
+{ client: Personne, pet: Animal } / client.adulte = true AND pet.domestique = true ==> adoption(client)
+
+{ acheteur: Personne, vehicule: Voiture } / acheteur.age >= 18 AND vehicule.electrique = true ==> vente(acheteur, vehicule)

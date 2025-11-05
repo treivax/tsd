@@ -1,0 +1,9 @@
+type Personne : < nom: string, age: number, adulte: bool >
+type Animal : < nom: string, age: number, domestique: bool >
+type Produit : < prix: number, stock: number, categorie: string >
+
+{ p1: Personne, p2: Personne } / p1.age > p2.age AND p1.adulte = true
+
+{ a1: Animal, a2: Animal } / a1.domestique = true AND a2.age < 10
+
+{ prod: Produit, client: Personne } / prod.prix < 100 AND client.adulte = true AND prod.stock > 0
