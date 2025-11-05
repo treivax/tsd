@@ -18,18 +18,18 @@ else
 fi
 
 echo "🧪 Tests du module constraint..."
-# Tester le parsing avec les fichiers de test
-cd cmd
-go build -o constraint-parser main.go
+# Construire l'exécutable depuis la racine du projet
+cd ..
+go build -o constraint-parser ./constraint/cmd/
 
 if [ $? -eq 0 ]; then
     echo "✅ Build réussi"
     echo "🎯 Test avec un fichier d'exemple..."
-    ./constraint-parser ../tests/test_input.txt
+    ./constraint-parser constraint/tests/test_type_valid.txt
 else
     echo "❌ Échec du build"
     exit 1
 fi
 
 echo "🎉 Module constraint construit avec succès !"
-echo "💡 Utilisation: cd constraint/cmd && ./constraint-parser ../tests/test_input.txt"
+echo "💡 Utilisation: ./constraint-parser constraint/tests/test_type_valid.txt"

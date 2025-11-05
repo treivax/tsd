@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"constraint"
+	"github.com/treivax/tsd/constraint"
 )
 
 func main() {

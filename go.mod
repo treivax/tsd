@@ -1,4 +1,4 @@
-module etcd-client
+module github.com/treivax/tsd
 
 go 1.21
 

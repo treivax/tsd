@@ -65,7 +65,7 @@ func TestParsingErrors(t *testing.T) {
 
 			// Test du parsing (peut réussir)
 			result, err := ParseConstraint(filename, content)
-			
+
 			// Si le parsing échoue, c'est acceptable pour certains cas
 			if err != nil {
 				t.Logf("✅ %s: parsing échoué comme attendu (%s): %v", filename, expectedErrorType, err)
@@ -86,7 +86,7 @@ func TestParsingErrors(t *testing.T) {
 // TestParseConstraintFile teste la fonction ParseConstraintFile
 func TestParseConstraintFile(t *testing.T) {
 	filename := filepath.Join("tests", "test_type_valid.txt")
-	
+
 	result, err := ParseConstraintFile(filename)
 	if err != nil {
 		t.Fatalf("ParseConstraintFile a échoué: %v", err)
@@ -240,7 +240,7 @@ func TestStringLiterals(t *testing.T) {
 			expected: false, // Actuellement cassé
 		},
 		{
-			name:     "single quotes", 
+			name:     "single quotes",
 			input:    `type Person : < name: string > { p: Person } / p.name == 'Jane'`,
 			expected: false, // Actuellement cassé
 		},
@@ -281,7 +281,7 @@ func TestBooleanLiterals(t *testing.T) {
 			input: "type Person : < active: bool > { p: Person } / p.active = true",
 		},
 		{
-			name:  "false literal", 
+			name:  "false literal",
 			input: "type Person : < active: bool > { p: Person } / p.active = false",
 		},
 	}
@@ -300,7 +300,7 @@ func TestBooleanLiterals(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Validation failed: %v", err)
 			}
-			
+
 			t.Logf("✅ %s parsed successfully", test.name)
 		})
 	}
@@ -345,7 +345,7 @@ func TestArithmeticExpressions(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Validation failed: %v", err)
 			}
-			
+
 			t.Logf("✅ %s parsed successfully", test.name)
 		})
 	}
@@ -354,11 +354,11 @@ func TestArithmeticExpressions(t *testing.T) {
 // TestComparisonOperators teste tous les opérateurs de comparaison
 func TestComparisonOperators(t *testing.T) {
 	operators := []string{"==", "!=", "<", ">", "<=", ">=", "="}
-	
+
 	for _, op := range operators {
 		t.Run("operator_"+op, func(t *testing.T) {
 			input := `type Person : < age: number > { p: Person } / p.age ` + op + ` 18`
-			
+
 			result, err := ParseConstraint("test", []byte(input))
 			if err != nil {
 				t.Fatalf("Parsing failed for operator %s: %v", op, err)
@@ -368,7 +368,7 @@ func TestComparisonOperators(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Validation failed for operator %s: %v", op, err)
 			}
-			
+
 			t.Logf("✅ Operator %s works correctly", op)
 		})
 	}
@@ -377,11 +377,11 @@ func TestComparisonOperators(t *testing.T) {
 // TestLogicalOperators teste tous les opérateurs logiques
 func TestLogicalOperators(t *testing.T) {
 	operators := []string{"AND", "OR", "&&", "||", "&", "|"}
-	
+
 	for _, op := range operators {
 		t.Run("logical_"+op, func(t *testing.T) {
 			input := `type Person : < age: number, active: bool > { p: Person } / p.age > 18 ` + op + ` p.active = true`
-			
+
 			result, err := ParseConstraint("test", []byte(input))
 			if err != nil {
 				t.Fatalf("Parsing failed for logical operator %s: %v", op, err)
@@ -391,7 +391,7 @@ func TestLogicalOperators(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Validation failed for logical operator %s: %v", op, err)
 			}
-			
+
 			t.Logf("✅ Logical operator %s works correctly", op)
 		})
 	}
@@ -401,23 +401,23 @@ func TestLogicalOperators(t *testing.T) {
 func TestParseReader(t *testing.T) {
 	input := "type Person : < name: string > { p: Person } / p.name = p.name"
 	reader := strings.NewReader(input)
-	
+
 	result, err := ParseReader("test", reader)
 	if err != nil {
 		t.Fatalf("ParseReader failed: %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("ParseReader returned nil")
 	}
-	
+
 	t.Log("✅ ParseReader works correctly")
 }
 
 // TestActionsWithoutArguments teste les actions sans arguments
 func TestActionsWithoutArguments(t *testing.T) {
 	input := "type Person : < age: number > { p: Person } / p.age > 18 ==> notify()"
-	
+
 	result, err := ParseConstraint("test", []byte(input))
 	if err != nil {
 		t.Fatalf("Parsing action without args failed: %v", err)
@@ -427,30 +427,30 @@ func TestActionsWithoutArguments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Validation failed: %v", err)
 	}
-	
+
 	t.Log("✅ Actions without arguments work correctly")
 }
 
 // TestEdgeCases teste des cas limites
 func TestEdgeCases(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
+		name       string
+		input      string
 		shouldFail bool
 	}{
 		{
-			name:     "decimal numbers",
-			input:    "type Stats : < rate: number > { s: Stats } / s.rate > 3.14",
+			name:       "decimal numbers",
+			input:      "type Stats : < rate: number > { s: Stats } / s.rate > 3.14",
 			shouldFail: false,
 		},
 		{
-			name:     "zero",
-			input:    "type Counter : < count: number > { c: Counter } / c.count >= 0",
+			name:       "zero",
+			input:      "type Counter : < count: number > { c: Counter } / c.count >= 0",
 			shouldFail: false,
 		},
 		{
-			name:     "negative numbers", 
-			input:    "type Temp : < celsius: number > { t: Temp } / t.celsius > -10",
+			name:       "negative numbers",
+			input:      "type Temp : < celsius: number > { t: Temp } / t.celsius > -10",
 			shouldFail: true, // Pas supporté actuellement
 		},
 	}
@@ -458,7 +458,7 @@ func TestEdgeCases(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := ParseConstraint(test.name, []byte(test.input))
-			
+
 			if test.shouldFail {
 				if err != nil {
 					t.Logf("✅ %s failed as expected: %v", test.name, err)
@@ -467,7 +467,7 @@ func TestEdgeCases(t *testing.T) {
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Fatalf("Unexpected parsing failure for %s: %v", test.name, err)
 			}
@@ -476,7 +476,7 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Validation failed for %s: %v", test.name, err)
 			}
-			
+
 			t.Logf("✅ %s works correctly", test.name)
 		})
 	}
@@ -491,11 +491,11 @@ func TestAllTestFiles(t *testing.T) {
 
 	expectedSuccess := map[string]bool{
 		// "test_input.txt":           true, // Temporairement désactivé
-		"test_type_valid.txt":      true,
-		"test_actions.txt":         true,
+		"test_type_valid.txt":        true,
+		"test_actions.txt":           true,
 		"test_multi_expressions.txt": true,
-		"test_multiple_actions.txt": true,
-		"test_field_comparison.txt": true,
+		"test_multiple_actions.txt":  true,
+		"test_field_comparison.txt":  true,
 	}
 
 	expectedErrors := map[string]bool{
