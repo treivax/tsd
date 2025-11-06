@@ -1,33 +1,33 @@
 package main
 
 import (
-	"testing"
 	"encoding/json"
-	
+	"testing"
+
 	parser "github.com/treivax/tsd/constraint"
 )
 
 // TestParserStructureAnalysis analyse la structure exacte du parseur existant
 func TestParserStructureAnalysis(t *testing.T) {
-	
+
 	content := `type User : <id: string, name: string>
 
 {u: User} / u.name == "test"`
 
 	result, err := parser.Parse("test", []byte(content))
-	
+
 	if err != nil {
 		t.Fatalf("Parsing failed: %v", err)
 	}
-	
+
 	// Afficher la structure complète en JSON pour analyse
 	jsonData, _ := json.MarshalIndent(result, "", "  ")
 	t.Logf("📊 Complete parsed structure:\n%s", string(jsonData))
-	
+
 	// Analyser la structure
 	if resultMap, ok := result.(map[string]interface{}); ok {
 		t.Logf("\n🔍 Structure analysis:")
-		
+
 		for key, value := range resultMap {
 			t.Logf("  Top-level key: %s", key)
 			analyzeValue(t, value, "    ")
