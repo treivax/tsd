@@ -3,8 +3,6 @@ package rete
 import (
 	"math"
 	"testing"
-	
-	"github.com/treivax/tsd/rete/pkg/domain"
 )
 
 // TestAlphaConditionEvaluator_ComprehensiveCoverage teste tous les types d'expressions possibles
