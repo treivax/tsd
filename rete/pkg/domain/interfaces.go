@@ -58,6 +58,40 @@ type JoinNode interface {
 	EvaluateJoin(*Token, *Fact) bool
 }
 
+// NotNode interface pour les nœuds de négation.
+// Implémente la logique NOT dans l'algorithme RETE.
+type NotNode interface {
+	BetaNode
+	SetNegationCondition(condition interface{})
+	GetNegationCondition() interface{}
+	ProcessNegation(*Token, *Fact) bool
+}
+
+// ExistsNode interface pour les nœuds de quantification existentielle.
+// Vérifie l'existence d'au moins un fait satisfaisant une condition.
+type ExistsNode interface {
+	BetaNode
+	SetExistenceCondition(variable TypedVariable, condition interface{})
+	GetExistenceCondition() (TypedVariable, interface{})
+	CheckExistence(*Token) bool
+}
+
+// AccumulateNode interface pour les nœuds d'agrégation.
+// Effectue des calculs d'agrégation (SUM, COUNT, AVG, MIN, MAX).
+type AccumulateNode interface {
+	BetaNode
+	SetAggregateFunction(function string, expression interface{})
+	GetAggregateFunction() (string, interface{})
+	ComputeAggregate([]*Fact) (interface{}, error)
+	UpdateAccumulation(*Fact, bool) // true pour ajout, false pour suppression
+}
+
+// TypedVariable représente une variable typée dans les contraintes
+type TypedVariable struct {
+	Name     string `json:"name"`
+	DataType string `json:"dataType"`
+}
+
 // BetaMemory interface pour la gestion de la mémoire des nœuds beta.
 type BetaMemory interface {
 	StoreToken(*Token)
@@ -85,4 +119,11 @@ type EventListener interface {
 	OnNodeActivated(nodeID string, fact *Fact)
 	OnTokenCreated(token *Token, nodeID string)
 	OnJoinPerformed(leftToken *Token, rightFact *Fact, resultToken *Token)
+}
+
+// AccumulateFunction définit une fonction d'agrégation
+type AccumulateFunction struct {
+	FunctionType string      // SUM, COUNT, AVG, MIN, MAX
+	Field        string      // Champ sur lequel appliquer la fonction
+	Condition    interface{} // Condition optionnelle
 }

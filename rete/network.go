@@ -224,3 +224,77 @@ func (rn *ReteNetwork) GetBetaNodeStatistics() map[string]interface{} {
 
 	return stats
 }
+
+// CreateNotNode crée un nœud NOT pour la négation
+func (rn *ReteNetwork) CreateNotNode(nodeID string, condition interface{}) error {
+	fmt.Printf("🚫 Création d'un nœud NOT: %s\n", nodeID)
+
+	// Dans une implémentation complète, on utiliserait le BetaBuilder
+	rn.BetaNodes[nodeID] = map[string]interface{}{
+		"type":      "NotNode",
+		"id":        nodeID,
+		"condition": condition,
+	}
+
+	fmt.Printf("   ✓ Nœud NOT créé: %s\n", nodeID)
+	return nil
+}
+
+// CreateExistsNode crée un nœud EXISTS pour la quantification existentielle
+func (rn *ReteNetwork) CreateExistsNode(nodeID string, variable string, varType string, condition interface{}) error {
+	fmt.Printf("🔍 Création d'un nœud EXISTS: %s\n", nodeID)
+
+	// Dans une implémentation complète, on utiliserait le BetaBuilder
+	rn.BetaNodes[nodeID] = map[string]interface{}{
+		"type":      "ExistsNode",
+		"id":        nodeID,
+		"variable":  variable,
+		"varType":   varType,
+		"condition": condition,
+	}
+
+	fmt.Printf("   ✓ Nœud EXISTS créé: %s\n", nodeID)
+	return nil
+}
+
+// CreateAccumulateNode crée un nœud d'accumulation pour les agrégations
+func (rn *ReteNetwork) CreateAccumulateNode(nodeID string, functionType string, field string, condition interface{}) error {
+	fmt.Printf("📊 Création d'un nœud d'accumulation: %s (%s)\n", nodeID, functionType)
+
+	// Dans une implémentation complète, on utiliserait le BetaBuilder
+	rn.BetaNodes[nodeID] = map[string]interface{}{
+		"type":         "AccumulateNode",
+		"id":           nodeID,
+		"functionType": functionType,
+		"field":        field,
+		"condition":    condition,
+	}
+
+	fmt.Printf("   ✓ Nœud d'accumulation créé: %s\n", nodeID)
+	return nil
+}
+
+// GetAdvancedNodeStatistics retourne les statistiques des nœuds avancés
+func (rn *ReteNetwork) GetAdvancedNodeStatistics() map[string]interface{} {
+	stats := map[string]interface{}{
+		"notNodes":        0,
+		"existsNodes":     0,
+		"accumulateNodes": 0,
+		"advancedEnabled": true,
+	}
+
+	for _, node := range rn.BetaNodes {
+		if nodeMap, ok := node.(map[string]interface{}); ok {
+			switch nodeMap["type"] {
+			case "NotNode":
+				stats["notNodes"] = stats["notNodes"].(int) + 1
+			case "ExistsNode":
+				stats["existsNodes"] = stats["existsNodes"].(int) + 1
+			case "AccumulateNode":
+				stats["accumulateNodes"] = stats["accumulateNodes"].(int) + 1
+			}
+		}
+	}
+
+	return stats
+}

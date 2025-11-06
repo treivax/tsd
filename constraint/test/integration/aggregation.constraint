@@ -1,0 +1,46 @@
+// Test 5 : Agrégation (AccumulateNode)
+// Types pour tests d'agrégation
+type Portfolio : <id: string, owner: string, type: string, created: number>
+type Asset : <id: string, portfolio_id: string, value: number, type: string, risk_level: number>
+type Trade : <id: string, portfolio_id: string, asset_id: string, amount: number, price: number, timestamp: number>
+
+// Agrégation SUM - somme des valeurs
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 100000
+
+// Agrégation COUNT - nombre d'éléments
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND COUNT(a.id) >= 10
+
+// Agrégation AVG - moyenne
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND AVG(a.risk_level) < 5
+
+// Agrégation MIN - valeur minimale  
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND MIN(a.value) > 1000
+
+// Agrégation MAX - valeur maximale
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND MAX(a.value) <= 500000
+
+// Agrégations avec expressions complexes
+{p: Portfolio, t: Trade} / p.id == t.portfolio_id AND SUM(t.amount * t.price) > 1000000
+
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND AVG(a.value * a.risk_level) < 50000
+
+// Agrégations avec conditions d'accès aux champs  
+{p: Portfolio, t: Trade} / p.id == t.portfolio_id AND COUNT(t.timestamp) > 100 AND MIN(t.price) > 10
+
+// Agrégations combinées avec conditions normales
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND p.type == "aggressive" AND SUM(a.value) > 500000 AND COUNT(a.id) < 20
+
+// Agrégations avec fonctions intégrées
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(ROUND(a.value)) == SUM(a.value)
+
+// Agrégations avec négation
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND NOT (SUM(a.value) < 10000)
+
+// Agrégations multiples dans la même expression
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 100000 AND AVG(a.risk_level) < 7 AND COUNT(a.id) >= 5
+
+// Agrégations avec EXISTS
+{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 50000 AND EXISTS (t: Trade / t.portfolio_id == p.id AND t.amount > 1000)
+
+// Agrégations imbriquées avec conditions complexes
+{p: Portfolio, a: Asset, t: Trade} / p.id == a.portfolio_id AND a.id == t.asset_id AND SUM(a.value) > AVG(t.amount * t.price) * 10

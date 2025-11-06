@@ -1,0 +1,31 @@
+// Test 1 : Conditions Alpha Simples (AlphaNode)
+// Types de base
+type Transaction : <id: string, amount: number, status: string, timestamp: number>
+type Account : <id: string, balance: number, type: string, active: bool>
+
+// Expressions alpha simples - conditions sur un seul fait
+{t: Transaction} / t.amount > 1000
+
+{t: Transaction} / t.status == "approved"
+
+{a: Account} / a.active == true AND a.balance >= 0
+
+{t: Transaction} / t.amount >= 100 AND t.amount <= 10000
+
+// Opérateurs de comparaison avancés
+{t: Transaction} / t.status IN ["pending", "approved", "rejected"]
+
+{a: Account} / a.type LIKE "premium%"
+
+{t: Transaction} / t.id MATCHES "TX[0-9]+"
+
+{a: Account} / a.id CONTAINS "VIP"
+
+// Fonctions intégrées
+{t: Transaction} / LENGTH(t.id) == 8
+
+{t: Transaction} / UPPER(t.status) == "APPROVED"
+
+{a: Account} / ABS(a.balance) > 1000
+
+{t: Transaction} / ROUND(t.amount) == t.amount

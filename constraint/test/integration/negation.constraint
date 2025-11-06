@@ -1,0 +1,29 @@
+// Test 3 : Négation (NotNode)
+// Types pour tests de négation
+type User : <id: string, name: string, active: bool, last_login: number>
+type Login : <user_id: string, timestamp: number, success: bool, ip: string>
+type SecurityEvent : <user_id: string, event_type: string, severity: string, timestamp: number>
+
+// Négation simple - pas de connexion récente
+{u: User} / NOT (u.last_login > 1700000000)
+
+// Négation complexe - pas de connexion réussie récente
+{u: User, l: Login} / u.id == l.user_id AND NOT (l.success == true AND l.timestamp > 1700000000)
+
+// Négation avec conditions multiples
+{u: User} / u.active == true AND NOT (u.last_login > 1700000000 AND u.name CONTAINS "admin")
+
+// Négation de conditions d'agrégation (sera traitée par NotNode + AccumulateNode)
+{u: User, s: SecurityEvent} / u.id == s.user_id AND NOT (COUNT(s.user_id) > 3)
+
+// Négation avec fonctions
+{u: User} / NOT (LENGTH(u.name) < 3 OR UPPER(u.name) == "GUEST")
+
+// Négations imbriquées (double négation)
+{u: User, l: Login} / u.id == l.user_id AND NOT (NOT (l.success == true))
+
+// Négation avec expressions arithmétiques
+{u: User} / NOT (u.last_login + 86400 > 1700000000)
+
+// Négation dans des conditions logiques complexes
+{u: User, s: SecurityEvent} / u.id == s.user_id AND (u.active == true AND NOT (s.severity == "low")) OR NOT (u.last_login == 0)

@@ -1,6 +1,8 @@
-// Grammaire PEG pour Go utilisant pigeon
-// Commande pour générer: pigeon -o parser.go constraint.peg
-
+// Grammaire PEG Complète et Cohérente avec le Réseau RETE
+// Cette grammaire supporte tous les constructs nécessaires pour une intégration complète
+// avec les noeuds du réseau RETE : AlphaNode, BetaNode, NotNode, ExistsNode, AccumulateNode, TerminalNode
+// 
+// Commande pour générer le parser: pigeon -o parser.go constraint.peg
 {
 package constraint
 
@@ -9,27 +11,44 @@ import (
     "strconv"
     "strings"
 )
-
 }
 
-Start <- types:TypeDefinition* exprs:ExpressionList EOF {
+Start <- _ statements:StatementList _ EOF {
+    // Séparer types et expressions
+    types := []interface{}{}
+    expressions := []interface{}{}
+    
+    if statements != nil {
+        for _, stmt := range statements.([]interface{}) {
+            if stmtMap, ok := stmt.(map[string]interface{}); ok {
+                if stmtMap["type"] == "typeDefinition" {
+                    types = append(types, stmt)
+                } else if stmtMap["type"] == "expression" {
+                    expressions = append(expressions, stmt)
+                }
+            }
+        }
+    }
+    
     return map[string]interface{}{
         "types": types,
-        "expressions": exprs,
+        "expressions": expressions,
     }, nil
 }
 
-ExpressionList <- first:Expression rest:(_ Expression)* {
-    expressions := []interface{}{first}
-    if rest != nil {
-        for _, item := range rest.([]interface{}) {
-            expressions = append(expressions, item.([]interface{})[1])
+StatementList <- statements:(Statement _)* {
+    result := []interface{}{}
+    if statements != nil {
+        for _, stmt := range statements.([]interface{}) {
+            result = append(result, stmt.([]interface{})[0])
         }
     }
-    return expressions, nil
+    return result, nil
 }
 
-TypeDefinition <- "type" _ name:Identifier _ ":" _ "<" _ fields:FieldList _ ">" _ {
+Statement <- TypeDefinition / Expression
+
+TypeDefinition <- "type" _ name:IdentName _ ":" _ "<" _ fields:FieldList _ ">" {
     return map[string]interface{}{
         "type": "typeDefinition",
         "name": name,
@@ -47,7 +66,7 @@ FieldList <- first:Field rest:(_ "," _ Field)* {
     return fields, nil
 }
 
-Field <- name:Identifier _ ":" _ fieldType:AtomicType {
+Field <- name:IdentName _ ":" _ fieldType:AtomicType {
     return map[string]interface{}{
         "name": name,
         "type": fieldType,
@@ -87,7 +106,7 @@ TypedVariableList <- first:TypedVariable rest:(_ "," _ TypedVariable)* {
     return variables, nil
 }
 
-TypedVariable <- name:Identifier _ ":" _ dataType:Identifier {
+TypedVariable <- name:IdentName _ ":" _ dataType:IdentName {
     return map[string]interface{}{
         "type": "typedVariable",
         "name": name,
@@ -118,12 +137,29 @@ Constraints <- first:Constraint rest:(_ LogicalOp _ Constraint)* {
 }
 
 Constraint <- "(" _ expr:Constraints _ ")" { return expr, nil } /
+              NotConstraint /
+              ExistsConstraint /
               left:ArithmeticExpr _ op:ComparisonOp _ right:ArithmeticExpr {
     return map[string]interface{}{
         "type": "comparison",
         "left": left,
         "operator": op,
         "right": right,
+    }, nil
+}
+
+NotConstraint <- "NOT" _ "(" _ expr:Constraints _ ")" {
+    return map[string]interface{}{
+        "type": "notConstraint",
+        "expression": expr,
+    }, nil
+}
+
+ExistsConstraint <- "EXISTS" _ "(" _ variable:TypedVariable _ "/" _ condition:Constraints _ ")" {
+    return map[string]interface{}{
+        "type": "existsConstraint", 
+        "variable": variable,
+        "condition": condition,
     }, nil
 }
 
@@ -166,13 +202,15 @@ Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
 }
 
 Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
+          FunctionCall /
           FieldAccess /
-          Variable /
           Number /
           StringLiteral /
-          BooleanLiteral
+          BooleanLiteral /
+          ArrayLiteral /
+          Variable
 
-FieldAccess <- object:Identifier "." field:Identifier {
+FieldAccess <- object:IdentName "." field:IdentName {
     return map[string]interface{}{
         "type": "fieldAccess",
         "object": object,
@@ -180,27 +218,68 @@ FieldAccess <- object:Identifier "." field:Identifier {
     }, nil
 }
 
-Variable <- name:Identifier {
+Variable <- name:IdentName {
     return map[string]interface{}{
         "type": "variable",
         "name": name,
     }, nil
 }
 
-ComparisonOp <- "==" { return "==", nil } /
-                "!=" { return "!=", nil } /
-                "<=" { return "<=", nil } /
-                ">=" { return ">=", nil } /
-                "="  { return "=", nil } /
-                "<"  { return "<", nil } /
-                ">"  { return ">", nil }
+ArrayLiteral <- "[" _ elements:ArrayElementList? _ "]" {
+    if elements == nil {
+        elements = []interface{}{}
+    }
+    return map[string]interface{}{
+        "type": "arrayLiteral",
+        "elements": elements,
+    }, nil
+}
 
-LogicalOp <- "AND" { return "AND", nil } /
-             "OR"  { return "OR", nil } /
-             "&&"  { return "&&", nil } /
-             "||"  { return "||", nil } /
-             "&"   { return "&", nil } /
-             "|"   { return "|", nil }
+ArrayElementList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
+    elements := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            elements = append(elements, item.([]interface{})[3])
+        }
+    }
+    return elements, nil
+}
+
+FunctionCall <- name:FunctionName _ "(" _ args:FunctionArgList? _ ")" {
+    if args == nil {
+        args = []interface{}{}
+    }
+    return map[string]interface{}{
+        "type": "functionCall",
+        "name": name,
+        "args": args,
+    }, nil
+}
+
+FunctionName <- "LENGTH" { return "LENGTH", nil } /
+                "SUBSTRING" { return "SUBSTRING", nil } /
+                "UPPER" { return "UPPER", nil } /
+                "LOWER" { return "LOWER", nil } /
+                "TRIM" { return "TRIM", nil } /
+                "ABS" { return "ABS", nil } /
+                "ROUND" { return "ROUND", nil } /
+                "FLOOR" { return "FLOOR", nil } /
+                "CEIL" { return "CEIL", nil } /
+                "COUNT" { return "COUNT", nil } /
+                "SUM" { return "SUM", nil } /
+                "AVG" { return "AVG", nil } /
+                "MIN" { return "MIN", nil } /
+                "MAX" { return "MAX", nil }
+
+FunctionArgList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
+    args := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            args = append(args, item.([]interface{})[3])
+        }
+    }
+    return args, nil
+}
 
 Action <- "==>" _ job:JobCall {
     return map[string]interface{}{
@@ -209,7 +288,7 @@ Action <- "==>" _ job:JobCall {
     }, nil
 }
 
-JobCall <- name:Identifier _ "(" _ args:ArgumentList? _ ")" {
+JobCall <- name:IdentName _ "(" _ args:ArgumentList? _ ")" {
     if args == nil {
         args = []interface{}{}
     }
@@ -220,7 +299,7 @@ JobCall <- name:Identifier _ "(" _ args:ArgumentList? _ ")" {
     }, nil
 }
 
-ArgumentList <- first:Identifier rest:(_ "," _ Identifier)* {
+ArgumentList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     arguments := []interface{}{first}
     if rest != nil {
         for _, item := range rest.([]interface{}) {
@@ -230,7 +309,22 @@ ArgumentList <- first:Identifier rest:(_ "," _ Identifier)* {
     return arguments, nil
 }
 
-BooleanLiteral <- "true"  { 
+ComparisonOp <- "==" { return "==", nil } /
+                "!=" { return "!=", nil } /
+                "<=" { return "<=", nil } /
+                ">=" { return ">=", nil } /
+                "="  { return "=", nil } /
+                "<"  { return "<", nil } /
+                ">"  { return ">", nil } /
+                "IN" { return "IN", nil } /
+                "LIKE" { return "LIKE", nil } /
+                "MATCHES" { return "MATCHES", nil } /
+                "CONTAINS" { return "CONTAINS", nil }
+
+LogicalOp <- "AND" { return "AND", nil } /
+             "OR"  { return "OR", nil }
+
+BooleanLiteral <- "true" {
         return map[string]interface{}{
             "type": "boolean", 
             "value": true,
@@ -255,15 +349,27 @@ Number <- [0-9]+ ("." [0-9]+)? {
 }
 
 StringLiteral <- "\"" chars:DoubleStringChar* "\"" {
+        var builder strings.Builder
+        if chars != nil {
+            for _, char := range chars.([]interface{}) {
+                builder.WriteString(char.(string))
+            }
+        }
         return map[string]interface{}{
             "type": "string",
-            "value": strings.Join(chars.([]string), ""),
+            "value": builder.String(),
         }, nil
     } /
     "'" chars:SingleStringChar* "'" {
+        var builder strings.Builder
+        if chars != nil {
+            for _, char := range chars.([]interface{}) {
+                builder.WriteString(char.(string))
+            }
+        }
         return map[string]interface{}{
             "type": "string", 
-            "value": strings.Join(chars.([]string), ""),
+            "value": builder.String(),
         }, nil
     }
 
@@ -271,11 +377,11 @@ DoubleStringChar <- !'"' char:. { return string(char.([]byte)), nil }
 
 SingleStringChar <- !'\'' char:. { return string(char.([]byte)), nil }
 
-Identifier <- [a-zA-Z][a-zA-Z0-9_]* {
+IdentName <- [a-zA-Z][a-zA-Z0-9_]* {
     return string(c.text), nil
 }
 
-_ <- [ \t\r\n]* / Comment*
+_ <- ([ \t\r\n] / Comment)*
 
 Comment <- "//" [^\r\n]* /
            "/*" (!"*/" .)* "*/"

@@ -86,6 +86,38 @@ type BooleanLiteral struct {
 	Value bool   `json:"value"`
 }
 
+// Nouvelles structures pour les nœuds avancés
+
+type NotConstraint struct {
+	Type       string      `json:"type"`
+	Expression interface{} `json:"expression"`
+}
+
+type ExistsConstraint struct {
+	Type      string        `json:"type"`
+	Variable  TypedVariable `json:"variable"`
+	Condition interface{}   `json:"condition"`
+}
+
+type AggregateConstraint struct {
+	Type       string      `json:"type"`
+	Function   string      `json:"function"` // SUM, COUNT, AVG, MIN, MAX
+	Expression interface{} `json:"expression"`
+	Operator   string      `json:"operator"`
+	Value      interface{} `json:"value"`
+}
+
+type FunctionCall struct {
+	Type string        `json:"type"`
+	Name string        `json:"name"`
+	Args []interface{} `json:"args"`
+}
+
+type ArrayLiteral struct {
+	Type     string        `json:"type"`
+	Elements []interface{} `json:"elements"`
+}
+
 // Structures pour les actions
 type Action struct {
 	Type string  `json:"type"`
