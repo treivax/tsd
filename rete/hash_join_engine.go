@@ -13,13 +13,13 @@ type HashJoinEngine struct {
 	// Hash tables pour les jointures
 	leftHashTable  map[string][]*domain.Token
 	rightHashTable map[string][]*domain.Fact
-	
+
 	// Configuration de jointure
 	joinConfig JoinConfig
-	
+
 	// Statistiques de performance
 	stats JoinStats
-	
+
 	// Verrou pour la concurrence
 	mutex sync.RWMutex
 }
@@ -28,19 +28,19 @@ type HashJoinEngine struct {
 type JoinConfig struct {
 	// Taille initiale des hash tables
 	InitialHashSize int
-	
+
 	// Factor de croissance pour les hash tables
 	GrowthFactor float64
-	
+
 	// Seuil pour déclencher une optimisation
 	OptimizationThreshold int
-	
+
 	// Activer le cache des résultats de jointure
 	EnableJoinCache bool
-	
+
 	// TTL pour le cache de jointure
 	JoinCacheTTL time.Duration
-	
+
 	// Taille maximale du cache
 	MaxCacheEntries int
 }
@@ -82,8 +82,8 @@ type JoinCache struct {
 
 // CacheEntry représente une entrée dans le cache de jointure
 type CacheEntry struct {
-	Results   []*JoinResult
-	CreatedAt time.Time
+	Results     []*JoinResult
+	CreatedAt   time.Time
 	AccessCount int64
 }
 
@@ -95,7 +95,7 @@ func NewHashJoinEngine(config JoinConfig) *HashJoinEngine {
 	if config.GrowthFactor <= 0 {
 		config.GrowthFactor = 2.0
 	}
-	
+
 	return &HashJoinEngine{
 		leftHashTable:  make(map[string][]*domain.Token, config.InitialHashSize),
 		rightHashTable: make(map[string][]*domain.Fact, config.InitialHashSize),
@@ -118,16 +118,16 @@ func NewJoinCache(maxSize int, ttl time.Duration) *JoinCache {
 func (hje *HashJoinEngine) AddLeftToken(token *domain.Token, joinCondition *OptimizedJoinCondition) error {
 	hje.mutex.Lock()
 	defer hje.mutex.Unlock()
-	
+
 	// Calculer la clé de hash pour le token
 	hashKey := hje.computeTokenHashKey(token, joinCondition)
-	
+
 	// Ajouter à la hash table gauche
 	if hje.leftHashTable[hashKey] == nil {
 		hje.leftHashTable[hashKey] = make([]*domain.Token, 0)
 	}
 	hje.leftHashTable[hashKey] = append(hje.leftHashTable[hashKey], token)
-	
+
 	return nil
 }
 
@@ -135,16 +135,16 @@ func (hje *HashJoinEngine) AddLeftToken(token *domain.Token, joinCondition *Opti
 func (hje *HashJoinEngine) AddRightFact(fact *domain.Fact, joinCondition *OptimizedJoinCondition) error {
 	hje.mutex.Lock()
 	defer hje.mutex.Unlock()
-	
+
 	// Calculer la clé de hash pour le fait
 	hashKey := hje.computeFactHashKey(fact, joinCondition)
-	
+
 	// Ajouter à la hash table droite
 	if hje.rightHashTable[hashKey] == nil {
 		hje.rightHashTable[hashKey] = make([]*domain.Fact, 0)
 	}
 	hje.rightHashTable[hashKey] = append(hje.rightHashTable[hashKey], fact)
-	
+
 	return nil
 }
 
@@ -157,10 +157,10 @@ func (hje *HashJoinEngine) PerformHashJoin(
 	defer func() {
 		hje.updateJoinStats(time.Since(startTime))
 	}()
-	
+
 	hje.mutex.RLock()
 	defer hje.mutex.RUnlock()
-	
+
 	// Vérifier le cache si activé
 	if cache != nil && hje.joinConfig.EnableJoinCache {
 		cacheKey := hje.generateCacheKey(joinCondition)
@@ -170,13 +170,13 @@ func (hje *HashJoinEngine) PerformHashJoin(
 		}
 		hje.stats.CacheMisses++
 	}
-	
+
 	results := make([]*JoinResult, 0)
-	
+
 	// Sélectionner la plus petite hash table comme table de build
 	leftSize := len(hje.leftHashTable)
 	rightSize := len(hje.rightHashTable)
-	
+
 	if leftSize <= rightSize {
 		// Utiliser la table gauche comme table de build
 		results = hje.performLeftBuildJoin(joinCondition)
@@ -184,22 +184,22 @@ func (hje *HashJoinEngine) PerformHashJoin(
 		// Utiliser la table droite comme table de build
 		results = hje.performRightBuildJoin(joinCondition)
 	}
-	
+
 	// Mettre en cache les résultats si activé
 	if cache != nil && hje.joinConfig.EnableJoinCache {
 		cacheKey := hje.generateCacheKey(joinCondition)
 		cache.Put(cacheKey, results)
 	}
-	
+
 	hje.stats.TotalJoins++
-	
+
 	return results, nil
 }
 
 // performLeftBuildJoin exécute une jointure avec la table gauche comme table de build
 func (hje *HashJoinEngine) performLeftBuildJoin(joinCondition *OptimizedJoinCondition) []*JoinResult {
 	results := make([]*JoinResult, 0)
-	
+
 	// Parcourir la hash table gauche (table de build)
 	for hashKey, leftTokens := range hje.leftHashTable {
 		// Chercher les faits correspondants dans la table droite
@@ -221,14 +221,14 @@ func (hje *HashJoinEngine) performLeftBuildJoin(joinCondition *OptimizedJoinCond
 			}
 		}
 	}
-	
+
 	return results
 }
 
 // performRightBuildJoin exécute une jointure avec la table droite comme table de build
 func (hje *HashJoinEngine) performRightBuildJoin(joinCondition *OptimizedJoinCondition) []*JoinResult {
 	results := make([]*JoinResult, 0)
-	
+
 	// Parcourir la hash table droite (table de build)
 	for hashKey, rightFacts := range hje.rightHashTable {
 		// Chercher les tokens correspondants dans la table gauche
@@ -250,7 +250,7 @@ func (hje *HashJoinEngine) performRightBuildJoin(joinCondition *OptimizedJoinCon
 			}
 		}
 	}
-	
+
 	return results
 }
 
@@ -262,12 +262,12 @@ func (hje *HashJoinEngine) computeTokenHashKey(token *domain.Token, joinConditio
 			return joinCondition.HashFunction(value)
 		}
 	}
-	
+
 	// Hash par défaut basé sur la valeur du champ
 	if value := hje.extractTokenFieldValue(token, joinCondition.LeftField); value != nil {
 		return fmt.Sprintf("%v", value)
 	}
-	
+
 	return "NULL"
 }
 
@@ -279,12 +279,12 @@ func (hje *HashJoinEngine) computeFactHashKey(fact *domain.Fact, joinCondition *
 			return joinCondition.HashFunction(value)
 		}
 	}
-	
+
 	// Hash par défaut basé sur la valeur du champ
 	if value, exists := fact.Fields[joinCondition.RightField]; exists {
 		return fmt.Sprintf("%v", value)
 	}
-	
+
 	return "NULL"
 }
 
@@ -301,17 +301,17 @@ func (hje *HashJoinEngine) extractTokenFieldValue(token *domain.Token, fieldName
 
 // evaluateJoinCondition évalue si deux éléments satisfont la condition de jointure
 func (hje *HashJoinEngine) evaluateJoinCondition(
-	token *domain.Token, 
-	fact *domain.Fact, 
+	token *domain.Token,
+	fact *domain.Fact,
 	joinCondition *OptimizedJoinCondition,
 ) bool {
 	leftValue := hje.extractTokenFieldValue(token, joinCondition.LeftField)
 	rightValue, exists := fact.Fields[joinCondition.RightField]
-	
+
 	if leftValue == nil || !exists {
 		return false
 	}
-	
+
 	switch joinCondition.Operator {
 	case "==", "=":
 		return fmt.Sprintf("%v", leftValue) == fmt.Sprintf("%v", rightValue)
@@ -326,12 +326,12 @@ func (hje *HashJoinEngine) evaluateJoinCondition(
 // calculateJoinConfidence calcule un score de confiance pour la jointure
 func (hje *HashJoinEngine) calculateJoinConfidence(
 	token *domain.Token,
-	fact *domain.Fact, 
+	fact *domain.Fact,
 	joinCondition *OptimizedJoinCondition,
 ) float64 {
 	// Score de base
 	confidence := 1.0
-	
+
 	// Ajuster basé sur la fraîcheur des données
 	now := time.Now()
 	for _, tokenFact := range token.Facts {
@@ -340,20 +340,20 @@ func (hje *HashJoinEngine) calculateJoinConfidence(
 			confidence *= 0.9 // Réduire la confiance pour les données anciennes
 		}
 	}
-	
+
 	factAge := now.Sub(fact.Timestamp)
 	if factAge > time.Hour {
 		confidence *= 0.9
 	}
-	
+
 	return confidence
 }
 
 // generateCacheKey génère une clé de cache pour une condition de jointure
 func (hje *HashJoinEngine) generateCacheKey(joinCondition *OptimizedJoinCondition) string {
-	return fmt.Sprintf("join:%s_%s_%s", 
-		joinCondition.LeftField, 
-		joinCondition.Operator, 
+	return fmt.Sprintf("join:%s_%s_%s",
+		joinCondition.LeftField,
+		joinCondition.Operator,
 		joinCondition.RightField)
 }
 
@@ -375,23 +375,23 @@ func (hje *HashJoinEngine) updateJoinStats(duration time.Duration) {
 func (jc *JoinCache) Get(key string) []*JoinResult {
 	jc.mutex.RLock()
 	defer jc.mutex.RUnlock()
-	
+
 	entry, exists := jc.cache[key]
 	if !exists {
 		return nil
 	}
-	
+
 	// Vérifier la TTL
 	if time.Since(entry.CreatedAt) > jc.ttl {
 		delete(jc.cache, key)
 		delete(jc.accessLog, key)
 		return nil
 	}
-	
+
 	// Mettre à jour les statistiques d'accès
 	entry.AccessCount++
 	jc.accessLog[key] = time.Now()
-	
+
 	return entry.Results
 }
 
@@ -399,12 +399,12 @@ func (jc *JoinCache) Get(key string) []*JoinResult {
 func (jc *JoinCache) Put(key string, results []*JoinResult) {
 	jc.mutex.Lock()
 	defer jc.mutex.Unlock()
-	
+
 	// Éviction si le cache est plein
 	if len(jc.cache) >= jc.maxSize {
 		jc.evictLRU()
 	}
-	
+
 	// Stocker la nouvelle entrée
 	jc.cache[key] = &CacheEntry{
 		Results:     results,
@@ -418,14 +418,14 @@ func (jc *JoinCache) Put(key string, results []*JoinResult) {
 func (jc *JoinCache) evictLRU() {
 	var oldestKey string
 	var oldestTime time.Time
-	
+
 	for key, lastAccess := range jc.accessLog {
 		if oldestKey == "" || lastAccess.Before(oldestTime) {
 			oldestKey = key
 			oldestTime = lastAccess
 		}
 	}
-	
+
 	if oldestKey != "" {
 		delete(jc.cache, oldestKey)
 		delete(jc.accessLog, oldestKey)
@@ -436,7 +436,7 @@ func (jc *JoinCache) evictLRU() {
 func (jc *JoinCache) Clear() {
 	jc.mutex.Lock()
 	defer jc.mutex.Unlock()
-	
+
 	jc.cache = make(map[string]*CacheEntry)
 	jc.accessLog = make(map[string]time.Time)
 }
@@ -445,7 +445,7 @@ func (jc *JoinCache) Clear() {
 func (hje *HashJoinEngine) GetStats() JoinStats {
 	hje.mutex.RLock()
 	defer hje.mutex.RUnlock()
-	
+
 	return hje.stats
 }
 
@@ -453,28 +453,28 @@ func (hje *HashJoinEngine) GetStats() JoinStats {
 func (hje *HashJoinEngine) OptimizeHashTables() {
 	hje.mutex.Lock()
 	defer hje.mutex.Unlock()
-	
+
 	// Redimensionner si nécessaire
 	leftLoad := float64(len(hje.leftHashTable)) / float64(hje.joinConfig.InitialHashSize)
 	rightLoad := float64(len(hje.rightHashTable)) / float64(hje.joinConfig.InitialHashSize)
-	
+
 	if leftLoad > 0.75 || rightLoad > 0.75 {
 		// Redimensionner les tables
 		hje.resizeHashTables()
 		hje.stats.HashTableResizes++
 	}
-	
+
 	hje.stats.OptimizationRuns++
 }
 
 // resizeHashTables redimensionne les hash tables
 func (hje *HashJoinEngine) resizeHashTables() {
 	newSize := int(float64(hje.joinConfig.InitialHashSize) * hje.joinConfig.GrowthFactor)
-	
+
 	// Créer de nouvelles tables plus grandes
 	newLeftTable := make(map[string][]*domain.Token, newSize)
 	newRightTable := make(map[string][]*domain.Fact, newSize)
-	
+
 	// Copier les données existantes
 	for key, tokens := range hje.leftHashTable {
 		newLeftTable[key] = tokens
@@ -482,7 +482,7 @@ func (hje *HashJoinEngine) resizeHashTables() {
 	for key, facts := range hje.rightHashTable {
 		newRightTable[key] = facts
 	}
-	
+
 	// Remplacer les anciennes tables
 	hje.leftHashTable = newLeftTable
 	hje.rightHashTable = newRightTable

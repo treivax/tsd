@@ -11,22 +11,22 @@ import (
 type EvaluationCache struct {
 	// Cache principal pour les résultats d'évaluation
 	cache map[string]*EvalCacheEntry
-	
+
 	// Index par type de condition pour des recherches rapides
 	conditionTypeIndex map[string][]string
-	
+
 	// Cache LRU pour éviction intelligente
 	lruList *LRUList
-	
+
 	// Configuration du cache
 	config CacheConfig
-	
+
 	// Statistiques de performance
 	stats CacheStats
-	
+
 	// Verrou pour la concurrence
 	mutex sync.RWMutex
-	
+
 	// Timer pour le nettoyage automatique
 	cleanupTimer *time.Timer
 }
@@ -35,22 +35,22 @@ type EvaluationCache struct {
 type CacheConfig struct {
 	// Taille maximale du cache
 	MaxSize int
-	
+
 	// TTL par défaut pour les entrées
 	DefaultTTL time.Duration
-	
+
 	// TTL spécifique par type de condition
 	TypeSpecificTTL map[string]time.Duration
-	
+
 	// Intervalle de nettoyage automatique
 	CleanupInterval time.Duration
-	
+
 	// Seuil pour le pré-calcul intelligent
 	PrecomputeThreshold int
-	
+
 	// Activer la compression des clés
 	EnableKeyCompression bool
-	
+
 	// Taille maximale des clés avant compression
 	MaxKeyLength int
 }
@@ -71,22 +71,22 @@ type CacheStats struct {
 type EvalCacheEntry struct {
 	// Résultat de l'évaluation
 	Result bool
-	
+
 	// Erreur associée (si any)
 	Error error
-	
+
 	// Métadonnées de cache
 	CreatedAt    time.Time
 	LastAccessed time.Time
 	AccessCount  int64
 	TTL          time.Duration
-	
+
 	// Score de confiance du résultat
 	Confidence float64
-	
+
 	// Coût de calcul (pour priorité d'éviction)
 	ComputeCost time.Duration
-	
+
 	// Tags pour classification
 	Tags []string
 }
@@ -126,7 +126,7 @@ func NewEvaluationCache(config CacheConfig) *EvaluationCache {
 	if config.CleanupInterval <= 0 {
 		config.CleanupInterval = time.Minute
 	}
-	
+
 	ec := &EvaluationCache{
 		cache:              make(map[string]*EvalCacheEntry),
 		conditionTypeIndex: make(map[string][]string),
@@ -134,10 +134,10 @@ func NewEvaluationCache(config CacheConfig) *EvaluationCache {
 		config:             config,
 		stats:              CacheStats{},
 	}
-	
+
 	// Démarrer le nettoyage automatique
 	ec.startCleanupTimer()
-	
+
 	return ec
 }
 
@@ -147,7 +147,7 @@ func NewLRUList() *LRUList {
 	tail := &LRUNode{}
 	head.next = tail
 	tail.prev = head
-	
+
 	return &LRUList{
 		head: head,
 		tail: tail,
@@ -158,18 +158,18 @@ func NewLRUList() *LRUList {
 // Get récupère un résultat d'évaluation depuis le cache
 func (ec *EvaluationCache) Get(key *EvaluationKey) (bool, error, bool) {
 	startTime := time.Now()
-	
+
 	ec.mutex.RLock()
 	cacheKey := ec.generateCacheKey(key)
 	entry, exists := ec.cache[cacheKey]
 	ec.mutex.RUnlock()
-	
+
 	if !exists {
 		ec.stats.Misses++
 		ec.stats.AverageMissTime = ec.updateAverageTime(ec.stats.AverageMissTime, time.Since(startTime), ec.stats.Misses)
 		return false, nil, false
 	}
-	
+
 	// Vérifier la TTL
 	if time.Since(entry.CreatedAt) > entry.TTL {
 		ec.mutex.Lock()
@@ -179,17 +179,17 @@ func (ec *EvaluationCache) Get(key *EvaluationKey) (bool, error, bool) {
 		ec.stats.AverageMissTime = ec.updateAverageTime(ec.stats.AverageMissTime, time.Since(startTime), ec.stats.Misses)
 		return false, nil, false
 	}
-	
+
 	// Mettre à jour les statistiques d'accès
 	ec.mutex.Lock()
 	entry.LastAccessed = time.Now()
 	entry.AccessCount++
 	ec.lruList.MoveToFront(cacheKey)
 	ec.mutex.Unlock()
-	
+
 	ec.stats.Hits++
 	ec.stats.AverageHitTime = ec.updateAverageTime(ec.stats.AverageHitTime, time.Since(startTime), ec.stats.Hits)
-	
+
 	return entry.Result, entry.Error, true
 }
 
@@ -197,23 +197,23 @@ func (ec *EvaluationCache) Get(key *EvaluationKey) (bool, error, bool) {
 func (ec *EvaluationCache) Put(key *EvaluationKey, result bool, err error, computeCost time.Duration) {
 	ec.mutex.Lock()
 	defer ec.mutex.Unlock()
-	
+
 	cacheKey := ec.generateCacheKey(key)
-	
+
 	// Éviction si nécessaire
 	if len(ec.cache) >= ec.config.MaxSize {
 		ec.evictLRU()
 	}
-	
+
 	// Déterminer la TTL appropriée
 	ttl := ec.config.DefaultTTL
 	if specificTTL, exists := ec.config.TypeSpecificTTL[key.ConditionType]; exists {
 		ttl = specificTTL
 	}
-	
+
 	// Calculer le score de confiance
 	confidence := ec.calculateConfidence(key, computeCost)
-	
+
 	// Créer l'entrée
 	entry := &EvalCacheEntry{
 		Result:       result,
@@ -226,16 +226,16 @@ func (ec *EvaluationCache) Put(key *EvaluationKey, result bool, err error, compu
 		ComputeCost:  computeCost,
 		Tags:         ec.generateTags(key),
 	}
-	
+
 	// Stocker dans le cache
 	ec.cache[cacheKey] = entry
-	
+
 	// Mettre à jour l'index par type
 	if ec.conditionTypeIndex[key.ConditionType] == nil {
 		ec.conditionTypeIndex[key.ConditionType] = make([]string, 0)
 	}
 	ec.conditionTypeIndex[key.ConditionType] = append(ec.conditionTypeIndex[key.ConditionType], cacheKey)
-	
+
 	// Ajouter à la liste LRU
 	ec.lruList.AddToFront(cacheKey)
 }
@@ -250,7 +250,7 @@ func (ec *EvaluationCache) generateCacheKey(key *EvaluationKey) string {
 		key.Operator,
 		key.Value,
 		key.FactID)
-	
+
 	// Compresser la clé si elle est trop longue
 	if ec.config.EnableKeyCompression && len(baseKey) > ec.config.MaxKeyLength {
 		hash := sha256.Sum256([]byte(baseKey))
@@ -258,24 +258,24 @@ func (ec *EvaluationCache) generateCacheKey(key *EvaluationKey) string {
 		ec.stats.Compressions++
 		return compressedKey
 	}
-	
+
 	return baseKey
 }
 
 // calculateConfidence calcule un score de confiance pour l'entrée
 func (ec *EvaluationCache) calculateConfidence(key *EvaluationKey, computeCost time.Duration) float64 {
 	confidence := 1.0
-	
+
 	// Réduire la confiance pour des calculs très rapides (possiblement triviaux)
 	if computeCost < time.Microsecond {
 		confidence *= 0.8
 	}
-	
+
 	// Augmenter la confiance pour des calculs coûteux
 	if computeCost > time.Millisecond {
 		confidence *= 1.2
 	}
-	
+
 	// Ajuster selon le type de condition
 	switch key.ConditionType {
 	case "binary_operation":
@@ -285,7 +285,7 @@ func (ec *EvaluationCache) calculateConfidence(key *EvaluationKey, computeCost t
 	case "function_call":
 		confidence *= 0.75 // Peut dépendre d'un état externe
 	}
-	
+
 	// Limiter à [0, 1]
 	if confidence > 1.0 {
 		confidence = 1.0
@@ -293,7 +293,7 @@ func (ec *EvaluationCache) calculateConfidence(key *EvaluationKey, computeCost t
 	if confidence < 0.0 {
 		confidence = 0.0
 	}
-	
+
 	return confidence
 }
 
@@ -305,7 +305,7 @@ func (ec *EvaluationCache) generateTags(key *EvaluationKey) []string {
 		"field:" + key.FieldName,
 		"op:" + key.Operator,
 	}
-	
+
 	// Ajouter des tags spécifiques à la valeur
 	switch v := key.Value.(type) {
 	case string:
@@ -321,7 +321,7 @@ func (ec *EvaluationCache) generateTags(key *EvaluationKey) []string {
 	default:
 		tags = append(tags, "complex_type")
 	}
-	
+
 	return tags
 }
 
@@ -330,13 +330,13 @@ func (ec *EvaluationCache) evictLRU() {
 	if ec.lruList.size == 0 {
 		return
 	}
-	
+
 	// Récupérer la clé de l'élément le moins récemment utilisé
 	lruKey := ec.lruList.RemoveFromTail()
 	if lruKey == "" {
 		return
 	}
-	
+
 	// Supprimer du cache
 	ec.removeEntry(lruKey)
 	ec.stats.Evictions++
@@ -348,10 +348,10 @@ func (ec *EvaluationCache) removeEntry(cacheKey string) {
 	if !exists {
 		return
 	}
-	
+
 	// Supprimer du cache principal
 	delete(ec.cache, cacheKey)
-	
+
 	// Supprimer des index par type
 	for condType, keys := range ec.conditionTypeIndex {
 		for i, key := range keys {
@@ -362,7 +362,7 @@ func (ec *EvaluationCache) removeEntry(cacheKey string) {
 			}
 		}
 	}
-	
+
 	// Supprimer de la liste LRU
 	ec.lruList.Remove(cacheKey)
 }
@@ -371,22 +371,22 @@ func (ec *EvaluationCache) removeEntry(cacheKey string) {
 func (ec *EvaluationCache) CleanupExpired() int {
 	ec.mutex.Lock()
 	defer ec.mutex.Unlock()
-	
+
 	now := time.Now()
 	expired := make([]string, 0)
-	
+
 	// Identifier les entrées expirées
 	for key, entry := range ec.cache {
 		if now.Sub(entry.CreatedAt) > entry.TTL {
 			expired = append(expired, key)
 		}
 	}
-	
+
 	// Supprimer les entrées expirées
 	for _, key := range expired {
 		ec.removeEntry(key)
 	}
-	
+
 	ec.stats.Cleanups++
 	return len(expired)
 }
@@ -395,7 +395,7 @@ func (ec *EvaluationCache) CleanupExpired() int {
 func (ec *EvaluationCache) PrecomputeFrequent(evaluator func(*EvaluationKey) (bool, error, time.Duration)) {
 	ec.mutex.RLock()
 	candidates := make([]*EvaluationKey, 0)
-	
+
 	// Identifier les patterns fréquents
 	for _, entry := range ec.cache {
 		if entry.AccessCount >= int64(ec.config.PrecomputeThreshold) {
@@ -404,7 +404,7 @@ func (ec *EvaluationCache) PrecomputeFrequent(evaluator func(*EvaluationKey) (bo
 		}
 	}
 	ec.mutex.RUnlock()
-	
+
 	// Pré-calculer les résultats pour ces patterns
 	for _, key := range candidates {
 		result, err, computeTime := evaluator(key)
@@ -417,22 +417,22 @@ func (ec *EvaluationCache) PrecomputeFrequent(evaluator func(*EvaluationKey) (bo
 func (ec *EvaluationCache) InvalidateByType(conditionType string) int {
 	ec.mutex.Lock()
 	defer ec.mutex.Unlock()
-	
+
 	keys, exists := ec.conditionTypeIndex[conditionType]
 	if !exists {
 		return 0
 	}
-	
+
 	count := len(keys)
-	
+
 	// Supprimer toutes les entrées de ce type
 	for _, key := range keys {
 		ec.removeEntry(key)
 	}
-	
+
 	// Vider l'index pour ce type
 	delete(ec.conditionTypeIndex, conditionType)
-	
+
 	return count
 }
 
@@ -440,21 +440,21 @@ func (ec *EvaluationCache) InvalidateByType(conditionType string) int {
 func (ec *EvaluationCache) InvalidateByFact(factID string) int {
 	ec.mutex.Lock()
 	defer ec.mutex.Unlock()
-	
+
 	toRemove := make([]string, 0)
-	
+
 	// Trouver toutes les entrées associées à ce fait
 	for key, _ := range ec.cache {
 		if ec.containsFactID(key, factID) {
 			toRemove = append(toRemove, key)
 		}
 	}
-	
+
 	// Supprimer les entrées trouvées
 	for _, key := range toRemove {
 		ec.removeEntry(key)
 	}
-	
+
 	return len(toRemove)
 }
 
@@ -469,7 +469,7 @@ func (ec *EvaluationCache) updateAverageTime(currentAvg time.Duration, newTime t
 	if count <= 1 {
 		return newTime
 	}
-	
+
 	// Moyenne pondérée pour éviter les débordements
 	return time.Duration(
 		(int64(currentAvg)*(count-1) + int64(newTime)) / count,
@@ -488,7 +488,7 @@ func (ec *EvaluationCache) startCleanupTimer() {
 func (ec *EvaluationCache) GetStats() CacheStats {
 	ec.mutex.RLock()
 	defer ec.mutex.RUnlock()
-	
+
 	return ec.stats
 }
 
@@ -496,7 +496,7 @@ func (ec *EvaluationCache) GetStats() CacheStats {
 func (ec *EvaluationCache) Clear() {
 	ec.mutex.Lock()
 	defer ec.mutex.Unlock()
-	
+
 	ec.cache = make(map[string]*EvalCacheEntry)
 	ec.conditionTypeIndex = make(map[string][]string)
 	ec.lruList = NewLRUList()
@@ -508,12 +508,12 @@ func (ec *EvaluationCache) Clear() {
 // AddToFront ajoute une clé au début de la liste LRU
 func (lru *LRUList) AddToFront(key string) {
 	node := &LRUNode{key: key}
-	
+
 	node.next = lru.head.next
 	node.prev = lru.head
 	lru.head.next.prev = node
 	lru.head.next = node
-	
+
 	lru.size++
 }
 
@@ -526,13 +526,13 @@ func (lru *LRUList) MoveToFront(key string) {
 			// Supprimer de la position actuelle
 			current.prev.next = current.next
 			current.next.prev = current.prev
-			
+
 			// Ajouter au début
 			current.next = lru.head.next
 			current.prev = lru.head
 			lru.head.next.prev = current
 			lru.head.next = current
-			
+
 			return
 		}
 		current = current.next
@@ -544,19 +544,19 @@ func (lru *LRUList) RemoveFromTail() string {
 	if lru.size == 0 {
 		return ""
 	}
-	
+
 	lastNode := lru.tail.prev
 	if lastNode == lru.head {
 		return ""
 	}
-	
+
 	key := lastNode.key
-	
+
 	lastNode.prev.next = lru.tail
 	lru.tail.prev = lastNode.prev
-	
+
 	lru.size--
-	
+
 	return key
 }
 
