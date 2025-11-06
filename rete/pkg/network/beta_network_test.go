@@ -293,9 +293,9 @@ func TestMultiJoinPattern(t *testing.T) {
 		}
 
 		// Vérifier la chaîne de connexions : Order→Customer→Product→Stock
-		firstNode := createdNodes[0]   // order_customer_join
-		secondNode := createdNodes[1]  // customer_product_join  
-		thirdNode := createdNodes[2]   // product_stock_validation
+		firstNode := createdNodes[0]  // order_customer_join
+		secondNode := createdNodes[1] // customer_product_join
+		thirdNode := createdNodes[2]  // product_stock_validation
 
 		// Vérifier connexion 1→2
 		children1 := firstNode.GetChildren()
@@ -453,7 +453,7 @@ func testECommerceFlow(t *testing.T, nodes []domain.BetaNode) {
 	}
 
 	orderCustomerNode := nodes[0]
-	customerProductNode := nodes[1] 
+	customerProductNode := nodes[1]
 	productStockNode := nodes[2]
 
 	// Créer les entités E-commerce
@@ -475,29 +475,29 @@ func testECommerceFlow(t *testing.T, nodes []domain.BetaNode) {
 	})
 
 	productFact := domain.NewFact("product_456", "Product", map[string]interface{}{
-		"id":          "PROD-456",
-		"name":        "Laptop Gaming Pro",
-		"category":    "Electronics",
-		"price":       59.99,
-		"brand":       "TechCorp",
-		"warranty":    24,
+		"id":       "PROD-456",
+		"name":     "Laptop Gaming Pro",
+		"category": "Electronics",
+		"price":    59.99,
+		"brand":    "TechCorp",
+		"warranty": 24,
 	})
 
 	// Stock suffisant
 	stockOKFact := domain.NewFact("stock_456_ok", "Stock", map[string]interface{}{
-		"product_id":          "PROD-456",
-		"warehouse_id":        "WH-001",
-		"available_quantity":  10,  // Suffisant pour quantity=5
-		"reserved_quantity":   2,
+		"product_id":         "PROD-456",
+		"warehouse_id":       "WH-001",
+		"available_quantity": 10, // Suffisant pour quantity=5
+		"reserved_quantity":  2,
 		"location":           "A-12-3",
 	})
 
 	// Stock insuffisant pour test d'échec
 	stockKOFact := domain.NewFact("stock_456_ko", "Stock", map[string]interface{}{
-		"product_id":          "PROD-456", 
-		"warehouse_id":        "WH-002",
-		"available_quantity":  3,   // Insuffisant pour quantity=5
-		"reserved_quantity":   1,
+		"product_id":         "PROD-456",
+		"warehouse_id":       "WH-002",
+		"available_quantity": 3, // Insuffisant pour quantity=5
+		"reserved_quantity":  1,
 		"location":           "B-5-7",
 	})
 
@@ -508,7 +508,7 @@ func testECommerceFlow(t *testing.T, nodes []domain.BetaNode) {
 		orderCustomerNode.ProcessLeftToken(orderToken)
 		orderCustomerNode.ProcessRightFact(customerFact)
 
-		// Traiter Product 
+		// Traiter Product
 		customerProductNode.ProcessRightFact(productFact)
 
 		// Traiter Stock (suffisant)
@@ -532,10 +532,10 @@ func testECommerceFlow(t *testing.T, nodes []domain.BetaNode) {
 		orderCustomerNode.ProcessLeftToken(orderToken)
 		orderCustomerNode.ProcessRightFact(customerFact)
 		customerProductNode.ProcessRightFact(productFact)
-		
+
 		// Stock insuffisant ne devrait pas passer la condition quantity <= available_quantity
 		productStockNode.ProcessRightFact(stockKOFact)
-		
+
 		// Le nombre de joins devrait être moindre ou nul
 		stats := getNodeStats(productStockNode)
 		t.Logf("Stock validation stats: %+v", stats)
@@ -556,24 +556,24 @@ func testHRSecurityFlow(t *testing.T, nodes []domain.BetaNode) {
 		"id":              "EMP-001",
 		"name":            "Alice Smith",
 		"dept_id":         "DEPT-SEC",
-		"clearance_level": 7,  // Niveau de sécurité élevé
+		"clearance_level": 7, // Niveau de sécurité élevé
 		"position":        "Senior Developer",
 		"hire_date":       "2020-03-15",
 	})
 
 	departmentFact := domain.NewFact("dept_sec", "Department", map[string]interface{}{
-		"id":          "DEPT-SEC", 
-		"name":        "Security Department",
-		"manager":     "Bob Wilson",
-		"budget":      2500000.00,
-		"location":    "Building-A Floor-3",
+		"id":       "DEPT-SEC",
+		"name":     "Security Department",
+		"manager":  "Bob Wilson",
+		"budget":   2500000.00,
+		"location": "Building-A Floor-3",
 	})
 
 	// Projet nécessitant clearance élevée
 	projectHighSecFact := domain.NewFact("proj_classified", "Project", map[string]interface{}{
 		"id":                 "PROJ-CLASSIFIED",
 		"name":               "Operation Phoenix",
-		"required_clearance": 6,  // Alice (7) peut y accéder
+		"required_clearance": 6, // Alice (7) peut y accéder
 		"deadline":           "2025-12-31",
 		"budget":             500000.00,
 		"classification":     "SECRET",
@@ -582,8 +582,8 @@ func testHRSecurityFlow(t *testing.T, nodes []domain.BetaNode) {
 	// Projet nécessitant clearance ultra-élevée
 	projectTopSecretFact := domain.NewFact("proj_topsecret", "Project", map[string]interface{}{
 		"id":                 "PROJ-TOPSECRET",
-		"name":               "Quantum Initiative", 
-		"required_clearance": 9,  // Alice (7) ne peut PAS y accéder
+		"name":               "Quantum Initiative",
+		"required_clearance": 9, // Alice (7) ne peut PAS y accéder
 		"deadline":           "2026-06-30",
 		"budget":             2000000.00,
 		"classification":     "TOP-SECRET",
@@ -606,7 +606,7 @@ func testHRSecurityFlow(t *testing.T, nodes []domain.BetaNode) {
 		}
 	})
 
-	// Test 2: Assignation échouée avec clearance insuffisante  
+	// Test 2: Assignation échouée avec clearance insuffisante
 	t.Run("HRFlowClearanceFailure", func(t *testing.T) {
 		// Nettoyer la mémoire
 		deptProjectNode.ClearMemory()
@@ -615,10 +615,10 @@ func testHRSecurityFlow(t *testing.T, nodes []domain.BetaNode) {
 		empToken := domain.NewToken("emp_token_2", "hr_source", []*domain.Fact{employeeFact})
 		empDeptNode.ProcessLeftToken(empToken)
 		empDeptNode.ProcessRightFact(departmentFact)
-		
+
 		// Projet TOP-SECRET ne devrait pas être accessible
 		deptProjectNode.ProcessRightFact(projectTopSecretFact)
-		
+
 		// L'assignation devrait échouer (clearance_level >= required_clearance échoue)
 		stats := getNodeStats(deptProjectNode)
 		t.Logf("Security clearance stats: %+v", stats)
@@ -756,9 +756,9 @@ func TestComplexPatternPerformance(t *testing.T) {
 
 			// Fait avec critères correspondants ou non
 			rightFact := domain.NewFact(fmt.Sprintf("right_%d", i), "RightEntity", map[string]interface{}{
-				"min_score":       float64((i % 80) + 10),
-				"required_level":  (i + 5) % 10,
-				"valid_status":    []string{"active", "pending", "disabled"}[i%3],
+				"min_score":        float64((i % 80) + 10),
+				"required_level":   (i + 5) % 10,
+				"valid_status":     []string{"active", "pending", "disabled"}[i%3],
 				"threshold_rating": float64((i % 30) + 20),
 			})
 
@@ -834,11 +834,11 @@ func TestAdvancedBusinessCases(t *testing.T) {
 
 		// Profil de risque
 		highRiskProfile := domain.NewFact("risk_high", "RiskProfile", map[string]interface{}{
-			"customer_id":  "CUST-SUSPICIOUS",
-			"risk_level":   "HIGH",
-			"daily_limit":  25000.00, // Limite dépassée par la transaction
-			"flags":        []string{"PEP", "Sanctions"},
-			"last_review":  "2025-01-01",
+			"customer_id": "CUST-SUSPICIOUS",
+			"risk_level":  "HIGH",
+			"daily_limit": 25000.00, // Limite dépassée par la transaction
+			"flags":       []string{"PEP", "Sanctions"},
+			"last_review": "2025-01-01",
 		})
 
 		// Traiter le flux de risque
@@ -896,18 +896,18 @@ func TestAdvancedBusinessCases(t *testing.T) {
 
 		// Fournisseur global
 		globalSupplier := domain.NewFact("sup_global", "Supplier", map[string]interface{}{
-			"id":           "SUP-GLOBAL",
-			"name":         "Global Supply Corp",
-			"rating":       4.8,
-			"regions":      []string{"Europe", "Asia", "Americas"},
-			"capacity":     1000000,
-			"lead_time":    3,
+			"id":        "SUP-GLOBAL",
+			"name":      "Global Supply Corp",
+			"rating":    4.8,
+			"regions":   []string{"Europe", "Asia", "Americas"},
+			"capacity":  1000000,
+			"lead_time": 3,
 		})
 
 		// Logistique disponible
 		expressLogistics := domain.NewFact("log_express", "Logistics", map[string]interface{}{
 			"id":             "LOG-EXPRESS",
-			"service_region": "Europe", 
+			"service_region": "Europe",
 			"available_date": "2025-11-08", // Disponible avant la date requise
 			"service_type":   "Express",
 			"cost_per_km":    2.50,
@@ -942,7 +942,7 @@ func TestAdvancedBusinessCases(t *testing.T) {
 					NodeID: "txn_account_join",
 				},
 				{
-					LeftType:  "TransactionAccount", 
+					LeftType:  "TransactionAccount",
 					RightType: "Customer",
 					Conditions: []domain.JoinCondition{
 						domain.NewBasicJoinCondition("customer_id", "id", "=="),
@@ -1004,13 +1004,13 @@ func TestAdvancedBusinessCases(t *testing.T) {
 		})
 
 		cryptoAccount := domain.NewFact("acc_crypto", "Account", map[string]interface{}{
-			"id":             "ACC-CRYPTO-TRADER",
-			"customer_id":    "CUST-WHALE-001",
-			"type":           "BUSINESS_PREMIUM",
-			"balance":        50000000.00, // 50M USD
-			"opened_date":    "2025-01-01",
-			"status":         "ACTIVE",
-			"flags":          []string{"CRYPTO", "HIGH_VOLUME"},
+			"id":          "ACC-CRYPTO-TRADER",
+			"customer_id": "CUST-WHALE-001",
+			"type":        "BUSINESS_PREMIUM",
+			"balance":     50000000.00, // 50M USD
+			"opened_date": "2025-01-01",
+			"status":      "ACTIVE",
+			"flags":       []string{"CRYPTO", "HIGH_VOLUME"},
 		})
 
 		whaleCustomer := domain.NewFact("cust_whale", "Customer", map[string]interface{}{
@@ -1033,33 +1033,33 @@ func TestAdvancedBusinessCases(t *testing.T) {
 		})
 
 		caymanRisk := domain.NewFact("geo_cayman", "GeolocationRisk", map[string]interface{}{
-			"country":             "KY",
-			"country_name":        "Cayman Islands",
-			"risk_rating":         "HIGH",
-			"max_allowed_score":   9.0, // Autorise le score de 8.5
-			"sanctions_risk":      "MEDIUM",
+			"country":               "KY",
+			"country_name":          "Cayman Islands",
+			"risk_rating":           "HIGH",
+			"max_allowed_score":     9.0, // Autorise le score de 8.5
+			"sanctions_risk":        "MEDIUM",
 			"offshore_jurisdiction": true,
-			"fatf_compliance":     "ADEQUATE",
+			"fatf_compliance":       "ADEQUATE",
 		})
 
 		complianceRule := domain.NewFact("rule_wire", "ComplianceRule", map[string]interface{}{
-			"id":                "RULE-WIRE-OFFSHORE",
-			"applicable_types":  "WIRE_TRANSFER",
-			"required_level":    2, // Customer a niveau 3, OK
-			"max_amount":        100000.00,
+			"id":                  "RULE-WIRE-OFFSHORE",
+			"applicable_types":    "WIRE_TRANSFER",
+			"required_level":      2, // Customer a niveau 3, OK
+			"max_amount":          100000.00,
 			"enhanced_monitoring": true,
-			"reporting_required": true,
-			"jurisdiction":       []string{"US", "EU", "KY"},
+			"reporting_required":  true,
+			"jurisdiction":        []string{"US", "EU", "KY"},
 		})
 
 		// Traiter le flux anti-fraude complet (5 niveaux!)
 		txnToken := domain.NewToken("anti_fraud_token", "fraud_detection_source", []*domain.Fact{suspiciousTransaction})
-		
+
 		// Niveau 1: Transaction → Account
 		nodes[0].ProcessLeftToken(txnToken)
 		nodes[0].ProcessRightFact(cryptoAccount)
 
-		// Niveau 2: Account → Customer  
+		// Niveau 2: Account → Customer
 		nodes[1].ProcessRightFact(whaleCustomer)
 
 		// Niveau 3: Customer → RiskProfile (avec validation montant)
