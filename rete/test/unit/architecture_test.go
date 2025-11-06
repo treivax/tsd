@@ -1,5 +1,4 @@
 package rete
-package rete
 
 import (
 	"testing"
@@ -12,61 +11,107 @@ import (
 func TestNewArchitecture(t *testing.T) {
 	t.Log("Test de la nouvelle architecture RETE")
 
-	// Test des types de base du domaine
-	t.Run("TestDomainFact", func(t *testing.T) {
-		fact := domain.NewFact("temperature", 25.5)
-		if fact.Type != "temperature" {
-			t.Errorf("Attendu type 'temperature', reçu '%s'", fact.Type)
+		// Test NewFact
+	t.Run("NewFact", func(t *testing.T) {
+		fields := map[string]interface{}{
+			"value": 25.5,
 		}
-		if fact.Value != 25.5 {
-			t.Errorf("Attendu valeur 25.5, reçu %v", fact.Value)
+		fact := domain.NewFact("temperature", "sensor", fields)
+		
+		if fact.ID != "temperature" {
+			t.Errorf("Attendu ID 'temperature', reçu '%s'", fact.ID)
+		}
+		if fact.Type != "sensor" {
+			t.Errorf("Attendu type 'sensor', reçu '%s'", fact.Type)
+		}
+		if val, exists := fact.GetField("value"); !exists || val != 25.5 {
+			t.Errorf("Attendu valeur 25.5, reçu %v", val)
+		}
+	})
+
+	// Test NewWorkingMemory
+	t.Run("NewWorkingMemory", func(t *testing.T) {
+		wm := domain.NewWorkingMemory("test-node")
+		
+		if wm == nil {
+			t.Error("WorkingMemory ne devrait pas être nil")
+		}
+		if wm.NodeID != "test-node" {
+			t.Errorf("Attendu NodeID 'test-node', reçu '%s'", wm.NodeID)
+		}
+	})
+
+	// Test AddFact
+	t.Run("AddFact", func(t *testing.T) {
+		fields := map[string]interface{}{
+			"value": "test",
+		}
+		fact := domain.NewFact("test", "type", fields)
+		wm := domain.NewWorkingMemory("test-node")
+		wm.AddFact(fact)
+		
+		// Vérifier que le fait a été ajouté
+		if len(wm.Facts) != 1 {
+			t.Errorf("Attendu 1 fait, reçu %d", len(wm.Facts))
+		}
+	})
+
+	// Test Token
+	t.Run("NewToken", func(t *testing.T) {
+		fields := map[string]interface{}{
+			"value": "test",
+		}
+		fact := domain.NewFact("test", "type", fields)
+		facts := []*domain.Fact{fact}
+		token := domain.NewToken("token1", "node1", facts)
+		
+		if len(token.Facts) != 1 {
+			t.Error("Le token devrait contenir 1 fait")
+		}
+		if token.Facts[0] != fact {
+			t.Error("Le token devrait contenir le fait correct")
 		}
 	})
 
 	t.Run("TestWorkingMemory", func(t *testing.T) {
-		wm := domain.NewWorkingMemory()
+		wm := domain.NewWorkingMemory("test-node")
 		if wm == nil {
 			t.Fatal("WorkingMemory ne doit pas être nil")
 		}
 
-		fact := domain.NewFact("test", "value")
+		fields := map[string]interface{}{
+			"value": "test",
+		}
+		fact := domain.NewFact("test", "type", fields)
 		wm.AddFact(fact)
 
-		facts := wm.GetFacts()
-		if len(facts) != 1 {
-			t.Errorf("Attendu 1 fait, reçu %d", len(facts))
+		if len(wm.Facts) != 1 {
+			t.Errorf("Attendu 1 fait, reçu %d", len(wm.Facts))
 		}
 	})
 
-	t.Run("TestToken", func(t *testing.T) {
-		fact := domain.NewFact("test", "value")
-		token := domain.NewToken(fact)
-		
-		if token.Fact != fact {
-			t.Error("Le token devrait contenir le fait")
-		}
-	})
-
-	// Test du BaseNode
+	// Test du BaseNode avec un logger mock
 	t.Run("TestBaseNode", func(t *testing.T) {
-		node := nodes.NewBaseNode("test-node", "TestNode")
-		if node.GetID() != "test-node" {
-			t.Errorf("Attendu ID 'test-node', reçu '%s'", node.GetID())
+		// Logger mock simple
+		logger := &mockLogger{}
+		node := nodes.NewBaseNode("test-node", "TestNode", logger)
+		if node.ID() != "test-node" {
+			t.Errorf("Attendu ID 'test-node', reçu '%s'", node.ID())
 		}
-		if node.GetType() != "TestNode" {
-			t.Errorf("Attendu type 'TestNode', reçu '%s'", node.GetType())
+		if node.Type() != "TestNode" {
+			t.Errorf("Attendu type 'TestNode', reçu '%s'", node.Type())
 		}
 	})
 
 	// Test des erreurs structurées
 	t.Run("TestDomainErrors", func(t *testing.T) {
-		err := domain.NewValidationError("test error", "field", "value")
+		err := domain.NewValidationError("field", "value", "test error")
 		if err == nil {
 			t.Fatal("L'erreur ne doit pas être nil")
 		}
 
-		if !domain.IsValidationError(err) {
-			t.Error("Devrait être une ValidationError")
+		if err.Field != "field" {
+			t.Errorf("Attendu field 'field', reçu '%s'", err.Field)
 		}
 	})
 }
@@ -82,3 +127,11 @@ func TestCompatibility(t *testing.T) {
 		t.Log("Les fonctions de base doivent être disponibles")
 	})
 }
+
+// mockLogger implémente l'interface Logger pour les tests
+type mockLogger struct{}
+
+func (m *mockLogger) Debug(msg string, fields map[string]interface{}) {}
+func (m *mockLogger) Info(msg string, fields map[string]interface{})  {}
+func (m *mockLogger) Warn(msg string, fields map[string]interface{})  {}
+func (m *mockLogger) Error(msg string, err error, fields map[string]interface{}) {}
