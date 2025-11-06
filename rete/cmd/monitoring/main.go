@@ -18,15 +18,15 @@ func main() {
 
 	// Configuration du monitoring
 	config := rete.MonitoringConfig{
-		Port:               8080,
-		UpdateInterval:     2 * time.Second,
-		MaxHistorySize:     100,
-		EnableProfiling:    true,
-		EnableAlerts:       true,
-		LogLevel:           "info",
-		MaxConnections:     100,
-		ReadTimeout:        30 * time.Second,
-		WriteTimeout:       30 * time.Second,
+		Port:            8080,
+		UpdateInterval:  2 * time.Second,
+		MaxHistorySize:  100,
+		EnableProfiling: true,
+		EnableAlerts:    true,
+		LogLevel:        "info",
+		MaxConnections:  100,
+		ReadTimeout:     30 * time.Second,
+		WriteTimeout:    30 * time.Second,
 	}
 
 	// Créer un réseau RETE de base pour le monitoring
@@ -66,7 +66,7 @@ func createSampleReteNetwork() *rete.ReteNetwork {
 	// Ici, nous créons un réseau minimal pour la démonstration
 	storage := rete.NewMemoryStorage()
 	network := rete.NewReteNetwork(storage)
-	
+
 	log.Println("🏗️ Réseau RETE de démonstration créé")
 	return network
 }
@@ -139,12 +139,12 @@ func setupDefaultAlertRules(server *rete.MonitoringServer) {
 // simulateReteActivity simule l'activité du réseau RETE pour la démonstration
 func simulateReteActivity(ctx context.Context, network *rete.ReteNetwork) {
 	log.Println("🎭 Démarrage de la simulation d'activité RETE...")
-	
+
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
-	
+
 	factCounter := 0
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -154,18 +154,18 @@ func simulateReteActivity(ctx context.Context, network *rete.ReteNetwork) {
 			// Simuler l'ajout de faits
 			for i := 0; i < 5; i++ {
 				fact := &rete.Fact{
-					ID:   generateFactID(factCounter),
-					Type: selectRandomType(),
-					Fields: generateRandomFields(),
+					ID:        generateFactID(factCounter),
+					Type:      selectRandomType(),
+					Fields:    generateRandomFields(),
 					Timestamp: time.Now(),
 				}
-				
+
 				// En mode démonstration, nous n'ajoutons pas vraiment les faits
-				// network.SubmitFact(fact) 
+				// network.SubmitFact(fact)
 				_ = fact
 				factCounter++
 			}
-			
+
 			// Log périodique d'activité
 			if factCounter%50 == 0 {
 				log.Printf("📊 Simulation: %d faits traités", factCounter)
@@ -193,19 +193,19 @@ func generateRandomFields() map[string]interface{} {
 			"score":  float64(time.Now().UnixNano()%100) + 0.5,
 		},
 		{
-			"user_id":    time.Now().UnixNano() % 1000,
-			"action":     "click",
-			"timestamp":  time.Now().Unix(),
-			"duration":   time.Now().UnixNano() % 5000,
+			"user_id":   time.Now().UnixNano() % 1000,
+			"action":    "click",
+			"timestamp": time.Now().Unix(),
+			"duration":  time.Now().UnixNano() % 5000,
 		},
 		{
-			"order_id":   time.Now().UnixNano() % 50000,
-			"amount":     float64(time.Now().UnixNano()%10000) / 100.0,
-			"currency":   "EUR",
-			"status":     "pending",
+			"order_id": time.Now().UnixNano() % 50000,
+			"amount":   float64(time.Now().UnixNano()%10000) / 100.0,
+			"currency": "EUR",
+			"status":   "pending",
 		},
 	}
-	
+
 	return fields[time.Now().UnixNano()%int64(len(fields))]
 }
 
@@ -213,7 +213,7 @@ func generateRandomFields() map[string]interface{} {
 func handleShutdown(cancel context.CancelFunc) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	sig := <-sigChan
 	log.Printf("🛑 Signal reçu: %v. Arrêt du serveur...", sig)
 	cancel()
@@ -224,10 +224,10 @@ func handleShutdown(cancel context.CancelFunc) {
 // DemonstrateAPIs montre comment utiliser les APIs du serveur
 func DemonstrateAPIs() {
 	log.Println("📡 Démonstration des APIs du serveur de monitoring...")
-	
+
 	// Ces exemples montrent comment vous pourriez interagir avec le serveur
 	// En pratique, ces appels seraient faits depuis votre application
-	
+
 	examples := []string{
 		"GET /api/metrics - Toutes les métriques",
 		"GET /api/metrics/system - Métriques système uniquement",
@@ -240,7 +240,7 @@ func DemonstrateAPIs() {
 		"GET /api/network/nodes - Liste des nœuds",
 		"WS /ws/metrics - Flux temps réel via WebSocket",
 	}
-	
+
 	log.Println("📋 APIs disponibles:")
 	for _, example := range examples {
 		log.Printf("   - %s", example)
