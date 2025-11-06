@@ -1,4 +1,0 @@
-type Personne : < nom: string, age: number, adulte: bool >
-type Animal : < espece: string, domestique: bool, age: number >
-
-{ client: Personne, pet: Animal } / client.nom = pet.age ==> action(client)
