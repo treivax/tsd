@@ -37,7 +37,7 @@ import (
 
 func main() {
     // 1. Créer le storage
-    storage := rete.NewMemoryStorage() // ou NewEtcdStorage()
+    storage := rete.NewMemoryStorage()
     
     // 2. Créer le réseau
     network := rete.NewReteNetwork(storage)
@@ -70,15 +70,7 @@ func main() {
 ### Avec etcd
 
 ```go
-// Créer un storage etcd
-storage, err := rete.NewEtcdStorage([]string{"localhost:2379"}, "myapp")
-if err != nil {
-    panic(err)
-}
-defer storage.Close()
 
-network := rete.NewReteNetwork(storage)
-// ... utilisation normale
 ```
 
 ## 📊 Fonctionnalités

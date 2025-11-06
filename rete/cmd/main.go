@@ -1,30 +1,33 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/treivax/tsd/rete"
 )
 
 func main() {
-	fmt.Println("🔥 DÉMONSTRATION DU RÉSEAU RETE (VERSION SIMPLE)")
-	fmt.Println("===============================================")
+	fmt.Println("🚀 BENCHMARK DE PERFORMANCE RETE (SANS PERSISTANCE)")
+	fmt.Println("==================================================")
 
-	// 1. Créer un programme RETE manuellement (sans parser constraint pour l'instant)
-	fmt.Println("\n📋 ÉTAPE 1: Création du programme RETE")
-	
+	// Démonstration des conditions Alpha
+	demonstrateAlphaConditions()
+
+	fmt.Println("\n==================================================")
+	fmt.Println("🚀 BENCHMARK DE PERFORMANCE PRINCIPAL")
+	fmt.Println("==================================================")
+
+	// Créer un programme simple
 	program := &rete.Program{
 		Types: []rete.TypeDefinition{
 			{
 				Type: "typeDefinition",
-				Name: "Personne",
+				Name: "Event",
 				Fields: []rete.Field{
-					{Name: "nom", Type: "string"},
-					{Name: "age", Type: "number"},
-					{Name: "adulte", Type: "bool"},
+					{Name: "id", Type: "number"},
+					{Name: "priority", Type: "number"},
+					{Name: "active", Type: "bool"},
 				},
 			},
 		},
@@ -36,132 +39,196 @@ func main() {
 					Variables: []rete.TypedVariable{
 						{
 							Type:     "typedVariable",
-							Name:     "client",
-							DataType: "Personne",
+							Name:     "evt",
+							DataType: "Event",
 						},
 					},
 				},
 				Constraints: map[string]interface{}{
-					"type": "logicalExpr",
-					"conditions": []string{"client.age = 25", "client.adulte = true"},
+					"type":     "binaryOperation",
+					"operator": ">",
+					"left": map[string]interface{}{
+						"type":   "fieldAccess",
+						"object": "evt",
+						"field":  "priority",
+					},
+					"right": map[string]interface{}{
+						"type":  "numberLiteral",
+						"value": 5.0,
+					},
 				},
 				Action: &rete.Action{
 					Type: "action",
 					Job: rete.JobCall{
 						Type: "jobCall",
-						Name: "action",
-						Args: []string{"client"},
+						Name: "process",
+						Args: []string{"evt"},
 					},
 				},
 			},
 		},
 	}
 
-	fmt.Printf("✅ Programme créé avec %d type(s) et %d expression(s)\n", 
-		len(program.Types), len(program.Expressions))
-
-	// 2. Créer le storage
-	fmt.Println("\n💾 ÉTAPE 2: Initialisation du storage")
+	// Créer le réseau (storage en mémoire seulement)
 	storage := rete.NewMemoryStorage()
-	fmt.Printf("✅ Storage en mémoire initialisé\n")
-
-	// 3. Créer et construire le réseau RETE
-	fmt.Println("\n🏗️  ÉTAPE 3: Construction du réseau RETE")
 	network := rete.NewReteNetwork(storage)
-	
+
 	err := network.LoadFromAST(program)
 	if err != nil {
-		log.Fatalf("Erreur construction réseau: %v", err)
+		panic(err)
 	}
 
-	// Afficher la structure
-	network.PrintNetworkStructure()
+	fmt.Printf("✅ Réseau RETE initialisé\n")
 
-	// 4. Créer et soumettre des faits de test
-	fmt.Println("\n🔥 ÉTAPE 4: Soumission de faits")
-	
-	// Fait qui devrait déclencher l'action (age=25 ET adulte=true)
-	fact1 := &rete.Fact{
-		ID:        "personne_1",
-		Type:      "Personne",
-		Fields: map[string]interface{}{
-			"nom":    "Alice",
-			"age":    25.0,
-			"adulte": true,
-		},
-		Timestamp: time.Now(),
+	// Test de performance avec différentes charges
+	testCases := []struct {
+		name      string
+		numFacts  int
+		batchSize int
+	}{
+		{"Petite charge", 1000, 100},
+		{"Charge moyenne", 10000, 1000},
+		{"Grande charge", 50000, 5000},
 	}
 
-	fmt.Printf("Soumission du fait 1: %s\n", fact1.String())
-	err = network.SubmitFact(fact1)
-	if err != nil {
-		log.Fatalf("Erreur soumission fait 1: %v", err)
-	}
+	for _, tc := range testCases {
+		fmt.Printf("\n🔥 Test: %s (%d faits par batch de %d)\n", tc.name, tc.numFacts, tc.batchSize)
 
-	// Fait qui ne devrait PAS déclencher l'action (age=17 ET adulte=false)
-	fact2 := &rete.Fact{
-		ID:        "personne_2", 
-		Type:      "Personne",
-		Fields: map[string]interface{}{
-			"nom":    "Bob",
-			"age":    17.0,
-			"adulte": false,
-		},
-		Timestamp: time.Now(),
-	}
+		start := time.Now()
 
-	fmt.Printf("Soumission du fait 2: %s\n", fact2.String())
-	err = network.SubmitFact(fact2)
-	if err != nil {
-		log.Fatalf("Erreur soumission fait 2: %v", err)
-	}
+		for i := 0; i < tc.numFacts; i++ {
+			fact := &rete.Fact{
+				ID:   fmt.Sprintf("event_%d", i),
+				Type: "Event",
+				Fields: map[string]interface{}{
+					"id":       float64(i),
+					"priority": float64(i % 10),
+					"active":   i%2 == 0,
+				},
+				Timestamp: time.Now(),
+			}
 
-	// Fait d'un autre type (devrait être ignoré)
-	fact3 := &rete.Fact{
-		ID:        "autre_1",
-		Type:      "AutreType",
-		Fields: map[string]interface{}{
-			"nom": "Test",
-		},
-		Timestamp: time.Now(),
-	}
+			err := network.SubmitFact(fact)
+			if err != nil {
+				panic(err)
+			}
 
-	fmt.Printf("Soumission du fait 3 (autre type): %s\n", fact3.String())
-	err = network.SubmitFact(fact3)
-	if err != nil {
-		log.Fatalf("Erreur soumission fait 3: %v", err)
-	}
-
-	// 5. Afficher l'état du réseau
-	fmt.Println("\n📊 ÉTAPE 5: État final du réseau")
-	state, err := network.GetNetworkState()
-	if err != nil {
-		log.Fatalf("Erreur récupération état: %v", err)
-	}
-
-	for nodeID, memory := range state {
-		fmt.Printf("\n🎯 Nœud: %s\n", nodeID)
-		fmt.Printf("   Faits en mémoire: %d\n", len(memory.Facts))
-		fmt.Printf("   Tokens en mémoire: %d\n", len(memory.Tokens))
-		
-		if len(memory.Facts) > 0 {
-			fmt.Printf("   Détail des faits:\n")
-			for _, fact := range memory.Facts {
-				factJSON, _ := json.MarshalIndent(fact, "     ", "  ")
-				fmt.Printf("     %s\n", factJSON)
+			// Afficher progression pour grandes charges
+			if tc.numFacts > 1000 && i%tc.batchSize == 0 && i > 0 {
+				elapsed := time.Since(start)
+				rate := float64(i) / elapsed.Seconds()
+				fmt.Printf("   Progress: %d/%d faits (%.0f faits/sec)\n", i, tc.numFacts, rate)
 			}
 		}
 
-		if len(memory.Tokens) > 0 {
-			fmt.Printf("   Détail des tokens:\n")
-			for _, token := range memory.Tokens {
-				tokenJSON, _ := json.MarshalIndent(token, "     ", "  ")
-				fmt.Printf("     %s\n", tokenJSON)
+		elapsed := time.Since(start)
+		rate := float64(tc.numFacts) / elapsed.Seconds()
+
+		fmt.Printf("   ✅ Terminé en %v\n", elapsed)
+		fmt.Printf("   📊 Performance: %.0f faits/seconde\n", rate)
+		fmt.Printf("   📊 Temps par fait: %.2f µs\n", float64(elapsed.Nanoseconds())/float64(tc.numFacts)/1000)
+
+		// Statistiques du réseau
+		state, _ := network.GetNetworkState()
+		totalFacts := 0
+		totalTokens := 0
+		for _, memory := range state {
+			totalFacts += len(memory.Facts)
+			totalTokens += len(memory.Tokens)
+		}
+		fmt.Printf("   💾 État final: %d faits, %d tokens dans le réseau\n", totalFacts, totalTokens)
+	}
+
+	fmt.Println("\n🎯 BENCHMARK TERMINÉ!")
+	fmt.Println("Performance optimisée sans persistance etcd")
+}
+
+func demonstrateAlphaConditions() {
+	fmt.Println("🔬 DÉMONSTRATION DES CONDITIONS ALPHA")
+	fmt.Println("=====================================")
+
+	storage := rete.NewMemoryStorage()
+	builder := rete.NewAlphaConditionBuilder()
+
+	// Créer quelques nœuds Alpha avec différentes conditions
+	conditions := map[string]interface{}{
+		"Priorité élevée": builder.And(
+			builder.FieldEquals("evt", "active", true),
+			builder.FieldGreaterOrEqual("evt", "priority", 8),
+		),
+		"Priorité moyenne": builder.FieldRange("evt", "priority", 4, 7),
+		"Événements critiques": builder.AndMultiple(
+			builder.FieldEquals("evt", "active", true),
+			builder.FieldGreaterThan("evt", "score", 90.0),
+		),
+	}
+
+	alphaNodes := make(map[string]*rete.AlphaNode)
+	for name, condition := range conditions {
+		nodeId := fmt.Sprintf("alpha_%s", name)
+		alphaNodes[name] = rete.NewAlphaNode(nodeId, condition, "evt", storage)
+	}
+
+	// Créer des faits de test
+	testFacts := []*rete.Fact{
+		{
+			ID:   "event_1",
+			Type: "Event",
+			Fields: map[string]interface{}{
+				"id":       1,
+				"priority": 9,
+				"active":   true,
+				"score":    85.0,
+			},
+		},
+		{
+			ID:   "event_2",
+			Type: "Event",
+			Fields: map[string]interface{}{
+				"id":       2,
+				"priority": 5,
+				"active":   true,
+				"score":    75.0,
+			},
+		},
+		{
+			ID:   "event_3",
+			Type: "Event",
+			Fields: map[string]interface{}{
+				"id":       3,
+				"priority": 7,
+				"active":   true,
+				"score":    95.5,
+			},
+		},
+	}
+
+	fmt.Println("\n📊 Test des conditions sur des faits d'exemple:")
+
+	for i, fact := range testFacts {
+		fmt.Printf("\n🔹 Fait %d: id=%v, priority=%v, active=%v, score=%v\n",
+			i+1, fact.Fields["id"], fact.Fields["priority"],
+			fact.Fields["active"], fact.Fields["score"])
+
+		for name, node := range alphaNodes {
+			memoryBefore := len(node.GetMemory().Facts)
+			err := node.ActivateRight(fact)
+			if err != nil {
+				fmt.Printf("   ❌ %s: ERREUR (%v)\n", name, err)
+				continue
+			}
+			memoryAfter := len(node.GetMemory().Facts)
+
+			if memoryAfter > memoryBefore {
+				fmt.Printf("   ✅ %s: MATCH\n", name)
+			} else {
+				fmt.Printf("   ❌ %s: NO MATCH\n", name)
 			}
 		}
 	}
 
-	fmt.Println("\n🎉 DÉMONSTRATION TERMINÉE!")
-	fmt.Println("Le réseau RETE a traité les faits et déclenché les actions appropriées.")
-	fmt.Println("========================")
+	fmt.Println("\n📈 Résumé des correspondances:")
+	for name, node := range alphaNodes {
+		fmt.Printf("   🎯 %s: %d faits correspondants\n", name, len(node.GetMemory().Facts))
+	}
 }

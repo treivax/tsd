@@ -1,7 +1,6 @@
 package rete
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -232,12 +231,10 @@ func (rn *RootNode) ActivateRight(fact *Fact) error {
 	rn.Memory.AddFact(fact)
 	rn.mutex.Unlock()
 
-	fmt.Printf("[ROOT] Reçu fait: %s\n", fact.String())
+	// Log désactivé pour les performances
+	// fmt.Printf("[ROOT] Reçu fait: %s\n", fact.String())
 
-	// Sauvegarder l'état
-	if err := rn.SaveMemory(); err != nil {
-		return fmt.Errorf("erreur sauvegarde mémoire racine: %w", err)
-	}
+	// Persistance désactivée pour les performances
 
 	// Propager aux enfants (TypeNodes)
 	return rn.PropagateToChildren(fact, nil)
@@ -279,7 +276,8 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 		return nil // Ignorer silencieusement les faits d'autres types
 	}
 
-	fmt.Printf("[TYPE_%s] Reçu fait: %s\n", tn.TypeName, fact.String())
+	// Log désactivé pour les performances
+	// fmt.Printf("[TYPE_%s] Reçu fait: %s\n", tn.TypeName, fact.String())
 
 	// Valider les champs du fait
 	if err := tn.validateFact(fact); err != nil {
@@ -290,10 +288,7 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 	tn.Memory.AddFact(fact)
 	tn.mutex.Unlock()
 
-	// Sauvegarder l'état
-	if err := tn.SaveMemory(); err != nil {
-		return fmt.Errorf("erreur sauvegarde mémoire type %s: %w", tn.TypeName, err)
-	}
+	// Persistance désactivée pour les performances
 
 	// Propager aux enfants (AlphaNodes)
 	return tn.PropagateToChildren(fact, nil)
@@ -366,19 +361,33 @@ func (an *AlphaNode) ActivateLeft(token *Token) error {
 
 // ActivateRight teste la condition sur le fait
 func (an *AlphaNode) ActivateRight(fact *Fact) error {
-	fmt.Printf("[ALPHA_%s] Test condition sur fait: %s\n", an.ID, fact.String())
+	// Log désactivé pour les performances
+	// fmt.Printf("[ALPHA_%s] Test condition sur fait: %s\n", an.ID, fact.String())
 
-	// Pour l'instant, on accepte tous les faits (implémentation basique)
-	// TODO: Implémenter l'évaluation réelle des conditions
+	// Évaluer la condition Alpha sur le fait
+	if an.Condition != nil {
+		evaluator := NewAlphaConditionEvaluator()
+		passed, err := evaluator.EvaluateCondition(an.Condition, fact, an.VariableName)
+		if err != nil {
+			return fmt.Errorf("erreur évaluation condition Alpha: %w", err)
+		}
+
+		// Si la condition n'est pas satisfaite, ignorer le fait
+		if !passed {
+			// Log désactivé pour les performances
+			// fmt.Printf("[ALPHA_%s] Condition non satisfaite pour le fait: %s\n", an.ID, fact.String())
+			return nil
+		}
+	}
+
+	// Log désactivé pour les performances
+	// fmt.Printf("[ALPHA_%s] Condition satisfaite pour le fait: %s\n", an.ID, fact.String())
 
 	an.mutex.Lock()
 	an.Memory.AddFact(fact)
 	an.mutex.Unlock()
 
-	// Sauvegarder l'état
-	if err := an.SaveMemory(); err != nil {
-		return fmt.Errorf("erreur sauvegarde mémoire alpha %s: %w", an.ID, err)
-	}
+	// Persistance désactivée pour les performances
 
 	// Créer un token et le propager
 	token := &Token{
@@ -414,7 +423,8 @@ func NewTerminalNode(nodeID string, action *Action, storage Storage) *TerminalNo
 
 // ActivateLeft déclenche l'action
 func (tn *TerminalNode) ActivateLeft(token *Token) error {
-	fmt.Printf("[TERMINAL_%s] Déclenchement action avec token: %s\n", tn.ID, token.ID)
+	// Log désactivé pour les performances
+	// fmt.Printf("[TERMINAL_%s] Déclenchement action avec token: %s\n", tn.ID, token.ID)
 
 	// Stocker le token
 	tn.mutex.Lock()
@@ -424,10 +434,7 @@ func (tn *TerminalNode) ActivateLeft(token *Token) error {
 	tn.Memory.Tokens[token.ID] = token
 	tn.mutex.Unlock()
 
-	// Sauvegarder l'état
-	if err := tn.SaveMemory(); err != nil {
-		return fmt.Errorf("erreur sauvegarde mémoire terminal %s: %w", tn.ID, err)
-	}
+	// Persistance désactivée pour les performances
 
 	// Déclencher l'action
 	return tn.executeAction(token)
@@ -444,15 +451,16 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		return fmt.Errorf("aucune action définie pour le nœud %s", tn.ID)
 	}
 
+	// Action exécutée silencieusement (logs désactivés pour les performances)
 	// Format de sortie de base : nom de l'action + faits
-	fmt.Printf("🎯 ACTION DÉCLENCHÉE: %s\n", tn.Action.Job.Name)
-	fmt.Printf("   Arguments: %v\n", tn.Action.Job.Args)
-	fmt.Printf("   Faits correspondants:\n")
+	// fmt.Printf("🎯 ACTION DÉCLENCHÉE: %s\n", tn.Action.Job.Name)
+	// fmt.Printf("   Arguments: %v\n", tn.Action.Job.Args)
+	// fmt.Printf("   Faits correspondants:\n")
 
-	for _, fact := range token.Facts {
-		factJSON, _ := json.MarshalIndent(fact, "     ", "  ")
-		fmt.Printf("     - %s\n", factJSON)
-	}
+	// for _, fact := range token.Facts {
+	//	factJSON, _ := json.MarshalIndent(fact, "     ", "  ")
+	//	fmt.Printf("     - %s\n", factJSON)
+	// }
 
 	return nil
 }

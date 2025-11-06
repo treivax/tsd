@@ -224,7 +224,19 @@ func TestFactSubmission(t *testing.T) {
 						},
 					},
 				},
-				Constraints: map[string]interface{}{"simple": true},
+				Constraints: map[string]interface{}{
+					"type":     "binaryOperation",
+					"operator": ">",
+					"left": map[string]interface{}{
+						"type":   "fieldAccess",
+						"object": "t",
+						"field":  "value",
+					},
+					"right": map[string]interface{}{
+						"type":  "numberLiteral",
+						"value": 0.0,
+					},
+				},
 				Action: &Action{
 					Type: "action",
 					Job: JobCall{
