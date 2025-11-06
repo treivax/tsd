@@ -91,3 +91,130 @@ func (wm *WorkingMemory) GetFacts() []*Fact {
 	}
 	return facts
 }
+
+// AddToken ajoute un token à la mémoire.
+func (wm *WorkingMemory) AddToken(token *Token) {
+	if wm.Tokens == nil {
+		wm.Tokens = make(map[string]*Token)
+	}
+	wm.Tokens[token.ID] = token
+}
+
+// RemoveToken supprime un token de la mémoire.
+func (wm *WorkingMemory) RemoveToken(tokenID string) {
+	delete(wm.Tokens, tokenID)
+}
+
+// GetTokens retourne tous les tokens de la mémoire.
+func (wm *WorkingMemory) GetTokens() []*Token {
+	tokens := make([]*Token, 0, len(wm.Tokens))
+	for _, token := range wm.Tokens {
+		tokens = append(tokens, token)
+	}
+	return tokens
+}
+
+// BasicJoinCondition implémente une condition de jointure simple.
+type BasicJoinCondition struct {
+	LeftField  string `json:"left_field"`
+	RightField string `json:"right_field"`
+	Operator   string `json:"operator"`
+}
+
+// NewBasicJoinCondition crée une nouvelle condition de jointure.
+func NewBasicJoinCondition(leftField, rightField, operator string) *BasicJoinCondition {
+	return &BasicJoinCondition{
+		LeftField:  leftField,
+		RightField: rightField,
+		Operator:   operator,
+	}
+}
+
+// Evaluate évalue la condition de jointure entre un token et un fait.
+func (bjc *BasicJoinCondition) Evaluate(token *Token, fact *Fact) bool {
+	if len(token.Facts) == 0 {
+		return false
+	}
+
+	// Prendre le dernier fait du token pour la comparaison
+	leftFact := token.Facts[len(token.Facts)-1]
+
+	leftValue, leftExists := leftFact.GetField(bjc.LeftField)
+	rightValue, rightExists := fact.GetField(bjc.RightField)
+
+	if !leftExists || !rightExists {
+		return false
+	}
+
+	return bjc.evaluateOperator(leftValue, rightValue)
+}
+
+// GetLeftField retourne le champ gauche de la condition.
+func (bjc *BasicJoinCondition) GetLeftField() string {
+	return bjc.LeftField
+}
+
+// GetRightField retourne le champ droit de la condition.
+func (bjc *BasicJoinCondition) GetRightField() string {
+	return bjc.RightField
+}
+
+// GetOperator retourne l'opérateur de la condition.
+func (bjc *BasicJoinCondition) GetOperator() string {
+	return bjc.Operator
+}
+
+// evaluateOperator évalue l'opérateur entre deux valeurs.
+func (bjc *BasicJoinCondition) evaluateOperator(left, right interface{}) bool {
+	switch bjc.Operator {
+	case "==", "=":
+		return left == right
+	case "!=":
+		return left != right
+	case "<":
+		return bjc.compareValues(left, right) < 0
+	case "<=":
+		return bjc.compareValues(left, right) <= 0
+	case ">":
+		return bjc.compareValues(left, right) > 0
+	case ">=":
+		return bjc.compareValues(left, right) >= 0
+	default:
+		return false
+	}
+}
+
+// compareValues compare deux valeurs pour les opérateurs relationnels.
+func (bjc *BasicJoinCondition) compareValues(left, right interface{}) int {
+	// Implémentation simplifiée pour les types de base
+	switch lv := left.(type) {
+	case int:
+		if rv, ok := right.(int); ok {
+			if lv < rv {
+				return -1
+			} else if lv > rv {
+				return 1
+			}
+			return 0
+		}
+	case float64:
+		if rv, ok := right.(float64); ok {
+			if lv < rv {
+				return -1
+			} else if lv > rv {
+				return 1
+			}
+			return 0
+		}
+	case string:
+		if rv, ok := right.(string); ok {
+			if lv < rv {
+				return -1
+			} else if lv > rv {
+				return 1
+			}
+			return 0
+		}
+	}
+	return 0
+}

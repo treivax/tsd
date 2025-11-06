@@ -9,9 +9,11 @@ type ReteNetwork struct {
 	RootNode      *RootNode                `json:"root_node"`
 	TypeNodes     map[string]*TypeNode     `json:"type_nodes"`
 	AlphaNodes    map[string]*AlphaNode    `json:"alpha_nodes"`
+	BetaNodes     map[string]interface{}   `json:"beta_nodes"` // Nœuds Beta pour les jointures multi-faits
 	TerminalNodes map[string]*TerminalNode `json:"terminal_nodes"`
 	Storage       Storage                  `json:"-"`
 	Types         []TypeDefinition         `json:"types"`
+	BetaBuilder   interface{}              `json:"-"` // Constructeur de réseau Beta
 }
 
 // NewReteNetwork crée un nouveau réseau RETE
@@ -22,9 +24,11 @@ func NewReteNetwork(storage Storage) *ReteNetwork {
 		RootNode:      rootNode,
 		TypeNodes:     make(map[string]*TypeNode),
 		AlphaNodes:    make(map[string]*AlphaNode),
+		BetaNodes:     make(map[string]interface{}),
 		TerminalNodes: make(map[string]*TerminalNode),
 		Storage:       storage,
 		Types:         make([]TypeDefinition, 0),
+		BetaBuilder:   nil, // Sera initialisé si nécessaire
 	}
 }
 
@@ -77,6 +81,7 @@ func (rn *ReteNetwork) LoadFromAST(program *Program) error {
 	fmt.Printf("🎯 Réseau RETE construit avec succès!\n")
 	fmt.Printf("   - %d TypeNodes\n", len(rn.TypeNodes))
 	fmt.Printf("   - %d AlphaNodes\n", len(rn.AlphaNodes))
+	fmt.Printf("   - %d BetaNodes\n", len(rn.BetaNodes))
 	fmt.Printf("   - %d TerminalNodes\n", len(rn.TerminalNodes))
 
 	return nil
@@ -157,5 +162,65 @@ func (rn *ReteNetwork) PrintNetworkStructure() {
 			}
 		}
 	}
+
+	// Afficher les nœuds Beta si présents
+	if len(rn.BetaNodes) > 0 {
+		fmt.Printf("Beta Nodes:\n")
+		for nodeID := range rn.BetaNodes {
+			fmt.Printf("├── BetaNode: %s\n", nodeID)
+		}
+	}
+
 	fmt.Printf("\n")
+}
+
+// EnableBetaNodes active le support des nœuds Beta dans le réseau
+// Cette méthode doit être appelée avant de créer des jointures multi-faits
+func (rn *ReteNetwork) EnableBetaNodes() error {
+	// Note: Cette implémentation utilise des interfaces génériques pour éviter
+	// les dépendances circulaires. Dans une vraie implémentation, on utiliserait
+	// directement les types du package network.
+	fmt.Printf("🔗 Activation du support des nœuds Beta\n")
+
+	// Placeholder pour l'initialisation du BetaNetworkBuilder
+	// Dans la vraie implémentation, on ferait:
+	// rn.BetaBuilder = network.NewBetaNetworkBuilder(logger)
+
+	return nil
+}
+
+// CreateBetaJoin crée une jointure Beta entre deux sources de données
+// Ceci est une méthode d'exemple montrant comment intégrer les nœuds Beta
+func (rn *ReteNetwork) CreateBetaJoin(leftSource, rightSource, joinID string, conditions []interface{}) error {
+	fmt.Printf("🔗 Création d'une jointure Beta: %s\n", joinID)
+	fmt.Printf("   Sources: %s ↔ %s\n", leftSource, rightSource)
+	fmt.Printf("   Conditions: %d\n", len(conditions))
+
+	// Placeholder pour la création d'un nœud de jointure
+	// Dans la vraie implémentation, on utiliserait le BetaBuilder
+	rn.BetaNodes[joinID] = map[string]interface{}{
+		"type":        "JoinNode",
+		"id":          joinID,
+		"leftSource":  leftSource,
+		"rightSource": rightSource,
+		"conditions":  conditions,
+	}
+
+	fmt.Printf("   ✓ Nœud Beta créé: %s\n", joinID)
+	return nil
+}
+
+// GetBetaNodeStatistics retourne les statistiques des nœuds Beta
+func (rn *ReteNetwork) GetBetaNodeStatistics() map[string]interface{} {
+	stats := map[string]interface{}{
+		"totalBetaNodes": len(rn.BetaNodes),
+		"betaEnabled":    rn.BetaBuilder != nil,
+		"nodes":          make(map[string]interface{}),
+	}
+
+	for nodeID, node := range rn.BetaNodes {
+		stats["nodes"].(map[string]interface{})[nodeID] = node
+	}
+
+	return stats
 }
