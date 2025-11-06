@@ -11,15 +11,15 @@ func TestFact(t *testing.T) {
 			"value": 25.5,
 		}
 		fact := NewFact("temperature", "sensor", fields)
-		
+
 		if fact.ID != "temperature" {
 			t.Errorf("Attendu ID 'temperature', reçu '%s'", fact.ID)
 		}
-		
+
 		if fact.Type != "sensor" {
 			t.Errorf("Attendu type 'sensor', reçu '%s'", fact.Type)
 		}
-		
+
 		if val, exists := fact.GetField("value"); !exists || val != 25.5 {
 			t.Errorf("Attendu valeur 25.5, reçu %v", val)
 		}
@@ -34,7 +34,7 @@ func TestToken(t *testing.T) {
 		fact := NewFact("test", "type", fields)
 		facts := []*Fact{fact}
 		token := NewToken("token1", "node1", facts)
-		
+
 		if len(token.Facts) != 1 {
 			t.Error("Le token devrait contenir 1 fait")
 		}

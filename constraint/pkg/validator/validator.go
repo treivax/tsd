@@ -128,7 +128,7 @@ func (v *ConstraintValidator) ValidateTypes(types []domain.TypeDefinition) error
 
 			if !domain.IsValidType(field.Type) {
 				return domain.NewValidationError(
-					fmt.Sprintf("invalid field type '%s' for field '%s' in type '%s'", 
+					fmt.Sprintf("invalid field type '%s' for field '%s' in type '%s'",
 						field.Type, field.Name, typeDef.Name),
 					domain.Context{
 						Type:     typeDef.Name,

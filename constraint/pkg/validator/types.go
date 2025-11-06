@@ -92,7 +92,7 @@ func (tr *TypeRegistry) GetTypeFields(typeName string) (map[string]string, error
 func (tr *TypeRegistry) Clear() {
 	tr.mutex.Lock()
 	defer tr.mutex.Unlock()
-	
+
 	tr.types = make(map[string]domain.TypeDefinition)
 }
 
@@ -117,7 +117,7 @@ func (tc *TypeChecker) GetFieldType(fieldAccess interface{}, variables []domain.
 		if faMap, ok := fieldAccess.(map[string]interface{}); ok {
 			objectName, _ := faMap["object"].(string)
 			fieldName, _ := faMap["field"].(string)
-			
+
 			fa = &domain.FieldAccess{
 				Object: objectName,
 				Field:  fieldName,
@@ -272,7 +272,7 @@ func (tc *TypeChecker) validateComparisonTypes(leftType, rightType, operator str
 
 	if !orderableTypes[leftType] || !orderableTypes[rightType] {
 		return domain.NewValidationError(
-			fmt.Sprintf("operator '%s' not supported for types '%s' and '%s'", 
+			fmt.Sprintf("operator '%s' not supported for types '%s' and '%s'",
 				operator, leftType, rightType),
 			domain.Context{
 				Expected: "number, integer, or string",

@@ -10,16 +10,16 @@ type ErrorType string
 const (
 	// Erreurs de parsing
 	ParseError ErrorType = "PARSE_ERROR"
-	
+
 	// Erreurs de validation
-	ValidationError ErrorType = "VALIDATION_ERROR"
-	TypeMismatchError ErrorType = "TYPE_MISMATCH_ERROR"
+	ValidationError    ErrorType = "VALIDATION_ERROR"
+	TypeMismatchError  ErrorType = "TYPE_MISMATCH_ERROR"
 	FieldNotFoundError ErrorType = "FIELD_NOT_FOUND_ERROR"
-	UnknownTypeError ErrorType = "UNKNOWN_TYPE_ERROR"
-	
+	UnknownTypeError   ErrorType = "UNKNOWN_TYPE_ERROR"
+
 	// Erreurs de contraintes
 	ConstraintValidationError ErrorType = "CONSTRAINT_ERROR"
-	ActionError ErrorType = "ACTION_ERROR"
+	ActionError               ErrorType = "ACTION_ERROR"
 )
 
 // Error représente une erreur structurée du module constraint
@@ -46,7 +46,7 @@ type Context struct {
 // Error implémente l'interface error
 func (ce *Error) Error() string {
 	if ce.Context.File != "" {
-		return fmt.Sprintf("%s at %s:%d:%d: %s", 
+		return fmt.Sprintf("%s at %s:%d:%d: %s",
 			ce.Type, ce.Context.File, ce.Context.Line, ce.Context.Column, ce.Message)
 	}
 	return fmt.Sprintf("%s: %s", ce.Type, ce.Message)
@@ -153,9 +153,9 @@ func IsParseError(err error) bool {
 func IsValidationError(err error) bool {
 	if ce, ok := err.(*Error); ok {
 		return ce.Type == ValidationError ||
-			   ce.Type == TypeMismatchError ||
-			   ce.Type == FieldNotFoundError ||
-			   ce.Type == UnknownTypeError
+			ce.Type == TypeMismatchError ||
+			ce.Type == FieldNotFoundError ||
+			ce.Type == UnknownTypeError
 	}
 	return false
 }
@@ -214,7 +214,7 @@ func (ec *ErrorCollection) Error() string {
 	if len(ec.Errors) == 1 {
 		return ec.Errors[0].Error()
 	}
-	return fmt.Sprintf("%d errors: %s (and %d more)", 
+	return fmt.Sprintf("%d errors: %s (and %d more)",
 		len(ec.Errors), ec.Errors[0].Error(), len(ec.Errors)-1)
 }
 

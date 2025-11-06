@@ -4,10 +4,10 @@ package domain
 type Parser interface {
 	// Parse analyse une chaîne de caractères et retourne l'AST
 	Parse(filename string, input []byte) (interface{}, error)
-	
+
 	// ParseFile analyse un fichier
 	ParseFile(filename string) (interface{}, error)
-	
+
 	// ParseReader analyse depuis un Reader
 	ParseReader(filename string, reader interface{}) (interface{}, error)
 }
@@ -16,13 +16,13 @@ type Parser interface {
 type Validator interface {
 	// ValidateProgram valide un programme complet
 	ValidateProgram(program interface{}) error
-	
+
 	// ValidateTypes valide les définitions de types
 	ValidateTypes(types []TypeDefinition) error
-	
+
 	// ValidateExpression valide une expression/règle
 	ValidateExpression(expr Expression, types []TypeDefinition) error
-	
+
 	// ValidateConstraint valide une contrainte
 	ValidateConstraint(constraint interface{}, variables []TypedVariable, types []TypeDefinition) error
 }
@@ -31,10 +31,10 @@ type Validator interface {
 type TypeChecker interface {
 	// GetFieldType retourne le type d'un champ
 	GetFieldType(fieldAccess interface{}, variables []TypedVariable, types []TypeDefinition) (string, error)
-	
+
 	// GetValueType retourne le type d'une valeur
 	GetValueType(value interface{}) string
-	
+
 	// ValidateTypeCompatibility vérifie la compatibilité entre types
 	ValidateTypeCompatibility(leftType, rightType, operator string) error
 }
@@ -43,7 +43,7 @@ type TypeChecker interface {
 type ActionValidator interface {
 	// ValidateAction valide une action
 	ValidateAction(action *Action) error
-	
+
 	// ValidateJobCall valide un appel de fonction/job
 	ValidateJobCall(jobCall JobCall) error
 }
@@ -52,16 +52,16 @@ type ActionValidator interface {
 type TypeRegistry interface {
 	// RegisterType enregistre un nouveau type
 	RegisterType(typeDef TypeDefinition) error
-	
+
 	// GetType récupère un type par son nom
 	GetType(name string) (*TypeDefinition, error)
-	
+
 	// HasType vérifie si un type existe
 	HasType(name string) bool
-	
+
 	// ListTypes retourne tous les types enregistrés
 	ListTypes() []TypeDefinition
-	
+
 	// GetTypeFields retourne les champs d'un type
 	GetTypeFields(typeName string) (map[string]string, error)
 }
@@ -70,7 +70,7 @@ type TypeRegistry interface {
 type ConstraintEngine interface {
 	// EvaluateConstraint évalue une contrainte avec des données
 	EvaluateConstraint(constraint interface{}, data map[string]interface{}) (bool, error)
-	
+
 	// EvaluateExpression évalue une expression complète
 	EvaluateExpression(expr Expression, data map[string]interface{}) (bool, error)
 }
@@ -79,7 +79,7 @@ type ConstraintEngine interface {
 type ActionExecutor interface {
 	// ExecuteAction exécute une action
 	ExecuteAction(action *Action, context map[string]interface{}) error
-	
+
 	// RegisterJobHandler enregistre un gestionnaire d'action
 	RegisterJobHandler(jobName string, handler JobHandler) error
 }
@@ -91,13 +91,13 @@ type JobHandler func(args []string, context map[string]interface{}) error
 type ProgramManager interface {
 	// LoadProgram charge un programme depuis un fichier ou une chaîne
 	LoadProgram(source string) (*Program, error)
-	
+
 	// SaveProgram sauvegarde un programme
 	SaveProgram(program *Program, destination string) error
-	
+
 	// ValidateAndLoad charge et valide un programme
 	ValidateAndLoad(source string) (*Program, error)
-	
+
 	// ExecuteProgram exécute un programme avec des données
 	ExecuteProgram(program *Program, data map[string]interface{}) error
 }
@@ -106,13 +106,13 @@ type ProgramManager interface {
 type Logger interface {
 	// Debug log un message de debug
 	Debug(message string, fields ...interface{})
-	
+
 	// Info log un message d'information
 	Info(message string, fields ...interface{})
-	
+
 	// Warn log un avertissement
 	Warn(message string, fields ...interface{})
-	
+
 	// Error log une erreur
 	Error(message string, err error, fields ...interface{})
 }
@@ -121,19 +121,19 @@ type Logger interface {
 type MetricsCollector interface {
 	// IncrementParsed incrémente le nombre de programmes parsés
 	IncrementParsed()
-	
+
 	// IncrementValidated incrémente le nombre de programmes validés
 	IncrementValidated()
-	
+
 	// IncrementExecuted incrémente le nombre de programmes exécutés
 	IncrementExecuted()
-	
+
 	// RecordParseTime enregistre le temps de parsing
 	RecordParseTime(duration interface{})
-	
+
 	// RecordValidationTime enregistre le temps de validation
 	RecordValidationTime(duration interface{})
-	
+
 	// GetMetrics retourne les métriques actuelles
 	GetMetrics() map[string]interface{}
 }
@@ -142,13 +142,13 @@ type MetricsCollector interface {
 type ConfigProvider interface {
 	// GetParserConfig retourne la configuration du parser
 	GetParserConfig() ParserConfig
-	
+
 	// GetValidatorConfig retourne la configuration du validateur
 	GetValidatorConfig() ValidatorConfig
-	
+
 	// GetLoggerConfig retourne la configuration du logger
 	GetLoggerConfig() LoggerConfig
-	
+
 	// IsDebugEnabled vérifie si le mode debug est activé
 	IsDebugEnabled() bool
 }
@@ -156,8 +156,8 @@ type ConfigProvider interface {
 // ParserConfig configuration du parser
 type ParserConfig struct {
 	MaxExpressions int  `json:"max_expressions"`
-	Debug         bool `json:"debug"`
-	Recover       bool `json:"recover"`
+	Debug          bool `json:"debug"`
+	Recover        bool `json:"recover"`
 }
 
 // ValidatorConfig configuration du validateur

@@ -2,7 +2,7 @@ package rete
 
 import (
 	"testing"
-	
+
 	"github.com/treivax/tsd/rete/pkg/domain"
 	"github.com/treivax/tsd/rete/pkg/nodes"
 )
@@ -11,13 +11,13 @@ import (
 func TestNewArchitecture(t *testing.T) {
 	t.Log("Test de la nouvelle architecture RETE")
 
-		// Test NewFact
+	// Test NewFact
 	t.Run("NewFact", func(t *testing.T) {
 		fields := map[string]interface{}{
 			"value": 25.5,
 		}
 		fact := domain.NewFact("temperature", "sensor", fields)
-		
+
 		if fact.ID != "temperature" {
 			t.Errorf("Attendu ID 'temperature', reçu '%s'", fact.ID)
 		}
@@ -32,7 +32,7 @@ func TestNewArchitecture(t *testing.T) {
 	// Test NewWorkingMemory
 	t.Run("NewWorkingMemory", func(t *testing.T) {
 		wm := domain.NewWorkingMemory("test-node")
-		
+
 		if wm == nil {
 			t.Error("WorkingMemory ne devrait pas être nil")
 		}
@@ -49,7 +49,7 @@ func TestNewArchitecture(t *testing.T) {
 		fact := domain.NewFact("test", "type", fields)
 		wm := domain.NewWorkingMemory("test-node")
 		wm.AddFact(fact)
-		
+
 		// Vérifier que le fait a été ajouté
 		if len(wm.Facts) != 1 {
 			t.Errorf("Attendu 1 fait, reçu %d", len(wm.Facts))
@@ -64,7 +64,7 @@ func TestNewArchitecture(t *testing.T) {
 		fact := domain.NewFact("test", "type", fields)
 		facts := []*domain.Fact{fact}
 		token := domain.NewToken("token1", "node1", facts)
-		
+
 		if len(token.Facts) != 1 {
 			t.Error("Le token devrait contenir 1 fait")
 		}
@@ -119,7 +119,7 @@ func TestNewArchitecture(t *testing.T) {
 // TestCompatibility teste la compatibilité avec l'ancienne API
 func TestCompatibility(t *testing.T) {
 	t.Log("Test de compatibilité avec l'ancienne API")
-	
+
 	// Vérifier que les fonctions principales existent toujours
 	t.Run("TestExistingFunctions", func(t *testing.T) {
 		// Test que le module principal compile toujours
@@ -131,7 +131,7 @@ func TestCompatibility(t *testing.T) {
 // mockLogger implémente l'interface Logger pour les tests
 type mockLogger struct{}
 
-func (m *mockLogger) Debug(msg string, fields map[string]interface{}) {}
-func (m *mockLogger) Info(msg string, fields map[string]interface{})  {}
-func (m *mockLogger) Warn(msg string, fields map[string]interface{})  {}
+func (m *mockLogger) Debug(msg string, fields map[string]interface{})            {}
+func (m *mockLogger) Info(msg string, fields map[string]interface{})             {}
+func (m *mockLogger) Warn(msg string, fields map[string]interface{})             {}
 func (m *mockLogger) Error(msg string, err error, fields map[string]interface{}) {}

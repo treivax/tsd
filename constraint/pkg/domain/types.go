@@ -101,7 +101,7 @@ type StringLiteral struct {
 }
 
 type NumberLiteral struct {
-	Type  string `json:"type"`
+	Type  string  `json:"type"`
 	Value float64 `json:"value"`
 }
 
