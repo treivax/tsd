@@ -18,7 +18,7 @@ func main() {
 
 	// Configuration simplifiée et stable
 	config := rete.MonitoringConfig{
-		Port:            8080,
+		Port:            8082,            // Port différent pour éviter les conflits
 		UpdateInterval:  3 * time.Second, // Plus lent pour éviter la surcharge
 		MaxHistorySize:  50,              // Plus petit pour les tests
 		EnableProfiling: false,           // Désactivé pour simplifier

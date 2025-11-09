@@ -204,6 +204,9 @@ body {
     border-radius: 8px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
+    height: 350px; /* Hauteur fixe pour éviter les problèmes de redimensionnement */
+    display: flex;
+    flex-direction: column;
 }
 
 .chart-container h3 {
@@ -211,6 +214,12 @@ body {
     font-weight: 600;
     margin-bottom: 1rem;
     color: var(--text-primary);
+    flex-shrink: 0; /* Empêche le titre de se réduire */
+}
+
+.chart-container canvas {
+    flex: 1; /* Le canvas prend tout l'espace restant */
+    min-height: 0; /* Important pour flex */
 }
 
 /* Network Summary */

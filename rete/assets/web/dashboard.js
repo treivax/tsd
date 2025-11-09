@@ -70,52 +70,79 @@ class RETEDashboard {
 
     // Charts Setup
     setupCharts() {
+        // Vérifier que Chart.js est disponible
+        if (typeof Chart === 'undefined') {
+            console.error('❌ Chart.js not loaded');
+            return;
+        }
+
+        // Configuration par défaut pour tous les graphiques
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+        Chart.defaults.animation = {
+            duration: 750,
+            easing: 'easeInOutQuart'
+        };
+
         // Throughput Chart
         const throughputCtx = document.getElementById('throughputChart');
         if (throughputCtx) {
             this.charts.throughput = new Chart(throughputCtx, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: this.generateTimeLabels(10), // Générer des labels initiaux
                     datasets: [
                         {
                             label: 'Facts/sec',
-                            data: [],
+                            data: new Array(10).fill(0), // Données initiales à zéro
                             borderColor: '#2563eb',
                             backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         },
                         {
                             label: 'Tokens/sec',
-                            data: [],
+                            data: new Array(10).fill(0),
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         },
                         {
                             label: 'Rules/sec',
-                            data: [],
+                            data: new Array(10).fill(0),
                             borderColor: '#f59e0b',
                             backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Operations/sec'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
                         },
                         x: {
                             title: {
                                 display: true,
                                 text: 'Time'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
                         }
                     },
@@ -123,6 +150,11 @@ class RETEDashboard {
                         legend: {
                             display: true,
                             position: 'top'
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white'
                         }
                     }
                 }
@@ -145,7 +177,8 @@ class RETEDashboard {
                             '#f59e0b',
                             '#ef4444',
                             '#7c3aed'
-                        ]
+                        ],
+                        borderRadius: 4
                     }]
                 },
                 options: {
@@ -157,7 +190,25 @@ class RETEDashboard {
                             title: {
                                 display: true,
                                 text: 'Latency (ms)'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white'
                         }
                     }
                 }
@@ -173,10 +224,12 @@ class RETEDashboard {
                     labels: ['IndexedStorage', 'HashJoin', 'EvalCache', 'TokenProp'],
                     datasets: [{
                         label: 'Performance Score',
-                        data: [0, 0, 0, 0],
+                        data: [50, 50, 50, 50], // Valeurs initiales neutres
                         borderColor: '#2563eb',
                         backgroundColor: 'rgba(37, 99, 235, 0.2)',
-                        pointBackgroundColor: '#2563eb'
+                        pointBackgroundColor: '#2563eb',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
                     }]
                 },
                 options: {
@@ -185,7 +238,20 @@ class RETEDashboard {
                     scales: {
                         r: {
                             beginAtZero: true,
-                            max: 100
+                            max: 100,
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
@@ -201,15 +267,21 @@ class RETEDashboard {
                     labels: ['Hits', 'Misses'],
                     datasets: [{
                         data: [80, 20],
-                        backgroundColor: ['#10b981', '#ef4444']
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '60%',
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                padding: 20
+                            }
                         }
                     }
                 }
@@ -222,13 +294,14 @@ class RETEDashboard {
             this.charts.memory = new Chart(memoryCtx, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: this.generateTimeLabels(10),
                     datasets: [{
                         label: 'Memory Usage (MB)',
-                        data: [],
+                        data: new Array(10).fill(0),
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
@@ -240,7 +313,20 @@ class RETEDashboard {
                             title: {
                                 display: true,
                                 text: 'Memory (MB)'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
+                        },
+                        x: {
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
@@ -253,13 +339,14 @@ class RETEDashboard {
             this.charts.goroutines = new Chart(goroutinesCtx, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: this.generateTimeLabels(10),
                     datasets: [{
                         label: 'Goroutines',
-                        data: [],
+                        data: new Array(10).fill(0),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
@@ -271,7 +358,20 @@ class RETEDashboard {
                             title: {
                                 display: true,
                                 text: 'Count'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
+                        },
+                        x: {
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
                     }
                 }
@@ -284,28 +384,31 @@ class RETEDashboard {
             this.charts.alertHistory = new Chart(alertHistoryCtx, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: this.generateTimeLabels(10),
                     datasets: [
                         {
                             label: 'Critical',
-                            data: [],
+                            data: new Array(10).fill(0),
                             borderColor: '#ef4444',
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         },
                         {
                             label: 'High',
-                            data: [],
+                            data: new Array(10).fill(0),
                             borderColor: '#f59e0b',
                             backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         },
                         {
                             label: 'Medium',
-                            data: [],
+                            data: new Array(10).fill(0),
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.4
+                            tension: 0.4,
+                            fill: false
                         }
                     ]
                 },
@@ -318,12 +421,27 @@ class RETEDashboard {
                             title: {
                                 display: true,
                                 text: 'Alert Count'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
                             }
+                        },
+                        x: {
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
                         }
                     }
                 }
             });
         }
+
+        console.log('📊 Charts initialized successfully');
     }
 
     // WebSocket Connection
@@ -576,7 +694,9 @@ class RETEDashboard {
     }
 
     updateThroughputChart() {
-        if (!this.charts.throughput || this.metricsHistory.length === 0) return;
+        if (!this.charts.throughput || this.metricsHistory.length === 0) {
+            return;
+        }
         
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
         const factsData = this.metricsHistory.map(h => h.rete?.facts_per_second || 0);
@@ -587,11 +707,15 @@ class RETEDashboard {
         this.charts.throughput.data.datasets[0].data = factsData;
         this.charts.throughput.data.datasets[1].data = tokensData;
         this.charts.throughput.data.datasets[2].data = rulesData;
+        
+        // Utiliser 'none' pour éviter les animations qui peuvent causer des problèmes de taille
         this.charts.throughput.update('none');
     }
 
     updateMemoryChart() {
-        if (!this.charts.memory || this.metricsHistory.length === 0) return;
+        if (!this.charts.memory || this.metricsHistory.length === 0) {
+            return;
+        }
         
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
         const memoryData = this.metricsHistory.map(h => 
@@ -604,7 +728,9 @@ class RETEDashboard {
     }
 
     updateGoroutinesChart() {
-        if (!this.charts.goroutines || this.metricsHistory.length === 0) return;
+        if (!this.charts.goroutines || this.metricsHistory.length === 0) {
+            return;
+        }
         
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
         const goroutinesData = this.metricsHistory.map(h => h.system?.goroutine_count || 0);
@@ -612,6 +738,30 @@ class RETEDashboard {
         this.charts.goroutines.data.labels = labels;
         this.charts.goroutines.data.datasets[0].data = goroutinesData;
         this.charts.goroutines.update('none');
+    }
+
+    // Fonction utilitaire pour générer des labels de temps
+    generateTimeLabels(count) {
+        const labels = [];
+        const now = new Date();
+        for (let i = count - 1; i >= 0; i--) {
+            const time = new Date(now.getTime() - (i * 3000)); // 3 secondes d'intervalle
+            labels.push(time.toLocaleTimeString());
+        }
+        return labels;
+    }
+
+    // Fonction pour redimensionner tous les graphiques
+    resizeCharts() {
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.resize === 'function') {
+                try {
+                    chart.resize();
+                } catch (error) {
+                    console.warn('⚠️ Error resizing chart:', error);
+                }
+            }
+        });
     }
 
     updatePerformanceRadarChart() {
@@ -946,11 +1096,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle window resize for chart responsiveness
 window.addEventListener('resize', () => {
-    if (window.reteDashboard && window.reteDashboard.charts) {
-        Object.values(window.reteDashboard.charts).forEach(chart => {
-            if (chart && typeof chart.resize === 'function') {
-                chart.resize();
-            }
-        });
+    if (window.reteDashboard && window.reteDashboard.resizeCharts) {
+        // Debounce le redimensionnement pour éviter les appels excessifs
+        clearTimeout(window.reteDashboard.resizeTimeout);
+        window.reteDashboard.resizeTimeout = setTimeout(() => {
+            window.reteDashboard.resizeCharts();
+        }, 150);
     }
 });
