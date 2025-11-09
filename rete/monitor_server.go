@@ -282,7 +282,7 @@ func (ms *MonitoringServer) setupRoutes() {
 	// WebSocket pour les mises à jour en temps réel
 	ms.router.HandleFunc("/ws/metrics", ms.handleWebSocketMetrics)
 
-	// Interface web statique - chemin relatif au répertoire de travail
+	// Interface web statique - chemin correct depuis le répertoire racine du projet
 	ms.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./rete/assets/web/"))).Methods("GET")
 }
 
