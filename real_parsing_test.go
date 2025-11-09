@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	parser "github.com/treivax/tsd/constraint/grammar"
+	parser "github.com/treivax/tsd/constraint"
 )
 
 // TestRealPEGParsingIntegration teste le parsing réel avec le parseur PEG généré
