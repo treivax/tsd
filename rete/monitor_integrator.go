@@ -230,14 +230,11 @@ func (mi *MetricsIntegrator) collectMetricsLoop() {
 	ticker := time.NewTicker(mi.updateInterval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			if !mi.isRunning {
-				return
-			}
-			mi.collectAndAggregateMetrics()
+	for range ticker.C {
+		if !mi.isRunning {
+			return
 		}
+		mi.collectAndAggregateMetrics()
 	}
 }
 
