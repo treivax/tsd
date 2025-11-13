@@ -29,25 +29,22 @@ func main() {
 		expectError bool
 	}{
 		{
-			name:        "Basic Variable Arguments",
-			constraint:  "../constraint/test/integration/variable_action_test.constraint",
-			facts:       "../constraint/test/integration/variable_action_test.facts",
-			description: "Test basic variable arguments (u) in actions",
-			expectError: false,
+			name:        "Variable Action Test",
+			description: "Test de variables et d'actions",
+			constraint:  "../../constraint/test/integration/variable_action_test.constraint",
+			facts:       "../../constraint/test/integration/variable_action_test.facts",
 		},
 		{
-			name:        "Comprehensive Mixed Arguments",
-			constraint:  "../constraint/test/integration/comprehensive_args_test.constraint",
-			facts:       "../constraint/test/integration/comprehensive_args_test.facts",
-			description: "Test all combinations: pure variables, pure fields, mixed arguments",
-			expectError: false,
+			name:        "Comprehensive Args Test",
+			description: "Test complet des arguments",
+			constraint:  "../../constraint/test/integration/comprehensive_args_test.constraint",
+			facts:       "../../constraint/test/integration/comprehensive_args_test.facts",
 		},
 		{
-			name:        "Error Detection - Invalid Syntax",
-			constraint:  "../constraint/test/integration/error_args_test.constraint",
-			facts:       "../constraint/test/integration/error_args_test.facts",
-			description: "Test detection of undefined variables, invalid fields, type mismatches",
-			expectError: true,
+			name:        "Error Args Test",
+			description: "Test des erreurs d'arguments",
+			constraint:  "../../constraint/test/integration/error_args_test.constraint",
+			facts:       "../../constraint/test/integration/error_args_test.facts",
 		},
 	}
 

@@ -11,8 +11,8 @@ func TestMassiveBetaNodesWithFactsFile(t *testing.T) {
 	fmt.Printf("==================================================================\n")
 
 	// Fichiers de test
-	constraintFile := "../constraint/test/integration/beta_complex_rules.constraint"
-	factsFile := "../constraint/test/integration/beta_mass_test.facts"
+	constraintFile := "../../constraint/test/integration/beta_complex_rules.constraint"
+	factsFile := "../../constraint/test/integration/beta_mass_test.facts"
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE AVEC SUPPORT FICHIERS .FACTS
 	helper := NewTestHelper()

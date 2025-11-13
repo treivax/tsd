@@ -1,0 +1,50 @@
+# EditorConfig pour projet TSD
+# Assure la cohérence de formatage entre tous les éditeurs
+# https://editorconfig.org/
+
+root = true
+
+# Configuration pour tous les fichiers
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+
+# Fichiers Go
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Fichiers de configuration
+[*.{json,yaml,yml}]
+indent_style = space
+indent_size = 2
+
+# Scripts shell
+[*.{sh,bash}]
+indent_style = space
+indent_size = 4
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+indent_style = space
+indent_size = 2
+
+# Makefiles (doivent utiliser des tabs)
+[{Makefile,makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Fichiers web
+[*.{html,css,js}]
+indent_style = space
+indent_size = 2
+
+# Docker
+[Dockerfile*]
+indent_style = space
+indent_size = 4

@@ -1,93 +1,93 @@
 package nodes
 
 import (
-"sync"
+	"sync"
 
-"github.com/treivax/tsd/rete/pkg/domain"
+	"github.com/treivax/tsd/rete/pkg/domain"
 )
 
 // BaseNode implémente les fonctionnalités communes à tous les nœuds.
 // Applique le principe DRY (Don't Repeat Yourself).
 type BaseNode struct {
-id       string
-nodeType string
-memory   *domain.WorkingMemory
-children []domain.Node
-logger   domain.Logger
-mutex    sync.RWMutex
+	id       string
+	nodeType string
+	memory   *domain.WorkingMemory
+	children []domain.Node
+	logger   domain.Logger
+	mutex    sync.RWMutex
 }
 
 // NewBaseNode crée un nouveau nœud de base.
 func NewBaseNode(id, nodeType string, logger domain.Logger) *BaseNode {
-return &BaseNode{
-id:       id,
-nodeType: nodeType,
-memory:   domain.NewWorkingMemory(id),
-children: make([]domain.Node, 0),
-logger:   logger,
-}
+	return &BaseNode{
+		id:       id,
+		nodeType: nodeType,
+		memory:   domain.NewWorkingMemory(id),
+		children: make([]domain.Node, 0),
+		logger:   logger,
+	}
 }
 
 // ID retourne l'identifiant du nœud.
 func (bn *BaseNode) ID() string {
-return bn.id
+	return bn.id
 }
 
 // Type retourne le type du nœud.
 func (bn *BaseNode) Type() string {
-return bn.nodeType
+	return bn.nodeType
 }
 
 // GetMemory retourne la mémoire de travail du nœud.
 func (bn *BaseNode) GetMemory() *domain.WorkingMemory {
-bn.mutex.RLock()
-defer bn.mutex.RUnlock()
-return bn.memory
+	bn.mutex.RLock()
+	defer bn.mutex.RUnlock()
+	return bn.memory
 }
 
 // AddChild ajoute un nœud enfant.
 func (bn *BaseNode) AddChild(child domain.Node) {
-bn.mutex.Lock()
-defer bn.mutex.Unlock()
-bn.children = append(bn.children, child)
+	bn.mutex.Lock()
+	defer bn.mutex.Unlock()
+	bn.children = append(bn.children, child)
 }
 
 // GetChildren retourne les nœuds enfants.
 func (bn *BaseNode) GetChildren() []domain.Node {
-bn.mutex.RLock()
-defer bn.mutex.RUnlock()
+	bn.mutex.RLock()
+	defer bn.mutex.RUnlock()
 
-// Retourne une copie pour éviter les modifications concurrentes
-children := make([]domain.Node, len(bn.children))
-copy(children, bn.children)
-return children
+	// Retourne une copie pour éviter les modifications concurrentes
+	children := make([]domain.Node, len(bn.children))
+	copy(children, bn.children)
+	return children
 }
 
 // propagateToChildren propage un fait vers tous les enfants.
 func (bn *BaseNode) propagateToChildren(fact *domain.Fact) error {
-children := bn.GetChildren()
+	children := bn.GetChildren()
 
-for _, child := range children {
-if err := child.ProcessFact(fact); err != nil {
-bn.logger.Error("failed to propagate fact to child", err, map[string]interface{}{
-"parent_node": bn.id,
-"child_node":  child.ID(),
-"fact_id":     fact.ID,
-})
-return err
-}
-}
+	for _, child := range children {
+		if err := child.ProcessFact(fact); err != nil {
+			bn.logger.Error("failed to propagate fact to child", err, map[string]interface{}{
+				"parent_node": bn.id,
+				"child_node":  child.ID(),
+				"fact_id":     fact.ID,
+			})
+			return err
+		}
+	}
 
-return nil
+	return nil
 }
 
 // logFactProcessing enregistre le traitement d'un fait.
 func (bn *BaseNode) logFactProcessing(fact *domain.Fact, action string) {
-bn.logger.Debug("processing fact", map[string]interface{}{
-"node_id":   bn.id,
-"node_type": bn.nodeType,
-"fact_id":   fact.ID,
-"fact_type": fact.Type,
-"action":    action,
-})
+	bn.logger.Debug("processing fact", map[string]interface{}{
+		"node_id":   bn.id,
+		"node_type": bn.nodeType,
+		"fact_id":   fact.ID,
+		"fact_type": fact.Type,
+		"action":    action,
+	})
 }

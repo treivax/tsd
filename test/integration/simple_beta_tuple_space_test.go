@@ -13,7 +13,7 @@ func TestSimpleBetaNodeTupleSpace(t *testing.T) {
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE
 	helper := NewTestHelper()
-	constraintPath := "../constraint/test/integration/beta_complex_rules.constraint"
+	constraintPath := "../../constraint/test/integration/beta_complex_rules.constraint"
 	network, _ := helper.BuildNetworkFromConstraintFile(t, constraintPath)
 
 	// Créer des faits de test avec l'helper

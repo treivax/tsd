@@ -24,8 +24,8 @@ func TestExhaustiveAlphaCoverage(t *testing.T) {
 	t.Log("🔍 Tests de TOUS les opérateurs, succès/échecs, logique")
 
 	// Fichiers de test pour couverture exhaustive Alpha
-	constraintFile := "../constraint/test/integration/alpha_exhaustive_coverage.constraint"
-	factsFile := "../constraint/test/integration/alpha_exhaustive_coverage_fixed.facts"
+	constraintFile := "../../constraint/test/integration/alpha_exhaustive_coverage.constraint"
+	factsFile := "../../constraint/test/integration/alpha_exhaustive_coverage_fixed.facts"
 
 	t.Log("")
 	t.Log("🔧 PIPELINE CONSTRAINT + FAITS EXHAUSTIFS → RETE")
