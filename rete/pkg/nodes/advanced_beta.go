@@ -134,7 +134,7 @@ func (n *NotNodeImpl) ProcessRightFact(fact *domain.Fact) error {
 func (n *NotNodeImpl) evaluateCondition(condition interface{}, token *domain.Token, fact *domain.Fact) (bool, error) {
 	// Pour l'instant, implémentation simplifiée qui évalue les conditions NOT basiques
 	// sur les champs des faits
-	
+
 	// Vérifier si c'est une condition de base avec comparison
 	if conditionMap, ok := condition.(map[string]interface{}); ok {
 		if conditionType, hasType := conditionMap["type"]; hasType {
@@ -146,7 +146,7 @@ func (n *NotNodeImpl) evaluateCondition(condition interface{}, token *domain.Tok
 			}
 		}
 	}
-	
+
 	// Pour les autres types de conditions, retourner false par défaut
 	return false, nil
 }
@@ -154,7 +154,7 @@ func (n *NotNodeImpl) evaluateCondition(condition interface{}, token *domain.Tok
 // evaluateBinaryCondition évalue une condition binaire simple (p.age == 0)
 func (n *NotNodeImpl) evaluateBinaryCondition(conditionMap map[string]interface{}, token *domain.Token, fact *domain.Fact) (bool, error) {
 	// Pour le format attendu: {left: {variable: "p", field: "age"}, operator: "==", right: {value: 0}}
-	
+
 	// Extraire l'opérateur
 	operator, ok := conditionMap["operator"].(string)
 	if !ok {
@@ -163,19 +163,19 @@ func (n *NotNodeImpl) evaluateBinaryCondition(conditionMap map[string]interface{
 			return false, fmt.Errorf("opérateur manquant")
 		}
 	}
-	
+
 	// Extraire la valeur de gauche (field du fait)
 	leftValue, err := n.extractFieldValue(conditionMap["left"], token, fact)
 	if err != nil {
 		return false, fmt.Errorf("erreur extraction valeur gauche: %w", err)
 	}
-	
+
 	// Extraire la valeur de droite (constante)
 	rightValue, err := n.extractConstantValue(conditionMap["right"])
 	if err != nil {
 		return false, fmt.Errorf("erreur extraction valeur droite: %w", err)
 	}
-	
+
 	// Comparer les valeurs
 	return n.compareValues(leftValue, operator, rightValue)
 }

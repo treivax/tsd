@@ -450,13 +450,13 @@ func (e *AlphaConditionEvaluator) evaluateNegationConstraint(expr map[string]int
 	if !ok {
 		return false, fmt.Errorf("condition manquante dans contrainte de négation")
 	}
-	
+
 	// Évaluer la condition interne
 	result, err := e.evaluateExpression(condition)
 	if err != nil {
 		return false, fmt.Errorf("erreur évaluation condition niée: %w", err)
 	}
-	
+
 	// Retourner la négation du résultat
 	return !result, nil
 }

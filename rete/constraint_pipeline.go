@@ -232,7 +232,7 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Analyser les contraintes pour détecter les négations
 	constraintsData, hasConstraints := exprMap["constraints"]
 	var condition map[string]interface{}
-	
+
 	if hasConstraints {
 		// Analyser et créer la condition appropriée
 		isNegation, negatedCondition, err := cp.analyzeConstraints(constraintsData)

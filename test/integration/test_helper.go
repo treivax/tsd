@@ -113,7 +113,7 @@ func (th *TestHelper) ShowFactDetails(fact *rete.Fact, index int) string {
 	if fact == nil || fact.Fields == nil {
 		return ""
 	}
-	
+
 	// Construire une représentation complète du fait avec id en premier
 	var sortedAttrs []string
 	if id, exists := fact.Fields["id"]; exists {
@@ -124,7 +124,7 @@ func (th *TestHelper) ShowFactDetails(fact *rete.Fact, index int) string {
 			sortedAttrs = append(sortedAttrs, fmt.Sprintf("%s=%v", key, value))
 		}
 	}
-	
+
 	return fmt.Sprintf("[%d] %s{%s}", index, fact.Type, strings.Join(sortedAttrs, ", "))
 }
 
@@ -135,7 +135,7 @@ func (th *TestHelper) ShowActionDetailsWithAllAttributes(actionName string, term
 		if count >= maxResults {
 			break
 		}
-		
+
 		// Extraire et afficher tous les faits du token avec leurs attributs complets
 		if len(token.Facts) > 0 {
 			fmt.Printf("   → %s:\n", actionName)
@@ -147,7 +147,7 @@ func (th *TestHelper) ShowActionDetailsWithAllAttributes(actionName string, term
 		}
 		count++
 	}
-	
+
 	if len(terminal.Memory.Tokens) > maxResults {
 		fmt.Printf("   ... et %d autres résultats\n", len(terminal.Memory.Tokens)-maxResults)
 	}
