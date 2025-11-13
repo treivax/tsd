@@ -5,25 +5,25 @@ type Login : <user_id: string, timestamp: number, success: bool, ip: string>
 type SecurityEvent : <user_id: string, event_type: string, severity: string, timestamp: number>
 
 // Négation simple - pas de connexion récente
-{u: User} / NOT (u.last_login > 1700000000)
+{u: User} / NOT (u.last_login > 1700000000) ==> flag_inactive_user(u.id)
 
 // Négation complexe - pas de connexion réussie récente
-{u: User, l: Login} / u.id == l.user_id AND NOT (l.success == true AND l.timestamp > 1700000000)
+{u: User, l: Login} / u.id == l.user_id AND NOT (l.success == true AND l.timestamp > 1700000000) ==> notify_login_failure(u.id)
 
 // Négation avec conditions multiples
-{u: User} / u.active == true AND NOT (u.last_login > 1700000000 AND u.name CONTAINS "admin")
+{u: User} / u.active == true AND NOT (u.last_login > 1700000000 AND u.name CONTAINS "admin") ==> check_user_access(u.id)
 
 // Négation de conditions d'agrégation (sera traitée par NotNode + AccumulateNode)
-{u: User, s: SecurityEvent} / u.id == s.user_id AND NOT (COUNT(s.user_id) > 3)
+{u: User, s: SecurityEvent} / u.id == s.user_id AND NOT (COUNT(s.user_id) > 3) ==> clear_security_alerts(u.id)
 
 // Négation avec fonctions
-{u: User} / NOT (LENGTH(u.name) < 3 OR UPPER(u.name) == "GUEST")
+{u: User} / NOT (LENGTH(u.name) < 3 OR UPPER(u.name) == "GUEST") ==> validate_user_credentials(u.id)
 
 // Négations imbriquées (double négation)
-{u: User, l: Login} / u.id == l.user_id AND NOT (NOT (l.success == true))
+{u: User, l: Login} / u.id == l.user_id AND NOT (NOT (l.success == true)) ==> confirm_successful_login(u.id)
 
 // Négation avec expressions arithmétiques
-{u: User} / NOT (u.last_login + 86400 > 1700000000)
+{u: User} / NOT (u.last_login + 86400 > 1700000000) ==> schedule_user_maintenance(u.id)
 
 // Négation dans des conditions logiques complexes
-{u: User, s: SecurityEvent} / u.id == s.user_id AND (u.active == true AND NOT (s.severity == "low")) OR NOT (u.last_login == 0)
+{u: User, s: SecurityEvent} / u.id == s.user_id AND (u.active == true AND NOT (s.severity == "low")) OR NOT (u.last_login == 0) ==> process_security_event(u.id, s.event_type)

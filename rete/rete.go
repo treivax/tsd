@@ -447,6 +447,8 @@ func (tn *TerminalNode) ActivateRight(fact *Fact) error {
 
 // executeAction exécute l'action avec les faits du token
 func (tn *TerminalNode) executeAction(token *Token) error {
+	// Les actions sont maintenant obligatoires dans la grammaire
+	// Mais nous gardons cette vérification par sécurité
 	if tn.Action == nil {
 		return fmt.Errorf("aucune action définie pour le nœud %s", tn.ID)
 	}

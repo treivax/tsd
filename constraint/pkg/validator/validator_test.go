@@ -453,7 +453,16 @@ func TestConstraintValidator(t *testing.T) {
 	t.Run("ValidateProgram", func(t *testing.T) {
 		validator, _ := setup()
 
-		// Programme valide
+		// Programme valide (avec action obligatoire)
+		action := domain.Action{
+			Type: "action",
+			Job: domain.JobCall{
+				Type: "jobCall",
+				Name: "process_person",
+				Args: []string{},
+			},
+		}
+
 		program := &domain.Program{
 			Types: []domain.TypeDefinition{
 				{
@@ -474,6 +483,7 @@ func TestConstraintValidator(t *testing.T) {
 							{Name: "person", DataType: "Person"},
 						},
 					},
+					Action: &action, // Action obligatoire
 				},
 			},
 		}

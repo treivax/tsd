@@ -365,13 +365,16 @@ func ValidateProgram(result interface{}) error {
 		}
 	}
 
-	// Validation des actions
+	// Validation des actions (maintenant obligatoires)
 	for i, expression := range program.Expressions {
 		if expression.Action != nil {
 			err = ValidateAction(program, *expression.Action, i)
 			if err != nil {
 				return fmt.Errorf("erreur validation action dans l'expression %d: %v", i+1, err)
 			}
+		} else {
+			// Avec la nouvelle grammaire, cette condition ne devrait plus arriver
+			return fmt.Errorf("action manquante dans l'expression %d: chaque règle doit avoir une action définie", i+1)
 		}
 	}
 

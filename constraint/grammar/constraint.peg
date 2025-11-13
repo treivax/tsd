@@ -77,16 +77,13 @@ AtomicType <- "string" { return "string", nil } /
               "number" { return "number", nil } /
               "bool"   { return "bool", nil }
 
-Expression <- set:Set _ "/" _ constraints:Constraints _ action:Action? {
-    expr := map[string]interface{}{
+Expression <- set:Set _ "/" _ constraints:Constraints _ action:Action {
+    return map[string]interface{}{
         "type": "expression",
         "set": set,
         "constraints": constraints,
-    }
-    if action != nil {
-        expr["action"] = action
-    }
-    return expr, nil
+        "action": action,
+    }, nil
 }
 
 Set <- "{" _ variables:TypedVariableList _ "}" {

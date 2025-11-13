@@ -73,13 +73,16 @@ func (ac *ASTConverter) convertExpression(constraintExpr constraint.Expression) 
 		Variables: ac.convertTypedVariables(constraintExpr.Set.Variables),
 	}
 
-	// Convertir l'action si présente
+	// Convertir l'action (maintenant obligatoire)
 	if constraintExpr.Action != nil {
 		action, err := ac.convertAction(*constraintExpr.Action)
 		if err != nil {
 			return nil, fmt.Errorf("erreur conversion action: %w", err)
 		}
 		expr.Action = action
+	} else {
+		// Cette condition ne devrait plus arriver avec la nouvelle grammaire
+		return nil, fmt.Errorf("action manquante: chaque règle doit avoir une action définie")
 	}
 
 	return expr, nil

@@ -181,12 +181,15 @@ func (v *ConstraintValidator) ValidateExpression(expr domain.Expression, types [
 		}
 	}
 
-	// Valider l'action si elle existe
+	// Valider l'action (maintenant obligatoire)
 	if expr.Action != nil {
 		validator := NewActionValidator()
 		if err := validator.ValidateAction(expr.Action); err != nil {
 			return err
 		}
+	} else {
+		// Avec la nouvelle grammaire, cette condition ne devrait plus arriver
+		return fmt.Errorf("action manquante: chaque règle doit avoir une action définie")
 	}
 
 	return nil

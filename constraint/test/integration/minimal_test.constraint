@@ -1,3 +1,3 @@
 type User : <id: string, name: string>
 
-{u: User} / u.id == "123"
+{u: User} / u.id == "123" ==> process_user(u.id)
