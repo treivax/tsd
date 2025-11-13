@@ -242,7 +242,25 @@ func (av *ActionValidator) ValidateJobCall(jobCall domain.JobCall) error {
 
 	// Valider les arguments (optionnel)
 	for i, arg := range jobCall.Args {
-		if strings.TrimSpace(arg) == "" {
+		// Convertir l'argument en string pour la validation
+		var argStr string
+		if s, ok := arg.(string); ok {
+			argStr = s
+		} else {
+			// Pour les objets complexes, on les considère comme valides s'ils ne sont pas nil
+			if arg == nil {
+				return domain.NewActionError(
+					fmt.Sprintf("job argument %d cannot be nil", i),
+					domain.Context{
+						Field: fmt.Sprintf("job.args[%d]", i),
+						Value: arg,
+					},
+				)
+			}
+			continue // Les objets complexes sont valides s'ils ne sont pas nil
+		}
+		
+		if strings.TrimSpace(argStr) == "" {
 			return domain.NewActionError(
 				fmt.Sprintf("job argument %d cannot be empty", i),
 				domain.Context{
