@@ -25,7 +25,7 @@ func TestCompleteAlphaCoverage(t *testing.T) {
 	fmt.Printf("==========================================\n")
 
 	totalActions := 0
-	
+
 	// Analyser les résultats par terminal (chaque terminal correspond à un test)
 	for _, terminal := range network.TerminalNodes {
 		tokenCount := len(terminal.Memory.Tokens)
@@ -87,7 +87,7 @@ func TestCompleteAlphaCoverage(t *testing.T) {
 	hasStringTests := false
 	hasNumericTests := false
 	hasBooleanTests := false
-	
+
 	for _, fact := range facts {
 		if strings.Contains(fmt.Sprintf("%v", fact), "Alice") || strings.Contains(fmt.Sprintf("%v", fact), "Electronics") {
 			hasStringTests = true
@@ -99,7 +99,7 @@ func TestCompleteAlphaCoverage(t *testing.T) {
 			hasBooleanTests = true
 		}
 	}
-	
+
 	if hasStringTests && hasNumericTests && hasBooleanTests {
 		fmt.Printf("✅ Types de données variés: string, numeric, boolean validés\n")
 	} else {

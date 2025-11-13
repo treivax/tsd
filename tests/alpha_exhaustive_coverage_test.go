@@ -14,7 +14,7 @@ func fileExists(filename string) bool {
 // TestExhaustiveAlphaCoverage teste EXHAUSTIVEMENT tous les aspects des nœuds Alpha
 // - Tous les opérateurs de comparaison (==, !=, <, <=, >, >=)
 // - Opérateurs logiques (AND, OR, NOT) si supportés
-// - Opérateurs de pattern (IN, LIKE, CONTAINS) si supportés  
+// - Opérateurs de pattern (IN, LIKE, CONTAINS) si supportés
 // - Tests de SUCCÈS et d'ÉCHEC pour chaque opérateur
 // - Cas limites et valeurs spéciales
 // - Combinaisons complexes multi-champs
@@ -148,7 +148,7 @@ func TestExhaustiveAlphaCoverage(t *testing.T) {
 
 	// Rapport final
 	t.Log("")
-	t.Log("📈 RAPPORT COUVERTURE EXHAUSTIVE") 
+	t.Log("📈 RAPPORT COUVERTURE EXHAUSTIVE")
 	t.Log("=================================")
 	t.Logf("🎯 COUVERTURE ALPHA EXHAUSTIVE:")
 	t.Logf("   Règles Alpha créées: %d", len(network.TerminalNodes))
@@ -161,10 +161,10 @@ func TestExhaustiveAlphaCoverage(t *testing.T) {
 	t.Log("")
 	t.Log("📊 STATISTIQUES COUVERTURE EXHAUSTIVE")
 	t.Log("====================================")
-	
+
 	coverage := float64(len(network.TerminalNodes)) / 60.0 * 100 // 60 règles cible pour exhaustif
 	t.Logf("📈 Taux de couverture estimé: %.1f%%", coverage)
-	
+
 	if coverage >= 80.0 {
 		t.Logf("🎊 EXCELLENT: Couverture exhaustive atteinte!")
 	} else if coverage >= 60.0 {

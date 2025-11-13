@@ -456,10 +456,10 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 	// === VERSION TUPLE-SPACE ===
 	// Au lieu d'exécuter l'action, on l'affiche avec les faits déclencheurs
 	// Les agents du tuple-space viendront "prendre" ces tuples plus tard
-	
+
 	actionName := tn.Action.Job.Name
 	fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
-	
+
 	// Afficher les faits déclencheurs entre parenthèses
 	if len(token.Facts) > 0 {
 		fmt.Print(" (")

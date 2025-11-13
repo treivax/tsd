@@ -17,7 +17,7 @@ func TestTupleSpaceTerminalNodes(t *testing.T) {
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE - Respecte les règles établies
 	constraintFile := "../constraint/test/integration/tuple_space_terminal.constraint"
-	
+
 	helper := NewTestHelper()
 	network, _ := helper.BuildNetworkFromConstraintFile(t, constraintFile)
 
@@ -60,7 +60,7 @@ func TestTupleSpaceTerminalNodes(t *testing.T) {
 	for terminalID, terminal := range network.TerminalNodes {
 		fmt.Printf("  Terminal: %s (Action: %s)\n", terminalID, terminal.Action.Job.Name)
 		fmt.Printf("  Tokens stockés: %d\n", len(terminal.Memory.Tokens))
-		
+
 		// Validation: Le pipeline a bien créé la structure RETE
 		assert.NotNil(t, terminal.Action, "L'action devrait être définie")
 		assert.NotEmpty(t, terminal.Action.Job.Name, "Le nom de l'action devrait être défini")
@@ -68,14 +68,14 @@ func TestTupleSpaceTerminalNodes(t *testing.T) {
 
 	fmt.Printf("\n✅ Test tuple-space terminé avec succès!\n")
 	fmt.Printf("📊 Le système stocke bien les ensembles de faits déclencheurs sans exécuter les actions\n")
-	
+
 	// 🎯 VALIDATION PIPELINE UNIQUE
 	fmt.Printf("\n🎯 VALIDATION PIPELINE UNIQUE:\n")
 	fmt.Printf("✅ Fichier .constraint utilisé: %s\n", constraintFile)
 	fmt.Printf("✅ Pipeline unique appliqué: .constraint → parseur PEG → réseau RETE → tuple-space\n")
 	fmt.Printf("✅ RÈGLE RESPECTÉE: Aucune construction manuelle de réseau RETE\n")
 	fmt.Printf("✅ RÈGLE RESPECTÉE: Pipeline unique et réutilisable\n")
-	
+
 	fmt.Printf("\n🎊 TEST TUPLE-SPACE PIPELINE UNIQUE: RÉUSSI\n\n")
 }
 

@@ -196,7 +196,7 @@ func (cp *ConstraintPipeline) createTypeDefinition(typeName string, typeMap map[
 func (cp *ConstraintPipeline) createRuleNodes(network *ReteNetwork, expressions []interface{}, storage Storage) error {
 	for i, exprData := range expressions {
 		ruleID := fmt.Sprintf("rule_%d", i)
-		
+
 		exprMap, ok := exprData.(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("format expression %d invalide: %T", i, exprData)
@@ -217,13 +217,13 @@ func (cp *ConstraintPipeline) createRuleNodes(network *ReteNetwork, expressions 
 func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID string, exprMap map[string]interface{}, storage Storage) error {
 	// Pour cette implémentation de base, on crée des nœuds Alpha simples
 	// Une implémentation future pourrait analyser les contraintes pour créer des Beta joints
-	
+
 	// Extraire l'action
 	actionData, hasAction := exprMap["action"]
 	if !hasAction {
 		return fmt.Errorf("aucune action trouvée pour règle %s", ruleID)
 	}
-	
+
 	actionMap, ok := actionData.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("format action invalide pour règle %s: %T", ruleID, actionData)
@@ -239,7 +239,7 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	}
 
 	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, "x", storage)
-	
+
 	// Connecter à un type node (prendre le premier disponible pour l'instant)
 	if len(network.TypeNodes) > 0 {
 		for _, typeNode := range network.TypeNodes {
@@ -271,7 +271,7 @@ func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Ac
 					actionName = name
 				}
 			}
-			
+
 			// Extraire les arguments depuis job.args
 			if argsData, hasArgs := jobMap["args"]; hasArgs {
 				if argsList, ok := argsData.([]interface{}); ok {
@@ -300,28 +300,28 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	fmt.Printf("========================================\n")
 	fmt.Printf("📁 Fichier contraintes: %s\n", constraintFile)
 	fmt.Printf("📁 Fichier faits: %s\n", factsFile)
-	
+
 	// Étape 1-4: Construction du réseau RETE normal
 	network, err := cp.BuildNetworkFromConstraintFile(constraintFile, storage)
 	if err != nil {
 		return nil, nil, fmt.Errorf("erreur construction réseau RETE: %w", err)
 	}
-	
+
 	fmt.Printf("\n🔍 Étape 5/6: Parsing et validation fichier faits...\n")
-	
+
 	// Extraire les définitions de types du réseau pour validation des faits
 	typeDefinitions := make(map[string]TypeDefinition)
 	for typeName, typeNode := range network.TypeNodes {
 		typeDefinitions[typeName] = typeNode.TypeDefinition
 	}
-	
+
 	// Parser les faits
 	factsParser := NewFactsParser()
 	facts, err := factsParser.ParseFactsFile(factsFile, typeDefinitions)
 	if err != nil {
 		return nil, nil, fmt.Errorf("erreur parsing faits: %w", err)
 	}
-	
+
 	// Afficher les métadonnées du fichier faits
 	metadata := factsParser.GetMetadata()
 	if len(metadata) > 0 {
@@ -330,15 +330,15 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 			fmt.Printf("   %s: %s\n", key, value)
 		}
 	}
-	
+
 	fmt.Printf("✅ %d faits parsés et validés\n", len(facts))
-	
+
 	fmt.Printf("\n🔍 Étape 6/6: Injection des faits dans le réseau RETE...\n")
-	
+
 	// Injecter tous les faits
 	successCount := 0
 	errorCount := 0
-	
+
 	for _, fact := range facts {
 		err := network.SubmitFact(fact)
 		if err != nil {
@@ -349,11 +349,11 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 			successCount++
 		}
 	}
-	
+
 	fmt.Printf("✅ Injection terminée: %d succès, %d erreurs\n", successCount, errorCount)
 	fmt.Printf("🎯 PIPELINE CONSTRAINT + FAITS TERMINÉ\n")
 	fmt.Printf("========================================\n\n")
-	
+
 	return network, facts, nil
 }
 

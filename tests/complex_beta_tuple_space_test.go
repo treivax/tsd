@@ -15,10 +15,10 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 
 	// Chemin vers le fichier de contraintes
 	constraintFile := "/home/resinsec/dev/tsd/constraint/test/integration/beta_complex_rules.constraint"
-	
+
 	// Créer un storage
 	storage := rete.NewMemoryStorage()
-	
+
 	// 🚀 UTILISER LE PIPELINE UNIQUE
 	pipeline := rete.NewConstraintPipeline()
 	reteNetwork, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
@@ -119,15 +119,15 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 
 	// Test des soumissions de faits
 	fmt.Printf("\n🔥 Soumission des faits au réseau RETE...\n")
-	
+
 	// Faits correspondant aux règles du fichier .constraint
 	testFacts := []*rete.Fact{
-		userMineurLille, adresseMineurLille,     // Règle 1: mineur à Lille
-		userMajeurParis, adresseMajeurParis,     // Règle 2: majeur à Paris
-		userSenior, adresseSenior,               // Règle 3: senior >= 65
+		userMineurLille, adresseMineurLille, // Règle 1: mineur à Lille
+		userMajeurParis, adresseMajeurParis, // Règle 2: majeur à Paris
+		userSenior, adresseSenior, // Règle 3: senior >= 65
 		userJeuneAdulteLyon, adresseJeuneAdulteLyon, // Règle 4: jeune adulte à Lyon
 	}
-	
+
 	for _, fact := range testFacts {
 		err := reteNetwork.SubmitFact(fact)
 		if err != nil {
@@ -145,23 +145,25 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 	for terminalID, terminal := range reteNetwork.TerminalNodes {
 		tokenCount := len(terminal.Memory.Tokens)
 		totalActions += tokenCount
-		
+
 		fmt.Printf("  Terminal: %s\n", terminalID)
 		fmt.Printf("    Action: %s\n", terminal.Action.Job.Name)
 		fmt.Printf("    Tuples stockés: %d\n", tokenCount)
-		
+
 		// Afficher des détails sur les tuples stockés
 		if tokenCount > 0 {
 			fmt.Printf("    Échantillon des faits déclencheurs:\n")
 			count := 0
 			for _, token := range terminal.Memory.Tokens {
-				if count >= 2 { break } // Limiter l'affichage
+				if count >= 2 {
+					break
+				} // Limiter l'affichage
 				for _, fact := range token.Facts {
 					if fact.Type == "Utilisateur" {
-						fmt.Printf("      - Utilisateur: %s %s (age=%.0f)\n", 
+						fmt.Printf("      - Utilisateur: %s %s (age=%.0f)\n",
 							fact.Fields["prenom"], fact.Fields["nom"], fact.Fields["age"])
 					} else if fact.Type == "Adresse" {
-						fmt.Printf("      - Adresse: %s, %s\n", 
+						fmt.Printf("      - Adresse: %s, %s\n",
 							fact.Fields["rue"], fact.Fields["ville"])
 					}
 				}
@@ -173,7 +175,7 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 
 	// Vérifications
 	fmt.Printf("🧪 VALIDATIONS:\n")
-	
+
 	expectedTerminals := len(reteNetwork.TerminalNodes) // Nombre de terminaux créés par le pipeline
 	if len(reteNetwork.TerminalNodes) > 0 {
 		fmt.Printf("✅ Réseau RETE construit avec %d nœuds terminaux\n", expectedTerminals)
@@ -186,7 +188,7 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 	} else {
 		fmt.Printf("⚠️ Aucune action déclenchée - normal pour cette implémentation de pipeline basique\n")
 	}
-	
+
 	fmt.Printf("✅ Pipeline unique utilisé: .constraint → parseur PEG → réseau RETE → tuple-space\n")
 	fmt.Printf("✅ RÈGLE RESPECTÉE: Un seul pipeline réutilisable pour tous les tests\n")
 

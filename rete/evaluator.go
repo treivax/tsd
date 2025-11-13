@@ -97,7 +97,7 @@ func (e *AlphaConditionEvaluator) evaluateBinaryOperationMap(expr map[string]int
 	// Supporter les deux formats: "operator" et "op"
 	var operator string
 	var ok bool
-	
+
 	if operator, ok = expr["operator"].(string); !ok {
 		if operator, ok = expr["op"].(string); !ok {
 			return false, fmt.Errorf("opérateur manquant (recherché 'operator' ou 'op')")
@@ -261,15 +261,15 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		// Supporter les deux formats: object/field et variable/field
 		var objectOrVariable, field string
 		var ok bool
-		
+
 		if objectOrVariable, ok = val["object"].(string); ok {
 			// Format: object + field
 		} else if objectOrVariable, ok = val["variable"].(string); ok {
-			// Format: variable + field  
+			// Format: variable + field
 		} else {
 			return nil, fmt.Errorf("objet ou variable d'accès de champ invalide")
 		}
-		
+
 		if field, ok = val["field"].(string); !ok {
 			return nil, fmt.Errorf("champ d'accès invalide")
 		}
