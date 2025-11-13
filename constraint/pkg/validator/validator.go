@@ -259,7 +259,7 @@ func (av *ActionValidator) ValidateJobCall(jobCall domain.JobCall) error {
 			}
 			continue // Les objets complexes sont valides s'ils ne sont pas nil
 		}
-		
+
 		if strings.TrimSpace(argStr) == "" {
 			return domain.NewActionError(
 				fmt.Sprintf("job argument %d cannot be empty", i),

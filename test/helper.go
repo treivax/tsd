@@ -70,7 +70,7 @@ func (th *TestHelper) CreateAddressFact(userID, street, city string) *rete.Fact 
 func (th *TestHelper) CreateCustomerFact(id string, age float64, isVIP bool) *rete.Fact {
 	return &rete.Fact{
 		ID:   id,
-		Type: "Customer", 
+		Type: "Customer",
 		Fields: map[string]interface{}{
 			"id":    id,
 			"age":   age,

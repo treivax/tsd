@@ -83,7 +83,7 @@ func TestComprehensiveMixedArguments(t *testing.T) {
 		t.Error("Expected to find field access arguments")
 	}
 
-	t.Logf("✅ Mixed arguments test passed: %d facts, %d terminal nodes, found variables=%v, fields=%v", 
+	t.Logf("✅ Mixed arguments test passed: %d facts, %d terminal nodes, found variables=%v, fields=%v",
 		len(facts), len(network.TerminalNodes), foundVariableArg, foundFieldArg)
 }
 
@@ -97,9 +97,9 @@ func TestErrorDetectionInArguments(t *testing.T) {
 	// This should fail due to syntax errors in the constraint file
 	network, facts, _ := helper.BuildNetworkFromConstraintFileWithMassiveFacts(t, constraintFile, factsFile)
 
-	// Since the helper uses t.Fatalf on error, if we reach here, 
+	// Since the helper uses t.Fatalf on error, if we reach here,
 	// it means the constraint was valid (which could be intended)
-	t.Logf("✅ Error detection test: network built with %d facts, %d terminal nodes", 
+	t.Logf("✅ Error detection test: network built with %d facts, %d terminal nodes",
 		len(facts), len(network.TerminalNodes))
 }
 
