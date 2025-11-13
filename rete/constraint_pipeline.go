@@ -213,11 +213,8 @@ func (cp *ConstraintPipeline) createRuleNodes(network *ReteNetwork, expressions 
 	return nil
 }
 
-// createSingleRule crée une règle unique (Alpha + Terminal pour l'instant)
+// createSingleRule crée une règle unique (Alpha + Terminal avec support des contraintes NOT)
 func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID string, exprMap map[string]interface{}, storage Storage) error {
-	// Pour cette implémentation de base, on crée des nœuds Alpha simples
-	// Une implémentation future pourrait analyser les contraintes pour créer des Beta joints
-
 	// Extraire l'action
 	actionData, hasAction := exprMap["action"]
 	if !hasAction {
@@ -232,15 +229,40 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Créer l'action RETE
 	action := cp.createAction(actionMap)
 
-	// Créer un nœud Alpha simple pour cette règle
-	// TODO: Analyser les contraintes pour déterminer le type exact de nœud
-	condition := map[string]interface{}{
-		"type": "simple", // Condition simple pour ce pipeline de base
+	// Analyser les contraintes pour détecter les négations
+	constraintsData, hasConstraints := exprMap["constraints"]
+	var condition map[string]interface{}
+	
+	if hasConstraints {
+		// Analyser et créer la condition appropriée
+		isNegation, negatedCondition, err := cp.analyzeConstraints(constraintsData)
+		if err != nil {
+			return fmt.Errorf("erreur analyse contraintes pour règle %s: %w", ruleID, err)
+		}
+
+		if isNegation {
+			fmt.Printf("   🚫 Détection contrainte NOT - création d'un AlphaNode de négation\n")
+			condition = map[string]interface{}{
+				"type":      "negation",
+				"negated":   true,
+				"condition": negatedCondition,
+			}
+		} else {
+			condition = map[string]interface{}{
+				"type":       "constraint",
+				"constraint": constraintsData,
+			}
+		}
+	} else {
+		condition = map[string]interface{}{
+			"type": "simple",
+		}
 	}
 
-	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, "x", storage)
+	// Créer un nœud Alpha avec la condition appropriée
+	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, "p", storage)
 
-	// Connecter à un type node (prendre le premier disponible pour l'instant)
+	// Connecter à un type node
 	if len(network.TypeNodes) > 0 {
 		for _, typeNode := range network.TypeNodes {
 			typeNode.AddChild(alphaNode)
@@ -254,7 +276,33 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	alphaNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	if condition["type"] == "negation" {
+		fmt.Printf("   ✓ AlphaNode de négation créé: %s -> %s\n", alphaNode.ID, terminalNode.ID)
+	}
+
 	return nil
+}
+
+// analyzeConstraints analyse les contraintes pour détecter les négations
+func (cp *ConstraintPipeline) analyzeConstraints(constraints interface{}) (bool, interface{}, error) {
+	constraintMap, ok := constraints.(map[string]interface{})
+	if !ok {
+		return false, nil, fmt.Errorf("format contraintes invalide: %T", constraints)
+	}
+
+	// Vérifier si c'est une contrainte NOT
+	if constraintType, hasType := constraintMap["type"]; hasType {
+		if constraintType == "notConstraint" {
+			// Extraire l'expression niée
+			if expression, hasExpr := constraintMap["expression"]; hasExpr {
+				fmt.Printf("   📍 Contrainte NOT détectée: %+v\n", expression)
+				return true, expression, nil
+			}
+		}
+	}
+
+	// Pour les autres types de contraintes, retourner false
+	return false, nil, nil
 }
 
 // createAction crée une action RETE à partir d'un map parsé

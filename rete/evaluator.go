@@ -62,6 +62,12 @@ func (e *AlphaConditionEvaluator) evaluateMapExpression(expr map[string]interfac
 		return e.evaluateLogicalExpressionMap(expr)
 	case "constraint":
 		return e.evaluateConstraintMap(expr)
+	case "comparison":
+		// Traitement des comparaisons directes
+		return e.evaluateBinaryOperationMap(expr)
+	case "negation":
+		// Traitement spécial pour les contraintes de négation
+		return e.evaluateNegationConstraint(expr)
 	case "booleanLiteral":
 		value, ok := expr["value"].(bool)
 		if !ok {
@@ -282,21 +288,25 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		}
 		return e.evaluateVariableByName(name)
 
-	case "numberLiteral":
+	case "numberLiteral", "number":
 		value, ok := val["value"].(float64)
 		if !ok {
+			// Essayer aussi avec int
+			if intValue, ok := val["value"].(int); ok {
+				return float64(intValue), nil
+			}
 			return nil, fmt.Errorf("valeur numérique invalide")
 		}
 		return value, nil
 
-	case "stringLiteral":
+	case "stringLiteral", "string":
 		value, ok := val["value"].(string)
 		if !ok {
 			return nil, fmt.Errorf("valeur de chaîne invalide")
 		}
 		return value, nil
 
-	case "booleanLiteral":
+	case "booleanLiteral", "boolean":
 		value, ok := val["value"].(bool)
 		if !ok {
 			return nil, fmt.Errorf("valeur booléenne invalide")
@@ -431,4 +441,22 @@ func (e *AlphaConditionEvaluator) ClearBindings() {
 // GetBindings retourne les liaisons actuelles
 func (e *AlphaConditionEvaluator) GetBindings() map[string]*Fact {
 	return e.variableBindings
+}
+
+// evaluateNegationConstraint évalue une contrainte de négation
+func (e *AlphaConditionEvaluator) evaluateNegationConstraint(expr map[string]interface{}) (bool, error) {
+	// Extraire la condition niée depuis "condition"
+	condition, ok := expr["condition"]
+	if !ok {
+		return false, fmt.Errorf("condition manquante dans contrainte de négation")
+	}
+	
+	// Évaluer la condition interne
+	result, err := e.evaluateExpression(condition)
+	if err != nil {
+		return false, fmt.Errorf("erreur évaluation condition niée: %w", err)
+	}
+	
+	// Retourner la négation du résultat
+	return !result, nil
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/treivax/tsd/rete"
@@ -104,4 +106,49 @@ func (th *TestHelper) SubmitFactsAndAnalyze(t *testing.T, network *rete.ReteNetw
 	}
 
 	return totalActions
+}
+
+// ShowFactDetails affiche les détails complets d'un fait avec tous ses attributs
+func (th *TestHelper) ShowFactDetails(fact *rete.Fact, index int) string {
+	if fact == nil || fact.Fields == nil {
+		return ""
+	}
+	
+	// Construire une représentation complète du fait avec id en premier
+	var sortedAttrs []string
+	if id, exists := fact.Fields["id"]; exists {
+		sortedAttrs = append(sortedAttrs, fmt.Sprintf("id=%v", id))
+	}
+	for key, value := range fact.Fields {
+		if key != "id" {
+			sortedAttrs = append(sortedAttrs, fmt.Sprintf("%s=%v", key, value))
+		}
+	}
+	
+	return fmt.Sprintf("[%d] %s{%s}", index, fact.Type, strings.Join(sortedAttrs, ", "))
+}
+
+// ShowActionDetailsWithAllAttributes affiche les détails d'une action avec tous les attributs des faits
+func (th *TestHelper) ShowActionDetailsWithAllAttributes(actionName string, terminal *rete.TerminalNode, maxResults int) {
+	count := 0
+	for _, token := range terminal.Memory.Tokens {
+		if count >= maxResults {
+			break
+		}
+		
+		// Extraire et afficher tous les faits du token avec leurs attributs complets
+		if len(token.Facts) > 0 {
+			fmt.Printf("   → %s:\n", actionName)
+			for i, fact := range token.Facts {
+				if fact != nil {
+					fmt.Printf("     %s\n", th.ShowFactDetails(fact, i+1))
+				}
+			}
+		}
+		count++
+	}
+	
+	if len(terminal.Memory.Tokens) > maxResults {
+		fmt.Printf("   ... et %d autres résultats\n", len(terminal.Memory.Tokens)-maxResults)
+	}
 }

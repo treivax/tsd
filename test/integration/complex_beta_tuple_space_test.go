@@ -13,6 +13,9 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 	fmt.Printf("🎯 TEST TUPLE-SPACE - Pipeline Unique .constraint → RETE\n")
 	fmt.Printf("=================================================================\n")
 
+	// Créer le helper de test
+	helper := NewTestHelper()
+
 	// Chemin vers le fichier de contraintes
 	constraintFile := "/home/resinsec/dev/tsd/constraint/test/integration/beta_complex_rules.constraint"
 
@@ -150,25 +153,9 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 		fmt.Printf("    Action: %s\n", terminal.Action.Job.Name)
 		fmt.Printf("    Tuples stockés: %d\n", tokenCount)
 
-		// Afficher des détails sur les tuples stockés
+		// Utiliser la nouvelle fonction d'affichage détaillée
 		if tokenCount > 0 {
-			fmt.Printf("    Échantillon des faits déclencheurs:\n")
-			count := 0
-			for _, token := range terminal.Memory.Tokens {
-				if count >= 2 {
-					break
-				} // Limiter l'affichage
-				for _, fact := range token.Facts {
-					if fact.Type == "Utilisateur" {
-						fmt.Printf("      - Utilisateur: %s %s (age=%.0f)\n",
-							fact.Fields["prenom"], fact.Fields["nom"], fact.Fields["age"])
-					} else if fact.Type == "Adresse" {
-						fmt.Printf("      - Adresse: %s, %s\n",
-							fact.Fields["rue"], fact.Fields["ville"])
-					}
-				}
-				count++
-			}
+			helper.ShowActionDetailsWithAllAttributes(terminalID, terminal, 2)
 		}
 		fmt.Printf("\n")
 	}

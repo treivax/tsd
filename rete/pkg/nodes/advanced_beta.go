@@ -132,9 +132,128 @@ func (n *NotNodeImpl) ProcessRightFact(fact *domain.Fact) error {
 
 // evaluateCondition évalue une condition (méthode helper)
 func (n *NotNodeImpl) evaluateCondition(condition interface{}, token *domain.Token, fact *domain.Fact) (bool, error) {
-	// Pour l'instant, implémentation basique
-	// TODO: Intégrer avec l'évaluateur d'expressions du package constraint
-	return true, nil
+	// Pour l'instant, implémentation simplifiée qui évalue les conditions NOT basiques
+	// sur les champs des faits
+	
+	// Vérifier si c'est une condition de base avec comparison
+	if conditionMap, ok := condition.(map[string]interface{}); ok {
+		if conditionType, hasType := conditionMap["type"]; hasType {
+			switch conditionType {
+			case "binaryOperation", "binary_op":
+				return n.evaluateBinaryCondition(conditionMap, token, fact)
+			case "simple":
+				return true, nil // Condition simple toujours vraie pour l'instant
+			}
+		}
+	}
+	
+	// Pour les autres types de conditions, retourner false par défaut
+	return false, nil
+}
+
+// evaluateBinaryCondition évalue une condition binaire simple (p.age == 0)
+func (n *NotNodeImpl) evaluateBinaryCondition(conditionMap map[string]interface{}, token *domain.Token, fact *domain.Fact) (bool, error) {
+	// Pour le format attendu: {left: {variable: "p", field: "age"}, operator: "==", right: {value: 0}}
+	
+	// Extraire l'opérateur
+	operator, ok := conditionMap["operator"].(string)
+	if !ok {
+		operator, ok = conditionMap["op"].(string)
+		if !ok {
+			return false, fmt.Errorf("opérateur manquant")
+		}
+	}
+	
+	// Extraire la valeur de gauche (field du fait)
+	leftValue, err := n.extractFieldValue(conditionMap["left"], token, fact)
+	if err != nil {
+		return false, fmt.Errorf("erreur extraction valeur gauche: %w", err)
+	}
+	
+	// Extraire la valeur de droite (constante)
+	rightValue, err := n.extractConstantValue(conditionMap["right"])
+	if err != nil {
+		return false, fmt.Errorf("erreur extraction valeur droite: %w", err)
+	}
+	
+	// Comparer les valeurs
+	return n.compareValues(leftValue, operator, rightValue)
+}
+
+// extractFieldValue extrait la valeur d'un champ depuis un fait
+func (n *NotNodeImpl) extractFieldValue(leftExpr interface{}, token *domain.Token, fact *domain.Fact) (interface{}, error) {
+	if leftMap, ok := leftExpr.(map[string]interface{}); ok {
+		if fieldName, hasField := leftMap["field"].(string); hasField {
+			// Chercher la valeur dans le fait principal du token
+			if len(token.Facts) > 0 {
+				primaryFact := token.Facts[0]
+				if value, exists := primaryFact.Fields[fieldName]; exists {
+					return value, nil
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("impossible d'extraire la valeur du champ")
+}
+
+// extractConstantValue extrait une valeur constante
+func (n *NotNodeImpl) extractConstantValue(rightExpr interface{}) (interface{}, error) {
+	if rightMap, ok := rightExpr.(map[string]interface{}); ok {
+		if value, hasValue := rightMap["value"]; hasValue {
+			return value, nil
+		}
+	}
+	// Si c'est directement la valeur
+	return rightExpr, nil
+}
+
+// compareValues compare deux valeurs avec un opérateur
+func (n *NotNodeImpl) compareValues(left interface{}, operator string, right interface{}) (bool, error) {
+	switch operator {
+	case "==":
+		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right), nil
+	case "!=":
+		return fmt.Sprintf("%v", left) != fmt.Sprintf("%v", right), nil
+	case "<":
+		return n.numericCompare(left, right, func(l, r float64) bool { return l < r })
+	case ">":
+		return n.numericCompare(left, right, func(l, r float64) bool { return l > r })
+	case "<=":
+		return n.numericCompare(left, right, func(l, r float64) bool { return l <= r })
+	case ">=":
+		return n.numericCompare(left, right, func(l, r float64) bool { return l >= r })
+	default:
+		return false, fmt.Errorf("opérateur non supporté: %s", operator)
+	}
+}
+
+// numericCompare compare numériquement deux valeurs
+func (n *NotNodeImpl) numericCompare(left, right interface{}, compareFunc func(float64, float64) bool) (bool, error) {
+	leftFloat, err := n.toFloat64(left)
+	if err != nil {
+		return false, err
+	}
+	rightFloat, err := n.toFloat64(right)
+	if err != nil {
+		return false, err
+	}
+	return compareFunc(leftFloat, rightFloat), nil
+}
+
+// toFloat64 convertit une valeur en float64
+func (n *NotNodeImpl) toFloat64(value interface{}) (float64, error) {
+	switch v := value.(type) {
+	case int:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case float64:
+		return v, nil
+	case float32:
+		return float64(v), nil
+	default:
+		return 0, fmt.Errorf("impossible de convertir %T en float64", value)
+	}
 }
 
 // ExistsNodeImpl implémente l'interface ExistsNode pour la quantification existentielle

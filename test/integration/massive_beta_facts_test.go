@@ -35,26 +35,8 @@ func TestMassiveBetaNodesWithFactsFile(t *testing.T) {
 
 		if tokenCount > 0 {
 			totalActions += tokenCount
-			// Afficher quelques échantillons
-			sampleCount := 0
-			fmt.Printf("    Échantillon des faits déclencheurs:\n")
-			for _, token := range terminal.Memory.Tokens {
-				if sampleCount >= 3 {
-					break
-				}
-				if len(token.Facts) > 0 {
-					fact := token.Facts[0]
-					if factType := fact.Type; factType == "Utilisateur" {
-						name := fmt.Sprintf("%v %v", fact.Fields["prenom"], fact.Fields["nom"])
-						age := fact.Fields["age"]
-						fmt.Printf("      - %s: %s (age=%.0f)\n", factType, name, age)
-					} else if factType == "Adresse" {
-						ville := fact.Fields["ville"]
-						fmt.Printf("      - %s: %v\n", factType, ville)
-					}
-					sampleCount++
-				}
-			}
+			// Utiliser la nouvelle fonction d'affichage détaillée
+			helper.ShowActionDetailsWithAllAttributes(terminalID, terminal, 3)
 		}
 		fmt.Printf("\n")
 	}
