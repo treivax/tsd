@@ -62,7 +62,7 @@ func main() {
 					Job: rete.JobCall{
 						Type: "jobCall",
 						Name: "process",
-						Args: []string{"evt"},
+						Args: []interface{}{"evt"},
 					},
 				},
 			},

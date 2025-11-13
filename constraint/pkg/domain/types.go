@@ -71,9 +71,9 @@ type Action struct {
 
 // JobCall représente l'appel d'une fonction/job
 type JobCall struct {
-	Type string   `json:"type"`
-	Name string   `json:"name"`
-	Args []string `json:"args"`
+	Type string        `json:"type"`
+	Name string        `json:"name"`
+	Args []interface{} `json:"args"`
 }
 
 // FieldAccess représente l'accès à un champ d'une variable
@@ -181,7 +181,7 @@ func NewFieldAccess(object, field string) *FieldAccess {
 }
 
 // NewAction crée une nouvelle action
-func NewAction(jobName string, args ...string) *Action {
+func NewAction(jobName string, args ...interface{}) *Action {
 	return &Action{
 		Type: "action",
 		Job: JobCall{

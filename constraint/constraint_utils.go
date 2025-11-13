@@ -86,12 +86,47 @@ func ValidateAction(program Program, action Action, expressionIndex int) error {
 
 	// Vérifier que tous les arguments de l'action référencent des variables valides
 	for _, arg := range action.Job.Args {
-		if !availableVars[arg] {
-			return fmt.Errorf("action %s: argument '%s' ne correspond à aucune variable de l'expression", action.Job.Name, arg)
+		// Extraire les variables utilisées dans l'argument
+		vars := extractVariablesFromArg(arg)
+		for _, varName := range vars {
+			if !availableVars[varName] {
+				return fmt.Errorf("action %s: argument contient la variable '%s' qui ne correspond à aucune variable de l'expression", action.Job.Name, varName)
+			}
 		}
 	}
 
 	return nil
+}
+
+// extractVariablesFromArg extrait les noms de variables utilisées dans un argument d'action
+func extractVariablesFromArg(arg interface{}) []string {
+	var vars []string
+
+	// Si c'est une string simple, c'est probablement un nom de variable
+	if str, ok := arg.(string); ok {
+		vars = append(vars, str)
+		return vars
+	}
+
+	// Si c'est un objet (map), extraire les variables selon le type
+	if argMap, ok := arg.(map[string]interface{}); ok {
+		argType, _ := argMap["type"].(string)
+		switch argType {
+		case "fieldAccess":
+			if object, ok := argMap["object"].(string); ok {
+				vars = append(vars, object)
+			}
+		case "string":
+			// Les string literals ne contiennent pas de variables
+		case "number":
+			// Les number literals ne contiennent pas de variables
+		default:
+			// Pour d'autres types, on peut chercher récursivement
+			// mais pour l'instant on ignore
+		}
+	}
+
+	return vars
 }
 
 // GetFieldType retourne le type d'un champ spécifique d'un objet dans une expression

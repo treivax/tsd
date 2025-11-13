@@ -99,9 +99,9 @@ type TypeDefinition struct {
 }
 
 type JobCall struct {
-	Type string   `json:"type"`
-	Name string   `json:"name"`
-	Args []string `json:"args"`
+	Type string        `json:"type"`
+	Name string        `json:"name"`
+	Args []interface{} `json:"args"`
 }
 
 type Action struct {

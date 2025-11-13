@@ -260,7 +260,7 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 // createAction crée une action RETE à partir d'un map parsé
 func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Action {
 	actionName := "default_action"
-	var args []string
+	var args []interface{}
 
 	// Extraire les données du job depuis la structure PEG: action.job.name et action.job.args
 	if jobData, hasJob := actionMap["job"]; hasJob {
@@ -272,14 +272,10 @@ func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Ac
 				}
 			}
 
-			// Extraire les arguments depuis job.args
+			// Extraire les arguments depuis job.args (maintenant []interface{})
 			if argsData, hasArgs := jobMap["args"]; hasArgs {
 				if argsList, ok := argsData.([]interface{}); ok {
-					for _, arg := range argsList {
-						if argStr, ok := arg.(string); ok {
-							args = append(args, argStr)
-						}
-					}
+					args = argsList // Garder les objets complexes
 				}
 			}
 		}

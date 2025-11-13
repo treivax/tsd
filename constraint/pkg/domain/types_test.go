@@ -263,7 +263,7 @@ func TestConstructors(t *testing.T) {
 			t.Errorf("Expected 2 arguments, got %d", len(action.Job.Args))
 		}
 
-		if action.Job.Args[0] != "email" {
+		if action.Job.Args[0].(string) != "email" {
 			t.Errorf("Expected first arg 'email', got '%s'", action.Job.Args[0])
 		}
 	})

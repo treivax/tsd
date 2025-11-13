@@ -459,7 +459,7 @@ func TestConstraintValidator(t *testing.T) {
 			Job: domain.JobCall{
 				Type: "jobCall",
 				Name: "process_person",
-				Args: []string{},
+				Args: []interface{}{},
 			},
 		}
 
@@ -541,7 +541,7 @@ func TestActionValidator(t *testing.T) {
 			Job: domain.JobCall{
 				Type: "jobCall",
 				Name: "notify",
-				Args: []string{"email", "sms"},
+				Args: []interface{}{"email", "sms"},
 			},
 		}
 
@@ -556,7 +556,7 @@ func TestActionValidator(t *testing.T) {
 			Job: domain.JobCall{
 				Type: "jobCall",
 				Name: "",
-				Args: []string{},
+				Args: []interface{}{},
 			},
 		}
 
@@ -571,7 +571,7 @@ func TestActionValidator(t *testing.T) {
 			Job: domain.JobCall{
 				Type: "jobCall",
 				Name: "notify",
-				Args: []string{"email", ""},
+				Args: []interface{}{"email", ""},
 			},
 		}
 

@@ -1,0 +1,21 @@
+// Test cases for error detection in action arguments
+// These should generate parsing or validation errors
+
+// Types definition
+type User : <
+    id: string,
+    name: string,
+    age: number
+>
+
+// ERROR Test 1: Undefined variable in action
+{u: User} / u.age > 18 ==> process_user(unknown_var)  // ERROR: unknown_var not defined
+
+// ERROR Test 2: Invalid field access
+{u: User} / u.age > 18 ==> process_user_info(u.invalid_field)  // ERROR: invalid_field doesn't exist in User
+
+// ERROR Test 3: Mixed valid/invalid arguments
+{u: User} / u.age > 18 ==> process_mixed(u, u.name, unknown_var, u.invalid_field)  // Multiple errors
+
+// ERROR Test 4: Wrong variable type in constraint
+{u: User} / u.name > 18 ==> process_user(u)  // ERROR: comparing string to number
