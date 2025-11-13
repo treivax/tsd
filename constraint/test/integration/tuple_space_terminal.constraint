@@ -1,0 +1,7 @@
+/* Test tuple-space terminal - Customer authorization */
+
+/* Type definitions */
+type Customer : <id: string, age: number, vip: bool>
+
+/* Rule: Authorize adult customers */
+{c: Customer} / c.age >= 18 ==> authorize_customer(c.id)

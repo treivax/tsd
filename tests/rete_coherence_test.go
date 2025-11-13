@@ -29,12 +29,12 @@ func TestCompleteCoherencePEGtoRETE(t *testing.T) {
 
 	// Fichiers de test couvrant TOUS les constructs
 	testFiles := []string{
-		"constraint/test/integration/alpha_conditions.constraint", // AlphaNode
-		"constraint/test/integration/beta_joins.constraint",       // JoinNode
-		"constraint/test/integration/negation.constraint",         // NotNode
-		"constraint/test/integration/exists.constraint",           // ExistsNode
-		"constraint/test/integration/aggregation.constraint",      // AccumulateNode
-		"constraint/test/integration/actions.constraint",          // TerminalNode
+		"../constraint/test/integration/alpha_conditions.constraint", // AlphaNode
+		"../constraint/test/integration/beta_joins.constraint",       // JoinNode
+		"../constraint/test/integration/negation.constraint",         // NotNode
+		"../constraint/test/integration/exists.constraint",           // ExistsNode
+		"../constraint/test/integration/aggregation.constraint",      // AccumulateNode
+		"../constraint/test/integration/actions.constraint",          // TerminalNode
 	}
 
 	t.Logf("🎯 VÉRIFICATION COHÉRENCE COMPLÈTE PEG ↔ RETE")

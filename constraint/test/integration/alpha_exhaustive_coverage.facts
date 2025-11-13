@@ -1,0 +1,337 @@
+// DONNÉES EXHAUSTIVES POUR TESTS ALPHA COMPLETS
+// Couvre tous les cas de succès et d'échec pour tous les opérateurs Alpha
+
+// Métadonnées
+# description: Données exhaustives pour validation complète des nœuds Alpha
+# test_purpose: Validation succès/échecs, opérateurs logiques, cas limites
+# author: Alpha Exhaustive Test Suite  
+# version: 2.0
+# coverage: ALL operators, ALL edge cases, SUCCESS + FAILURE validation
+
+// ===============================================================
+// DONNÉES TESTPERSON - VARIÉTÉ MAXIMALE
+// ===============================================================
+
+// Personne 1 : Alice - Profil standard pour succès de base
+TestPerson P001 {
+    id: "P001",
+    name: "Alice", 
+    age: 25,
+    salary: 45000,
+    active: true,
+    score: 87.5,
+    tags: "admin,user",
+    status: "ACTIVE"
+}
+
+// Personne 2 : Bob - Pour tests d'inégalité et OR
+TestPerson P002 {
+    id: "P002",
+    name: "Bob",
+    age: 30, 
+    salary: 55000,
+    active: false,
+    score: 92.0,
+    tags: "user",
+    status: "INACTIVE"
+}
+
+// Personne 3 : Charlie - Senior actif pour combinaisons
+TestPerson P003 {
+    id: "P003", 
+    name: "Charlie",
+    age: 67,
+    salary: 85000,
+    active: true,
+    score: 89.0,
+    tags: "senior,manager",
+    status: "ACTIVE"
+}
+
+// Personne 4 : Dana - Junior pour tests d'âge
+TestPerson P004 {
+    id: "P004",
+    name: "Dana",
+    age: 17,
+    salary: 25000,
+    active: true,
+    score: 78.0,
+    tags: "intern",
+    status: "PENDING"
+}
+
+// Personne 5 : Eve - Profil haut salaire + score
+TestPerson P005 {
+    id: "P005",
+    name: "Eve",
+    age: 35,
+    salary: 120000,
+    active: true,
+    score: 96.0,
+    tags: "executive",
+    status: "ACTIVE"
+}
+
+// Personne 6 : Frank - Senior inactif
+TestPerson P006 {
+    id: "P006",
+    name: "Frank",
+    age: 68,
+    salary: 75000,
+    active: false,
+    score: 82.0,
+    tags: "retired",
+    status: "DISABLED"
+}
+
+// Personne 7 : Grace - Cas limites (faible salaire, score moyen)
+TestPerson P007 {
+    id: "P007",
+    name: "Grace", 
+    age: 28,
+    salary: 38000,
+    active: true,
+    score: 75.0,
+    tags: "contractor",
+    status: "ACTIVE"
+}
+
+// Personne 8 : Henri - Score très élevé, jeune
+TestPerson P008 {
+    id: "P008",
+    name: "Henri",
+    age: 22,
+    salary: 48000,
+    active: true,
+    score: 98.5,
+    tags: "prodigy",
+    status: "ACTIVE"
+}
+
+// Personne 9 : Ivy - Cas d'échec pour AND (senior + bas score)
+TestPerson P009 {
+    id: "P009",
+    name: "Ivy",
+    age: 66,
+    salary: 45000,
+    active: false,
+    score: 65.0,
+    tags: "part-time",
+    status: "INACTIVE"
+}
+
+// Personne 10 : Jack - Très bas salaire + score
+TestPerson P010 {
+    id: "P010",
+    name: "Jack",
+    age: 24,
+    salary: 28000,
+    active: true,
+    score: 68.0,
+    tags: "entry-level",
+    status: "PROBATION"
+}
+
+// ===============================================================
+// CAS LIMITES ET VALEURS SPÉCIALES
+// ===============================================================
+
+// Edge Case 1 : Âge zéro (nouveau-né théorique)
+TestPerson P011 {
+    id: "P011",
+    name: "EdgeBaby",
+    age: 0,
+    salary: 0,
+    active: true,
+    score: 0.0,
+    tags: "",
+    status: "NEW"
+}
+
+// Edge Case 2 : Salaire négatif (dette)
+TestPerson P012 {
+    id: "P012",
+    name: "Debtor",
+    age: 45,
+    salary: -1000,
+    active: false,
+    score: 50.0,
+    tags: "debt",
+    status: "SUSPENDED"
+}
+
+// Edge Case 3 : Nom vide
+TestPerson P013 {
+    id: "P013", 
+    name: "",
+    age: 30,
+    salary: 50000,
+    active: true,
+    score: 85.0,
+    tags: "anonymous",
+    status: "ACTIVE"
+}
+
+// Edge Case 4 : Score précision décimale élevée
+TestPerson P014 {
+    id: "P014",
+    name: "Precision",
+    age: 33,
+    salary: 60000,
+    active: true,
+    score: 87.50000,
+    tags: "precise",
+    status: "ACTIVE"
+}
+
+// Edge Case 5 : Très haut salaire pour OR tests
+TestPerson P015 {
+    id: "P015",
+    name: "Millionaire", 
+    age: 42,
+    salary: 250000,
+    active: true,
+    score: 88.0,
+    tags: "wealthy",
+    status: "VIP"
+}
+
+// ===============================================================
+// DONNÉES TESTPRODUCT - DIVERSITÉ MAXIMALE  
+// ===============================================================
+
+// Produit 1 : Laptop standard
+TestProduct PROD001 {
+    id: "PROD001",
+    name: "Laptop",
+    price: 99.99,
+    category: "Electronics",
+    available: true,
+    rating: 4.5,
+    keywords: "computer tech",
+    brand: "TechCorp"
+}
+
+// Produit 2 : Livre pas cher
+TestProduct PROD002 {
+    id: "PROD002", 
+    name: "Novel",
+    price: 15.99,
+    category: "Books",
+    available: true,
+    rating: 4.8,
+    keywords: "fiction story",
+    brand: "BookHouse"
+}
+
+// Produit 3 : Outil cher
+TestProduct PROD003 {
+    id: "PROD003",
+    name: "Professional Tool",
+    price: 150.00,
+    category: "Tools",
+    available: true,
+    rating: 4.2,
+    keywords: "tool professional",
+    brand: "ToolMaster"
+}
+
+// Produit 4 : Produit gratuit
+TestProduct PROD004 {
+    id: "PROD004",
+    name: "Free Sample",
+    price: 0.0,
+    category: "Sample",
+    available: true,
+    rating: 3.0,
+    keywords: "free sample",
+    brand: "GenericBrand"
+}
+
+// Produit 5 : Produit cher indisponible
+TestProduct PROD005 {
+    id: "PROD005",
+    name: "Luxury Item",
+    price: 1200.00,
+    category: "Luxury",
+    available: false,
+    rating: 4.9,
+    keywords: "luxury premium",
+    brand: "LuxuryBrand"
+}
+
+// Produit 6 : Rating précis (PI)
+TestProduct PROD006 {
+    id: "PROD006",
+    name: "Pi Product", 
+    price: 31.41,
+    category: "Math",
+    available: true,
+    rating: 3.14159265,
+    keywords: "mathematical constant",
+    brand: "MathCorp"
+}
+
+// Produit 7 : Électronique milieu de gamme
+TestProduct PROD007 {
+    id: "PROD007",
+    name: "Smartphone",
+    price: 599.99,
+    category: "Electronics", 
+    available: true,
+    rating: 4.1,
+    keywords: "phone mobile",
+    brand: "MobileTech"
+}
+
+// Produit 8 : Produit bas rating  
+TestProduct PROD008 {
+    id: "PROD008",
+    name: "Poor Quality",
+    price: 25.00,
+    category: "Cheap",
+    available: true,
+    rating: 1.5,
+    keywords: "cheap low-quality",
+    brand: "CheapCorp"
+}
+
+// =============================================================== 
+// DONNÉES SUPPLÉMENTAIRES POUR TESTS SPÉCIFIQUES
+// ===============================================================
+
+// Pour tests string lexicographique
+TestPerson P016 {
+    id: "P016",
+    name: "Zebra",
+    age: 29,
+    salary: 51000,
+    active: true,
+    score: 82.0,
+    tags: "last",
+    status: "ACTIVE"
+}
+
+// Pour tests combinaisons complexes
+TestPerson P017 {
+    id: "P017", 
+    name: "Complex",
+    age: 41,
+    salary: 95000,
+    active: true,
+    score: 91.0,
+    tags: "complex,multi",
+    status: "SENIOR"
+}
+
+// Pour tester échecs de combinaisons
+TestPerson P018 {
+    id: "P018",
+    name: "Failure",
+    age: 19,
+    salary: 22000,
+    active: false,
+    score: 55.0,
+    tags: "failing",
+    status: "PROBATION"
+}

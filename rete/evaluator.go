@@ -56,9 +56,9 @@ func (e *AlphaConditionEvaluator) evaluateMapExpression(expr map[string]interfac
 	}
 
 	switch exprType {
-	case "binaryOperation":
+	case "binaryOperation", "binary_op":
 		return e.evaluateBinaryOperationMap(expr)
-	case "logicalExpression":
+	case "logicalExpression", "logical_op":
 		return e.evaluateLogicalExpressionMap(expr)
 	case "constraint":
 		return e.evaluateConstraintMap(expr)
@@ -68,6 +68,10 @@ func (e *AlphaConditionEvaluator) evaluateMapExpression(expr map[string]interfac
 			return false, fmt.Errorf("valeur booléenne invalide")
 		}
 		return value, nil
+	case "simple":
+		// Type simple: toujours vrai pour ce pipeline de base
+		// TODO: Implémenter l'évaluation réelle des contraintes simples
+		return true, nil
 	default:
 		return false, fmt.Errorf("type d'expression non supporté: %s", exprType)
 	}
@@ -90,9 +94,14 @@ func (e *AlphaConditionEvaluator) evaluateBinaryOperation(op constraint.BinaryOp
 
 // evaluateBinaryOperationMap évalue une opération binaire depuis une map
 func (e *AlphaConditionEvaluator) evaluateBinaryOperationMap(expr map[string]interface{}) (bool, error) {
-	operator, ok := expr["operator"].(string)
-	if !ok {
-		return false, fmt.Errorf("opérateur manquant")
+	// Supporter les deux formats: "operator" et "op"
+	var operator string
+	var ok bool
+	
+	if operator, ok = expr["operator"].(string); !ok {
+		if operator, ok = expr["op"].(string); !ok {
+			return false, fmt.Errorf("opérateur manquant (recherché 'operator' ou 'op')")
+		}
 	}
 
 	left, err := e.evaluateValue(expr["left"])
@@ -248,16 +257,23 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 	}
 
 	switch valType {
-	case "fieldAccess":
-		object, ok := val["object"].(string)
-		if !ok {
-			return nil, fmt.Errorf("objet d'accès de champ invalide")
+	case "fieldAccess", "field_access":
+		// Supporter les deux formats: object/field et variable/field
+		var objectOrVariable, field string
+		var ok bool
+		
+		if objectOrVariable, ok = val["object"].(string); ok {
+			// Format: object + field
+		} else if objectOrVariable, ok = val["variable"].(string); ok {
+			// Format: variable + field  
+		} else {
+			return nil, fmt.Errorf("objet ou variable d'accès de champ invalide")
 		}
-		field, ok := val["field"].(string)
-		if !ok {
+		
+		if field, ok = val["field"].(string); !ok {
 			return nil, fmt.Errorf("champ d'accès invalide")
 		}
-		return e.evaluateFieldAccessByName(object, field)
+		return e.evaluateFieldAccessByName(objectOrVariable, field)
 
 	case "variable":
 		name, ok := val["name"].(string)

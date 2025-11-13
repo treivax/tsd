@@ -445,7 +445,7 @@ func (tn *TerminalNode) ActivateRight(fact *Fact) error {
 	return fmt.Errorf("les nœuds terminaux ne reçoivent pas de faits directement")
 }
 
-// executeAction exécute l'action avec les faits du token
+// executeAction affiche l'action déclenchée avec les faits déclencheurs (version tuple-space)
 func (tn *TerminalNode) executeAction(token *Token) error {
 	// Les actions sont maintenant obligatoires dans la grammaire
 	// Mais nous gardons cette vérification par sécurité
@@ -453,16 +453,35 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		return fmt.Errorf("aucune action définie pour le nœud %s", tn.ID)
 	}
 
-	// Action exécutée silencieusement (logs désactivés pour les performances)
-	// Format de sortie de base : nom de l'action + faits
-	// fmt.Printf("🎯 ACTION DÉCLENCHÉE: %s\n", tn.Action.Job.Name)
-	// fmt.Printf("   Arguments: %v\n", tn.Action.Job.Args)
-	// fmt.Printf("   Faits correspondants:\n")
-
-	// for _, fact := range token.Facts {
-	//	factJSON, _ := json.MarshalIndent(fact, "     ", "  ")
-	//	fmt.Printf("     - %s\n", factJSON)
-	// }
+	// === VERSION TUPLE-SPACE ===
+	// Au lieu d'exécuter l'action, on l'affiche avec les faits déclencheurs
+	// Les agents du tuple-space viendront "prendre" ces tuples plus tard
+	
+	actionName := tn.Action.Job.Name
+	fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
+	
+	// Afficher les faits déclencheurs entre parenthèses
+	if len(token.Facts) > 0 {
+		fmt.Print(" (")
+		for i, fact := range token.Facts {
+			if i > 0 {
+				fmt.Print(", ")
+			}
+			// Format compact : Type[id=value, field=value, ...]
+			fmt.Printf("%s[", fact.Type)
+			fieldCount := 0
+			for key, value := range fact.Fields {
+				if fieldCount > 0 {
+					fmt.Print(", ")
+				}
+				fmt.Printf("%s=%v", key, value)
+				fieldCount++
+			}
+			fmt.Print("]")
+		}
+		fmt.Print(")")
+	}
+	fmt.Println()
 
 	return nil
 }

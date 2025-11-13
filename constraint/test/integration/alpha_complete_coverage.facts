@@ -1,0 +1,93 @@
+
+
+
+@author: Alpha Test Suite
+@version: 1.0  
+@description: Données de test exhaustives pour tous les opérateurs Alpha
+@test_purpose: Validation complète des nœuds Alpha avec succès et échecs
+
+
+
+
+TestPerson[id=P001, name="Alice", age=25, salary=45000, active=true, score=87.5]
+
+
+TestPerson[id=P002, name="Bob", age=25, salary=55000, active=false, score=92.0]
+
+
+TestPerson[id=P003, name="Charlie", age=35, salary=65000, active=true, score=88.5]
+
+
+TestPerson[id=P004, name="David", age=28, salary=48000, active=true, score=90.0]
+
+
+TestPerson[id=P005, name="Eve", age=22, salary=42000, active=false, score=95.5]
+TestPerson[id=P006, name="Frank", age=45, salary=75000, active=true, score=82.0]
+TestPerson[id=P007, name="Grace", age=29, salary=50000, active=false, score=89.0]
+
+
+TestPerson[id=P008, name="Helen", age=33, salary=58000, active=true, score=86.5]
+TestPerson[id=P009, name="Alice", age=40, salary=68000, active=false, score=91.5]
+
+
+TestPerson[id=P010, name="Jack", age=18, salary=35000, active=true, score=78.0]
+TestPerson[id=P011, name="Kate", age=67, salary=85000, active=false, score=93.5]
+TestPerson[id=P012, name="Liam", age=16, salary=25000, active=true, score=85.0]
+TestPerson[id=P013, name="Mia", age=52, salary=120000, active=true, score=96.0]
+
+
+TestPerson[id=P014, name="Noah", age=30, salary=-500, active=false, score=70.0]
+
+
+
+
+TestPerson[id=P101, name="Zoe", age=35, salary=95000, active=true, score=82.0]
+TestPerson[id=P102, name="Oliver", age=45, salary=55000, active=false, score=75.5]
+TestPerson[id=P103, name="Charlie", age=32, salary=62000, active=true, score=84.0]
+
+
+
+
+TestProduct[id=PROD001, name="Laptop", price=99.99, category="Electronics", available=true, rating=4.5]
+
+
+TestProduct[id=PROD002, name="Mouse", price=25.50, category="Accessories", available=false, rating=4.2]
+
+
+TestProduct[id=PROD003, name="Novel", price=15.99, category="Books", available=true, rating=4.8]
+
+
+TestProduct[id=PROD004, name="Smartphone", price=799.99, category="Electronics", available=true, rating=4.6]
+TestProduct[id=PROD005, name="Tablet", price=299.99, category="Electronics", available=false, rating=3.9]
+
+
+TestProduct[id=PROD006, name="Product_B", price=45.00, category="Tools", available=true, rating=4.1]
+
+
+TestProduct[id=PROD007, name="FreeSample", price=0, category="Sample", available=true, rating=3.0]
+TestProduct[id=PROD008, name="Luxury", price=1500.00, category="Premium", available=false, rating=5.0]
+TestProduct[id=PROD009, name="Basic", price=12.99, category="Budget", available=true, rating=1.5]
+
+
+TestProduct[id=PROD010, name="Special", price=149.99, category="Limited", available=true, rating=3.14159]
+
+
+
+
+TestProduct[id=PROD101, name="Expensive", price=2000.00, category="Premium", available=true, rating=4.8]
+TestProduct[id=PROD102, name="Product_A", price=35.00, category="Standard", available=false, rating=3.8]
+TestProduct[id=PROD103, name="Electronics_Item", price=199.99, category="Electronics", available=true, rating=2.5]
+
+
+
+
+TestPerson[id=P201, name="EdgeCase1", age=0, salary=0, active=true, score=0.0]
+TestPerson[id=P202, name="EdgeCase2", age=65, salary=100000, active=false, score=85.5]
+
+
+TestPerson[id=P203, name="", age=25, salary=40000, active=true, score=80.0]
+TestPerson[id=P204, name="M", age=30, salary=50000, active=false, score=85.0]
+
+
+TestProduct[id=PROD201, name="Precision", price=99.999, category="Test", available=true, rating=4.0001]
+TestProduct[id=PROD202, name="Zero", price=0.01, category="Minimal", available=false, rating=0.1]
