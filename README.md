@@ -1,175 +1,264 @@
-# Projet TSD (Type System & Data)
+# TSD - Système de Traitement de Contraintes et Réseau RETE
 
-Projet combinant un client etcd Go et un module de système de contraintes avec grammaire PEG personnalisée.
+[![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
+[![Build Status](https://img.shields.io/badge/Build-Passing-green.svg)](https://github.com/treivax/tsd)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Composants du projet
+**TSD** est un système avancé de traitement de contraintes métier intégré à un réseau RETE haute performance. Il permet de définir des règles métier complexes via une syntaxe déclarative et de les exécuter efficacement grâce à l'algorithme RETE optimisé.
 
-### 🔧 Client etcd
-Programme Go qui se connecte à un service etcd et gère les clés/valeurs.
+## 🎯 Fonctionnalités Principales
 
-### 📝 Module Constraint  
-Système de contraintes avec :
-- Grammaire PEG personnalisée
-- Parser automatique 
-- Validation de types et règles
-- API Go réutilisable
+### � **Module Constraint**
+- **Grammaire PEG complète** pour définir des contraintes métier
+- **Parser robuste** généré automatiquement avec validation syntaxique
+- **Actions obligatoires** garantissant des règles métier complètes
+- **Validation sémantique** avec vérification de types
+- **Support complet** : négation, quantification existentielle, agrégation
 
-## Prérequis
+### ⚡ **Module RETE** 
+- **Implémentation optimisée** de l'algorithme RETE
+- **Architecture modulaire** : AlphaNode, BetaNode, NotNode, ExistsNode, AccumulateNode
+- **Monitoring en temps réel** avec interface web intégrée
+- **Performance élevée** avec cache d'évaluation et optimisations
+- **Compatibilité complète** entre grammaire PEG et réseau RETE
 
-1. **Go installé** (version 1.21 ou supérieure)
-   ```bash
-   # Sur Ubuntu/Debian
-   sudo apt update
-   sudo apt install golang-go
-   
-   # Sur CentOS/RHEL
-   sudo yum install golang
-   
-   # Ou télécharger depuis https://golang.org/dl/
-   ```
+### 🌐 **Interface de Monitoring**
+- **Dashboard web** en temps réel pour visualiser l'état du réseau
+- **Métriques système** : mémoire, CPU, goroutines
+- **Métriques RETE** : nœuds actifs, faits traités, latence
+- **WebSocket** pour mises à jour en temps réel
+- **API REST** complète pour intégration
 
-2. **Service etcd en cours d'exécution**
-   ```bash
-   # Installation d'etcd (exemple sur Ubuntu)
-   sudo apt install etcd
-   
-   # Ou utiliser Docker
-   docker run -d -p 2379:2379 -p 2380:2380 \
-     --name etcd-server \
-     quay.io/coreos/etcd:latest \
-     etcd \
-     --advertise-client-urls http://0.0.0.0:2379 \
-     --listen-client-urls http://0.0.0.0:2379
-   ```
+## 📦 Installation
 
-## Configuration
+### Prérequis
+- **Go 1.21+** 
+- **pigeon** (générateur PEG) : `go install github.com/mna/pigeon@latest`
 
-Par défaut, le programme se connecte à etcd sur `localhost:2379`. 
-
-Pour modifier l'adresse de connexion, éditez le fichier `main.go` et changez la ligne :
-```go
-Endpoints: []string{"localhost:2379"},
+### Installation
+```bash
+git clone https://github.com/treivax/tsd.git
+cd tsd
+go mod tidy
+go build ./...
 ```
 
-## Structure du projet
+## 🚀 Démarrage Rapide
+
+### 1. Définir des Contraintes
+
+Créez un fichier `rules.constraint` :
+
+```constraint
+// Définition des types métier
+type Customer : <id: string, age: number, vip: bool>
+type Order : <id: string, customer_id: string, total: number>
+type Transaction : <id: string, amount: number, status: string>
+
+// Règles métier avec actions obligatoires
+{c: Customer} / c.age >= 18 AND c.vip == true ==> apply_vip_benefits(c.id)
+
+{o: Order} / o.total > 1000 ==> flag_large_order(o.id, o.total)
+
+{c: Customer, o: Order} / c.id == o.customer_id AND o.total > 500 ==> process_order(c.id, o.id)
+
+{t: Transaction} / t.amount > 10000 AND t.status == "pending" ==> require_approval(t.id)
+
+// Règles complexes avec négation et quantification
+{c: Customer} / NOT (c.age < 18) AND EXISTS (o: Order / o.customer_id == c.id AND o.total > 100) ==> activate_premium_account(c.id)
+```
+
+### 2. Lancer le Monitoring
+
+```bash
+cd rete
+go run cmd/monitoring/main.go
+```
+
+Accédez à l'interface web : **http://localhost:8082**
+
+### 3. Intégration Programmatique
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/treivax/tsd/constraint"
+    "github.com/treivax/tsd/rete"
+)
+
+func main() {
+    // Parser les contraintes
+    content, _ := os.ReadFile("rules.constraint")
+    ast, err := constraint.Parse("rules.constraint", content)
+    if err != nil {
+        log.Fatal("Erreur parsing:", err)
+    }
+
+    // Créer le réseau RETE
+    storage := rete.NewMemoryStorage()
+    network := rete.NewReteNetwork(storage)
+    
+    // Convertir et charger les règles
+    converter := rete.NewASTConverter()
+    expressions, _ := converter.ConvertProgram(ast)
+    
+    for _, expr := range expressions {
+        network.AddRule(expr)
+    }
+
+    // Ajouter des faits
+    customerFact := rete.NewFact("Customer", map[string]interface{}{
+        "id": "C001", 
+        "age": 25, 
+        "vip": true,
+    })
+    network.AddFact(customerFact)
+
+    fmt.Println("✅ Réseau RETE configuré et opérationnel")
+}
+```
+
+## 📊 Architecture
 
 ```
 tsd/
-├── README.md              # Cette documentation
-├── build.sh              # Script de build principal
-├── go.mod               # Dépendances du client etcd
-├── main.go              # Client etcd principal
-├── operations.go        # Opérations etcd
-├── put.go              # Opérations PUT
-├── take.go             # Opérations TAKE
-└── constraint/         # 📁 MODULE CONSTRAINT
-    ├── README.md           # Documentation du module
-    ├── build.sh           # Build spécifique au module
-    ├── go.mod            # Configuration du module
-    ├── api.go            # API publique
-    ├── constraint_types.go  # Types d'AST
-    ├── constraint_utils.go  # Utilitaires de validation
-    ├── parser.go         # Parser généré (ne pas modifier)
-    ├── cmd/              # Exécutable
-    │   ├── go.mod
-    │   └── main.go
-    ├── grammar/          # Grammaires
-    │   ├── constraint.peg    # Grammaire PEG source
-    │   └── SetConstraint.g4  # Grammaire ANTLR
-    ├── tests/            # Fichiers de test
-    │   ├── test_input.txt
-    │   ├── test_type_valid.txt
-    │   └── ... (autres tests)
-    └── docs/             # Documentation
-        ├── GUIDE_CONTRAINTES.md
-        ├── TUTORIEL_CONTRAINTES.md
-        └── PARSER_README.md
+├── constraint/              # Module de traitement des contraintes
+│   ├── pkg/                 # Packages internes
+│   │   ├── domain/          # Types fondamentaux et erreurs
+│   │   └── validator/       # Validation et vérification
+│   ├── grammar/             # Grammaire PEG et parser
+│   ├── docs/                # Documentation utilisateur
+│   └── test/                # Tests d'intégration
+│
+├── rete/                    # Module réseau RETE
+│   ├── pkg/                 # Packages internes
+│   │   ├── domain/          # Types et interfaces RETE
+│   │   ├── nodes/           # Implémentation des nœuds
+│   │   └── network/         # Logique réseau et constructeurs
+│   ├── cmd/                 # Commandes exécutables
+│   │   └── monitoring/      # Serveur de monitoring
+│   ├── assets/web/          # Interface web de monitoring
+│   └── test/                # Tests unitaires et intégration
+│
+└── tests/                   # Tests système globaux
 ```
 
-## Installation et compilation
+## 🔧 Syntaxe des Contraintes
 
-### Prérequis globaux
+### Types de Base
+```constraint
+type TypeName : <field1: string, field2: number, field3: bool>
+```
 
-1. **Go 1.21+**
-2. **Pigeon** (pour le module constraint)
-   ```bash
-   go install github.com/mna/pigeon@latest
-   ```
-3. **etcd** (pour le client)
+### Règles Simples
+```constraint
+{variable: TypeName} / condition ==> action(args)
+```
 
-### Build complet
+### Règles Complexes
+```constraint
+// Jointures
+{a: TypeA, b: TypeB} / a.id == b.ref_id ==> process_link(a.id, b.id)
 
+// Négation
+{user: User} / NOT (user.status == "banned") ==> allow_access(user.id)
+
+// Quantification existentielle
+{account: Account} / EXISTS (tx: Transaction / tx.account_id == account.id AND tx.amount > 1000) ==> flag_high_activity(account.id)
+
+// Agrégation
+{portfolio: Portfolio, asset: Asset} / portfolio.id == asset.portfolio_id AND SUM(asset.value) > 100000 ==> apply_portfolio_tax(portfolio.id)
+```
+
+### Opérateurs Supportés
+- **Comparaison** : `==`, `!=`, `<`, `>`, `<=`, `>=`, `IN`, `LIKE`, `CONTAINS`
+- **Logiques** : `AND`, `OR`, `NOT`
+- **Agrégation** : `SUM()`, `COUNT()`, `AVG()`, `MIN()`, `MAX()`
+- **Fonctions** : `LENGTH()`, `UPPER()`, `LOWER()`, `ABS()`, `ROUND()`
+
+## 📈 Monitoring et Performance
+
+### Interface Web
+- **Temps réel** : Graphiques mis à jour automatiquement
+- **Métriques système** : Usage mémoire, CPU, goroutines
+- **Métriques RETE** : Nœuds actifs, débit de faits, latence moyenne
+- **API REST** : Accès programmatique aux métriques
+
+### Optimisations Performance
+- **Cache d'évaluation** pour conditions complexes
+- **Jointures par hash** optimisées
+- **Propagation de tokens** asynchrone
+- **Stockage indexé** pour recherche rapide
+
+## 🧪 Tests et Validation
+
+### Tests Complets
 ```bash
-# Build de tous les composants
-./build.sh
+# Tests unitaires tous modules
+go test ./...
 
-# Ou builds séparés
-cd constraint && ./build.sh  # Module constraint
-go build -o etcd-client main.go operations.go put.go take.go  # Client etcd
+# Tests d'intégration système  
+go test ./tests/... -v
 
-# Exécuter le programme
-./etcd-client
+# Tests de cohérence PEG ↔ RETE
+go test ./tests/rete_coherence_test.go -v
 ```
 
-Ou directement :
+### Cas d'Usage Testés
+- **Domaine financier** : Détection de fraude, évaluation de risque
+- **E-commerce** : Gestion commandes, promotion automatique
+- **Ressources humaines** : Validation accès, calcul permissions
+- **Banking** : Anti-blanchiment, conformité réglementaire
+
+## 🔄 Développement
+
+### Régénération du Parser
 ```bash
-go run main.go
+cd constraint
+pigeon -o parser.go grammar/constraint.peg
 ```
 
-## Utilisation
-
-Le programme :
-1. Se connecte au service etcd
-2. Recherche toutes les clés avec le préfixe `/a/b/c`
-3. Affiche les détails de chaque clé trouvée (clé, valeur, version, etc.)
-
-## Exemple de sortie
-
-```
-Connexion réussie à etcd!
-Récupération des clés avec le préfixe '/a/b/c'...
-
-Nombre de clés trouvées avec le préfixe '/a/b/c': 3
-
-Clés trouvées:
-==============
-1. Clé: /a/b/c/key1
-   Valeur: value1
-   Version: 1
-   Créée à: 12345
-   Modifiée à: 12345
-   ---
-2. Clé: /a/b/c/config/setting
-   Valeur: {"enabled": true}
-   Version: 2
-   Créée à: 12346
-   Modifiée à: 12347
-   ---
-```
-
-## Test avec des données d'exemple
-
-Pour tester le programme, vous pouvez ajouter des clés de test dans etcd :
-
+### Build Scripts
 ```bash
-# Installer etcdctl
-sudo apt install etcd-client
+# Module constraint
+cd constraint && ./scripts/build.sh
 
-# Ajouter des clés de test
-etcdctl put /a/b/c/test1 "valeur de test 1"
-etcdctl put /a/b/c/test2 "valeur de test 2"
-etcdctl put /a/b/c/config/debug "true"
-etcdctl put /other/key "cette clé ne sera pas listée"
+# Module rete
+cd rete && ./scripts/run_tests.sh
 
-# Exécuter le programme
-go run main.go
+# Nettoyage global
+./scripts/clean.sh
 ```
 
-## Gestion des erreurs
+## 📚 Documentation Avancée
 
-Le programme gère plusieurs types d'erreurs :
-- Connexion impossible à etcd
-- Timeout de connexion (5 secondes par défaut)
-- Erreurs lors de la récupération des clés
+- **Guide des Contraintes** : `constraint/docs/GUIDE_CONTRAINTES.md`
+- **Tutoriel Utilisateur** : `constraint/docs/TUTORIEL_CONTRAINTES.md` 
+- **Grammaire Complète** : `constraint/docs/GRAMMAR_COMPLETE.md`
+- **Guide d'Usage Nœuds** : `rete/docs/ADVANCED_NODES_USAGE_GUIDE.md`
 
-En cas d'erreur, le programme affichera un message d'erreur explicite et se terminera.
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/amazing-feature`)
+3. Commit les changements (`git commit -m 'Add amazing feature'`)
+4. Push sur la branche (`git push origin feature/amazing-feature`)
+5. Ouvrir une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 🏆 Status du Projet
+
+✅ **Production Ready**  
+✅ **Tests Complets**  
+✅ **Documentation Complète**  
+✅ **Performance Optimisée**  
+✅ **Monitoring Intégré**
+
+---
+
+**Développé avec ❤️ pour des systèmes de règles métier haute performance**
