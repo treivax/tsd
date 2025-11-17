@@ -578,9 +578,17 @@ func (e *AlphaConditionEvaluator) evaluateLike(left, right interface{}) (bool, e
 	// Convertir pattern SQL LIKE en regex Go
 	// % = .* (zéro ou plus de caractères)
 	// _ = . (exactement un caractère)
-	pattern := regexp.QuoteMeta(rightStr)
-	pattern = strings.ReplaceAll(pattern, "\\%", ".*")
-	pattern = strings.ReplaceAll(pattern, "\\_", ".")
+
+	// D'abord remplacer les caractères LIKE par des placeholders temporaires
+	tempPattern := strings.ReplaceAll(rightStr, "%", "PERCENTPLACEHOLDER")
+	tempPattern = strings.ReplaceAll(tempPattern, "_", "UNDERSCOREPLACEHOLDER")
+
+	// Échapper les caractères regex
+	pattern := regexp.QuoteMeta(tempPattern)
+
+	// Remplacer les placeholders par les équivalents regex
+	pattern = strings.ReplaceAll(pattern, "PERCENTPLACEHOLDER", ".*")
+	pattern = strings.ReplaceAll(pattern, "UNDERSCOREPLACEHOLDER", ".")
 	pattern = "^" + pattern + "$"
 
 	regex, err := regexp.Compile(pattern)

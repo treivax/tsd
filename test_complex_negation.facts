@@ -1,5 +1,0 @@
-Person[id=P001, name=Alice, age=25, ville=Paris, active=true]
-Person[id=P002, name=Bob, age=0, ville=Lyon, active=true]  
-Person[id=P003, name=Charlie, age=0, ville=Paris, active=false]
-Person[id=P004, name=David, age=30, ville=Marseille, active=true]
-Person[id=P005, name=Eve, age=0, ville=Nice, active=true]

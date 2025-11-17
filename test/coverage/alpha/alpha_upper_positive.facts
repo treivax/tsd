@@ -1,0 +1,3 @@
+Department[id="D001", name="finance", active=true]
+Department[id="D002", name="IT", active=true]
+Department[id="D003", name="Finance", active=true]
