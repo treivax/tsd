@@ -60,7 +60,7 @@ func (e *AlphaConditionEvaluator) evaluateMapExpression(expr map[string]interfac
 	switch exprType {
 	case "binaryOperation", "binary_op":
 		return e.evaluateBinaryOperationMap(expr)
-	case "logicalExpression", "logical_op":
+	case "logicalExpression", "logical_op", "logicalExpr":
 		return e.evaluateLogicalExpressionMap(expr)
 	case "constraint":
 		return e.evaluateConstraintMap(expr)
@@ -350,6 +350,41 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		}
 		return evaluatedElements, nil
 
+	case "binaryOp", "binary_operation", "binaryOperation":
+		// Support des opérations binaires
+		// Gérer les différents types d'opérateurs
+		var operator string
+		var ok bool
+		if operator, ok = val["operator"].(string); !ok {
+			if operatorBytes, ok := val["operator"].([]uint8); ok {
+				operator = string(operatorBytes)
+			} else {
+				return nil, fmt.Errorf("opérateur invalide dans l'opération binaire")
+			}
+		}
+		
+		left, err := e.evaluateValue(val["left"])
+		if err != nil {
+			return nil, fmt.Errorf("erreur évaluation côté gauche: %w", err)
+		}
+
+		right, err := e.evaluateValue(val["right"])
+		if err != nil {
+			return nil, fmt.Errorf("erreur évaluation côté droit: %w", err)
+		}
+		
+		// Distinguer les opérations arithmétiques des comparaisons
+		switch operator {
+		case "+", "-", "*", "/", "%":
+			// Opération arithmétique - retourne une valeur numérique
+			return e.evaluateArithmeticOperation(left, operator, right)
+		case "==", "!=", "<", "<=", ">", ">=", "CONTAINS", "IN", "LIKE", "MATCHES":
+			// Opération de comparaison - retourne un booléen
+			return e.compareValues(left, operator, right)
+		default:
+			return nil, fmt.Errorf("opérateur binaire non supporté: %s", operator)
+		}
+
 	default:
 		return nil, fmt.Errorf("type de valeur non supporté: %s", valType)
 	}
@@ -398,6 +433,12 @@ func (e *AlphaConditionEvaluator) evaluateVariableByName(name string) (interface
 
 // compareValues compare deux valeurs avec un opérateur
 func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator string, right interface{}) (bool, error) {
+	// Gérer les opérations arithmétiques qui retournent une valeur
+	switch operator {
+	case "+", "-", "*", "/", "%":
+		return false, fmt.Errorf("opération arithmétique %s ne peut pas retourner un booléen", operator)
+	}
+	
 	// Normaliser les valeurs numériques
 	leftVal := e.normalizeValue(left)
 	rightVal := e.normalizeValue(right)
@@ -429,6 +470,42 @@ func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator strin
 		return e.evaluateMatches(leftVal, rightVal)
 	default:
 		return false, fmt.Errorf("opérateur non supporté: %s", operator)
+	}
+}
+
+// evaluateArithmeticOperation évalue une opération arithmétique et retourne la valeur résultante
+func (e *AlphaConditionEvaluator) evaluateArithmeticOperation(left interface{}, operator string, right interface{}) (interface{}, error) {
+	// Normaliser les valeurs numériques
+	leftVal := e.normalizeValue(left)
+	rightVal := e.normalizeValue(right)
+	
+	// Convertir en float64 pour les calculs
+	leftNum, leftOk := leftVal.(float64)
+	rightNum, rightOk := rightVal.(float64)
+	
+	if !leftOk || !rightOk {
+		return nil, fmt.Errorf("opérations arithmétiques requièrent des valeurs numériques: gauche=%T, droite=%T", left, right)
+	}
+	
+	switch operator {
+	case "+":
+		return leftNum + rightNum, nil
+	case "-":
+		return leftNum - rightNum, nil
+	case "*":
+		return leftNum * rightNum, nil
+	case "/":
+		if rightNum == 0 {
+			return nil, fmt.Errorf("division par zéro")
+		}
+		return leftNum / rightNum, nil
+	case "%":
+		if rightNum == 0 {
+			return nil, fmt.Errorf("modulo par zéro")
+		}
+		return float64(int64(leftNum) % int64(rightNum)), nil
+	default:
+		return nil, fmt.Errorf("opérateur arithmétique non supporté: %s", operator)
 	}
 }
 

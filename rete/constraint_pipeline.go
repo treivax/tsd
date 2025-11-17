@@ -259,8 +259,10 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 		}
 	}
 
-	// Extraire le nom de variable réel depuis les contraintes set
+	// Extraire le nom de variable et son type depuis les contraintes set
 	variableName := "p" // défaut
+	variableType := ""
+	
 	if setData, hasSet := exprMap["set"]; hasSet {
 		if setMap, ok := setData.(map[string]interface{}); ok {
 			if varsData, hasVars := setMap["variables"]; hasVars {
@@ -269,6 +271,12 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 						if name, ok := varMap["name"].(string); ok {
 							variableName = name
 						}
+					// Extraire aussi le type de la variable
+					if dataType, ok := varMap["dataType"].(string); ok {
+						variableType = dataType
+					} else if varType, ok := varMap["type"].(string); ok {
+						variableType = varType
+					}
 					}
 				}
 			}
@@ -278,8 +286,23 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Créer un nœud Alpha avec la condition appropriée
 	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, variableName, storage)
 
-	// Connecter à un type node
-	if len(network.TypeNodes) > 0 {
+	// Connecter seulement au type node correspondant selon le type de variable
+	if variableType != "" {
+		// Les TypeNodes sont stockés avec leur nom direct, pas avec "type_" préfixe
+		if typeNode, exists := network.TypeNodes[variableType]; exists {
+			typeNode.AddChild(alphaNode)
+			fmt.Printf("   ✓ AlphaNode %s connecté au TypeNode %s\n", alphaNode.ID, variableType)
+		} else {
+			fmt.Printf("   ⚠️  TypeNode %s non trouvé pour variable %s\n", variableType, variableName)
+			// Fallback: connecter au premier type node trouvé
+			for _, typeNode := range network.TypeNodes {
+				typeNode.AddChild(alphaNode)
+				break
+			}
+		}
+	} else {
+		fmt.Printf("   ⚠️  Type de variable non trouvé pour %s, fallback\n", variableName)
+		// Fallback: connecter au premier type node trouvé
 		for _, typeNode := range network.TypeNodes {
 			typeNode.AddChild(alphaNode)
 			break
