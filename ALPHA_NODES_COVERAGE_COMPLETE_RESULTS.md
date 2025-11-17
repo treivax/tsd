@@ -1,6 +1,6 @@
 # 📊 RAPPORT COMPLET - TESTS DE COUVERTURE ALPHA NODES
 
-**Date d'exécution:** 2025-11-17 11:24:48
+**Date d'exécution:** 2025-11-17 14:55:32
 **Nombre de tests:** 10
 
 ## 🎯 RÉSUMÉ EXÉCUTIF
@@ -16,7 +16,7 @@
 - **Description:** Test condition booléenne négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.facts`
-- **Temps d'exécution:** 871.631µs
+- **Temps d'exécution:** 665.073µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -46,9 +46,9 @@ Champs:
 ```json
 Type: Account
 Champs:
+  active: false
   id: ACC002
   balance: 500
-  active: false
 ```
 
 **Fait 3:** `ACC003`
@@ -99,7 +99,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition booléenne positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.facts`
-- **Temps d'exécution:** 663.812µs
+- **Temps d'exécution:** 337.1µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -171,8 +171,8 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 #### 🎯 Action: `active_account_found`
 - **Nombre de déclenchements:** 2
 - **Faits concernés:**
-  1. `ACC001` (Type: Account)
-  2. `ACC003` (Type: Account)
+  1. `ACC003` (Type: Account)
+  2. `ACC001` (Type: Account)
 
 ---
 
@@ -183,7 +183,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.facts`
-- **Temps d'exécution:** 618.988µs
+- **Temps d'exécution:** 342.4µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -266,7 +266,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.facts`
-- **Temps d'exécution:** 669.483µs
+- **Temps d'exécution:** 341.689µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -296,9 +296,9 @@ Champs:
 ```json
 Type: Product
 Champs:
-  id: PROD002
   price: 50
   category: books
+  id: PROD002
 ```
 
 **Fait 3:** `PROD003`
@@ -350,7 +350,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité négative simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.facts`
-- **Temps d'exécution:** 668.49µs
+- **Temps d'exécution:** 335.828µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -433,7 +433,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité positive simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.facts`
-- **Temps d'exécution:** 634.306µs
+- **Temps d'exécution:** 328.064µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -472,9 +472,9 @@ Champs:
 ```json
 Type: Person
 Champs:
+  id: P003
   age: 25
   status: inactive
-  id: P003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -517,7 +517,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.facts`
-- **Temps d'exécution:** 666.717µs
+- **Temps d'exécution:** 342.591µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -538,27 +538,27 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Order
 Champs:
+  id: ORD001
   total: 100
   status: pending
-  id: ORD001
 ```
 
 **Fait 2:** `ORD002`
 ```json
 Type: Order
 Champs:
-  status: cancelled
   id: ORD002
   total: 200
+  status: cancelled
 ```
 
 **Fait 3:** `ORD003`
 ```json
 Type: Order
 Champs:
+  id: ORD003
   total: 300
   status: completed
-  id: ORD003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -600,7 +600,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.facts`
-- **Temps d'exécution:** 570.016µs
+- **Temps d'exécution:** 343.422µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -621,27 +621,27 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Order
 Champs:
-  id: ORD001
   total: 100
   status: pending
+  id: ORD001
 ```
 
 **Fait 2:** `ORD002`
 ```json
 Type: Order
 Champs:
-  status: cancelled
   id: ORD002
   total: 200
+  status: cancelled
 ```
 
 **Fait 3:** `ORD003`
 ```json
 Type: Order
 Champs:
-  status: completed
   id: ORD003
   total: 300
+  status: completed
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -684,7 +684,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.facts`
-- **Temps d'exécution:** 428.792µs
+- **Temps d'exécution:** 360.734µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -705,9 +705,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: User
 Champs:
+  name: Alice
   role: admin
   id: U001
-  name: Alice
 ```
 
 **Fait 2:** `U002`
@@ -723,9 +723,9 @@ Champs:
 ```json
 Type: User
 Champs:
-  id: U003
   name: Charlie
   role: admin
+  id: U003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -767,7 +767,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.facts`
-- **Temps d'exécution:** 409.647µs
+- **Temps d'exécution:** 369.28µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -788,9 +788,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: User
 Champs:
-  role: admin
   id: U001
   name: Alice
+  role: admin
 ```
 
 **Fait 2:** `U002`
@@ -806,9 +806,9 @@ Champs:
 ```json
 Type: User
 Champs:
-  role: admin
   id: U003
   name: Charlie
+  role: admin
 ```
 
 ### 🕸️ Structure du réseau RETE

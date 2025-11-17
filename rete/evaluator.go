@@ -2,7 +2,9 @@ package rete
 
 import (
 	"fmt"
+	"math"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/treivax/tsd/constraint"
@@ -326,6 +328,28 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		}
 		return value, nil
 
+	case "functionCall", "function_call":
+		// Support des appels de fonction
+		return e.evaluateFunctionCall(val)
+
+	case "arrayLiteral", "array_literal":
+		// Support des littéraux de tableau
+		elements, ok := val["elements"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("éléments de tableau invalides")
+		}
+
+		// Évaluer chaque élément du tableau
+		evaluatedElements := make([]interface{}, len(elements))
+		for i, element := range elements {
+			evaluatedElement, err := e.evaluateValue(element)
+			if err != nil {
+				return nil, fmt.Errorf("erreur évaluation élément tableau[%d]: %w", i, err)
+			}
+			evaluatedElements[i] = evaluatedElement
+		}
+		return evaluatedElements, nil
+
 	default:
 		return nil, fmt.Errorf("type de valeur non supporté: %s", valType)
 	}
@@ -395,6 +419,14 @@ func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator strin
 		equal := e.areEqual(leftVal, rightVal)
 		greater, err := e.isGreater(leftVal, rightVal)
 		return equal || greater, err
+	case "CONTAINS":
+		return e.evaluateContains(leftVal, rightVal)
+	case "IN":
+		return e.evaluateIn(leftVal, rightVal)
+	case "LIKE":
+		return e.evaluateLike(leftVal, rightVal)
+	case "MATCHES":
+		return e.evaluateMatches(leftVal, rightVal)
 	default:
 		return false, fmt.Errorf("opérateur non supporté: %s", operator)
 	}
@@ -477,4 +509,270 @@ func (e *AlphaConditionEvaluator) evaluateNegationConstraint(expr map[string]int
 
 	// Retourner la négation du résultat
 	return !result, nil
+}
+
+// evaluateContains vérifie si une chaîne contient une sous-chaîne
+func (e *AlphaConditionEvaluator) evaluateContains(left, right interface{}) (bool, error) {
+	leftStr, ok := left.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur CONTAINS nécessite une chaîne à gauche, reçu: %T", left)
+	}
+
+	rightStr, ok := right.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur CONTAINS nécessite une chaîne à droite, reçu: %T", right)
+	}
+
+	return strings.Contains(leftStr, rightStr), nil
+}
+
+// evaluateIn vérifie si une valeur fait partie d'un tableau
+func (e *AlphaConditionEvaluator) evaluateIn(left, right interface{}) (bool, error) {
+	// Convertir le côté droit en slice
+	var rightSlice []interface{}
+
+	switch rightVal := right.(type) {
+	case []interface{}:
+		rightSlice = rightVal
+	case []string:
+		rightSlice = make([]interface{}, len(rightVal))
+		for i, v := range rightVal {
+			rightSlice[i] = v
+		}
+	case []int:
+		rightSlice = make([]interface{}, len(rightVal))
+		for i, v := range rightVal {
+			rightSlice[i] = v
+		}
+	case []float64:
+		rightSlice = make([]interface{}, len(rightVal))
+		for i, v := range rightVal {
+			rightSlice[i] = v
+		}
+	default:
+		return false, fmt.Errorf("l'opérateur IN nécessite un tableau à droite, reçu: %T", right)
+	}
+
+	// Vérifier si la valeur de gauche existe dans le tableau
+	for _, item := range rightSlice {
+		if e.areEqual(left, item) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// evaluateLike vérifie si une chaîne correspond à un pattern (SQL LIKE style)
+func (e *AlphaConditionEvaluator) evaluateLike(left, right interface{}) (bool, error) {
+	leftStr, ok := left.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur LIKE nécessite une chaîne à gauche, reçu: %T", left)
+	}
+
+	rightStr, ok := right.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur LIKE nécessite un pattern à droite, reçu: %T", right)
+	}
+
+	// Convertir pattern SQL LIKE en regex Go
+	// % = .* (zéro ou plus de caractères)
+	// _ = . (exactement un caractère)
+	pattern := regexp.QuoteMeta(rightStr)
+	pattern = strings.ReplaceAll(pattern, "\\%", ".*")
+	pattern = strings.ReplaceAll(pattern, "\\_", ".")
+	pattern = "^" + pattern + "$"
+
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, fmt.Errorf("pattern LIKE invalide '%s': %w", rightStr, err)
+	}
+
+	return regex.MatchString(leftStr), nil
+}
+
+// evaluateMatches vérifie si une chaîne correspond à une expression régulière
+func (e *AlphaConditionEvaluator) evaluateMatches(left, right interface{}) (bool, error) {
+	leftStr, ok := left.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur MATCHES nécessite une chaîne à gauche, reçu: %T", left)
+	}
+
+	rightStr, ok := right.(string)
+	if !ok {
+		return false, fmt.Errorf("l'opérateur MATCHES nécessite un pattern regex à droite, reçu: %T", right)
+	}
+
+	regex, err := regexp.Compile(rightStr)
+	if err != nil {
+		return false, fmt.Errorf("pattern regex invalide '%s': %w", rightStr, err)
+	}
+
+	return regex.MatchString(leftStr), nil
+}
+
+// evaluateFunctionCall évalue un appel de fonction
+func (e *AlphaConditionEvaluator) evaluateFunctionCall(val map[string]interface{}) (interface{}, error) {
+	functionName, ok := val["name"].(string)
+	if !ok {
+		return nil, fmt.Errorf("nom de fonction invalide")
+	}
+
+	args, ok := val["args"].([]interface{})
+	if !ok {
+		// Pas d'arguments
+		args = []interface{}{}
+	}
+
+	// Évaluer les arguments
+	evaluatedArgs := make([]interface{}, len(args))
+	for i, arg := range args {
+		evaluatedArg, err := e.evaluateValue(arg)
+		if err != nil {
+			return nil, fmt.Errorf("erreur évaluation argument[%d] pour %s: %w", i, functionName, err)
+		}
+		evaluatedArgs[i] = evaluatedArg
+	}
+
+	// Appeler la fonction appropriée
+	switch functionName {
+	case "LENGTH":
+		return e.evaluateLength(evaluatedArgs)
+	case "UPPER":
+		return e.evaluateUpper(evaluatedArgs)
+	case "LOWER":
+		return e.evaluateLower(evaluatedArgs)
+	case "ABS":
+		return e.evaluateAbs(evaluatedArgs)
+	case "ROUND":
+		return e.evaluateRound(evaluatedArgs)
+	case "SUBSTRING":
+		return e.evaluateSubstring(evaluatedArgs)
+	case "TRIM":
+		return e.evaluateTrim(evaluatedArgs)
+	default:
+		return nil, fmt.Errorf("fonction non supportée: %s", functionName)
+	}
+}
+
+// evaluateLength retourne la longueur d'une chaîne
+func (e *AlphaConditionEvaluator) evaluateLength(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("LENGTH() attend 1 argument, reçu %d", len(args))
+	}
+
+	str, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("LENGTH() nécessite une chaîne, reçu: %T", args[0])
+	}
+
+	return float64(len(str)), nil
+}
+
+// evaluateUpper convertit une chaîne en majuscules
+func (e *AlphaConditionEvaluator) evaluateUpper(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("UPPER() attend 1 argument, reçu %d", len(args))
+	}
+
+	str, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("UPPER() nécessite une chaîne, reçu: %T", args[0])
+	}
+
+	return strings.ToUpper(str), nil
+}
+
+// evaluateLower convertit une chaîne en minuscules
+func (e *AlphaConditionEvaluator) evaluateLower(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("LOWER() attend 1 argument, reçu %d", len(args))
+	}
+
+	str, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("LOWER() nécessite une chaîne, reçu: %T", args[0])
+	}
+
+	return strings.ToLower(str), nil
+}
+
+// evaluateAbs retourne la valeur absolue d'un nombre
+func (e *AlphaConditionEvaluator) evaluateAbs(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("ABS() attend 1 argument, reçu %d", len(args))
+	}
+
+	num, ok := args[0].(float64)
+	if !ok {
+		return nil, fmt.Errorf("ABS() nécessite un nombre, reçu: %T", args[0])
+	}
+
+	return math.Abs(num), nil
+}
+
+// evaluateRound arrondit un nombre
+func (e *AlphaConditionEvaluator) evaluateRound(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("ROUND() attend 1 argument, reçu %d", len(args))
+	}
+
+	num, ok := args[0].(float64)
+	if !ok {
+		return nil, fmt.Errorf("ROUND() nécessite un nombre, reçu: %T", args[0])
+	}
+
+	return math.Round(num), nil
+}
+
+// evaluateSubstring extrait une sous-chaîne
+func (e *AlphaConditionEvaluator) evaluateSubstring(args []interface{}) (interface{}, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return nil, fmt.Errorf("SUBSTRING() attend 2 ou 3 arguments, reçu %d", len(args))
+	}
+
+	str, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("SUBSTRING() nécessite une chaîne comme premier argument, reçu: %T", args[0])
+	}
+
+	start, ok := args[1].(float64)
+	if !ok {
+		return nil, fmt.Errorf("SUBSTRING() nécessite un nombre comme deuxième argument, reçu: %T", args[1])
+	}
+
+	startInt := int(start)
+	if startInt < 0 || startInt >= len(str) {
+		return "", nil // Retourner chaîne vide si index hors limites
+	}
+
+	if len(args) == 3 {
+		length, ok := args[2].(float64)
+		if !ok {
+			return nil, fmt.Errorf("SUBSTRING() nécessite un nombre comme troisième argument, reçu: %T", args[2])
+		}
+
+		lengthInt := int(length)
+		endInt := startInt + lengthInt
+		if endInt > len(str) {
+			endInt = len(str)
+		}
+		return str[startInt:endInt], nil
+	}
+
+	return str[startInt:], nil
+}
+
+// evaluateTrim supprime les espaces en début et fin
+func (e *AlphaConditionEvaluator) evaluateTrim(args []interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("TRIM() attend 1 argument, reçu %d", len(args))
+	}
+
+	str, ok := args[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("TRIM() nécessite une chaîne, reçu: %T", args[0])
+	}
+
+	return strings.TrimSpace(str), nil
 }

@@ -1,3 +1,2 @@
-Balance[id=B001, amount=150.0, type=credit]
-Balance[id=B002, amount=-25.0, type=debit]
-Balance[id=B003, amount=75.0, type=credit]
+Balance[id="B001", amount=150.0, type="credit"]Balance[id="B002", amount=-25.0, type="debit"]Balance[id="B003", amount=75.0, type="credit"]
+

@@ -14,26 +14,26 @@ import (
 
 // AlphaTestResult stocke les résultats d'un test alpha
 type AlphaTestResult struct {
-	TestName        string
-	Description     string
-	ConstraintFile  string
-	FactsFile       string
-	Rules           []ParsedRule
-	Facts           []*rete.Fact
-	Network         *rete.ReteNetwork
-	Actions         []ActionResult
-	ExecutionTime   time.Duration
-	Success         bool
-	ErrorMessage    string
+	TestName       string
+	Description    string
+	ConstraintFile string
+	FactsFile      string
+	Rules          []ParsedRule
+	Facts          []*rete.Fact
+	Network        *rete.ReteNetwork
+	Actions        []ActionResult
+	ExecutionTime  time.Duration
+	Success        bool
+	ErrorMessage   string
 }
 
 // ParsedRule représente une règle parsée
 type ParsedRule struct {
-	RuleNumber  int
-	RuleText    string
-	ActionName  string
-	Condition   string
-	IsNegation  bool
+	RuleNumber int
+	RuleText   string
+	ActionName string
+	Condition  string
+	IsNegation bool
 }
 
 // ActionResult représente le résultat d'une action
@@ -45,12 +45,12 @@ type ActionResult struct {
 
 // NetworkNode représente un nœud du réseau RETE
 type NetworkNode struct {
-	ID          string
-	Type        string
-	Condition   interface{}
-	FactsCount  int
-	Facts       []*rete.Fact
-	Children    []string
+	ID         string
+	Type       string
+	Condition  interface{}
+	FactsCount int
+	Facts      []*rete.Fact
+	Children   []string
 }
 
 func main() {
@@ -75,7 +75,7 @@ func main() {
 		fmt.Printf("🧪 Exécution test: %s\n", testName)
 		result := executeAlphaTest(testDir, testName)
 		allResults = append(allResults, result)
-		
+
 		if result.Success {
 			fmt.Printf("✅ Succès (%v)\n", result.ExecutionTime)
 		} else {
@@ -108,12 +108,12 @@ func main() {
 // discoverAlphaTests découvre tous les tests dans le répertoire
 func discoverAlphaTests(testDir string) ([]string, error) {
 	var tests []string
-	
+
 	err := filepath.Walk(testDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if strings.HasSuffix(info.Name(), ".constraint") {
 			testName := strings.TrimSuffix(info.Name(), ".constraint")
 			factsFile := filepath.Join(testDir, testName+".facts")
@@ -123,7 +123,7 @@ func discoverAlphaTests(testDir string) ([]string, error) {
 		}
 		return nil
 	})
-	
+
 	sort.Strings(tests)
 	return tests, err
 }
@@ -155,7 +155,7 @@ func executeAlphaTest(testDir, testName string) AlphaTestResult {
 	// Créer le réseau RETE via le pipeline
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
-	
+
 	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
 		result.ConstraintFile, result.FactsFile, storage)
 	if err != nil {
@@ -185,11 +185,11 @@ func executeAlphaTest(testDir, testName string) AlphaTestResult {
 		if terminal.Action != nil && terminal.Action.Job.Name != "" {
 			actionName = terminal.Action.Job.Name
 		}
-		
+
 		tokenCount := len(terminal.Memory.Tokens)
 		if tokenCount > 0 {
 			actionsCount[actionName] = tokenCount
-			
+
 			// Extraire les faits des tokens
 			for _, token := range terminal.Memory.Tokens {
 				for _, fact := range token.Facts {
@@ -233,7 +233,7 @@ func extractDescription(constraintFile string) (string, error) {
 // extractRulesFromProgram extrait les règles parsées
 func extractRulesFromProgram(program interface{}) []ParsedRule {
 	var rules []ParsedRule
-	
+
 	// Tenter de convertir en map pour accéder aux expressions
 	if programMap, ok := program.(map[string]interface{}); ok {
 		if expressions, exists := programMap["expressions"]; exists {
@@ -270,7 +270,7 @@ func extractRulesFromProgram(program interface{}) []ParsedRule {
 			}
 		}
 	}
-	
+
 	return rules
 }
 
@@ -414,7 +414,7 @@ func generateCompleteReport(results []AlphaTestResult, outputFile string) error 
 	}
 
 	report.WriteString("## 🎯 RÉSUMÉ EXÉCUTIF\n\n")
-	report.WriteString(fmt.Sprintf("- ✅ **Tests réussis:** %d/%d (%.1f%%)\n", 
+	report.WriteString(fmt.Sprintf("- ✅ **Tests réussis:** %d/%d (%.1f%%)\n",
 		successCount, len(results), float64(successCount)/float64(len(results))*100))
 	report.WriteString(fmt.Sprintf("- 🎬 **Actions déclenchées:** %d\n", totalActions))
 	report.WriteString(fmt.Sprintf("- ⚡ **Couverture:** Nœuds Alpha positifs et négatifs\n\n"))
@@ -422,7 +422,7 @@ func generateCompleteReport(results []AlphaTestResult, outputFile string) error 
 	// Détail de chaque test
 	for i, result := range results {
 		report.WriteString(fmt.Sprintf("## 🧪 TEST %d: %s\n\n", i+1, result.TestName))
-		
+
 		// Informations générales
 		report.WriteString("### 📋 Informations générales\n\n")
 		report.WriteString(fmt.Sprintf("- **Description:** %s\n", result.Description))
@@ -539,7 +539,7 @@ func generateNetworkVisualization(report *strings.Builder, network *rete.ReteNet
 		report.WriteString("│\n")
 	}
 
-		// Terminal Nodes
+	// Terminal Nodes
 	if len(network.TerminalNodes) > 0 {
 		report.WriteString("└── 🎯 TerminalNodes (Actions)\n")
 		for _, terminalNode := range network.TerminalNodes {
