@@ -362,7 +362,7 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 				return nil, fmt.Errorf("opérateur invalide dans l'opération binaire")
 			}
 		}
-		
+
 		left, err := e.evaluateValue(val["left"])
 		if err != nil {
 			return nil, fmt.Errorf("erreur évaluation côté gauche: %w", err)
@@ -372,7 +372,7 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		if err != nil {
 			return nil, fmt.Errorf("erreur évaluation côté droit: %w", err)
 		}
-		
+
 		// Distinguer les opérations arithmétiques des comparaisons
 		switch operator {
 		case "+", "-", "*", "/", "%":
@@ -438,7 +438,7 @@ func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator strin
 	case "+", "-", "*", "/", "%":
 		return false, fmt.Errorf("opération arithmétique %s ne peut pas retourner un booléen", operator)
 	}
-	
+
 	// Normaliser les valeurs numériques
 	leftVal := e.normalizeValue(left)
 	rightVal := e.normalizeValue(right)
@@ -478,15 +478,15 @@ func (e *AlphaConditionEvaluator) evaluateArithmeticOperation(left interface{}, 
 	// Normaliser les valeurs numériques
 	leftVal := e.normalizeValue(left)
 	rightVal := e.normalizeValue(right)
-	
+
 	// Convertir en float64 pour les calculs
 	leftNum, leftOk := leftVal.(float64)
 	rightNum, rightOk := rightVal.(float64)
-	
+
 	if !leftOk || !rightOk {
 		return nil, fmt.Errorf("opérations arithmétiques requièrent des valeurs numériques: gauche=%T, droite=%T", left, right)
 	}
-	
+
 	switch operator {
 	case "+":
 		return leftNum + rightNum, nil

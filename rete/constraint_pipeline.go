@@ -262,7 +262,7 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Extraire le nom de variable et son type depuis les contraintes set
 	variableName := "p" // défaut
 	variableType := ""
-	
+
 	if setData, hasSet := exprMap["set"]; hasSet {
 		if setMap, ok := setData.(map[string]interface{}); ok {
 			if varsData, hasVars := setMap["variables"]; hasVars {
@@ -271,12 +271,12 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 						if name, ok := varMap["name"].(string); ok {
 							variableName = name
 						}
-					// Extraire aussi le type de la variable
-					if dataType, ok := varMap["dataType"].(string); ok {
-						variableType = dataType
-					} else if varType, ok := varMap["type"].(string); ok {
-						variableType = varType
-					}
+						// Extraire aussi le type de la variable
+						if dataType, ok := varMap["dataType"].(string); ok {
+							variableType = dataType
+						} else if varType, ok := varMap["type"].(string); ok {
+							variableType = varType
+						}
 					}
 				}
 			}
