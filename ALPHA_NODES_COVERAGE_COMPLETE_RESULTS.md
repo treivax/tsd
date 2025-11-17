@@ -1,6 +1,6 @@
 # 📊 RAPPORT COMPLET - TESTS DE COUVERTURE ALPHA NODES
 
-**Date d'exécution:** 2025-11-17 14:55:32
+**Date d'exécution:** 2025-11-17 15:17:23
 **Nombre de tests:** 10
 
 ## 🎯 RÉSUMÉ EXÉCUTIF
@@ -16,7 +16,7 @@
 - **Description:** Test condition booléenne négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.facts`
-- **Temps d'exécution:** 665.073µs
+- **Temps d'exécution:** 693.657µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -46,18 +46,18 @@ Champs:
 ```json
 Type: Account
 Champs:
+  balance: 500
   active: false
   id: ACC002
-  balance: 500
 ```
 
 **Fait 3:** `ACC003`
 ```json
 Type: Account
 Champs:
-  id: ACC003
   balance: 2000
   active: true
+  id: ACC003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -99,7 +99,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition booléenne positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.facts`
-- **Temps d'exécution:** 337.1µs
+- **Temps d'exécution:** 343.342µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -120,9 +120,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Account
 Champs:
+  active: true
   id: ACC001
   balance: 1000
-  active: true
 ```
 
 **Fait 2:** `ACC002`
@@ -171,8 +171,8 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 #### 🎯 Action: `active_account_found`
 - **Nombre de déclenchements:** 2
 - **Faits concernés:**
-  1. `ACC003` (Type: Account)
-  2. `ACC001` (Type: Account)
+  1. `ACC001` (Type: Account)
+  2. `ACC003` (Type: Account)
 
 ---
 
@@ -183,7 +183,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.facts`
-- **Temps d'exécution:** 342.4µs
+- **Temps d'exécution:** 344.584µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -266,7 +266,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.facts`
-- **Temps d'exécution:** 341.689µs
+- **Temps d'exécution:** 334.225µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -287,18 +287,18 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Product
 Champs:
-  id: PROD001
   price: 150
   category: electronics
+  id: PROD001
 ```
 
 **Fait 2:** `PROD002`
 ```json
 Type: Product
 Champs:
+  id: PROD002
   price: 50
   category: books
-  id: PROD002
 ```
 
 **Fait 3:** `PROD003`
@@ -350,7 +350,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité négative simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.facts`
-- **Temps d'exécution:** 335.828µs
+- **Temps d'exécution:** 330.107µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -433,7 +433,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité positive simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.facts`
-- **Temps d'exécution:** 328.064µs
+- **Temps d'exécution:** 331.529µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -454,9 +454,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Person
 Champs:
-  id: P001
   age: 25
   status: active
+  id: P001
 ```
 
 **Fait 2:** `P002`
@@ -517,7 +517,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.facts`
-- **Temps d'exécution:** 342.591µs
+- **Temps d'exécution:** 353.09µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -600,7 +600,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.facts`
-- **Temps d'exécution:** 343.422µs
+- **Temps d'exécution:** 357.057µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -621,9 +621,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Order
 Champs:
+  id: ORD001
   total: 100
   status: pending
-  id: ORD001
 ```
 
 **Fait 2:** `ORD002`
@@ -684,7 +684,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.facts`
-- **Temps d'exécution:** 360.734µs
+- **Temps d'exécution:** 528.919µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -705,27 +705,27 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: User
 Champs:
+  id: U001
   name: Alice
   role: admin
-  id: U001
 ```
 
 **Fait 2:** `U002`
 ```json
 Type: User
 Champs:
-  id: U002
   name: Bob
   role: user
+  id: U002
 ```
 
 **Fait 3:** `U003`
 ```json
 Type: User
 Champs:
+  id: U003
   name: Charlie
   role: admin
-  id: U003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -767,7 +767,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.facts`
-- **Temps d'exécution:** 369.28µs
+- **Temps d'exécution:** 442.197µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test

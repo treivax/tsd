@@ -1,6 +1,6 @@
 # 📊 RAPPORT COMPLET - TESTS DE COUVERTURE ALPHA ÉTENDUS
 
-**Date d'exécution:** 2025-11-17 14:55:32
+**Date d'exécution:** 2025-11-17 15:17:24
 **Nombre de tests:** 26
 
 ## 🎯 RÉSUMÉ EXÉCUTIF
@@ -17,13 +17,13 @@
 
 | Opérateur | Tests | Succès | Taux |
 |-----------|-------|--------|------|
+| `IN` | 2 | 0 | 0.0% |
+| `LIKE` | 2 | 0 | 0.0% |
+| `MATCHES` | 2 | 0 | 0.0% |
 | `==` | 8 | 8 | 100.0% |
 | `>` | 2 | 2 | 100.0% |
 | `CONTAINS` | 2 | 2 | 100.0% |
 | `=` | 2 | 0 | 0.0% |
-| `IN` | 2 | 0 | 0.0% |
-| `LIKE` | 2 | 0 | 0.0% |
-| `MATCHES` | 2 | 0 | 0.0% |
 
 ### Fonctions testées
 
@@ -41,7 +41,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 388.486µs
+- **Temps d'exécution:** 398.244µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -60,7 +60,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 229.459µs
+- **Temps d'exécution:** 239.298µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -79,7 +79,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `>`
-- **Temps d'exécution:** 239.658µs
+- **Temps d'exécution:** 367.667µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -98,7 +98,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `>`
-- **Temps d'exécution:** 213.93µs
+- **Temps d'exécution:** 285.393µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -117,7 +117,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 195.165µs
+- **Temps d'exécution:** 227.265µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -136,7 +136,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 205.163µs
+- **Temps d'exécution:** 237.093µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -155,7 +155,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 231.262µs
+- **Temps d'exécution:** 242.804µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -174,7 +174,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 234.849µs
+- **Temps d'exécution:** 246.411µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -193,7 +193,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 223.888µs
+- **Temps d'exécution:** 233.897µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -212,7 +212,7 @@
 
 - **Type:** ORIGINAL
 - **Opérateur testé:** `==`
-- **Temps d'exécution:** 199.122µs
+- **Temps d'exécution:** 206.556µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -231,7 +231,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `ABS()`
-- **Temps d'exécution:** 200.445µs
+- **Temps d'exécution:** 218.519µs
 - **Faits analysés:** 1
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -250,7 +250,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `ABS()`
-- **Temps d'exécution:** 160.67µs
+- **Temps d'exécution:** 170.278µs
 - **Faits analysés:** 1
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -269,7 +269,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `CONTAINS`
-- **Temps d'exécution:** 240.82µs
+- **Temps d'exécution:** 237.223µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -288,7 +288,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `CONTAINS`
-- **Temps d'exécution:** 226.163µs
+- **Temps d'exécution:** 246.601µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -307,7 +307,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `=`
-- **Temps d'exécution:** 161.151µs
+- **Temps d'exécution:** 172.182µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ points: strconv.ParseInt: parsing "5000]Customer[id=\"C002\"": invalid syntax
@@ -326,7 +326,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `=`
-- **Temps d'exécution:** 150.952µs
+- **Temps d'exécution:** 154.87µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ points: strconv.ParseInt: parsing "5000]Customer[id=\"C002\"": invalid syntax
@@ -345,7 +345,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `IN`
-- **Temps d'exécution:** 176.871µs
+- **Temps d'exécution:** 175.298µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ priority: strconv.ParseInt: parsing "1]Status[id=\"S002\"": invalid syntax
@@ -364,7 +364,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `IN`
-- **Temps d'exécution:** 198.351µs
+- **Temps d'exécution:** 179.425µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ priority: strconv.ParseInt: parsing "1]Status[id=\"S002\"": invalid syntax
@@ -383,7 +383,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `LENGTH()`
-- **Temps d'exécution:** 154.659µs
+- **Temps d'exécution:** 164.527µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ secure: strconv.ParseBool: parsing "true]Password[id=\"P002\"": invalid syntax
@@ -402,7 +402,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `LENGTH()`
-- **Temps d'exécution:** 229.529µs
+- **Temps d'exécution:** 232.515µs
 - **Faits analysés:** 3
 - **Statut:** ✅ Succès
 - **Actions déclenchées:** 0
@@ -421,7 +421,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `LIKE`
-- **Temps d'exécution:** 161.672µs
+- **Temps d'exécution:** 171.371µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ verified: strconv.ParseBool: parsing "true]Email[id=\"E002\"": invalid syntax
@@ -440,7 +440,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `LIKE`
-- **Temps d'exécution:** 155.802µs
+- **Temps d'exécution:** 157.344µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ verified: strconv.ParseBool: parsing "true]Email[id=\"E002\"": invalid syntax
@@ -459,7 +459,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `MATCHES`
-- **Temps d'exécution:** 148.047µs
+- **Temps d'exécution:** 146.063µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ active: strconv.ParseBool: parsing "true]Code[id=\"C002\"": invalid syntax
@@ -478,7 +478,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `MATCHES`
-- **Temps d'exécution:** 154.068µs
+- **Temps d'exécution:** 145.812µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ active: strconv.ParseBool: parsing "true]Code[id=\"C002\"": invalid syntax
@@ -497,7 +497,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `UPPER()`
-- **Temps d'exécution:** 172.292µs
+- **Temps d'exécution:** 172.062µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ active: strconv.ParseBool: parsing "true]Department[id=\"D002\"": invalid syntax
@@ -516,7 +516,7 @@
 
 - **Type:** EXTENDED
 - **Opérateur testé:** `UPPER()`
-- **Temps d'exécution:** 146.093µs
+- **Temps d'exécution:** 141.184µs
 - **Faits analysés:** 0
 - **Statut:** ❌ Échec
 - **Erreur:** Erreur construction réseau: erreur parsing faits: erreur fait ligne 1: erreur parsing champs: erreur conversion champ active: strconv.ParseBool: parsing "true]Department[id=\"D002\"": invalid syntax
