@@ -1,0 +1,3 @@
+Customer[id=C001, tier=gold, points=5000]
+Customer[id=C002, tier=silver, points=2000]
+Customer[id=C003, tier=gold, points=1500]

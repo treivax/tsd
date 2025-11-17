@@ -1,0 +1,3 @@
+Status[id=S001, state=active, priority=1]
+Status[id=S002, state=inactive, priority=3]
+Status[id=S003, state=archived, priority=5]

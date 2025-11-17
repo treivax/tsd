@@ -1,0 +1,4 @@
+// Test opérateur IN (appartenance) - négation
+type Status : <id: string, state: string, priority: number>
+
+{s: Status} / NOT(s.state IN ["active", "pending"]) ==> invalid_state_found(s.id, s.state)

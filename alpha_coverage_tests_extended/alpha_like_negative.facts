@@ -1,0 +1,3 @@
+Email[id=E001, address="john@company.com", verified=true]
+Email[id=E002, address="jane@external.org", verified=false]
+Email[id=E003, address="user@other.net", verified=true]

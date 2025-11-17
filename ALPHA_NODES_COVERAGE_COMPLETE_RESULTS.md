@@ -1,6 +1,6 @@
 # 📊 RAPPORT COMPLET - TESTS DE COUVERTURE ALPHA NODES
 
-**Date d'exécution:** 2025-11-17 11:18:04
+**Date d'exécution:** 2025-11-17 11:24:48
 **Nombre de tests:** 10
 
 ## 🎯 RÉSUMÉ EXÉCUTIF
@@ -16,7 +16,7 @@
 - **Description:** Test condition booléenne négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_negative.facts`
-- **Temps d'exécution:** 589.222µs
+- **Temps d'exécution:** 871.631µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -46,18 +46,18 @@ Champs:
 ```json
 Type: Account
 Champs:
+  id: ACC002
   balance: 500
   active: false
-  id: ACC002
 ```
 
 **Fait 3:** `ACC003`
 ```json
 Type: Account
 Champs:
-  active: true
   id: ACC003
   balance: 2000
+  active: true
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -99,7 +99,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition booléenne positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_boolean_positive.facts`
-- **Temps d'exécution:** 488.344µs
+- **Temps d'exécution:** 663.812µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -183,7 +183,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_negative.facts`
-- **Temps d'exécution:** 396.431µs
+- **Temps d'exécution:** 618.988µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -266,7 +266,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test comparaison numérique positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_comparison_positive.facts`
-- **Temps d'exécution:** 427.059µs
+- **Temps d'exécution:** 669.483µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -338,8 +338,8 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 #### 🎯 Action: `expensive_product`
 - **Nombre de déclenchements:** 2
 - **Faits concernés:**
-  1. `PROD003` (Type: Product)
-  2. `PROD001` (Type: Product)
+  1. `PROD001` (Type: Product)
+  2. `PROD003` (Type: Product)
 
 ---
 
@@ -350,7 +350,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité négative simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_negative.facts`
-- **Temps d'exécution:** 406.781µs
+- **Temps d'exécution:** 668.49µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -389,9 +389,9 @@ Champs:
 ```json
 Type: Person
 Champs:
+  id: P003
   age: 25
   status: inactive
-  id: P003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -433,7 +433,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test égalité positive simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_equality_positive.facts`
-- **Temps d'exécution:** 402.072µs
+- **Temps d'exécution:** 634.306µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -454,9 +454,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Person
 Champs:
-  status: active
   id: P001
   age: 25
+  status: active
 ```
 
 **Fait 2:** `P002`
@@ -472,9 +472,9 @@ Champs:
 ```json
 Type: Person
 Champs:
-  id: P003
   age: 25
   status: inactive
+  id: P003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -517,7 +517,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_negative.facts`
-- **Temps d'exécution:** 409.967µs
+- **Temps d'exécution:** 666.717µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -538,9 +538,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: Order
 Champs:
-  id: ORD001
   total: 100
   status: pending
+  id: ORD001
 ```
 
 **Fait 2:** `ORD002`
@@ -556,9 +556,9 @@ Champs:
 ```json
 Type: Order
 Champs:
-  id: ORD003
   total: 300
   status: completed
+  id: ORD003
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -600,7 +600,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test inégalité positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_inequality_positive.facts`
-- **Temps d'exécution:** 428.532µs
+- **Temps d'exécution:** 570.016µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -639,9 +639,9 @@ Champs:
 ```json
 Type: Order
 Champs:
+  status: completed
   id: ORD003
   total: 300
-  status: completed
 ```
 
 ### 🕸️ Structure du réseau RETE
@@ -684,7 +684,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string négative
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_negative.facts`
-- **Temps d'exécution:** 411.509µs
+- **Temps d'exécution:** 428.792µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -705,9 +705,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: User
 Champs:
-  name: Alice
   role: admin
   id: U001
+  name: Alice
 ```
 
 **Fait 2:** `U002`
@@ -767,7 +767,7 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 - **Description:** Test condition string positive
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/alpha_coverage_tests/alpha_string_positive.facts`
-- **Temps d'exécution:** 404.617µs
+- **Temps d'exécution:** 409.647µs
 - **Statut:** ✅ Succès
 
 ### 📏 Règles du test
@@ -788,9 +788,9 @@ RÉSEAU RETE - STRUCTURE HIÉRARCHIQUE
 ```json
 Type: User
 Champs:
-  name: Alice
   role: admin
   id: U001
+  name: Alice
 ```
 
 **Fait 2:** `U002`
@@ -806,9 +806,9 @@ Champs:
 ```json
 Type: User
 Champs:
+  role: admin
   id: U003
   name: Charlie
-  role: admin
 ```
 
 ### 🕸️ Structure du réseau RETE

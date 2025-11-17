@@ -1,0 +1,4 @@
+// Test opérateur CONTAINS (contenance)
+type Message : <id: string, content: string, urgent: bool>
+
+{m: Message} / m.content CONTAINS "urgent" ==> urgent_message_found(m.id, m.content)
