@@ -1,0 +1,3 @@
+User[id=U001, name=Alice, role=admin]
+User[id=U002, name=Bob, role=user]
+User[id=U003, name=Charlie, role=admin]

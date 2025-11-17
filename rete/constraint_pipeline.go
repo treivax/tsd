@@ -259,8 +259,24 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 		}
 	}
 
+	// Extraire le nom de variable réel depuis les contraintes set
+	variableName := "p" // défaut
+	if setData, hasSet := exprMap["set"]; hasSet {
+		if setMap, ok := setData.(map[string]interface{}); ok {
+			if varsData, hasVars := setMap["variables"]; hasVars {
+				if varsList, ok := varsData.([]interface{}); ok && len(varsList) > 0 {
+					if varMap, ok := varsList[0].(map[string]interface{}); ok {
+						if name, ok := varMap["name"].(string); ok {
+							variableName = name
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// Créer un nœud Alpha avec la condition appropriée
-	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, "p", storage)
+	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, variableName, storage)
 
 	// Connecter à un type node
 	if len(network.TypeNodes) > 0 {

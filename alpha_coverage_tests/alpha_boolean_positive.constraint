@@ -1,0 +1,4 @@
+// Test condition booléenne positive
+type Account : <id: string, balance: number, active: bool>
+
+{a: Account} / a.active == true ==> active_account_found(a.id, a.balance)

@@ -1,0 +1,10 @@
+// Test de négation complexe avec opérateurs logiques
+// Test: NOT(p.age == 0 AND p.ville != "Paris")
+
+type Person : <id: string, name: string, age: number, ville: string, active: bool>
+
+// Règle de test avec négation complexe AND
+{p: Person} / NOT(p.age == 0 AND p.ville != "Paris") ==> negation_complex_and_passed(p.id, p.age, p.ville)
+
+// Règle équivalente en forme normale (loi De Morgan) pour validation
+{p: Person} / (p.age != 0 OR p.ville == "Paris") ==> de_morgan_equivalent(p.id, p.age, p.ville)

@@ -209,17 +209,30 @@ func (e *AlphaConditionEvaluator) evaluateConstraint(constraint constraint.Const
 
 // evaluateConstraintMap évalue une contrainte depuis une map
 func (e *AlphaConditionEvaluator) evaluateConstraintMap(expr map[string]interface{}) (bool, error) {
-	operator, ok := expr["operator"].(string)
+	// Si l'expression a une clé "constraint", extraire la contrainte réelle
+	var actualConstraint map[string]interface{}
+	if constraintData, hasConstraint := expr["constraint"]; hasConstraint {
+		if constraintMap, ok := constraintData.(map[string]interface{}); ok {
+			actualConstraint = constraintMap
+		} else {
+			return false, fmt.Errorf("format contrainte invalide: %T", constraintData)
+		}
+	} else {
+		// Utiliser directement l'expression si pas d'indirection
+		actualConstraint = expr
+	}
+
+	operator, ok := actualConstraint["operator"].(string)
 	if !ok {
 		return false, fmt.Errorf("opérateur manquant")
 	}
 
-	left, err := e.evaluateValue(expr["left"])
+	left, err := e.evaluateValue(actualConstraint["left"])
 	if err != nil {
 		return false, fmt.Errorf("erreur évaluation côté gauche: %w", err)
 	}
 
-	right, err := e.evaluateValue(expr["right"])
+	right, err := e.evaluateValue(actualConstraint["right"])
 	if err != nil {
 		return false, fmt.Errorf("erreur évaluation côté droit: %w", err)
 	}
@@ -327,7 +340,12 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccess(fa constraint.FieldAccess)
 func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string) (interface{}, error) {
 	fact, exists := e.variableBindings[object]
 	if !exists {
-		return nil, fmt.Errorf("variable non liée: %s", object)
+		// Debug info pour aider à diagnostiquer les problèmes de binding
+		availableVars := make([]string, 0, len(e.variableBindings))
+		for k := range e.variableBindings {
+			availableVars = append(availableVars, k)
+		}
+		return nil, fmt.Errorf("variable non liée: %s (variables disponibles: %v)", object, availableVars)
 	}
 
 	value, exists := fact.Fields[field]
