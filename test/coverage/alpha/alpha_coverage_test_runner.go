@@ -224,7 +224,7 @@ func updateAlphaReport(results []AlphaTestResult, outputFile string) error {
 	report.WriteString("3. **Score permissif** : 100% si le test s'exécute sans erreur\n")
 	report.WriteString("4. **Couverture complète** : Tous les opérateurs alpha testés\n\n")
 
-	report.WriteString(fmt.Sprintf("## ✨ **STATUT FINAL**\n\n"))
+	report.WriteString("## ✨ **STATUT FINAL**\n\n")
 	report.WriteString(fmt.Sprintf("**🎯 COUVERTURE ALPHA COMPLÈTE : %d/%d tests validés à 100%%**\n\n", successCount, len(results)))
 
 	report.WriteString("L'architecture régénérée garantit :\n")

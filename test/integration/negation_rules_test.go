@@ -322,7 +322,7 @@ func createCompleteResultsFile(t *testing.T, helper *TestHelper, network *rete.R
 		// Statistiques
 		if len(relevantFacts) > 0 {
 			percentage := float64(tokenCount) / float64(len(relevantFacts)) * 100
-			content.WriteString(fmt.Sprintf("### 📊 STATISTIQUES\n\n"))
+			content.WriteString("### 📊 STATISTIQUES\n\n")
 			content.WriteString(fmt.Sprintf("- **Taux de déclenchement**: %d/%d (%.1f%%)\n", tokenCount, len(relevantFacts), percentage))
 			content.WriteString(fmt.Sprintf("- **Efficacité**: %s\n", getEfficiencyLabel(percentage)))
 		}

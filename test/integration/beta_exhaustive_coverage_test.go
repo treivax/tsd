@@ -165,13 +165,13 @@ func TestExhaustiveBetaCoverage(t *testing.T) {
 	t.Logf("========================================")
 
 	// Valider les composants du réseau Beta
-	if network.TypeNodes == nil || len(network.TypeNodes) < 5 {
+	if len(network.TypeNodes) < 5 {
 		t.Errorf("❌ TypeNodes insuffisants: %d (minimum 5 types attendus)", len(network.TypeNodes))
 	} else {
 		t.Logf("✅ TypeNodes: %d types définis", len(network.TypeNodes))
 	}
 
-	if network.BetaNodes == nil || len(network.BetaNodes) == 0 {
+	if len(network.BetaNodes) == 0 {
 		t.Logf("⚠️ BetaNodes: Non initialisés (normal pour ce niveau de test)")
 	} else {
 		t.Logf("✅ BetaNodes: %d nœuds Beta créés", len(network.BetaNodes))

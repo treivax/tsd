@@ -689,35 +689,6 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 	return nil
 }
 
-// performJoin effectue la jointure entre un token et un fait
-func (jn *JoinNode) performJoin(token *Token, fact *Fact) *Token {
-	// Créer un nouveau token combinant le token existant et le nouveau fait
-	combinedBindings := make(map[string]*Fact)
-
-	// Copier les bindings existants du token
-	for varName, varFact := range token.Bindings {
-		combinedBindings[varName] = varFact
-	}
-
-	// Ajouter le nouveau fait selon sa variable
-	factVar := jn.getVariableForFact(fact)
-	if factVar != "" {
-		combinedBindings[factVar] = fact
-	}
-
-	// Valider les conditions de jointure
-	if !jn.evaluateJoinConditions(combinedBindings) {
-		return nil // Jointure échoue
-	}
-
-	// Créer et retourner le token joint
-	return &Token{
-		ID:       fmt.Sprintf("%s_%s", token.ID, fact.ID),
-		Bindings: combinedBindings,
-		NodeID:   jn.ID,
-	}
-}
-
 // performJoinWithTokens effectue la jointure entre deux tokens
 func (jn *JoinNode) performJoinWithTokens(token1 *Token, token2 *Token) *Token {
 	// Vérifier que les tokens ont des variables différentes
@@ -1173,22 +1144,4 @@ func (en *ExistsNode) isAlreadyValidated(token *Token) bool {
 		}
 	}
 	return false
-}
-
-// getVariableForFact détermine la variable associée à un fait dans ExistsNode
-func (en *ExistsNode) getVariableForFact(fact *Fact) string {
-	// Utiliser le mapping variable -> type de l'ExistsNode
-	if expectedType, exists := en.VariableTypes[en.MainVariable]; exists {
-		if expectedType == fact.Type {
-			return en.MainVariable
-		}
-	}
-
-	if expectedType, exists := en.VariableTypes[en.ExistsVariable]; exists {
-		if expectedType == fact.Type {
-			return en.ExistsVariable
-		}
-	}
-
-	return ""
 }

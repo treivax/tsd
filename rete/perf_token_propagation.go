@@ -77,7 +77,6 @@ type TokenPriorityItem struct {
 // TokenPriorityQueue implémente une queue de priorité pour les tokens
 type TokenPriorityQueue struct {
 	items []*TokenPriorityItem
-	mutex sync.Mutex
 }
 
 // TokenWorkerPool gère un pool de workers pour la propagation

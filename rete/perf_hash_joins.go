@@ -171,12 +171,11 @@ func (hje *HashJoinEngine) PerformHashJoin(
 		hje.stats.CacheMisses++
 	}
 
-	results := make([]*JoinResult, 0)
-
 	// Sélectionner la plus petite hash table comme table de build
 	leftSize := len(hje.leftHashTable)
 	rightSize := len(hje.rightHashTable)
 
+	var results []*JoinResult
 	if leftSize <= rightSize {
 		// Utiliser la table gauche comme table de build
 		results = hje.performLeftBuildJoin(joinCondition)

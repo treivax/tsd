@@ -63,24 +63,6 @@ func (bn *BaseNode) GetChildren() []domain.Node {
 	return children
 }
 
-// propagateToChildren propage un fait vers tous les enfants.
-func (bn *BaseNode) propagateToChildren(fact *domain.Fact) error {
-	children := bn.GetChildren()
-
-	for _, child := range children {
-		if err := child.ProcessFact(fact); err != nil {
-			bn.logger.Error("failed to propagate fact to child", err, map[string]interface{}{
-				"parent_node": bn.id,
-				"child_node":  child.ID(),
-				"fact_id":     fact.ID,
-			})
-			return err
-		}
-	}
-
-	return nil
-}
-
 // logFactProcessing enregistre le traitement d'un fait.
 func (bn *BaseNode) logFactProcessing(fact *domain.Fact, action string) {
 	bn.logger.Debug("processing fact", map[string]interface{}{
