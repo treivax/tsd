@@ -1,0 +1,4 @@
+// Test NotNode avec condition sur string
+type Device : <id: string, name: string, status: string, type: string>
+
+{d: Device} / NOT (d.status == "broken") ==> working_device(d.id, d.name, d.type)

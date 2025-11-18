@@ -1,0 +1,5 @@
+// Test de jointure complexe avec multiple conditions
+type Employee : <id: string, name: string, department: string, salary: number>
+type Project : <id: string, name: string, department: string, budget: number>
+
+{e: Employee, p: Project} / e.department == p.department ==> dept_match(e.id, p.id, e.name, p.name)

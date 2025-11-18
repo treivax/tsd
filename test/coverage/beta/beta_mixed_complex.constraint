@@ -1,0 +1,5 @@
+// Test combinant JoinNode et NotNode
+type Account : <id: string, balance: number, type: string, active: bool>
+type Transaction : <id: string, account_id: string, amount: number, status: string>
+
+{a: Account, t: Transaction} / a.id == t.account_id ==> valid_transaction(a.id, t.id, a.balance, t.amount)

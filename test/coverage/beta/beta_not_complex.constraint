@@ -1,0 +1,4 @@
+// Test de négation avec multiple conditions
+type Person : <id: string, name: string, age: number, status: string>
+
+{p: Person} / NOT (p.age < 18) ==> eligible_person(p.id, p.name)
