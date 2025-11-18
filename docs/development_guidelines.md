@@ -1,7 +1,7 @@
 # GUIDE DE DÉVELOPPEMENT GO - PROJET TSD
 
-**Version :** 1.0  
-**Date :** 13 novembre 2025  
+**Version :** 1.0
+**Date :** 13 novembre 2025
 **Statut :** Standards obligatoires pour tous les développeurs
 
 ## 🎯 CONVENTIONS DE NOMMAGE OBLIGATOIRES
@@ -10,7 +10,7 @@
 ```bash
 # ✅ CORRECT - snake_case
 user_service.go
-constraint_parser.go  
+constraint_parser.go
 rete_network.go
 test_utils.go
 
@@ -47,7 +47,7 @@ type constraint_validator interface { } // INTERDIT
 func (s *UserService) ValidateUser(user User) error { }
 func NewConstraintValidator() *ConstraintValidator { }
 
-// ✅ CORRECT - camelCase pour privées  
+// ✅ CORRECT - camelCase pour privées
 func (s *userService) parseInput(input string) error { }
 func createConnection() *Connection { }
 
@@ -87,7 +87,7 @@ cmd/constraint_parser/
 
 # ❌ INCORRECT - camelCase ou trop génériques
 pkg/Domain/ # INTERDIT
-internal/Config/ # INTERDIT  
+internal/Config/ # INTERDIT
 test/Integration/ # INTERDIT
 cmd/constraintParser/ # INTERDIT
 ```
@@ -117,7 +117,7 @@ project/
 ```go
 // ✅ CORRECT - Noms simples et descriptifs
 package domain
-package validator  
+package validator
 package storage
 
 // ❌ INCORRECT - Noms génériques ou répétitifs
@@ -135,9 +135,9 @@ func TestUserService_ValidateUser(t *testing.T) {
     t.Run("valid_user_should_pass", func(t *testing.T) {
         // Test avec snake_case OK
     })
-    
+
     t.Run("invalid_user_should_fail", func(t *testing.T) {
-        // Test avec snake_case OK  
+        // Test avec snake_case OK
     })
 }
 
@@ -170,7 +170,7 @@ test/unit/user_unit_test.go
 ### Pre-commit Hook
 Le projet inclut un hook pre-commit qui valide automatiquement :
 - ✅ Noms de fichiers en snake_case
-- ✅ Types en PascalCase  
+- ✅ Types en PascalCase
 - ✅ Fonctions correctement nommées
 - ✅ Variables en camelCase
 - ✅ Compilation sans erreurs
@@ -236,7 +236,7 @@ type Thing struct { }       // Nom non descriptif
 package UtilityFunctions    // PascalCase interdit pour packages
 package constraint_utils    // snake_case interdit pour packages
 
-// ERREUR: Récepteurs mal nommés  
+// ERREUR: Récepteurs mal nommés
 func (constraintValidator *ConstraintValidator) Validate() {} // Trop verbeux
 func (cv ConstraintValidator) Validate() {}                  // Devrait être pointeur
 func (this *ConstraintValidator) Validate() {}               // "this" interdit en Go
@@ -246,7 +246,7 @@ func (this *ConstraintValidator) Validate() {}               // "this" interdit 
 
 ### Métriques Cibles
 - **Conformité nommage :** > 90%
-- **Couverture de tests :** > 80%  
+- **Couverture de tests :** > 80%
 - **Compilation sans warnings :** 100%
 - **Tests passants :** 100%
 
@@ -283,7 +283,7 @@ go test -race ./...
 
 ### Application Systématique
 - ✅ **Types exportés :** PascalCase uniquement
-- ✅ **Fonctions exportées :** PascalCase, privées camelCase  
+- ✅ **Fonctions exportées :** PascalCase, privées camelCase
 - ✅ **Variables :** camelCase systématique
 - ✅ **Fichiers :** snake_case (convention TSD)
 - ✅ **Tests :** pattern TestType_Method
@@ -297,7 +297,7 @@ go test -race ./...
 
 ## 🏁 **CONCLUSION**
 
-**Ce guide est OBLIGATOIRE** pour maintenir la qualité et la cohérence du projet TSD. 
+**Ce guide est OBLIGATOIRE** pour maintenir la qualité et la cohérence du projet TSD.
 
 Le hook pre-commit aide à détecter automatiquement les violations, mais chaque développeur est responsable de respecter ces conventions.
 

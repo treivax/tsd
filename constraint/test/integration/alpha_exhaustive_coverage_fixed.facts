@@ -15,7 +15,7 @@ TestPerson[id=P003, name=Charlie, age=16, salary=0, active=false, score=6.0, tag
 TestPerson[id=P004, name=Diana, age=45, salary=85000, active=true, score=7.8, tags=manager, status=active]
 TestPerson[id=P005, name=Eve, age=30, salary=55000, active=false, score=8.0, tags=employee, status=inactive]
 
-// Cas limites et valeurs spéciales  
+// Cas limites et valeurs spéciales
 TestPerson[id=P006, name=Frank, age=0, salary=-5000, active=true, score=0.0, tags=test, status=active]
 TestPerson[id=P007, name=Grace, age=65, salary=95000, active=true, score=10.0, tags=executive, status=active]
 TestPerson[id=P008, name=Henry, age=18, salary=25000, active=false, score=5.5, tags=junior, status=inactive]

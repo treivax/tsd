@@ -46,7 +46,7 @@ echo "========================="
 
 # Vérifier les fonctions exportées (doivent être PascalCase)
 exported_funcs_ok=$(grep -r "^func [A-Z][a-zA-Z]*" . --include="*.go" | wc -l)
-# Vérifier les fonctions privées (doivent être camelCase)  
+# Vérifier les fonctions privées (doivent être camelCase)
 private_funcs_ok=$(grep -r "^func [a-z][a-zA-Z]*[^_]*(" . --include="*.go" | wc -l)
 # Fonctions avec snake_case (incorrect)
 funcs_snake=$(grep -r "^func [a-z][a-z0-9]*_" . --include="*.go" | wc -l)
@@ -70,7 +70,7 @@ echo "Fichiers camelCase à standardiser:"
 
 problematic_files=(
     "./constraint/api.go"
-    "./constraint/parser.go" 
+    "./constraint/parser.go"
     "./rete/converter.go"
     "./rete/evaluator.go"
     "./rete/network.go"
@@ -91,7 +91,7 @@ echo "========================="
 
 echo -e "${GREEN}✅ CONFORME:${NC}"
 echo "  - Types et structures: PascalCase ✅"
-echo "  - Fonctions exportées: PascalCase ✅" 
+echo "  - Fonctions exportées: PascalCase ✅"
 echo "  - Fonctions privées: camelCase ✅"
 echo "  - Répertoires: snake_case ✅"
 echo "  - Variables: camelCase (dans l'ensemble) ✅"

@@ -96,7 +96,7 @@ pattern := network.MultiJoinPattern{
     JoinSpecs: []network.JoinSpecification{
         {
             LeftType:   "Person",
-            RightType:  "Address", 
+            RightType:  "Address",
             Conditions: []domain.JoinCondition{
                 domain.NewBasicJoinCondition("address_id", "id", "=="),
             },
@@ -164,11 +164,11 @@ conditions := []domain.JoinCondition{
 ```go
 func TestConcurrentAccess(t *testing.T) {
     node := nodes.NewJoinNodeImpl("test", []domain.JoinCondition{})
-    
+
     // Lancer plusieurs goroutines
     for i := 0; i < 100; i++ {
         go func(id int) {
-            fact := domain.NewFact(fmt.Sprintf("f%d", id), "Test", 
+            fact := domain.NewFact(fmt.Sprintf("f%d", id), "Test",
                                  map[string]interface{}{"id": id})
             node.ProcessRightFact(fact)
         }(i)
@@ -189,7 +189,7 @@ fmt.Printf("Faits en mémoire: %d\n", stats.TotalFacts)
 
 // Statistiques par nœud
 for nodeID, memStats := range stats.MemoryStats {
-    fmt.Printf("Nœud %s: %d tokens, %d faits\n", 
+    fmt.Printf("Nœud %s: %d tokens, %d faits\n",
                nodeID, memStats.TokenCount, memStats.FactCount)
 }
 ```
@@ -240,7 +240,7 @@ pattern := network.MultiJoinPattern{
             NodeID: "emp_dept_join",
         },
         {
-            LeftType:   "EmployeeDepartment", 
+            LeftType:   "EmployeeDepartment",
             RightType:  "Project",
             Conditions: []domain.JoinCondition{
                 domain.NewBasicJoinCondition("project_id", "id", "=="),
@@ -295,7 +295,7 @@ orderPattern := network.MultiJoinPattern{
 ### Optimisations
 
 1. **Indexation des faits** : Accès O(1) aux faits par clé
-2. **Mémoire partagée** : Réutilisation des tokens entre nœuds  
+2. **Mémoire partagée** : Réutilisation des tokens entre nœuds
 3. **Évaluation paresseuse** : Les jointures ne sont calculées qu'au besoin
 4. **Nettoyage automatique** : Garbage collection des tokens expirés
 

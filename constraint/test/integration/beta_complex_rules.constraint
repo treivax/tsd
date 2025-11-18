@@ -5,7 +5,7 @@ type Adresse : <utilisateur_id: string, rue: string, ville: string>
 // Règle 1: Utilisateurs mineurs habitant Lille
 {u: Utilisateur, a: Adresse} / u.id == a.utilisateur_id AND u.age < 18 AND a.ville == "Lille" ==> alert_mineur_lille(u.id, u.nom, u.prenom, a.rue)
 
-// Règle 2: Utilisateurs majeurs habitant Paris  
+// Règle 2: Utilisateurs majeurs habitant Paris
 {u: Utilisateur, a: Adresse} / u.id == a.utilisateur_id AND u.age >= 18 AND a.ville == "Paris" ==> process_majeur_paris(u.id, u.nom, u.prenom, a.rue)
 
 // Règle 3: Utilisateurs très âgés (>= 65) dans toutes les villes

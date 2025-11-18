@@ -21,10 +21,10 @@ notNode.SetNegationCondition("type == 'login' AND timestamp > recent")
 **Usage** : Vérifier l'existence d'au moins un fait satisfaisant une condition
 
 ```go
-// Créer un nœud EXISTS  
+// Créer un nœud EXISTS
 existsNode := nodes.NewExistsNode("exists_suspicious", logger)
 variable := domain.TypedVariable{
-    Name:     "suspicious_activity", 
+    Name:     "suspicious_activity",
     DataType: "SecurityEvent"
 }
 existsNode.SetExistenceCondition(variable, "risk_level == 'high'")
@@ -55,7 +55,7 @@ func SetupFraudDetection(logger domain.Logger) (*FraudDetectionSystem, error) {
     // 1. Nœud NOT : Pas de transaction légitime récente
     notNode := nodes.NewNotNode("no_recent_legitimate", logger)
     notNode.SetNegationCondition("type == 'legitimate' AND age_hours < 24")
-    
+
     // 2. Nœud EXISTS : Transactions suspectes présentes
     existsNode := nodes.NewExistsNode("has_suspicious", logger)
     suspiciousVar := domain.TypedVariable{
@@ -63,21 +63,21 @@ func SetupFraudDetection(logger domain.Logger) (*FraudDetectionSystem, error) {
         DataType: "Transaction",
     }
     existsNode.SetExistenceCondition(suspiciousVar, "amount > 10000 AND location != 'home'")
-    
+
     // 3. Nœud ACCUMULATE : Somme des montants
     sumAccumulator := domain.AccumulateFunction{
         FunctionType: "SUM",
         Field:        "amount",
     }
     sumNode := nodes.NewAccumulateNode("total_amount", sumAccumulator, logger)
-    
+
     // 4. Nœud ACCUMULATE : Nombre de transactions
     countAccumulator := domain.AccumulateFunction{
         FunctionType: "COUNT",
         Field:        "",
     }
     countNode := nodes.NewAccumulateNode("tx_count", countAccumulator, logger)
-    
+
     return &FraudDetectionSystem{
         NotNode:   notNode,
         ExistsNode: existsNode,
@@ -96,7 +96,7 @@ func (fds *FraudDetectionSystem) AnalyzeAccount(accountToken *domain.Token, tran
         Score:     0,
         Reasons:   []string{},
     }
-    
+
     // 1. Vérifier l'absence de transactions légitimes
     legitimateFound := false
     for _, tx := range transactions {
@@ -108,25 +108,25 @@ func (fds *FraudDetectionSystem) AnalyzeAccount(accountToken *domain.Token, tran
             }
         }
     }
-    
+
     if !legitimateFound {
         report.Score += 30
         report.Reasons = append(report.Reasons, "Pas de transaction légitime récente")
     }
-    
+
     // 2. Vérifier la présence de transactions suspectes
     if fds.ExistsNode.CheckExistence(accountToken) {
         report.Score += 50
         report.Reasons = append(report.Reasons, "Transactions suspectes détectées")
     }
-    
+
     // 3. Vérifier la somme totale
     totalSum, _ := fds.SumNode.ComputeAggregate(accountToken, transactions)
     if sum := totalSum.(float64); sum > 50000 {
         report.Score += 20
         report.Reasons = append(report.Reasons, fmt.Sprintf("Montant élevé: %.2f", sum))
     }
-    
+
     // Déterminer le niveau de risque
     if report.Score >= 70 {
         report.RiskLevel = "HIGH"
@@ -135,7 +135,7 @@ func (fds *FraudDetectionSystem) AnalyzeAccount(accountToken *domain.Token, tran
     } else {
         report.RiskLevel = "LOW"
     }
-    
+
     return report
 }
 ```
@@ -163,7 +163,7 @@ accumulator := domain.AccumulateFunction{
 ### AVG - Moyenne
 ```go
 accumulator := domain.AccumulateFunction{
-    FunctionType: "AVG", 
+    FunctionType: "AVG",
     Field:        "response_time",
 }
 // Calcule la moyenne des temps de réponse
@@ -178,7 +178,7 @@ accumulator := domain.AccumulateFunction{
 // Trouve le prix minimum
 ```
 
-### MAX - Maximum  
+### MAX - Maximum
 ```go
 accumulator := domain.AccumulateFunction{
     FunctionType: "MAX",
@@ -193,7 +193,7 @@ accumulator := domain.AccumulateFunction{
 ```go
 // Créer les nœuds
 notNode := nodes.NewNotNode("id", logger)
-existsNode := nodes.NewExistsNode("id", logger) 
+existsNode := nodes.NewExistsNode("id", logger)
 accNode := nodes.NewAccumulateNode("id", accumulator, logger)
 
 // Configurer les conditions
@@ -220,7 +220,7 @@ token := &domain.Token{
 }
 
 notNode.ProcessLeftToken(token)
-existsNode.ProcessLeftToken(token)  
+existsNode.ProcessLeftToken(token)
 accNode.ProcessLeftToken(token)
 ```
 
@@ -241,10 +241,10 @@ aggResult, _ := accNode.ComputeAggregate(token, allFacts)
 // ACCUMULATE : Pic de fréquence inhabituel
 ```
 
-### Pattern 2 : Analyse de Performance  
+### Pattern 2 : Analyse de Performance
 ```go
 // NOT : Pas de succès récent
-// EXISTS : Erreurs critiques présentes  
+// EXISTS : Erreurs critiques présentes
 // ACCUMULATE : Moyenne de temps de réponse élevée
 ```
 
@@ -294,7 +294,7 @@ func SafeAggregation(node *AccumulateNodeImpl, token *domain.Token, facts []*dom
             logger.Error("Aggregation panic recovered", fmt.Errorf("%v", r), nil)
         }
     }()
-    
+
     return node.ComputeAggregate(token, facts)
 }
 ```
@@ -319,14 +319,14 @@ func TestAdvancedNodePattern(t *testing.T) {
     // 1. Setup
     logger := &MockLogger{}
     node := createNodeUnderTest(logger)
-    
+
     // 2. Prepare data
     facts := createTestFacts()
     token := createTestToken()
-    
-    // 3. Execute  
+
+    // 3. Execute
     result := executeNodeLogic(node, token, facts)
-    
+
     // 4. Verify
     validateResult(t, result, expectedOutcome)
 }

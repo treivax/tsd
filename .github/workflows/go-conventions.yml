@@ -10,16 +10,16 @@ jobs:
   conventions-validation:
     name: 🎯 Validation des Conventions Go
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 📦 Checkout du code
       uses: actions/checkout@v4
-      
+
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-        
+
     - name: 📊 Cache des dépendances Go
       uses: actions/cache@v3
       with:
@@ -29,7 +29,7 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
-          
+
     - name: 🔍 Vérification du formatage
       run: |
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
@@ -39,72 +39,72 @@ jobs:
         else
           echo "✅ Code correctement formaté"
         fi
-        
+
     - name: 🧪 Analyse statique (go vet)
       run: go vet ./...
-      
+
     - name: 🏗️ Test de compilation
       run: go build ./...
-      
+
     - name: 🧪 Exécution des tests
       run: go test -v ./...
-      
+
     - name: 📊 Couverture de code
       run: go test -coverprofile=coverage.out ./...
-      
+
     - name: 📈 Upload de la couverture
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.out
         flags: unittests
         name: codecov-umbrella
-        
+
     - name: 🎯 Validation conventions de nommage
       run: |
         chmod +x scripts/validate_conventions.sh
         ./scripts/validate_conventions.sh
-        
+
     - name: 📋 Analyse détaillée du nommage
       run: |
         chmod +x scripts/analyze_naming.sh
         ./scripts/analyze_naming.sh
-        
+
     - name: 🏁 Résumé de la validation
       run: |
         echo "✅ VALIDATION TERMINÉE"
         echo "====================="
         echo "✅ Formatage correct"
         echo "✅ Analyse statique passée"
-        echo "✅ Compilation réussie"  
+        echo "✅ Compilation réussie"
         echo "✅ Tests passants"
         echo "✅ Conventions validées"
 
   security-scan:
     name: 🔒 Scan de Sécurité
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 📦 Checkout du code
       uses: actions/checkout@v4
-      
+
     - name: 🛡️ Scan de sécurité Go
       uses: securecodewarrior/github-action-gosec@master
       with:
         args: './...'
-        
+
   dependency-check:
     name: 📦 Vérification des Dépendances
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 📦 Checkout du code
       uses: actions/checkout@v4
-      
+
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-        
+
     - name: 🔍 Vérification des dépendances
       run: |
         go mod verify
@@ -116,20 +116,20 @@ jobs:
         else
           echo "✅ Dépendances à jour"
         fi
-        
+
   performance-check:
     name: ⚡ Tests de Performance
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: 📦 Checkout du code
       uses: actions/checkout@v4
-      
+
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-        
+
     - name: 🚀 Benchmarks
       run: |
         # Exécuter les benchmarks s'ils existent

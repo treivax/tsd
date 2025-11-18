@@ -14,7 +14,7 @@ Le système RETE a été modifié pour fonctionner comme un **tuple-space** où 
 Fait → TypeNode → AlphaNode → TerminalNode → [EXÉCUTION IMMÉDIATE]
 ```
 
-### Après (Tuple-Space)  
+### Après (Tuple-Space)
 ```
 Fait → TypeNode → AlphaNode → TerminalNode → [STOCKAGE + AFFICHAGE]
                                                     ↓
@@ -44,10 +44,10 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 func (tn *TerminalNode) executeAction(token *Token) error {
     // === VERSION TUPLE-SPACE ===
     // Au lieu d'exécuter l'action, on l'affiche avec les faits déclencheurs
-    
+
     actionName := tn.Action.Job.Name
     fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
-    
+
     // Afficher les faits déclencheurs entre parenthèses
     if len(token.Facts) > 0 {
         fmt.Print(" (")
@@ -64,7 +64,7 @@ func (tn *TerminalNode) executeAction(token *Token) error {
         fmt.Print(")")
     }
     fmt.Println()
-    
+
     return nil
 }
 ```
@@ -75,7 +75,7 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 
 **Ajouts pour la compatibilité :**
 - Support de `"binary_op"` en plus de `"binaryOperation"`
-- Support de `"logical_op"` en plus de `"logicalExpression"`  
+- Support de `"logical_op"` en plus de `"logicalExpression"`
 - Support de `"field_access"` en plus de `"fieldAccess"`
 - Support du format `"op"` en plus de `"operator"`
 - Support du format `"variable"` en plus de `"object"` pour l'accès aux champs
@@ -95,7 +95,7 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: authorize_customer (Customer[id=C003, age=30, vip=false])
 
 📋 ANALYSE DU TUPLE-SPACE:
-  Terminal: terminal_authorize (Action: authorize_customer)  
+  Terminal: terminal_authorize (Action: authorize_customer)
   Tokens stockés: 2
     Token 1: 1 faits déclencheurs - Client C001 (age=25)
     Token 2: 1 faits déclencheurs - Client C003 (age=30)
@@ -148,7 +148,7 @@ RootNode → TypeNode → AlphaNode → TerminalNode
 ### 5. Consommation par les Agents (À implémenter)
 Les agents du tuple-space peuvent :
 - **Lister** les actions disponibles dans `network.TerminalNodes`
-- **Prendre** un token spécifique 
+- **Prendre** un token spécifique
 - **Exécuter** l'action correspondante
 - **Supprimer** le token du tuple-space
 
@@ -176,7 +176,7 @@ Les agents du tuple-space peuvent :
 2. **Take Operation** : Implémenter la prise de tuples atomique
 3. **Concurrence** : Gestion des accès concurrents au tuple-space
 
-### Phase 3 - Distribution  
+### Phase 3 - Distribution
 1. **Réseau** : Distribution des tuples sur plusieurs nœuds
 2. **Persistence** : Sauvegarde des tuples non traités
 3. **Récupération** : Gestion des pannes et reprises
@@ -187,6 +187,6 @@ Les agents du tuple-space peuvent :
 
 **IMPLÉMENTATION COMPLÈTE** de la première étape :
 - ✅ Stockage des ensembles de faits déclencheurs
-- ✅ Affichage des actions avec faits en format tuple-space  
+- ✅ Affichage des actions avec faits en format tuple-space
 - ✅ Tests validés avec règles simples et complexes
 - ✅ Architecture prête pour l'ajout des agents consommateurs

@@ -1,7 +1,7 @@
 # 🎯 RAPPORT DE SYNTHÈSE - VALIDATION COMPLÈTE DES ALPHA NODES TSD
 
-**Date de génération:** 17 novembre 2025  
-**Objectif:** Validation de la capacité de TSD à traiter correctement les expressions de négation complexes  
+**Date de génération:** 17 novembre 2025
+**Objectif:** Validation de la capacité de TSD à traiter correctement les expressions de négation complexes
 
 ---
 
@@ -28,7 +28,7 @@
 
 #### Tests Originaux (10)
 - ✅ `alpha_boolean_negative` - NOT(a.active == true)
-- ✅ `alpha_boolean_positive` - a.active == true  
+- ✅ `alpha_boolean_positive` - a.active == true
 - ✅ `alpha_comparison_negative` - NOT(prod.price > 100)
 - ✅ `alpha_comparison_positive` - prod.price > 100
 - ✅ `alpha_equality_negative` - NOT(p.age == 25)
@@ -54,7 +54,7 @@
 
 **Résultat :** ✅ **FONCTIONNEL**
 - Faits soumis : P001(age=25), P002(age=30), P003(age=25)
-- Action déclenchée : `non_twentyfive_found(P002, 30)` 
+- Action déclenchée : `non_twentyfive_found(P002, 30)`
 - Analyse : Seul P002 avec age=30 déclenche l'action, conforme à NOT(age==25)
 
 ---
@@ -63,7 +63,7 @@
 
 ### ✅ Opérateurs de Base
 - **Égalité :** `==`, `=`
-- **Inégalité :** `!=`, `<>` 
+- **Inégalité :** `!=`, `<>`
 - **Comparaisons :** `>`, `<`, `>=`, `<=`
 - **Booléens :** `true`, `false`
 

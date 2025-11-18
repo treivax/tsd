@@ -25,7 +25,7 @@ type NomType : < champ1: type, champ2: type >
 ### Exercice 1.1 : Définir un type Person
 Créez un type `Personne` avec les champs suivants :
 - `prenom` (string)
-- `nom` (string) 
+- `nom` (string)
 - `age` (number)
 - `actif` (bool)
 
@@ -40,7 +40,7 @@ type Personne : < prenom: string, nom: string, age: number, actif: bool >
 ### Exercice 1.2 : Types pour un e-commerce
 Créez trois types pour un système e-commerce :
 1. `Client` : nom, email, premium (bool)
-2. `Produit` : titre, prix, disponible (bool)  
+2. `Produit` : titre, prix, disponible (bool)
 3. `Commande` : numero (number), total (number), livree (bool)
 
 <details>
@@ -200,7 +200,7 @@ Contexte : Un site de streaming vidéo
 
 Créez les types et règles pour :
 1. `Utilisateur` : nom, age, abonne (bool), genre_prefere (string)
-2. `Film` : titre, duree (number), genre (string), note (number) 
+2. `Film` : titre, duree (number), genre (string), note (number)
 3. `Visionnage` : termine (bool), note_utilisateur (number)
 
 Règles à implémenter :
@@ -214,10 +214,10 @@ Règles à implémenter :
 type Utilisateur : < nom: string, age: number, abonne: bool, genre_prefere: string >
 type Film : < titre: string, duree: number, genre: string, note: number >
 
-{ user: Utilisateur, film: Film } / 
-    user.abonne = true AND 
-    film.genre = user.genre_prefere AND 
-    film.note >= 7 
+{ user: Utilisateur, film: Film } /
+    user.abonne = true AND
+    film.genre = user.genre_prefere AND
+    film.note >= 7
 ==> recommander(user, film)
 ```
 </details>
@@ -241,11 +241,11 @@ Règles :
 type Employe : < nom: string, experience: number, disponible: bool, competence: string >
 type Projet : < nom: string, duree: number, competence_requise: string, urgent: bool >
 
-{ emp: Employe, proj: Projet } / 
-    emp.disponible = true AND 
-    proj.urgent = true AND 
-    emp.competence = proj.competence_requise AND 
-    emp.experience >= 2 
+{ emp: Employe, proj: Projet } /
+    emp.disponible = true AND
+    proj.urgent = true AND
+    emp.competence = proj.competence_requise AND
+    emp.experience >= 2
 ==> affecterProjet(emp, proj)
 ```
 </details>
@@ -284,24 +284,24 @@ type Reduction : < pourcentage: number, categorie_cible: string, actif: bool >
 // ===== RÈGLES MÉTIER =====
 
 // Vente VIP pour produits premium
-{ c: Client, p: Produit } / 
-    c.vip = true AND 
-    p.categorie = "premium" AND 
-    p.stock > 0 
+{ c: Client, p: Produit } /
+    c.vip = true AND
+    p.categorie = "premium" AND
+    p.stock > 0
 ==> vendreVIP(c, p)
 
 // Application de réductions
-{ c: Client, p: Produit, r: Reduction } / 
-    r.actif = true AND 
-    r.categorie_cible = p.categorie AND 
-    c.budget >= (p.prix * (100 - r.pourcentage) / 100) 
+{ c: Client, p: Produit, r: Reduction } /
+    r.actif = true AND
+    r.categorie_cible = p.categorie AND
+    c.budget >= (p.prix * (100 - r.pourcentage) / 100)
 ==> appliquerReduction(c, p, r)
 
 // Validation commandes standard
-{ c: Client, p: Produit } / 
-    c.age >= 18 AND 
-    c.budget >= p.prix AND 
-    p.stock > 0 
+{ c: Client, p: Produit } /
+    c.age >= 18 AND
+    c.budget >= p.prix AND
+    p.stock > 0
 ==> validerCommande(c, p)
 ```
 </details>

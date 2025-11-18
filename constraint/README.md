@@ -5,7 +5,7 @@ Ce module contient **UNE SEULE grammaire PEG complète** et tous les utilitaires
 ## ✅ Statut : Module Nettoyé et Complet
 
 - **Grammaire unique** : `grammar/constraint.peg`
-- **100% de compatibilité** avec les fichiers de contraintes existants  
+- **100% de compatibilité** avec les fichiers de contraintes existants
 - **Cohérence RETE garantie** : tous les nœuds supportés
 - **Tests d'intégration** : 6/6 fichiers complexes analysés avec succès
 
@@ -14,7 +14,7 @@ Ce module contient **UNE SEULE grammaire PEG complète** et tous les utilitaires
 ```
 constraint/
 ├── README.md                    # Cette documentation
-├── api.go                      # API publique du module  
+├── api.go                      # API publique du module
 ├── constraint_types.go         # Définitions des types d'AST
 ├── constraint_utils.go         # Fonctions utilitaires de validation
 ├── parser.go                   # Parser généré par pigeon (ne pas modifier)
@@ -114,7 +114,7 @@ La grammaire est définie dans `grammar/constraint.peg` et supporte :
 - **Variables typées** dans des ensembles
 - **Contraintes logiques** avec opérateurs de comparaison
 - **Actions** déclenchées par les règles
-- **Expressions arithmétiques** 
+- **Expressions arithmétiques**
 - **Accès aux champs** avec notation pointée
 
 ### Exemple de syntaxe
@@ -132,7 +132,7 @@ Les fichiers de test dans `tests/` couvrent différents aspects :
 
 - `test_input.txt` : Exemple de base
 - `test_type_valid.txt` : Validation de types
-- `test_actions.txt` : Tests d'actions  
+- `test_actions.txt` : Tests d'actions
 - `test_field_*.txt` : Tests d'accès aux champs
 - `test_multi_expressions.txt` : Règles multiples
 
@@ -170,7 +170,7 @@ Les fichiers de test dans `tests/` couvrent différents aspects :
 // ParseConstraint analyse un fichier de contraintes
 func ParseConstraint(filename string, input []byte) (interface{}, error)
 
-// ValidateConstraintProgram valide un programme d'AST 
+// ValidateConstraintProgram valide un programme d'AST
 func ValidateConstraintProgram(result interface{}) error
 
 // ParseConstraintFile analyse depuis le système de fichiers

@@ -27,7 +27,7 @@ echo "   📈 Couverture pkg/domain: $DOMAIN_COV"
 echo ""
 
 echo "🔬 Tests pkg/validator (validation, types, registres)..."
-go test -v -coverprofile=test/coverage/validator.out ./pkg/validator  
+go test -v -coverprofile=test/coverage/validator.out ./pkg/validator
 VALIDATOR_COV=$(go tool cover -func=test/coverage/validator.out | tail -1 | grep -o '[0-9.]*%')
 echo "   📈 Couverture pkg/validator: $VALIDATOR_COV"
 echo ""
@@ -116,7 +116,7 @@ echo "  📊 Tests d'interfaces (compatibilité, substitution)"
 echo ""
 
 echo "📦 Packages testés:"
-echo "  ✅ pkg/domain/types.go - Constructeurs et structures"  
+echo "  ✅ pkg/domain/types.go - Constructeurs et structures"
 echo "  ✅ pkg/domain/errors.go - Gestion d'erreurs avancée"
 echo "  ✅ pkg/validator/validator.go - Validation des programmes"
 echo "  ✅ pkg/validator/types.go - Vérification de types"
@@ -139,7 +139,7 @@ echo "  🌐 test/coverage/reports/validator_coverage.html"
 echo ""
 echo "📊 Données de couverture:"
 echo "  📄 test/coverage/global.out"
-echo "  📄 test/coverage/domain.out"  
+echo "  📄 test/coverage/domain.out"
 echo "  📄 test/coverage/validator.out"
 echo ""
 

@@ -74,7 +74,7 @@ validate: format lint build test check-conventions ## Validation complète du pr
 	@echo "$(GREEN)🎉 VALIDATION COMPLÈTE TERMINÉE$(NC)"
 	@echo "================================="
 	@echo "$(GREEN)✅ Formatage$(NC)"
-	@echo "$(GREEN)✅ Analyse statique$(NC)"  
+	@echo "$(GREEN)✅ Analyse statique$(NC)"
 	@echo "$(GREEN)✅ Compilation$(NC)"
 	@echo "$(GREEN)✅ Tests$(NC)"
 	@echo "$(GREEN)✅ Conventions de nommage$(NC)"
@@ -132,7 +132,7 @@ ci-validate: ## Validation pour CI/CD (sans hooks)
 	@echo "$(BLUE)🤖 VALIDATION CI/CD$(NC)"
 	@echo "=================="
 	@make format
-	@make lint  
+	@make lint
 	@make build
 	@make test-coverage
 	@make check-conventions
@@ -151,7 +151,7 @@ onboarding: ## Guide pour nouveaux développeurs
 	@echo ""
 	@echo "$(YELLOW)🔧 DÉVELOPPEMENT QUOTIDIEN :$(NC)"
 	@echo "• $(GREEN)make quick-check$(NC)        - Avant chaque commit"
-	@echo "• $(GREEN)make test-integration$(NC)   - Tests d'intégration"  
+	@echo "• $(GREEN)make test-integration$(NC)   - Tests d'intégration"
 	@echo "• $(GREEN)make watch-test$(NC)         - Développement en continu"
 	@echo ""
 	@echo "$(YELLOW)📋 VALIDATION AVANT PUSH :$(NC)"

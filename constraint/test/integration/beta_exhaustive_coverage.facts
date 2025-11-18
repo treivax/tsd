@@ -2,12 +2,12 @@
 // ===========================================================
 // Dataset complet pour tester tous les types de noeuds Beta avec :
 // - Jointures (JoinNode) avec tous opérateurs et conditions
-// - Négations (NotNode) avec cas succès/échec  
+// - Négations (NotNode) avec cas succès/échec
 // - Quantifications (ExistsNode) avec variantes d'existence
 // - Agrégations (AccumulateNode) avec SUM, COUNT, AVG, MIN, MAX
 // - Combinaisons complexes multi-noeuds
 
-// Personnes de test - 20 profils variés 
+// Personnes de test - 20 profils variés
 TestPerson[id=P001, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active, department=sales, level=2]
 TestPerson[id=P002, name=Bob, age=35, salary=75000, active=true, score=9.2, tags=senior, status=active, department=engineering, level=5]
 TestPerson[id=P003, name=Charlie, age=16, salary=0, active=false, score=6.0, tags=intern, status=inactive, department=hr, level=1]

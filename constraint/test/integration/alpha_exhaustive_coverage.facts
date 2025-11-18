@@ -4,7 +4,7 @@
 // Métadonnées
 # description: Données exhaustives pour validation complète des nœuds Alpha
 # test_purpose: Validation succès/échecs, opérateurs logiques, cas limites
-# author: Alpha Exhaustive Test Suite  
+# author: Alpha Exhaustive Test Suite
 # version: 2.0
 # coverage: ALL operators, ALL edge cases, SUCCESS + FAILURE validation
 
@@ -15,7 +15,7 @@
 // Personne 1 : Alice - Profil standard pour succès de base
 TestPerson P001 {
     id: "P001",
-    name: "Alice", 
+    name: "Alice",
     age: 25,
     salary: 45000,
     active: true,
@@ -28,7 +28,7 @@ TestPerson P001 {
 TestPerson P002 {
     id: "P002",
     name: "Bob",
-    age: 30, 
+    age: 30,
     salary: 55000,
     active: false,
     score: 92.0,
@@ -38,7 +38,7 @@ TestPerson P002 {
 
 // Personne 3 : Charlie - Senior actif pour combinaisons
 TestPerson P003 {
-    id: "P003", 
+    id: "P003",
     name: "Charlie",
     age: 67,
     salary: 85000,
@@ -87,7 +87,7 @@ TestPerson P006 {
 // Personne 7 : Grace - Cas limites (faible salaire, score moyen)
 TestPerson P007 {
     id: "P007",
-    name: "Grace", 
+    name: "Grace",
     age: 28,
     salary: 38000,
     active: true,
@@ -162,7 +162,7 @@ TestPerson P012 {
 
 // Edge Case 3 : Nom vide
 TestPerson P013 {
-    id: "P013", 
+    id: "P013",
     name: "",
     age: 30,
     salary: 50000,
@@ -187,7 +187,7 @@ TestPerson P014 {
 // Edge Case 5 : Très haut salaire pour OR tests
 TestPerson P015 {
     id: "P015",
-    name: "Millionaire", 
+    name: "Millionaire",
     age: 42,
     salary: 250000,
     active: true,
@@ -197,7 +197,7 @@ TestPerson P015 {
 }
 
 // ===============================================================
-// DONNÉES TESTPRODUCT - DIVERSITÉ MAXIMALE  
+// DONNÉES TESTPRODUCT - DIVERSITÉ MAXIMALE
 // ===============================================================
 
 // Produit 1 : Laptop standard
@@ -214,7 +214,7 @@ TestProduct PROD001 {
 
 // Produit 2 : Livre pas cher
 TestProduct PROD002 {
-    id: "PROD002", 
+    id: "PROD002",
     name: "Novel",
     price: 15.99,
     category: "Books",
@@ -263,7 +263,7 @@ TestProduct PROD005 {
 // Produit 6 : Rating précis (PI)
 TestProduct PROD006 {
     id: "PROD006",
-    name: "Pi Product", 
+    name: "Pi Product",
     price: 31.41,
     category: "Math",
     available: true,
@@ -277,14 +277,14 @@ TestProduct PROD007 {
     id: "PROD007",
     name: "Smartphone",
     price: 599.99,
-    category: "Electronics", 
+    category: "Electronics",
     available: true,
     rating: 4.1,
     keywords: "phone mobile",
     brand: "MobileTech"
 }
 
-// Produit 8 : Produit bas rating  
+// Produit 8 : Produit bas rating
 TestProduct PROD008 {
     id: "PROD008",
     name: "Poor Quality",
@@ -296,7 +296,7 @@ TestProduct PROD008 {
     brand: "CheapCorp"
 }
 
-// =============================================================== 
+// ===============================================================
 // DONNÉES SUPPLÉMENTAIRES POUR TESTS SPÉCIFIQUES
 // ===============================================================
 
@@ -314,7 +314,7 @@ TestPerson P016 {
 
 // Pour tests combinaisons complexes
 TestPerson P017 {
-    id: "P017", 
+    id: "P017",
     name: "Complex",
     age: 41,
     salary: 95000,

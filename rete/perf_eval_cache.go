@@ -444,7 +444,7 @@ func (ec *EvaluationCache) InvalidateByFact(factID string) int {
 	toRemove := make([]string, 0)
 
 	// Trouver toutes les entrées associées à ce fait
-	for key, _ := range ec.cache {
+	for key := range ec.cache {
 		if ec.containsFactID(key, factID) {
 			toRemove = append(toRemove, key)
 		}

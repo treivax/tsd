@@ -4,7 +4,7 @@
 User[id="u001", name="Alice", age=25]
 User[id="u002", name="Bob", age=30]
 
-// ERROR: Invalid field type (string instead of number)  
+// ERROR: Invalid field type (string instead of number)
 User[id="u003", name="Charlie", age="invalid_age"]
 
 // ERROR: Missing required field

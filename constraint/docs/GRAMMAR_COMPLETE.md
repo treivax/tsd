@@ -111,7 +111,7 @@ go test -run TestFlexibleParserIntegration -v advanced_integration_test.go
 ### Résultats Attendus
 ```
 ✅ alpha_conditions.constraint: 2 types, 12 expressions
-✅ beta_joins.constraint: 3 types, 9 expressions  
+✅ beta_joins.constraint: 3 types, 9 expressions
 ✅ negation.constraint: 3 types, 8 expressions
 ✅ exists.constraint: 3 types, 10 expressions
 ✅ aggregation.constraint: 3 types, 14 expressions
@@ -134,7 +134,7 @@ go test -run TestFlexibleParserIntegration -v advanced_integration_test.go
   "types": [
     {
       "type": "typeDefinition",
-      "name": "Transaction", 
+      "name": "Transaction",
       "fields": [...]
     }
   ],
@@ -158,7 +158,7 @@ go test -run TestFlexibleParserIntegration -v advanced_integration_test.go
 
 Cette grammaire unique garantit :
 1. **Couverture complète** de tous les nœuds RETE
-2. **Parsing réel** (pas seulement validation syntaxique)  
+2. **Parsing réel** (pas seulement validation syntaxique)
 3. **Compatibilité** avec tous les fichiers de contraintes existants
 4. **Extensibilité** pour futurs constructs RETE
 5. **Documentation** complète des correspondances PEG ↔ RETE
@@ -167,7 +167,7 @@ Cette grammaire unique garantit :
 
 Pour ajouter de nouveaux constructs :
 1. Mettre à jour `constraint.peg`
-2. Régénérer avec `pigeon -o ../parser.go constraint.peg`  
+2. Régénérer avec `pigeon -o ../parser.go constraint.peg`
 3. Ajouter les tests d'intégration correspondants
 4. Documenter la correspondance RETE
 

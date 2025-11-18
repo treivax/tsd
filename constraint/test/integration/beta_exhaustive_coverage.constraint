@@ -2,7 +2,7 @@
 // =================================================================
 // Objectif: Valider TOUS les opérateurs et fonctionnalités des noeuds Beta
 // - JoinNode: jointures avec toutes conditions possibles
-// - NotNode: négations de tous types  
+// - NotNode: négations de tous types
 // - ExistsNode: quantifications existentielles avec toutes variantes
 // - AccumulateNode: toutes fonctions d'agrégation (SUM, COUNT, AVG, MIN, MAX)
 // - Combinaisons complexes multi-noeuds Beta
@@ -22,7 +22,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id ==> join_person_order_equal(p.id, o.id)
 {o: TestOrder, prod: TestProduct} / o.product_id == prod.id ==> join_order_product_equal(o.id, prod.id)
 
-// 1.2 Jointures inégalité  
+// 1.2 Jointures inégalité
 {p: TestPerson, o: TestOrder} / p.id != o.customer_id ==> join_person_order_different(p.id, o.id)
 {o: TestOrder, prod: TestProduct} / o.amount != prod.price ==> join_order_product_price_diff(o.id, prod.id)
 
@@ -76,7 +76,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 {o: TestOrder} / NOT (o.total > 50000) ==> not_high_total(o.id)
 {prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)
 
-// 2.3 Négations d'expressions arithmétiques  
+// 2.3 Négations d'expressions arithmétiques
 {p: TestPerson} / NOT (p.age * 1000 < p.salary) ==> not_age_times_thousand_less_salary(p.id)
 {o: TestOrder} / NOT (o.amount + o.discount >= o.total) ==> not_amount_plus_discount_geq_total(o.id)
 
@@ -101,7 +101,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // 2.9 Négations complexes imbriquées
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT ((p.age < 18 OR p.salary < 25000) AND (o.total > 1000 OR o.priority == "urgent")) ==> not_minor_poor_large_urgent_order(p.id, o.id)
 
-// =====================================================================  
+// =====================================================================
 // SECTION 3: ExistsNode - Quantification existentielle exhaustive
 // =====================================================================
 
@@ -120,7 +120,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // 3.4 EXISTS avec conditions logiques
 {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND (o.status == "shipped" OR o.priority == "high") AND o.total > 500) ==> exists_shipped_high_priority_valuable_order(p.id)
 
-// 3.5 EXISTS avec fonctions string  
+// 3.5 EXISTS avec fonctions string
 {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND LENGTH(o.region) > 5) ==> exists_order_long_region_name(p.id)
 {p: TestPerson} / EXISTS (prod: TestProduct / prod.keywords CONTAINS p.tags) ==> exists_product_matching_tags(p.id)
 
@@ -137,7 +137,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 {p: TestPerson} / p.active == true AND EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 2000) ==> active_person_with_large_order(p.id)
 
 // =====================================================================
-// SECTION 4: AccumulateNode - Agrégations exhaustives  
+// SECTION 4: AccumulateNode - Agrégations exhaustives
 // =====================================================================
 
 // 4.1 SUM - Sommes simples par relation
@@ -154,13 +154,13 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // 4.4 MIN - Valeurs minimales
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND MIN(o.total) > 100 ==> all_orders_over_hundred(p.id)
 
-//4.5 MAX - Valeurs maximales  
+//4.5 MAX - Valeurs maximales
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND MAX(o.total) <= 10000 ==> max_order_under_ten_thousand(p.id)
 
 // 4.6 SUM avec condition complexe
 {p: TestPerson, t: TestTransaction} / p.id == t.account_id AND t.type == "purchase" AND SUM(t.amount) > 1000 ==> high_purchase_sum(p.id)
 
-// 4.7 COUNT avec conditions multiples  
+// 4.7 COUNT avec conditions multiples
 {p: TestPerson, t: TestTransaction} / p.id == t.account_id AND t.approved == true AND COUNT(t.id) >= 5 ==> frequent_approved_transactions(p.id)
 
 // 4.8 AVG avec filtrage par type
@@ -176,13 +176,13 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // 5.1 JOIN + NOT
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total < 100) ==> join_not_cheap_order(p.id, o.id)
 
-// 5.2 JOIN + EXISTS  
+// 5.2 JOIN + EXISTS
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> join_order_with_existing_product(p.id, o.id)
 
 // 5.3 NOT + EXISTS
 {p: TestPerson} / NOT (EXISTS (o: TestOrder / o.customer_id == p.id AND o.status == "cancelled")) ==> not_exists_cancelled_order(p.id)
 
-// 5.4 Combinaison triple 
+// 5.4 Combinaison triple
 {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.status == "pending") AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> complex_join_not_exists(p.id, o.id)
 
 // =====================================================================
@@ -199,5 +199,5 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // 6.3 Conditions avec précision décimale
 {p: TestPerson} / p.score >= 7.5 AND p.score <= 9.99 ==> high_score_person(p.id)
 
-// 6.4 Tests jointures multiples  
+// 6.4 Tests jointures multiples
 {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> three_way_join_test(p.id, o.id, prod.id)

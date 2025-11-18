@@ -13,7 +13,7 @@ type TestProduct : <id: string, name: string, price: number, category: string, a
 // Test égalité number entier
 {p: TestPerson} / p.age == 25 ==> test_number_equality_success(p.id)
 
-// Test égalité number décimal  
+// Test égalité number décimal
 {prod: TestProduct} / prod.price == 99.99 ==> test_decimal_equality_success(prod.id)
 
 // Test égalité boolean true

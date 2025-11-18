@@ -54,7 +54,7 @@ go build -o bin/tsd ./cmd/
 type Account : <id: string, balance: number, active: bool>
 
 // Règle: Détecter les comptes inactifs avec solde élevé
-{a: Account} / NOT(a.active == true) AND a.balance > 1000 
+{a: Account} / NOT(a.active == true) AND a.balance > 1000
     ==> suspicious_account_alert(a.id, a.balance)
 ```
 
@@ -82,10 +82,10 @@ if err != nil {
 tsd/
 ├── cmd/           # CLI application principale
 ├── constraint/    # Parser et validation des règles
-├── rete/          # Moteur RETE et évaluation  
+├── rete/          # Moteur RETE et évaluation
 ├── test/          # Tests organisés par type
 │   ├── unit/      # Tests unitaires
-│   ├── integration/ # Tests d'intégration  
+│   ├── integration/ # Tests d'intégration
 │   └── coverage/  # Tests de couverture fonctionnelle
 ├── docs/          # Documentation complète
 └── scripts/       # Scripts utilitaires
@@ -99,7 +99,7 @@ TSD maintient une couverture de tests de 100% sur les fonctionnalités critiques
 # Tests complets
 ./scripts/build.sh
 
-# Tests unitaires uniquement  
+# Tests unitaires uniquement
 go test ./...
 
 # Tests avec couverture
@@ -114,7 +114,7 @@ go test -cover ./...
 26 tests de couverture validant tous les opérateurs :
 
 - ✅ **Booléens** : `==`, `!=` avec `true`/`false`
-- ✅ **Comparaisons** : `>`, `<`, `>=`, `<=` 
+- ✅ **Comparaisons** : `>`, `<`, `>=`, `<=`
 - ✅ **Chaînes** : Égalité et patterns
 - ✅ **Fonctions** : `LENGTH()`, `ABS()`, `UPPER()`
 - ✅ **Patterns** : `CONTAINS`, `LIKE`, `MATCHES`, `IN`
@@ -133,7 +133,7 @@ go test -cover ./...
 
 ```go
 // Exemple validé : Détecter les anomalies utilisateur
-{u: User} / NOT(u.age >= 18 AND u.status != "blocked") 
+{u: User} / NOT(u.age >= 18 AND u.status != "blocked")
     ==> user_anomaly_detected(u.id, u.age, u.status)
 ```
 
@@ -143,11 +143,11 @@ go test -cover ./...
 
 ```go
 // Validation d'emails d'entreprise
-{e: Email} / e.address LIKE "%@company.com" 
+{e: Email} / e.address LIKE "%@company.com"
     ==> company_email_found(e.address)
 
 // Codes conformes au format
-{c: Code} / c.value MATCHES "CODE[0-9]+" 
+{c: Code} / c.value MATCHES "CODE[0-9]+"
     ==> valid_code_detected(c.value)
 ```
 
@@ -189,7 +189,7 @@ Voir [DEVELOPMENT_GUIDELINES.md](docs/development_guidelines.md) pour les standa
 
 - ✅ API stable
 - ✅ Tests complets (100%)
-- ✅ Documentation complète  
+- ✅ Documentation complète
 - ✅ Performance validée
 - ✅ Expressions complexes supportées
 

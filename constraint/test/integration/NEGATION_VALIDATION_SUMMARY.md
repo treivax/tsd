@@ -62,7 +62,7 @@ TestPerson{id=P010, name=X, salary=28000, score=6.5, tags=temp, status=active, l
 
 ### ✅ **Négations de comparaisons numériques**
 - `NOT (p.salary < 30000)` : **10/10 faits** (100%) ✅
-- `NOT (o.total > 50000)` : **10/10 faits** (100%) ✅ 
+- `NOT (o.total > 50000)` : **10/10 faits** (100%) ✅
 - `NOT (prod.price <= 10)` : **7/7 faits** (100%) ✅
 
 ### ✅ **Négations d'expressions arithmétiques**
@@ -137,6 +137,6 @@ Le système de négation TSD est **pleinement opérationnel** et **robuste** :
 
 ---
 
-**🎊 VERDICT FINAL**: Système de règles de négation TSD **VALIDÉ** et **PRÊT PRODUCTION** 
+**🎊 VERDICT FINAL**: Système de règles de négation TSD **VALIDÉ** et **PRÊT PRODUCTION**
 
 **📊 Score global**: **100% RÉUSSITE** sur tous les critères testés ✅

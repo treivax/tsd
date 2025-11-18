@@ -40,7 +40,7 @@ NOT(p.age == 0 AND p.ville <> "Paris")
 ### Opérateurs Supportés ✅
 - **Booléens :** `==`, `!=` avec `true`/`false`
 - **Comparaisons :** `>`, `<`, `>=`, `<=`
-- **Chaînes :** Égalité et patterns  
+- **Chaînes :** Égalité et patterns
 - **Fonctions :** `LENGTH()`, `ABS()`, `UPPER()`
 - **Patterns :** `CONTAINS`, `LIKE`, `MATCHES`, `IN`
 - **Négations :** `NOT()` avec tous opérateurs
@@ -60,7 +60,7 @@ NOT(p.age == 0 AND p.ville <> "Paris")
 ```
 tsd/
 ├── cmd/           # Applications et CLI
-├── constraint/    # Parser de contraintes  
+├── constraint/    # Parser de contraintes
 ├── rete/          # Moteur RETE
 ├── test/          # Tests organisés
 ├── docs/          # Documentation
@@ -77,8 +77,8 @@ tsd/
 
 **TSD est prêt pour la production** avec une validation complète des expressions de négation complexes.
 
-**Version :** 1.0  
-**Dernière validation :** 17 novembre 2025  
+**Version :** 1.0
+**Dernière validation :** 17 novembre 2025
 **Conformité :** 100%
 
 ---

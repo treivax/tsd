@@ -54,29 +54,29 @@
 		<div id="topbar">
 			<div id="nav">
 				<select id="files">
-				
+
 				<option value="file0">github.com/treivax/tsd/constraint/internal/config/config.go (0.0%)</option>
-				
+
 				<option value="file1">github.com/treivax/tsd/constraint/pkg/domain/errors.go (86.7%)</option>
-				
+
 				<option value="file2">github.com/treivax/tsd/constraint/pkg/domain/types.go (96.0%)</option>
-				
+
 				<option value="file3">github.com/treivax/tsd/constraint/pkg/validator/types.go (92.2%)</option>
-				
+
 				<option value="file4">github.com/treivax/tsd/constraint/pkg/validator/validator.go (78.1%)</option>
-				
+
 				</select>
 			</div>
 			<div id="legend">
 				<span>not tracked</span>
-			
+
 				<span class="cov0">not covered</span>
 				<span class="cov8">covered</span>
-			
+
 			</div>
 		</div>
 		<div id="content">
-		
+
 		<pre class="file" id="file0" style="display: none">package config
 
 import (
@@ -296,7 +296,7 @@ func (cm *ConfigManager) Clone() *ConfigManager <span class="cov0" title="0">{
 func (cm *ConfigManager) Reset() <span class="cov0" title="0">{
         cm.config = DefaultConfig()
 }</pre>
-		
+
 		<pre class="file" id="file1" style="display: none">package domain
 
 import (
@@ -309,13 +309,13 @@ type ErrorType string
 const (
         // Erreurs de parsing
         ParseError ErrorType = "PARSE_ERROR"
-        
+
         // Erreurs de validation
         ValidationError ErrorType = "VALIDATION_ERROR"
         TypeMismatchError ErrorType = "TYPE_MISMATCH_ERROR"
         FieldNotFoundError ErrorType = "FIELD_NOT_FOUND_ERROR"
         UnknownTypeError ErrorType = "UNKNOWN_TYPE_ERROR"
-        
+
         // Erreurs de contraintes
         ConstraintValidationError ErrorType = "CONSTRAINT_ERROR"
         ActionError ErrorType = "ACTION_ERROR"
@@ -345,7 +345,7 @@ type Context struct {
 // Error implémente l'interface error
 func (ce *Error) Error() string <span class="cov8" title="1">{
         if ce.Context.File != "" </span><span class="cov8" title="1">{
-                return fmt.Sprintf("%s at %s:%d:%d: %s", 
+                return fmt.Sprintf("%s at %s:%d:%d: %s",
                         ce.Type, ce.Context.File, ce.Context.Line, ce.Context.Column, ce.Message)
         }</span>
         <span class="cov8" title="1">return fmt.Sprintf("%s: %s", ce.Type, ce.Message)</span>
@@ -513,7 +513,7 @@ func (ec *ErrorCollection) Error() string <span class="cov8" title="1">{
         <span class="cov8" title="1">if len(ec.Errors) == 1 </span><span class="cov8" title="1">{
                 return ec.Errors[0].Error()
         }</span>
-        <span class="cov8" title="1">return fmt.Sprintf("%d errors: %s (and %d more)", 
+        <span class="cov8" title="1">return fmt.Sprintf("%d errors: %s (and %d more)",
                 len(ec.Errors), ec.Errors[0].Error(), len(ec.Errors)-1)</span>
 }
 
@@ -524,7 +524,7 @@ func (ec *ErrorCollection) First() *Error <span class="cov8" title="1">{
         }</span>
         <span class="cov8" title="1">return nil</span>
 }</pre>
-		
+
 		<pre class="file" id="file2" style="display: none">package domain
 
 import (
@@ -774,7 +774,7 @@ func IsValidType(t string) bool <span class="cov8" title="1">{
         }
         return validTypes[t]
 }</pre>
-		
+
 		<pre class="file" id="file3" style="display: none">package validator
 
 import (
@@ -869,7 +869,7 @@ func (tr *TypeRegistry) GetTypeFields(typeName string) (map[string]string, error
 func (tr *TypeRegistry) Clear() <span class="cov8" title="1">{
         tr.mutex.Lock()
         defer tr.mutex.Unlock()
-        
+
         tr.types = make(map[string]domain.TypeDefinition)
 }</span>
 
@@ -894,7 +894,7 @@ func (tc *TypeChecker) GetFieldType(fieldAccess interface{}, variables []domain.
                 if faMap, ok := fieldAccess.(map[string]interface{}); ok </span><span class="cov8" title="1">{
                         objectName, _ := faMap["object"].(string)
                         fieldName, _ := faMap["field"].(string)
-                        
+
                         fa = &amp;domain.FieldAccess{
                                 Object: objectName,
                                 Field:  fieldName,
@@ -1049,7 +1049,7 @@ func (tc *TypeChecker) validateComparisonTypes(leftType, rightType, operator str
 
         if !orderableTypes[leftType] || !orderableTypes[rightType] </span><span class="cov0" title="0">{
                 return domain.NewValidationError(
-                        fmt.Sprintf("operator '%s' not supported for types '%s' and '%s'", 
+                        fmt.Sprintf("operator '%s' not supported for types '%s' and '%s'",
                                 operator, leftType, rightType),
                         domain.Context{
                                 Expected: "number, integer, or string",
@@ -1115,7 +1115,7 @@ func (tc *TypeChecker) validateArithmeticTypes(leftType, rightType, operator str
 
         <span class="cov8" title="1">return nil</span>
 }</pre>
-		
+
 		<pre class="file" id="file4" style="display: none">package validator
 
 import (
@@ -1246,7 +1246,7 @@ func (v *ConstraintValidator) ValidateTypes(types []domain.TypeDefinition) error
 
                         <span class="cov8" title="1">if !domain.IsValidType(field.Type) </span><span class="cov8" title="1">{
                                 return domain.NewValidationError(
-                                        fmt.Sprintf("invalid field type '%s' for field '%s' in type '%s'", 
+                                        fmt.Sprintf("invalid field type '%s' for field '%s' in type '%s'",
                                                 field.Type, field.Name, typeDef.Name),
                                         domain.Context{
                                                 Type:     typeDef.Name,
@@ -1370,7 +1370,7 @@ func (av *ActionValidator) ValidateJobCall(jobCall domain.JobCall) error <span c
 
         <span class="cov8" title="1">return nil</span>
 }</pre>
-		
+
 		</div>
 	</body>
 	<script>

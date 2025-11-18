@@ -1,7 +1,7 @@
 # 🎯 STRATÉGIE POUR 100% DE RÉUSSITE TSD
 
-**Objectif :** Atteindre un taux de réussite de 100% pour tous les tests TSD  
-**Statut actuel :** 91% - Identification des causes d'échec  
+**Objectif :** Atteindre un taux de réussite de 100% pour tous les tests TSD
+**Statut actuel :** 91% - Identification des causes d'échec
 **Plan d'action :** Correction systématique des problèmes identifiés
 
 ---
@@ -13,7 +13,7 @@
 **Erreurs détectées :**
 ```
 ⚠️ champ inexistant: prod.available (dans règles TestPerson)
-⚠️ champ inexistant: p.age (dans règles TestProduct)  
+⚠️ champ inexistant: p.age (dans règles TestProduct)
 ⚠️ champ inexistant: o.total (dans règles TestPerson)
 ⚠️ type de valeur non supporté: binaryOp
 ⚠️ opérateur manquant (dans règles beta)
@@ -29,7 +29,7 @@
 
 #### 1.1 Corriger les références de champs erronées
 
-**Problème identifié :** 
+**Problème identifié :**
 - Règle `rule_4_alpha` : TestPerson essaie d'accéder à `prod.available`
 - Règle `rule_7_alpha` : TestProduct essaie d'accéder à `p.age`
 
@@ -38,7 +38,7 @@
 // AVANT (incorrect)
 {p: TestPerson} / NOT (prod.available == true) ==> error_rule
 
-// APRÈS (correct)  
+// APRÈS (correct)
 {p: TestPerson} / NOT (p.active == true) ==> valid_rule
 {prod: TestProduct} / NOT (prod.available == true) ==> valid_product_rule
 ```
@@ -63,12 +63,12 @@ func (eval *ConditionEvaluator) evaluateBinaryOp(op BinaryOp, fact Fact) (interf
     if err != nil {
         return nil, fmt.Errorf("erreur évaluation côté gauche: %w", err)
     }
-    
-    right, err := eval.evaluateValue(op.Right, fact) 
+
+    right, err := eval.evaluateValue(op.Right, fact)
     if err != nil {
         return nil, fmt.Errorf("erreur évaluation côté droit: %w", err)
     }
-    
+
     return eval.applyOperator(op.Operator, left, right)
 }
 ```
@@ -114,7 +114,7 @@ func TestNegationRulesValid(t *testing.T) {
         "{p: TestPerson} / NOT (p.age == 0) ==> not_zero_age(p.id)",
         "{prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)",
     }
-    
+
     for _, rule := range rules {
         _, err := constraint.ParseRule(rule)
         assert.NoError(t, err, "Rule should parse without error: %s", rule)
@@ -191,7 +191,7 @@ echo "✅ Validation cohérence réussie"
 ### Phase 2 : **Amélioration Évaluateur** (1h)
 
 1. **Ajouter support binaryOp** dans `rete/evaluator.go`
-2. **Validation stricte des champs** 
+2. **Validation stricte des champs**
 3. **Messages d'erreur informatifs**
 
 ### Phase 3 : **Tests Unitaires** (45 min)
@@ -239,7 +239,7 @@ echo "✅ Validation cohérence réussie"
 ## ⏱️ TIMELINE
 
 - **Phase 1** : 30 minutes - Corrections critiques
-- **Phase 2** : 60 minutes - Amélioration évaluateur  
+- **Phase 2** : 60 minutes - Amélioration évaluateur
 - **Phase 3** : 45 minutes - Tests unitaires
 - **Phase 4** : 15 minutes - Validation continue
 

@@ -59,7 +59,7 @@ type TestProduct : <id: string, name: string, price: number, category: string, a
 // Test CONTAINS (si supporté)
 {p: TestPerson} / p.tags CONTAINS "admin" ==> pattern_contains_success(p.id)
 
-// Test LIKE (si supporté)  
+// Test LIKE (si supporté)
 {p: TestPerson} / p.name LIKE "A%" ==> pattern_like_success(p.id)
 
 // ===============================================================
@@ -80,7 +80,7 @@ type TestProduct : <id: string, name: string, price: number, category: string, a
 {p: TestPerson} / p.salary > 100000 OR p.score > 95.0 ==> logical_or_rich_expert_success(p.id)
 {p: TestPerson} / p.name == "Alice" OR p.name == "Bob" ==> logical_or_specific_names_success(p.id)
 
-// === TESTS OR FAILURE === 
+// === TESTS OR FAILURE ===
 {p: TestPerson} / p.age < 18 OR p.age > 65 ==> logical_or_minor_senior_failure(p.id)
 {p: TestPerson} / p.salary > 200000 OR p.score > 99.0 ==> logical_or_extreme_values_failure(p.id)
 

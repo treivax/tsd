@@ -13,7 +13,7 @@ AST (constraint) → Réseau RETE → Actions déclenchées
 ### Types de nœuds
 
 1. **RootNode** : Point d'entrée pour tous les faits
-2. **TypeNode** : Filtre les faits par type et valide leur structure  
+2. **TypeNode** : Filtre les faits par type et valide leur structure
 3. **AlphaNode** : Teste les conditions sur les faits individuels
 4. **BetaNode** : Gère les jointures multi-faits (nouveauté ✨)
 5. **JoinNode** : Effectue les jointures conditionnelles entre faits
@@ -23,7 +23,7 @@ AST (constraint) → Réseau RETE → Actions déclenchées
 
 Chaque nœud sauvegarde automatiquement son état (Working Memory) dans etcd :
 - Faits correspondants aux conditions du nœud
-- Tokens de propagation 
+- Tokens de propagation
 - Timestamps de dernière modification
 
 ## 🚀 Utilisation
@@ -40,16 +40,16 @@ import (
 func main() {
     // 1. Créer le storage
     storage := rete.NewMemoryStorage()
-    
+
     // 2. Créer le réseau
     network := rete.NewReteNetwork(storage)
-    
+
     // 3. Charger les règles depuis un AST
     err := network.LoadFromAST(program)
     if err != nil {
         panic(err)
     }
-    
+
     // 4. Soumettre des faits
     fact := &rete.Fact{
         ID:   "person1",
@@ -59,12 +59,12 @@ func main() {
             "name": "Alice",
         },
     }
-    
+
     err = network.SubmitFact(fact)
     if err != nil {
         panic(err)
     }
-    
+
     // Les actions sont automatiquement déclenchées !
 }
 ```
@@ -83,7 +83,7 @@ func main() {
     // 1. Créer le constructeur de réseau Beta
     logger := &MyLogger{}
     builder := network.NewBetaNetworkBuilder(logger)
-    
+
     // 2. Définir un pattern de jointures complexe
     pattern := network.MultiJoinPattern{
         PatternID: "employee_complete_profile",
@@ -97,7 +97,7 @@ func main() {
                 NodeID: "person_address_join",
             },
             {
-                LeftType:   "PersonAddress", 
+                LeftType:   "PersonAddress",
                 RightType:  "Company",
                 Conditions: []domain.JoinCondition{
                     domain.NewBasicJoinCondition("company_id", "id", "=="),
@@ -107,26 +107,26 @@ func main() {
         },
         FinalAction: "create_employee_complete_record",
     }
-    
+
     // 3. Construire le réseau de jointures
     joinNodes, err := builder.BuildMultiJoinNetwork(pattern)
     if err != nil {
         panic(err)
     }
-    
+
     // 4. Traiter des faits multi-types
     personFact := domain.NewFact("p1", "Person", map[string]interface{}{
         "id": "person_1", "name": "Alice", "address_id": "addr_1",
     })
-    
+
     addressFact := domain.NewFact("a1", "Address", map[string]interface{}{
         "id": "addr_1", "street": "123 Main St", "company_id": "comp_1",
     })
-    
+
     companyFact := domain.NewFact("c1", "Company", map[string]interface{}{
         "id": "comp_1", "name": "Tech Corp",
     })
-    
+
     // 5. Les jointures sont automatiquement effectuées !
     // Résultat : Token combiné avec Person + Address + Company
 }
@@ -139,7 +139,7 @@ func main() {
 Le module RETE a atteint une **maturité complète de niveau enterprise** avec tous les composants core, optimisations et monitoring implémentés et validés :
 
 - **✅ Architecture complète** : Tous les types de nœuds RETE implémentés et testés
-- **✅ Cohérence PEG↔RETE** : Mapping bidirectionnel 100% validé sur fichiers complexes  
+- **✅ Cohérence PEG↔RETE** : Mapping bidirectionnel 100% validé sur fichiers complexes
 - **✅ Évaluateur d'expressions** : Support complet des opérations et conditions
 - **✅ Nœuds avancés** : NotNode, ExistsNode, AccumulateNode entièrement fonctionnels
 - **✅ Optimisations performance** : IndexedStorage, HashJoins, Cache, TokenPropagation
@@ -172,7 +172,7 @@ Le système est maintenant **prêt pour un usage enterprise en production** avec
 ### ✅ Implémenté
 
 - [x] Construction automatique du réseau depuis AST
-- [x] Propagation efficace des faits 
+- [x] Propagation efficace des faits
 - [x] Filtrage par type avec validation
 - [x] Déclenchement d'actions conditionnelles
 - [x] Persistance etcd de l'état complet
@@ -190,7 +190,7 @@ Le système est maintenant **prêt pour un usage enterprise en production** avec
   - [x] Normalisation automatique des types numériques
 - [x] **Nœuds RETE avancés complets** ✨
   - [x] **NotNodeImpl** : Négation avec conditions personnalisables
-  - [x] **ExistsNodeImpl** : Vérification d'existence avec variables typées  
+  - [x] **ExistsNodeImpl** : Vérification d'existence avec variables typées
   - [x] **AccumulateNodeImpl** : Agrégation avec fonctions SUM, COUNT, AVG, MIN, MAX
 - [x] **Cohérence PEG ↔ RETE 100% validée** ✨
   - [x] Mapping bidirectionnel complet entre constructs grammaticaux et nœuds
@@ -201,7 +201,7 @@ Le système est maintenant **prêt pour un usage enterprise en production** avec
 
 - [x] **Évaluation complète des expressions de condition** ✅
   - Support complet des opérations binaires (==, !=, <, <=, >, >=)
-  - Évaluation des expressions logiques (AND, OR)  
+  - Évaluation des expressions logiques (AND, OR)
   - Support des contraintes, littéraux booléens et accès aux champs
   - Liaison de variables et normalisation des types
 - [x] **Nœuds Beta avancés** ✅ **COMPLET**
@@ -224,12 +224,12 @@ go build -o rete-demo ./rete/cmd/
 # Sortie attendue :
 # 🔥 DÉMONSTRATION DU RÉSEAU RETE
 # ===============================================
-# 
+#
 # 📋 ÉTAPE 1: Création du programme RETE
 # ✅ Programme créé avec 1 type(s) et 1 expression(s)
-# 
+#
 # [... construction du réseau ...]
-# 
+#
 # 🎯 ACTION DÉCLENCHÉE: action
 #    Arguments: [client]
 #    Faits correspondants:
@@ -278,7 +278,7 @@ type MonitoredNetworkConfig struct {
 // Storage pour la persistance
 type Storage interface {
     SaveMemory(nodeID string, memory *WorkingMemory) error
-    LoadMemory(nodeID string) (*WorkingMemory, error) 
+    LoadMemory(nodeID string) (*WorkingMemory, error)
     DeleteMemory(nodeID string) error
     ListNodes() ([]string, error)
 }
@@ -308,7 +308,7 @@ storage := NewIndexedFactStorage(config)
 
 // Performances mesurées :
 // - Insertion : ~285K ops/sec
-// - Recherche par type : ~77K ops/sec  
+// - Recherche par type : ~77K ops/sec
 // - Recherche par champ : O(1) lookup
 ```
 
@@ -328,7 +328,7 @@ engine := NewHashJoinEngine(config)
 // - Cache hit ratio : 99%+
 ```
 
-#### **🧠 EvaluationCache** 
+#### **🧠 EvaluationCache**
 ```go
 config := CacheConfig{
     MaxSize:              10000,
@@ -447,7 +447,7 @@ go test -run=TestPerformanceComparison -v ./rete/
 
 ### 🎯 **Performance Validée**
 
-- **✅ Scalabilité** : Ajout dynamique de règles et faits  
+- **✅ Scalabilité** : Ajout dynamique de règles et faits
 - **✅ Persistance** : État complet sauvé en temps réel dans etcd
 - **✅ Concurrence** : Thread safety complet pour tous les nœuds
 - **✅ Efficacité** : Propagation optimisée selon l'algorithme RETE
@@ -480,7 +480,7 @@ network := NewMonitoredRETENetwork(storage, monitoringConfig)
 
 // Le monitoring track automatiquement :
 network.AddFact(fact)           // ✅ Métriques de faits
-network.ProcessToken(token)     // ✅ Métriques de tokens  
+network.ProcessToken(token)     // ✅ Métriques de tokens
 network.ExecuteRule(ruleName)   // ✅ Métriques de règles
 
 // Dashboard accessible immédiatement

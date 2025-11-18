@@ -8,7 +8,7 @@ class RETEDashboard {
         this.metricsHistory = [];
         this.maxHistoryPoints = 50;
         this.currentTab = 'overview';
-        
+
         this.init();
     }
 
@@ -19,7 +19,7 @@ class RETEDashboard {
         this.setupEventListeners();
         this.setupModals();
         this.startDataRefresh();
-        
+
         console.log('🚀 RETE Dashboard initialized');
     }
 
@@ -31,17 +31,17 @@ class RETEDashboard {
         navButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const tabId = btn.dataset.tab;
-                
+
                 // Update navigation
                 navButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
+
                 // Update content
                 tabContents.forEach(content => {
                     content.classList.remove('active');
                 });
                 document.getElementById(tabId).classList.add('active');
-                
+
                 this.currentTab = tabId;
                 this.onTabChange(tabId);
             });
@@ -448,20 +448,20 @@ class RETEDashboard {
     setupWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws/metrics`;
-        
+
         this.connectWebSocket(wsUrl);
     }
 
     connectWebSocket(url) {
         try {
             this.ws = new WebSocket(url);
-            
+
             this.ws.onopen = () => {
                 console.log('🔌 WebSocket connected');
                 this.wsConnected = true;
                 this.updateConnectionStatus('connected', 'Connected');
             };
-            
+
             this.ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
@@ -470,23 +470,23 @@ class RETEDashboard {
                     console.error('❌ Error parsing WebSocket message:', error);
                 }
             };
-            
+
             this.ws.onclose = () => {
                 console.log('🔌 WebSocket disconnected');
                 this.wsConnected = false;
                 this.updateConnectionStatus('disconnected', 'Disconnected');
-                
+
                 // Reconnect after 5 seconds
                 setTimeout(() => {
                     this.connectWebSocket(url);
                 }, 5000);
             };
-            
+
             this.ws.onerror = (error) => {
                 console.error('❌ WebSocket error:', error);
                 this.updateConnectionStatus('error', 'Connection Error');
             };
-            
+
         } catch (error) {
             console.error('❌ Failed to create WebSocket:', error);
             this.updateConnectionStatus('error', 'Connection Failed');
@@ -512,7 +512,7 @@ class RETEDashboard {
     handleInitialData(data) {
         console.log('📊 Initial data received');
         this.updateMetrics(data);
-        
+
         if (data.history && data.history.length > 0) {
             this.metricsHistory = data.history;
             this.updateCharts();
@@ -536,7 +536,7 @@ class RETEDashboard {
         const statusElement = document.getElementById('connectionStatus');
         const statusDot = statusElement.querySelector('.status-dot');
         const statusText = statusElement.querySelector('.status-text');
-        
+
         statusDot.className = `status-dot ${status}`;
         statusText.textContent = text;
     }
@@ -606,11 +606,11 @@ class RETEDashboard {
         if (data.system) {
             this.updateSystemMetrics(data.system);
         }
-        
+
         if (data.rete) {
             this.updateReteMetrics(data.rete);
         }
-        
+
         if (data.performance) {
             this.updatePerformanceMetrics(data.performance);
         }
@@ -621,11 +621,11 @@ class RETEDashboard {
         const memoryUsed = system.memory_usage_bytes || 0;
         const memoryTotal = system.memory_system_bytes || 1;
         const memoryPercent = Math.round((memoryUsed / memoryTotal) * 100);
-        
+
         this.updateElement('memoryUsed', `width: ${memoryPercent}%`, 'style');
         this.updateElement('memoryText', `${this.formatBytes(memoryUsed)} / ${this.formatBytes(memoryTotal)}`);
         this.updateElement('memoryPercent', `${memoryPercent}%`);
-        
+
         // Other system metrics
         this.updateElement('goroutineCount', system.goroutine_count || 0);
         this.updateElement('gcCount', system.gc_count || 0);
@@ -638,7 +638,7 @@ class RETEDashboard {
         this.updateElement('tokensPerSec', this.formatNumber(rete.tokens_per_second || 0));
         this.updateElement('rulesPerSec', this.formatNumber(rete.rules_per_second || 0));
         this.updateElement('avgLatency', `${this.formatNumber(rete.average_latency || 0)}ms`);
-        
+
         // Network stats
         this.updateElement('totalNodes', rete.total_nodes || 0);
         this.updateElement('activeNodes', rete.active_nodes || 0);
@@ -652,19 +652,19 @@ class RETEDashboard {
         this.updateElement('indexCacheHit', `${this.formatNumber(indexStats.cache_hit_ratio || 0)}%`);
         this.updateElement('totalIndexes', indexStats.total_indexes || 0);
         this.updateElement('lookupSpeed', `${this.formatNumber(indexStats.avg_lookup_time || 0)}ms`);
-        
+
         // HashJoin stats
         const joinStats = performance.hash_join_stats || {};
         this.updateElement('joinCacheHits', joinStats.cache_hits || 0);
         this.updateElement('joinCacheMisses', joinStats.cache_misses || 0);
         this.updateElement('avgJoinTime', `${this.formatNumber(joinStats.avg_join_time || 0)}ms`);
-        
+
         // Evaluation cache stats
         const evalStats = performance.evaluation_cache_stats || {};
         this.updateElement('evalCacheSize', evalStats.current_size || 0);
         this.updateElement('evalHitRatio', `${this.formatNumber(evalStats.hit_ratio || 0)}%`);
         this.updateElement('evalEvictions', evalStats.evictions || 0);
-        
+
         // Token propagation stats
         const tokenStats = performance.token_propagation_stats || {};
         this.updateElement('queueSize', tokenStats.queue_size || 0);
@@ -679,7 +679,7 @@ class RETEDashboard {
             rete: data.rete,
             performance: data.performance
         });
-        
+
         if (this.metricsHistory.length > this.maxHistoryPoints) {
             this.metricsHistory.shift();
         }
@@ -697,17 +697,17 @@ class RETEDashboard {
         if (!this.charts.throughput || this.metricsHistory.length === 0) {
             return;
         }
-        
+
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
         const factsData = this.metricsHistory.map(h => h.rete?.facts_per_second || 0);
         const tokensData = this.metricsHistory.map(h => h.rete?.tokens_per_second || 0);
         const rulesData = this.metricsHistory.map(h => h.rete?.rules_per_second || 0);
-        
+
         this.charts.throughput.data.labels = labels;
         this.charts.throughput.data.datasets[0].data = factsData;
         this.charts.throughput.data.datasets[1].data = tokensData;
         this.charts.throughput.data.datasets[2].data = rulesData;
-        
+
         // Utiliser 'none' pour éviter les animations qui peuvent causer des problèmes de taille
         this.charts.throughput.update('none');
     }
@@ -716,12 +716,12 @@ class RETEDashboard {
         if (!this.charts.memory || this.metricsHistory.length === 0) {
             return;
         }
-        
+
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
-        const memoryData = this.metricsHistory.map(h => 
+        const memoryData = this.metricsHistory.map(h =>
             (h.system?.memory_usage_bytes || 0) / (1024 * 1024) // Convert to MB
         );
-        
+
         this.charts.memory.data.labels = labels;
         this.charts.memory.data.datasets[0].data = memoryData;
         this.charts.memory.update('none');
@@ -731,10 +731,10 @@ class RETEDashboard {
         if (!this.charts.goroutines || this.metricsHistory.length === 0) {
             return;
         }
-        
+
         const labels = this.metricsHistory.map(h => h.timestamp.toLocaleTimeString());
         const goroutinesData = this.metricsHistory.map(h => h.system?.goroutine_count || 0);
-        
+
         this.charts.goroutines.data.labels = labels;
         this.charts.goroutines.data.datasets[0].data = goroutinesData;
         this.charts.goroutines.update('none');
@@ -766,11 +766,11 @@ class RETEDashboard {
 
     updatePerformanceRadarChart() {
         if (!this.charts.performance) return;
-        
+
         // Calculate performance scores (0-100) based on current metrics
         const latest = this.metricsHistory[this.metricsHistory.length - 1];
         if (!latest) return;
-        
+
         const perf = latest.performance || {};
         const scores = [
             this.calculatePerformanceScore('indexedStorage', perf.indexed_storage_stats),
@@ -778,28 +778,28 @@ class RETEDashboard {
             this.calculatePerformanceScore('evalCache', perf.evaluation_cache_stats),
             this.calculatePerformanceScore('tokenProp', perf.token_propagation_stats)
         ];
-        
+
         this.charts.performance.data.datasets[0].data = scores;
         this.charts.performance.update('none');
     }
 
     updateCacheChart() {
         if (!this.charts.cache) return;
-        
+
         const latest = this.metricsHistory[this.metricsHistory.length - 1];
         if (!latest) return;
-        
+
         const evalStats = latest.performance?.evaluation_cache_stats || {};
         const hitRatio = evalStats.hit_ratio || 80;
         const missRatio = 100 - hitRatio;
-        
+
         this.charts.cache.data.datasets[0].data = [hitRatio, missRatio];
         this.charts.cache.update('none');
     }
 
     calculatePerformanceScore(component, stats) {
         if (!stats) return 0;
-        
+
         // Simple scoring algorithm - can be enhanced
         switch(component) {
             case 'indexedStorage':
@@ -841,7 +841,7 @@ class RETEDashboard {
     startDataRefresh() {
         // Initial load
         this.refreshAllData();
-        
+
         // Periodic refresh for non-WebSocket data
         setInterval(() => {
             if (this.currentTab === 'network') {
@@ -859,7 +859,7 @@ class RETEDashboard {
                 this.fetchAPI('/api/network/status'),
                 this.fetchAPI('/api/alerts')
             ]);
-            
+
             if (metrics) {
                 this.updateMetrics({
                     system: metrics.system_metrics,
@@ -867,7 +867,7 @@ class RETEDashboard {
                     performance: metrics.performance_metrics
                 });
             }
-            
+
         } catch (error) {
             console.error('❌ Error refreshing data:', error);
             this.showToast('Error', 'Failed to refresh data', 'error');
@@ -880,9 +880,9 @@ class RETEDashboard {
                 this.fetchAPI('/api/network/status'),
                 this.fetchAPI('/api/network/nodes')
             ]);
-            
+
             this.updateNetworkDisplay(status, nodes);
-            
+
         } catch (error) {
             console.error('❌ Error refreshing network data:', error);
         }
@@ -892,7 +892,7 @@ class RETEDashboard {
         try {
             const alerts = await this.fetchAPI('/api/alerts');
             this.updateAlertsDisplay(alerts);
-            
+
         } catch (error) {
             console.error('❌ Error refreshing alerts data:', error);
         }
@@ -914,7 +914,7 @@ class RETEDashboard {
 
     updateAlertsDisplay(alertsData) {
         if (!alertsData) return;
-        
+
         // Update active alerts
         const activeAlertsContainer = document.getElementById('activeAlerts');
         if (alertsData.active_alerts && alertsData.active_alerts.length > 0) {
@@ -924,7 +924,7 @@ class RETEDashboard {
         } else {
             activeAlertsContainer.innerHTML = '<div class="alert-placeholder">No active alerts</div>';
         }
-        
+
         // Update alert rules
         const rulesContainer = document.getElementById('alertRules');
         if (alertsData.rules_count > 0) {
@@ -956,7 +956,7 @@ class RETEDashboard {
     async createAlertRule() {
         const form = document.getElementById('alertRuleForm');
         const formData = new FormData(form);
-        
+
         const rule = {
             name: formData.get('name'),
             description: formData.get('description'),
@@ -965,7 +965,7 @@ class RETEDashboard {
             severity: formData.get('severity'),
             is_enabled: true
         };
-        
+
         try {
             await this.fetchAPI('/api/alerts/rules', {
                 method: 'POST',
@@ -974,12 +974,12 @@ class RETEDashboard {
                 },
                 body: JSON.stringify(rule)
             });
-            
+
             this.showToast('Success', 'Alert rule created successfully', 'success');
             document.getElementById('alertRuleModal').classList.remove('show');
             form.reset();
             this.refreshAlertsData();
-            
+
         } catch (error) {
             console.error('❌ Error creating alert rule:', error);
             this.showToast('Error', 'Failed to create alert rule', 'error');
@@ -992,7 +992,7 @@ class RETEDashboard {
             .then(nodes => {
                 const dataStr = JSON.stringify(nodes, null, 2);
                 const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                
+
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(dataBlob);
                 link.download = `rete-network-${new Date().toISOString().slice(0, 10)}.json`;
@@ -1049,7 +1049,7 @@ class RETEDashboard {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         const s = Math.floor(seconds % 60);
-        
+
         if (h > 0) return `${h}h ${m}m`;
         if (m > 0) return `${m}m ${s}s`;
         return `${s}s`;
@@ -1059,7 +1059,7 @@ class RETEDashboard {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
+
         toast.innerHTML = `
             <div class="toast-header">
                 <span class="toast-title">${title}</span>
@@ -1067,18 +1067,18 @@ class RETEDashboard {
             </div>
             <div class="toast-message">${message}</div>
         `;
-        
+
         toastContainer.appendChild(toast);
-        
+
         // Show animation
         setTimeout(() => toast.classList.add('show'), 100);
-        
+
         // Close button
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         });
-        
+
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (toast.parentNode) {

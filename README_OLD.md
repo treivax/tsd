@@ -15,7 +15,7 @@
 - **Validation sémantique** avec vérification de types
 - **Support complet** : négation, quantification existentielle, agrégation
 
-### ⚡ **Module RETE** 
+### ⚡ **Module RETE**
 - **Implémentation optimisée** de l'algorithme RETE
 - **Architecture modulaire** : AlphaNode, BetaNode, NotNode, ExistsNode, AccumulateNode
 - **Monitoring en temps réel** avec interface web intégrée
@@ -32,7 +32,7 @@
 ## 📦 Installation
 
 ### Prérequis
-- **Go 1.21+** 
+- **Go 1.21+**
 - **pigeon** (générateur PEG) : `go install github.com/mna/pigeon@latest`
 
 ### Installation
@@ -99,19 +99,19 @@ func main() {
     // Créer le réseau RETE
     storage := rete.NewMemoryStorage()
     network := rete.NewReteNetwork(storage)
-    
+
     // Convertir et charger les règles
     converter := rete.NewASTConverter()
     expressions, _ := converter.ConvertProgram(ast)
-    
+
     for _, expr := range expressions {
         network.AddRule(expr)
     }
 
     // Ajouter des faits
     customerFact := rete.NewFact("Customer", map[string]interface{}{
-        "id": "C001", 
-        "age": 25, 
+        "id": "C001",
+        "age": 25,
         "vip": true,
     })
     network.AddFact(customerFact)
@@ -199,7 +199,7 @@ type TypeName : <field1: string, field2: number, field3: bool>
 # Tests unitaires tous modules
 go test ./...
 
-# Tests d'intégration système  
+# Tests d'intégration système
 go test ./tests/... -v
 
 # Tests de cohérence PEG ↔ RETE
@@ -235,7 +235,7 @@ cd rete && ./scripts/run_tests.sh
 ## 📚 Documentation Avancée
 
 - **Guide des Contraintes** : `constraint/docs/GUIDE_CONTRAINTES.md`
-- **Tutoriel Utilisateur** : `constraint/docs/TUTORIEL_CONTRAINTES.md` 
+- **Tutoriel Utilisateur** : `constraint/docs/TUTORIEL_CONTRAINTES.md`
 - **Grammaire Complète** : `constraint/docs/GRAMMAR_COMPLETE.md`
 - **Guide d'Usage Nœuds** : `rete/docs/ADVANCED_NODES_USAGE_GUIDE.md`
 
@@ -253,10 +253,10 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 🏆 Status du Projet
 
-✅ **Production Ready**  
-✅ **Tests Complets**  
-✅ **Documentation Complète**  
-✅ **Performance Optimisée**  
+✅ **Production Ready**
+✅ **Tests Complets**
+✅ **Documentation Complète**
+✅ **Performance Optimisée**
 ✅ **Monitoring Intégré**
 
 ---

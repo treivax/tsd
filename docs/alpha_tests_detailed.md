@@ -1,6 +1,6 @@
 # 📊 RAPPORT STRUCTURÉ - TESTS ALPHA COMPLETS (ACTIONS FILTRÉES)
 
-**Date de génération:** 2025-11-17 16:04:05  
+**Date de génération:** 2025-11-17 16:04:05
 **Format:** Test par test avec actions filtrées par règle spécifique
 
 ---
@@ -72,7 +72,7 @@ type Account : <id: string, balance: number, active: bool>
 
 ```facts
 Account[id=ACC001, balance=1000, active=true]
-Account[id=ACC002, balance=500, active=false] 
+Account[id=ACC002, balance=500, active=false]
 Account[id=ACC003, balance=2000, active=true]
 ```
 
@@ -211,7 +211,7 @@ type Person : <id: string, age: number, status: string>
 
 ```facts
 Person[id=P001, age=25, status=active]
-Person[id=P002, age=30, status=active]  
+Person[id=P002, age=30, status=active]
 Person[id=P003, age=25, status=inactive]
 ```
 
@@ -1225,8 +1225,8 @@ Department[id="D003", name="Finance", active=true]
 
 ## 📈 Bilan Final
 
-**Tests exécutés:** 26  
-**Tests conformes:** 26  
+**Tests exécutés:** 26
+**Tests conformes:** 26
 **Taux de conformité:** 100.0%
 
 **Note:** Les actions affichées sont filtrées pour ne montrer que celles correspondant exactement à l'action définie dans la règle de chaque test.

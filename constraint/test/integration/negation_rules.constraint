@@ -19,7 +19,7 @@ type TestTransaction : <id: string, account_id: string, amount: number, type: st
 {o: TestOrder} / NOT (o.total > 50000) ==> not_high_total(o.id)
 {prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)
 
-// 2.3 Négations d'expressions arithmétiques  
+// 2.3 Négations d'expressions arithmétiques
 {p: TestPerson} / NOT (p.age * 1000 < p.salary) ==> not_age_times_thousand_less_salary(p.id)
 {o: TestOrder} / NOT (o.amount + o.discount >= o.total) ==> not_amount_plus_discount_geq_total(o.id)
 

@@ -1,6 +1,6 @@
 # 📊 RAPPORT ALPHA NODES - ACTIONS FILTRÉES
 
-**Date de génération:** 2025-11-17 16:03:53  
+**Date de génération:** 2025-11-17 16:03:53
 **Méthode:** Filtrage par action spécifique de chaque test
 
 ---
@@ -48,7 +48,7 @@
 
 ### 🧪 Test: `alpha_abs_negative`
 
-**Action testée:** `small_balance_found`  
+**Action testée:** `small_balance_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -79,7 +79,7 @@ Balance[id="B003", amount=75.0, type="credit"]
 
 ### 🧪 Test: `alpha_abs_positive`
 
-**Action testée:** `significant_balance_found`  
+**Action testée:** `significant_balance_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -110,7 +110,7 @@ Balance[id="B003", amount=50.0, type="credit"]
 
 ### 🧪 Test: `alpha_boolean_negative`
 
-**Action testée:** `inactive_account_found`  
+**Action testée:** `inactive_account_found`
 **Résultat:** ✅ Conforme (1/1 actions)
 
 #### 📋 Règle (.constraint)
@@ -140,7 +140,7 @@ Account[id=ACC003, balance=2000, active=true]
 
 ### 🧪 Test: `alpha_boolean_positive`
 
-**Action testée:** `active_account_found`  
+**Action testée:** `active_account_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -154,7 +154,7 @@ type Account : <id: string, balance: number, active: bool>
 #### 📊 Faits (.facts)
 ```facts
 Account[id=ACC001, balance=1000, active=true]
-Account[id=ACC002, balance=500, active=false] 
+Account[id=ACC002, balance=500, active=false]
 Account[id=ACC003, balance=2000, active=true]
 ```
 
@@ -171,7 +171,7 @@ Account[id=ACC003, balance=2000, active=true]
 
 ### 🧪 Test: `alpha_comparison_negative`
 
-**Action testée:** `affordable_product`  
+**Action testée:** `affordable_product`
 **Résultat:** ✅ Conforme (1/1 actions)
 
 #### 📋 Règle (.constraint)
@@ -201,7 +201,7 @@ Product[id=PROD003, price=200, category=electronics]
 
 ### 🧪 Test: `alpha_comparison_positive`
 
-**Action testée:** `expensive_product`  
+**Action testée:** `expensive_product`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -232,7 +232,7 @@ Product[id=PROD003, price=200, category=electronics]
 
 ### 🧪 Test: `alpha_contains_negative`
 
-**Action testée:** `normal_message_found`  
+**Action testée:** `normal_message_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -263,7 +263,7 @@ Message[id="M003", content="Simple notification", urgent=false]
 
 ### 🧪 Test: `alpha_contains_positive`
 
-**Action testée:** `urgent_message_found`  
+**Action testée:** `urgent_message_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -294,7 +294,7 @@ Message[id="M003", content="Very urgent matter!", urgent=true]
 
 ### 🧪 Test: `alpha_equal_sign_negative`
 
-**Action testée:** `non_gold_customer_found`  
+**Action testée:** `non_gold_customer_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -325,7 +325,7 @@ Customer[id="C003", tier="bronze", points=1000]
 
 ### 🧪 Test: `alpha_equal_sign_positive`
 
-**Action testée:** `gold_customer_found`  
+**Action testée:** `gold_customer_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -356,7 +356,7 @@ Customer[id="C003", tier="gold", points=7500]
 
 ### 🧪 Test: `alpha_equality_negative`
 
-**Action testée:** `age_is_not_twenty_five`  
+**Action testée:** `age_is_not_twenty_five`
 **Résultat:** ✅ Conforme (1/1 actions)
 
 #### 📋 Règle (.constraint)
@@ -370,7 +370,7 @@ type Person : <id: string, age: number, status: string>
 #### 📊 Faits (.facts)
 ```facts
 Person[id=P001, age=25, status=active]
-Person[id=P002, age=30, status=active]  
+Person[id=P002, age=30, status=active]
 Person[id=P003, age=25, status=inactive]
 ```
 
@@ -386,7 +386,7 @@ Person[id=P003, age=25, status=inactive]
 
 ### 🧪 Test: `alpha_equality_positive`
 
-**Action testée:** `age_is_twenty_five`  
+**Action testée:** `age_is_twenty_five`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -417,7 +417,7 @@ Person[id=P003, age=25, status=inactive]
 
 ### 🧪 Test: `alpha_in_negative`
 
-**Action testée:** `invalid_state_found`  
+**Action testée:** `invalid_state_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -448,7 +448,7 @@ Status[id="S003", state="archived", priority=5]
 
 ### 🧪 Test: `alpha_in_positive`
 
-**Action testée:** `valid_state_found`  
+**Action testée:** `valid_state_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -479,7 +479,7 @@ Status[id="S003", state="pending", priority=2]
 
 ### 🧪 Test: `alpha_inequality_negative`
 
-**Action testée:** `cancelled_order_found`  
+**Action testée:** `cancelled_order_found`
 **Résultat:** ✅ Conforme (1/1 actions)
 
 #### 📋 Règle (.constraint)
@@ -509,7 +509,7 @@ Order[id=ORD003, total=300, status=completed]
 
 ### 🧪 Test: `alpha_inequality_positive`
 
-**Action testée:** `valid_order_found`  
+**Action testée:** `valid_order_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -540,7 +540,7 @@ Order[id=ORD003, total=300, status=completed]
 
 ### 🧪 Test: `alpha_length_negative`
 
-**Action testée:** `weak_password_found`  
+**Action testée:** `weak_password_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -571,7 +571,7 @@ Password[id="P003", value="pass", secure=false]
 
 ### 🧪 Test: `alpha_length_positive`
 
-**Action testée:** `secure_password_found`  
+**Action testée:** `secure_password_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -602,7 +602,7 @@ Password[id="P003", value="verysecurepass", secure=true]
 
 ### 🧪 Test: `alpha_like_negative`
 
-**Action testée:** `external_email_found`  
+**Action testée:** `external_email_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -633,7 +633,7 @@ Email[id="E003", address="user@other.net", verified=true]
 
 ### 🧪 Test: `alpha_like_positive`
 
-**Action testée:** `company_email_found`  
+**Action testée:** `company_email_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -664,7 +664,7 @@ Email[id="E003", address="admin@company.com", verified=true]
 
 ### 🧪 Test: `alpha_matches_negative`
 
-**Action testée:** `invalid_code_found`  
+**Action testée:** `invalid_code_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -695,7 +695,7 @@ Code[id="C003", value="BADFORMAT", active=true]
 
 ### 🧪 Test: `alpha_matches_positive`
 
-**Action testée:** `valid_code_found`  
+**Action testée:** `valid_code_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -726,7 +726,7 @@ Code[id="C003", value="CODE999", active=true]
 
 ### 🧪 Test: `alpha_string_negative`
 
-**Action testée:** `non_admin_user_found`  
+**Action testée:** `non_admin_user_found`
 **Résultat:** ✅ Conforme (1/1 actions)
 
 #### 📋 Règle (.constraint)
@@ -756,7 +756,7 @@ User[id=U003, name=Charlie, role=admin]
 
 ### 🧪 Test: `alpha_string_positive`
 
-**Action testée:** `admin_user_found`  
+**Action testée:** `admin_user_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -787,7 +787,7 @@ User[id=U003, name=Charlie, role=admin]
 
 ### 🧪 Test: `alpha_upper_negative`
 
-**Action testée:** `non_finance_dept_found`  
+**Action testée:** `non_finance_dept_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)
@@ -818,7 +818,7 @@ Department[id="D003", name="HR", active=true]
 
 ### 🧪 Test: `alpha_upper_positive`
 
-**Action testée:** `finance_dept_found`  
+**Action testée:** `finance_dept_found`
 **Résultat:** ✅ Conforme (2/2 actions)
 
 #### 📋 Règle (.constraint)

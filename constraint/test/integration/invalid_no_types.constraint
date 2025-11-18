@@ -3,7 +3,7 @@
 // Cette expression devrait échouer car aucun type "Transaction" n'est défini
 {t: Transaction} / t.amount > 1000
 
-// Cette expression devrait aussi échouer  
+// Cette expression devrait aussi échouer
 {a: Account} / a.active == true
 
 // Action sans types définis

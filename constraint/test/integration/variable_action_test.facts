@@ -2,5 +2,5 @@
 // Format: TypeName[field=value, field=value]
 
 TestUser[id="user1", name="Alice", age=25]
-TestUser[id="user2", name="Bob", age=16] 
+TestUser[id="user2", name="Bob", age=16]
 TestUser[id="user3", name="Charlie", age=30]

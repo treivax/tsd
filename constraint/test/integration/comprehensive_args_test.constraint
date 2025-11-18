@@ -1,7 +1,7 @@
 // Comprehensive test suite for action arguments
 // Tests all valid combinations of complete objects and field values
 
-// Types definition  
+// Types definition
 type User : <
     id: string,
     name: string,
@@ -27,7 +27,7 @@ type Product : <
 // Test 1: Pure variable arguments (complete objects)
 {u: User} / u.age >= 18 ==> process_adult(u)
 
-// Test 2: Pure field arguments (simple values) 
+// Test 2: Pure field arguments (simple values)
 {u: User} / u.active == true ==> log_user_info(u.id, u.name, u.age)
 
 // Test 3: Mixed arguments (objects + fields in same action)

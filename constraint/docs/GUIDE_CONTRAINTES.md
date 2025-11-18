@@ -215,11 +215,11 @@ type Voiture : < marque: string, annee: number, electrique: bool >
 type Produit : < prix: number, stock: number, categorie: string >
 type Client : < nom: string, age: number, budget: number, vip: bool >
 
-{ prod: Produit, client: Client } / 
-    prod.prix <= client.budget AND 
-    prod.stock > 0 AND 
+{ prod: Produit, client: Client } /
+    prod.prix <= client.budget AND
+    prod.stock > 0 AND
     (client.vip = true OR prod.categorie != "premium") AND
-    client.age >= 18 
+    client.age >= 18
 ==> processCommande(client, prod)
 ```
 
@@ -229,9 +229,9 @@ type Client : < nom: string, age: number, budget: number, vip: bool >
 type Personne : < nom: string, age: number, salaire: number >
 
 // Trouver les personnes avec un salaire supérieur à une autre
-{ p1: Personne, p2: Personne } / 
-    p1.salaire > p2.salaire AND 
-    p1.age < p2.age 
+{ p1: Personne, p2: Personne } /
+    p1.salaire > p2.salaire AND
+    p1.age < p2.age
 ==> analyseEcartSalarial(p1, p2)
 ```
 
@@ -269,14 +269,14 @@ type Commande : < montant: number, urgent: bool >
 // ===== RÈGLES MÉTIER =====
 
 // Règle de validation client VIP
-{ client: Client } / 
-    client.age >= 18 AND client.vip = true 
+{ client: Client } /
+    client.age >= 18 AND client.vip = true
 ==> activerServiceVIP(client)
 
 // Règle de gestion stock
-{ prod: Produit, cmd: Commande } / 
-    prod.stock > 0 AND 
-    cmd.montant >= prod.prix 
+{ prod: Produit, cmd: Commande } /
+    prod.stock > 0 AND
+    cmd.montant >= prod.prix
 ==> traiterCommande(cmd, prod)
 ```
 
@@ -316,7 +316,7 @@ AND | OR | && | || | & | |
 
 ```
 // Commentaire sur une ligne
-/* Commentaire 
+/* Commentaire
    sur plusieurs lignes */
 ```
 
@@ -330,8 +330,8 @@ AND | OR | && | || | & | |
    ```
    // ❌ Incorrect
    type Personne < nom: string >
-   
-   // ✅ Correct  
+
+   // ✅ Correct
    type Personne : < nom: string >
    ```
 
@@ -339,7 +339,7 @@ AND | OR | && | || | & | |
    ```
    // ❌ Incorrect
    { client: Personne; prod: Produit }
-   
+
    // ✅ Correct
    { client: Personne, prod: Produit }
    ```
@@ -348,7 +348,7 @@ AND | OR | && | || | & | |
    ```
    // ❌ Référence à un type non défini
    { user: Utilisateur } / user.age > 18
-   
+
    // ✅ Défini d'abord le type
    type Utilisateur : < age: number >
    { user: Utilisateur } / user.age > 18

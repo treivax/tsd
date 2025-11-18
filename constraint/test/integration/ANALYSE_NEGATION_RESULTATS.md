@@ -2,7 +2,7 @@
 
 ## 🎯 RÉSUMÉ EXÉCUTIF
 - **19 règles totales** créées à partir du fichier `negation_rules.constraint`
-- **17 règles de négation (NOT)** testées spécifiquement 
+- **17 règles de négation (NOT)** testées spécifiquement
 - **27 faits** injectés (10 TestPerson, 10 TestOrder, 7 TestProduct)
 - **19 nœuds terminaux** actifs avec résultats
 - **🟢 SUCCÈS COMPLET**: Toutes les règles de négation ont été correctement évaluées
@@ -63,7 +63,7 @@ TestProduct[id=PROD005, keywords=obsolete, name=OldKeyboard]
 ✅ Validation: Seuls les produits avec keywords='obsolete' sont exclus
 ```
 
-#### 4. **Employé temporaire (P010)** - `not_temporary_employee`  
+#### 4. **Employé temporaire (P010)** - `not_temporary_employee`
 ```
 TestPerson[id=P010, tags=temp, name=X, department=intern]
 ❌ Règle NOT (p.tags == 'temp') PAS déclenchée pour P010 (comme attendu)
@@ -84,7 +84,7 @@ NOT (NOT (p.active == true)) équivaut à (p.active == true)
 - **Taux de succès**: 90/90 activations attendues
 - **Cas spéciaux testés**: age=0, salary=-5000, tags=temp, noms courts
 
-### 📦 TestOrder (10 faits) 
+### 📦 TestOrder (10 faits)
 - **4 règles de négation** s'appliquent aux commandes
 - **Taux de succès**: 40/40 activations attendues
 - **Cas spéciaux testés**: status=cancelled, status=refunded, total=75000
