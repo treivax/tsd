@@ -304,18 +304,7 @@ func executeBetaTest(testDir, testName string) BetaTestResult {
 	// Extraire les règles avec analyse Beta
 	result.Rules = extractBetaRulesFromProgram(program)
 
-	// Charger les faits temporairement pour générer les résultats attendus
-	factsParser := rete.NewFactsParser()
-	tempFacts, err := factsParser.ParseFactsFile(result.FactsFile, make(map[string]rete.TypeDefinition))
-	if err != nil {
-		result.ErrorMessage = fmt.Sprintf("Erreur chargement faits pour validation: %v", err)
-		return result
-	}
-
-	// Générer les résultats attendus dynamiquement
-	result.ExpectedResults = generateExpectedResultsDynamic(result.Rules, tempFacts)
-
-	// Créer le réseau RETE via le pipeline
+	// Créer le réseau RETE via le pipeline pour obtenir les types et faits correctement
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
@@ -328,6 +317,9 @@ func executeBetaTest(testDir, testName string) BetaTestResult {
 
 	result.Network = network
 	result.Facts = facts
+
+	// Générer les résultats attendus dynamiquement
+	result.ExpectedResults = generateExpectedResultsDynamic(result.Rules, facts)
 
 	// Analyser la structure du réseau Beta avant exécution
 	analyzeBetaNetworkStructure(&result)
