@@ -4,7 +4,7 @@
 **📊 Tests exécutés:** 3
 **✅ Tests réussis:** 3 (100.0%)
 **🧠 Score sémantique moyen:** 100.0%
-**📅 Date d'exécution:** 2025-11-18 14:51:18
+**📅 Date d'exécution:** 2025-11-18 14:56:07
 
 ## 🎯 NŒUDS BETA ANALYSÉS
 | Type de Nœud | Tests | Succès | Score Sémantique |
@@ -20,7 +20,7 @@
 - **Description:** Test existence simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/beta_coverage_tests/exists_simple.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/beta_coverage_tests/exists_simple.facts`
-- **Temps d'exécution:** 526.084µs
+- **Temps d'exécution:** 531.654µs
 - **Résultat:** ✅ Succès
 
 ### 🧠 Validation sémantique
@@ -79,7 +79,7 @@ Order[customer_id=P001, amount=100]
 **📋 Détail des faits parsés:**
 1. **Person[P001]** - `Person[id=P001, name=Alice]`
 2. **Person[P002]** - `Person[id=P002, name=Bob]`
-3. **Order[fact_Order_3]** - `Order[customer_id=P001, amount=100, id=fact_Order_3]`
+3. **Order[fact_Order_3]** - `Order[id=fact_Order_3, customer_id=P001, amount=100]`
 
 ### ⚡ Résultats des actions
 | Action | Déclenchements | Type de Nœud | Correspondance Sémantique |
@@ -90,10 +90,10 @@ Order[customer_id=P001, amount=100]
 - **Nombre de déclenchements:** 1
 - **Type de nœud déclencheur:** AlphaNode
 
-**📋 Tokens et couples de faits activant l'action:**
+**📋 TOKENS COMBINÉS activant l'action:**
 
-##### Token 1
-**Fait activateur:** `Person[name=Alice, id=P001]`
+##### Token combiné 1
+- **`p`**: Person[P001] - `Person[id=P001, name=Alice]`
 
 ### 🎯 Comparaison attendu vs observé
 #### Actions
@@ -129,7 +129,7 @@ Order[customer_id=P001, amount=100]
 - **Description:** Test jointure simple entre deux faits
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/beta_coverage_tests/join_simple.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/beta_coverage_tests/join_simple.facts`
-- **Temps d'exécution:** 463.357µs
+- **Temps d'exécution:** 466.332µs
 - **Résultat:** ✅ Succès
 
 ### 🧠 Validation sémantique
@@ -192,8 +192,8 @@ Order[id=O002, customer_id=P002, amount=200]
 **📋 Détail des faits parsés:**
 1. **Person[P001]** - `Person[id=P001, name=Alice, age=25]`
 2. **Person[P002]** - `Person[id=P002, name=Bob, age=30]`
-3. **Order[O001]** - `Order[customer_id=P001, amount=100, id=O001]`
-4. **Order[O002]** - `Order[customer_id=P002, amount=200, id=O002]`
+3. **Order[O001]** - `Order[id=O001, customer_id=P001, amount=100]`
+4. **Order[O002]** - `Order[id=O002, customer_id=P002, amount=200]`
 
 ### ⚡ Résultats des actions
 | Action | Déclenchements | Type de Nœud | Correspondance Sémantique |
@@ -204,18 +204,16 @@ Order[id=O002, customer_id=P002, amount=200]
 - **Nombre de déclenchements:** 2
 - **Type de nœud déclencheur:** AlphaNode
 
-**📋 Tokens et couples de faits activant l'action:**
+**📋 TOKENS COMBINÉS activant l'action:**
 
-##### Token 1
-**Couple de faits joints:**
-- **Fait 1 (Person):** `Person[age=25, id=P001, name=Alice]`
-- **Fait 2 (Order):** `Order[id=O001, customer_id=P001, amount=100]`
+##### Token combiné 1
+- **`p`**: Person[P001] - `Person[id=P001, name=Alice, age=25]`
+- **`o`**: Order[O001] - `Order[id=O001, customer_id=P001, amount=100]`
 - **Association:** Person[P001] ⋈ Order[O001]
 
-##### Token 2
-**Couple de faits joints:**
-- **Fait 1 (Person):** `Person[id=P002, name=Bob, age=30]`
-- **Fait 2 (Order):** `Order[id=O002, customer_id=P002, amount=200]`
+##### Token combiné 2
+- **`p`**: Person[P002] - `Person[id=P002, name=Bob, age=30]`
+- **`o`**: Order[O002] - `Order[amount=200, id=O002, customer_id=P002]`
 - **Association:** Person[P002] ⋈ Order[O002]
 
 ### 🔗 Analyse des jointures (JoinNodes)
@@ -241,17 +239,17 @@ Order[id=O002, customer_id=P002, amount=200]
   * `p`: Person[P001] - `Person[id=P001, name=Alice, age=25]`
   * `o`: Order[O001] - `Order[id=O001, customer_id=P001, amount=100]`
 - **Token attendu 2:**
+  * `p`: Person[P002] - `Person[age=30, id=P002, name=Bob]`
   * `o`: Order[O002] - `Order[id=O002, customer_id=P002, amount=200]`
-  * `p`: Person[P002] - `Person[id=P002, name=Bob, age=30]`
 
 **📊 TOKENS COMBINÉS OBTENUS:**
 - **Nombre de tokens obtenus:** 2
 - **Token obtenu 1:**
   * `p`: Person[P001] - `Person[id=P001, name=Alice, age=25]`
-  * `o`: Order[O001] - `Order[id=O001, customer_id=P001, amount=100]`
+  * `o`: Order[O001] - `Order[customer_id=P001, amount=100, id=O001]`
 - **Token obtenu 2:**
   * `p`: Person[P002] - `Person[id=P002, name=Bob, age=30]`
-  * `o`: Order[O002] - `Order[customer_id=P002, amount=200, id=O002]`
+  * `o`: Order[O002] - `Order[id=O002, customer_id=P002, amount=200]`
 
 **🎯 RÉSULTAT:** ✅ SUCCÈS
 - ✅ Nombre de tokens correct
@@ -265,7 +263,7 @@ Order[id=O002, customer_id=P002, amount=200]
 - **Description:** Test négation simple
 - **Fichier contraintes:** `/home/resinsec/dev/tsd/beta_coverage_tests/not_simple.constraint`
 - **Fichier faits:** `/home/resinsec/dev/tsd/beta_coverage_tests/not_simple.facts`
-- **Temps d'exécution:** 287.738µs
+- **Temps d'exécution:** 275.485µs
 - **Résultat:** ✅ Succès
 
 ### 🧠 Validation sémantique
@@ -320,7 +318,7 @@ Person[id=P002, name=Bob, active=false]
 - **Person:** 2 faits
 
 **📋 Détail des faits parsés:**
-1. **Person[P001]** - `Person[active=true, id=P001, name=Alice]`
+1. **Person[P001]** - `Person[name=Alice, active=true, id=P001]`
 2. **Person[P002]** - `Person[id=P002, name=Bob, active=false]`
 
 ### ⚡ Résultats des actions
@@ -332,10 +330,10 @@ Person[id=P002, name=Bob, active=false]
 - **Nombre de déclenchements:** 1
 - **Type de nœud déclencheur:** AlphaNode
 
-**📋 Tokens et couples de faits activant l'action:**
+**📋 TOKENS COMBINÉS activant l'action:**
 
-##### Token 1
-**Fait activateur:** `Person[name=Alice, active=true, id=P001]`
+##### Token combiné 1
+- **`p`**: Person[P001] - `Person[id=P001, name=Alice, active=true]`
 
 ### 🚫 Analyse des négations (NotNodes)
 | Nœud | Condition Niée | Faits Filtrés | Type | Validation |
@@ -357,7 +355,7 @@ Person[id=P002, name=Bob, active=false]
 **📍 TOKENS COMBINÉS ATTENDUS:**
 - **Nombre de tokens attendus:** 1-1
 - **Token attendu 1:**
-  * `p`: Person[P001] - `Person[id=P001, name=Alice, active=true]`
+  * `p`: Person[P001] - `Person[active=true, id=P001, name=Alice]`
 
 **📊 TOKENS COMBINÉS OBTENUS:**
 - **Nombre de tokens obtenus:** 1

@@ -1230,28 +1230,43 @@ func generateBetaCompleteReport(results []BetaTestResult, outputFile string) err
 				report.WriteString("\n")
 
 				if len(action.JoinedFacts) > 0 {
-					report.WriteString("**📋 Tokens et couples de faits activant l'action:**\n\n")
-					for k, joinedFacts := range action.JoinedFacts {
-						report.WriteString(fmt.Sprintf("##### Token %d\n", k+1))
+					report.WriteString("**📋 TOKENS COMBINÉS activant l'action:**\n\n")
 
-						// Si c'est une jointure, montrer les couples explicitement
-						if len(joinedFacts) > 1 {
-							report.WriteString("**Couple de faits joints:**\n")
+					// Obtenir les variables de la règle pour affichage structuré
+					variables := getActionVariables(result.Rules, action.ActionName)
+
+					for k, joinedFacts := range action.JoinedFacts {
+						report.WriteString(fmt.Sprintf("##### Token combiné %d\n", k+1))
+
+						// Afficher chaque fait avec sa variable correspondante
+						if len(variables) > 0 && len(joinedFacts) > 0 {
+							for l, fact := range joinedFacts {
+								varName := "unknown"
+								if l < len(variables) {
+									varName = variables[l]
+								}
+								report.WriteString(fmt.Sprintf("- **`%s`**: %s[%s] - `%s`\n",
+									varName, fact.Type, fact.ID, formatFactWithFields(fact)))
+							}
+
+							// Pour les jointures multiples, montrer aussi l'association explicite
+							if len(joinedFacts) > 1 {
+								var associations []string
+								for l, fact := range joinedFacts {
+									if l < len(variables) {
+										associations = append(associations, fmt.Sprintf("%s[%s]", fact.Type, fact.ID))
+									}
+								}
+								if len(associations) > 1 {
+									report.WriteString(fmt.Sprintf("- **Association:** %s\n", strings.Join(associations, " ⋈ ")))
+								}
+							}
+						} else {
+							// Fallback si pas de variables définies
 							for l, fact := range joinedFacts {
 								report.WriteString(fmt.Sprintf("- **Fait %d (%s):** `%s`\n",
 									l+1, fact.Type, formatFactWithFields(fact)))
 							}
-
-							// Montrer l'association explicite pour les jointures
-							if len(joinedFacts) == 2 {
-								fact1, fact2 := joinedFacts[0], joinedFacts[1]
-								report.WriteString(fmt.Sprintf("- **Association:** %s[%s] ⋈ %s[%s]\n",
-									fact1.Type, fact1.ID, fact2.Type, fact2.ID))
-							}
-						} else {
-							// Pour une action simple (pas de jointure)
-							fact := joinedFacts[0]
-							report.WriteString(fmt.Sprintf("**Fait activateur:** `%s`\n", formatFactWithFields(fact)))
 						}
 						report.WriteString("\n")
 					}
