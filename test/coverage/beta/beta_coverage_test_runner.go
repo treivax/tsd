@@ -397,11 +397,42 @@ func executeBetaTestWithMonitoring(result *BetaTestResult) error {
 	actionsCount := make(map[string]int)
 	actionsMap := make(map[string][]*rete.Fact)
 
-	// Soumettre tous les faits avec monitoring
-	for _, fact := range result.Facts {
-		err := network.SubmitFact(fact)
-		if err != nil {
-			return fmt.Errorf("erreur soumission fait %s: %v", fact.ID, err)
+	// LES FAITS ONT DÉJÀ ÉTÉ INJECTÉS PAR LE PIPELINE
+	// Ne pas les réinjecter ici
+
+	// Analyser les BetaNodes (JoinNodes) réels dans le réseau pour capturer les vraies jointures
+	betaIndex := 0
+	for _, betaNode := range network.BetaNodes {
+		if joinNode, ok := betaNode.(*rete.JoinNode); ok && joinNode.Memory != nil {
+			// Compter uniquement les jointures réussies (tokens avec flag IsJoinResult)
+			joinMatches := 0
+			var tuples []FactTuple
+
+			for _, token := range joinNode.Memory.Tokens {
+				if token.IsJoinResult && len(token.Facts) >= 2 {
+					// C'est une jointure réussie
+					joinMatches++
+					var facts []string
+					var desc []string
+					for _, fact := range token.Facts {
+						facts = append(facts, fact.ID)
+						desc = append(desc, fmt.Sprintf("%s[%s]", fact.Type, fact.ID))
+					}
+					tuples = append(tuples, FactTuple{
+						Facts:       facts,
+						Description: fmt.Sprintf("Tuple joint: %s", strings.Join(desc, " ⋈ ")),
+					})
+				}
+			}
+
+			if betaIndex < len(result.JoinResults) {
+				result.JoinResults[betaIndex].MatchedTuples = joinMatches
+				if joinMatches > 0 {
+					result.JoinResults[betaIndex].SemanticValid = true
+					result.JoinResults[betaIndex].Tuples = tuples
+				}
+				betaIndex++
+			}
 		}
 	}
 
@@ -413,6 +444,7 @@ func executeBetaTestWithMonitoring(result *BetaTestResult) error {
 		}
 
 		tokenCount := len(terminal.Memory.Tokens)
+
 		if tokenCount > 0 {
 			actionsCount[actionName] = tokenCount
 
@@ -552,13 +584,30 @@ func validateBetaSemantics(result *BetaTestResult) {
 
 	// Valider les jointures
 	for _, expectedJoin := range result.ExpectedResults.ExpectedJoins {
+		fmt.Printf("\n📋 Jointure attendue: %s -> %s\n", expectedJoin.LeftFactType, expectedJoin.RightFactType)
+		fmt.Printf("   📊 Correspondances attendues: %d\n", expectedJoin.ExpectedMatches)
+
 		joinFound := false
 		for i := range result.JoinResults {
 			actualJoin := &result.JoinResults[i]
+			fmt.Printf("   🔍 JoinNode %s: %d correspondances\n", actualJoin.NodeID, actualJoin.MatchedTuples)
+
+			if len(actualJoin.Tuples) > 0 {
+				fmt.Printf("   🔗 Tuples observés:\n")
+				for j, tuple := range actualJoin.Tuples {
+					fmt.Printf("      %d. %s\n", j+1, tuple.Description)
+				}
+			}
+
 			if actualJoin.MatchedTuples == expectedJoin.ExpectedMatches {
 				joinFound = true
 				actualJoin.SemanticValid = true
+				fmt.Printf("   ✅ Jointure validée\n")
 				break
+			} else if actualJoin.MatchedTuples > 0 {
+				fmt.Printf("   ❌ Nombre incorrect: attendu %d, observé %d\n", expectedJoin.ExpectedMatches, actualJoin.MatchedTuples)
+			} else {
+				fmt.Printf("   ❌ Aucune correspondance trouvée\n")
 			}
 		}
 		if !joinFound {
@@ -823,6 +872,31 @@ func determineTriggerNodeType(actionName string) string {
 func loadExpectedResults(testName string) ExpectedTestResults {
 	// Charger les résultats attendus selon le nom du test
 	switch testName {
+	case "exists_simple", "beta_exists_simple":
+		return ExpectedTestResults{
+			ExpectedActions: []ExpectedAction{
+				{ActionName: "person_has_orders", MinTriggers: 1, MaxTriggers: 1,
+					ExpectedFactIDs:   []string{"P001"},   // Seulement la variable principale
+					RequiredFactTypes: []string{"Person"}, // Variable principale
+					SemanticReason:    "Une personne (Alice) a une commande existante"},
+			},
+			ExpectedExists: []ExpectedExists{
+				{ExistsCondition: "o.customer_id == p.id", ShouldExist: true,
+					QuantifierReason: "Alice a une commande, Bob n'en a pas"},
+			},
+		}
+	case "not_simple", "beta_not_simple":
+		return ExpectedTestResults{
+			ExpectedActions: []ExpectedAction{
+				{ActionName: "active_person", MinTriggers: 1, MaxTriggers: 1,
+					ExpectedFactIDs: []string{"P001"},
+					SemanticReason:  "Une personne active (Alice) passe le filtre NOT"},
+			},
+			ExpectedNegations: []ExpectedNegation{
+				{NegatedCondition: "p.active == false", ExpectedFiltered: 1,
+					LogicalReason: "Exclure les personnes inactives"},
+			},
+		}
 	case "join_simple", "beta_join_simple":
 		return ExpectedTestResults{
 			ExpectedActions: []ExpectedAction{
@@ -864,13 +938,13 @@ func loadExpectedResults(testName string) ExpectedTestResults {
 	case "beta_exists_complex":
 		return ExpectedTestResults{
 			ExpectedActions: []ExpectedAction{
-				{ActionName: "customer_purchase", MinTriggers: 4, MaxTriggers: 4,
-					ExpectedFactIDs: []string{"C001", "C002", "C003", "PUR001", "PUR003", "PUR004", "PUR005"},
-					SemanticReason:  "Jointures Customer-Purchase"},
+				{ActionName: "customer_purchase", MinTriggers: 5, MaxTriggers: 5,
+					ExpectedFactIDs: []string{"C001", "C002", "C003", "PUR001", "PUR002", "PUR003", "PUR004", "PUR005"},
+					SemanticReason:  "Cinq jointures Customer-Purchase (C001 a 2 achats, C002 a 1 achat, C003 a 2 achats)"},
 			},
 			ExpectedJoins: []ExpectedJoin{
 				{LeftFactType: "Customer", RightFactType: "Purchase",
-					JoinCondition: "c.id == p.customer_id", ExpectedMatches: 4,
+					JoinCondition: "c.id == p.customer_id", ExpectedMatches: 5,
 					SemanticReason: "Jointure sur customer_id"},
 			},
 		}
@@ -1247,8 +1321,8 @@ func generateBetaCompleteReport(results []BetaTestResult, outputFile string) err
 
 			if len(result.ExpectedResults.ExpectedActions) > 0 {
 				report.WriteString("#### Actions\n")
-				report.WriteString("| Action | Attendu | Observé | Faits Attendus | Faits Observés | Statut |\n")
-				report.WriteString("|--------|---------|---------|----------------|----------------|--------|\n")
+				report.WriteString("| Action | Attendu | Observé | Statut |\n")
+				report.WriteString("|--------|---------|---------|--------|\n")
 				for _, expected := range result.ExpectedResults.ExpectedActions {
 					observed := findActualAction(result.Actions, expected.ActionName)
 					status := "❌"
@@ -1257,34 +1331,83 @@ func generateBetaCompleteReport(results []BetaTestResult, outputFile string) err
 						status = "✅"
 					}
 					observedCount := 0
-					observedFactIDs := []string{}
 					if observed != nil {
 						observedCount = observed.Count
-						for _, fact := range observed.Facts {
-							observedFactIDs = append(observedFactIDs, fact.ID)
-						}
 					}
-					report.WriteString(fmt.Sprintf("| %s | %d-%d | %d | %s | %s | %s |\n",
+					report.WriteString(fmt.Sprintf("| %s | %d-%d | %d | %s |\n",
 						expected.ActionName, expected.MinTriggers, expected.MaxTriggers,
-						observedCount, strings.Join(expected.ExpectedFactIDs, ", "),
-						strings.Join(observedFactIDs, ", "), status))
+						observedCount, status))
 				}
 				report.WriteString("\n")
 
-				// Détails des tuples/nœuds attendus pour Beta
-				report.WriteString("#### 📋 Détails des tuples Beta attendus\n\n")
+				// Détails complets des tokens combinés attendus vs observés
+				report.WriteString("#### 📋 TOKENS COMBINÉS ATTENDUS vs OBTENUS\n\n")
 				for _, expected := range result.ExpectedResults.ExpectedActions {
-					report.WriteString(fmt.Sprintf("**Action `%s`:**\n", expected.ActionName))
+					observed := findActualAction(result.Actions, expected.ActionName)
+
+					report.WriteString(fmt.Sprintf("**🎯 Action `%s`:**\n", expected.ActionName))
 					report.WriteString(fmt.Sprintf("- **Description:** %s\n", expected.SemanticReason))
-					report.WriteString(fmt.Sprintf("- **Déclenchements attendus:** %d-%d\n", expected.MinTriggers, expected.MaxTriggers))
+					report.WriteString(fmt.Sprintf("- **Variables de la règle:** %s\n",
+						strings.Join(getActionVariables(result.Rules, expected.ActionName), ", ")))
+					report.WriteString("\n")
+
+					// TOKENS ATTENDUS
+					report.WriteString("**📍 TOKENS COMBINÉS ATTENDUS:**\n")
+					report.WriteString(fmt.Sprintf("- **Nombre de tokens attendus:** %d-%d\n", expected.MinTriggers, expected.MaxTriggers))
 					if len(expected.ExpectedFactIDs) > 0 {
-						report.WriteString("- **IDs de faits attendus:**\n")
-						for i, factID := range expected.ExpectedFactIDs {
-							report.WriteString(fmt.Sprintf("  %d. `%s`\n", i+1, factID))
+						// Grouper les faits par token attendu selon les variables de la règle
+						expectedTokens := groupFactsIntoTokens(expected.ExpectedFactIDs, result.Facts, result.Rules, expected.ActionName)
+						for i, token := range expectedTokens {
+							report.WriteString(fmt.Sprintf("- **Token attendu %d:**\n", i+1))
+							for varName, fact := range token {
+								report.WriteString(fmt.Sprintf("  * `%s`: %s[%s] - `%s`\n",
+									varName, fact.Type, fact.ID, formatFactWithFields(fact)))
+							}
 						}
+					} else {
+						report.WriteString("- *Pas de détails de tokens attendus spécifiés*\n")
 					}
-					if len(expected.RequiredFactTypes) > 0 {
-						report.WriteString(fmt.Sprintf("- **Types de faits requis:** %s\n", strings.Join(expected.RequiredFactTypes, ", ")))
+					report.WriteString("\n")
+
+					// TOKENS OBTENUS
+					report.WriteString("**📊 TOKENS COMBINÉS OBTENUS:**\n")
+					if observed != nil && len(observed.JoinedFacts) > 0 {
+						report.WriteString(fmt.Sprintf("- **Nombre de tokens obtenus:** %d\n", len(observed.JoinedFacts)))
+						for k, joinedFacts := range observed.JoinedFacts {
+							report.WriteString(fmt.Sprintf("- **Token obtenu %d:**\n", k+1))
+							// Associer chaque fait à sa variable selon l'ordre de la règle
+							variables := getActionVariables(result.Rules, expected.ActionName)
+							for l, fact := range joinedFacts {
+								varName := "unknown"
+								if l < len(variables) {
+									varName = variables[l]
+								}
+								report.WriteString(fmt.Sprintf("  * `%s`: %s[%s] - `%s`\n",
+									varName, fact.Type, fact.ID, formatFactWithFields(fact)))
+							}
+						}
+					} else {
+						report.WriteString("- **Nombre de tokens obtenus:** 0\n")
+						report.WriteString("- *Aucun token combiné généré*\n")
+					}
+					report.WriteString("\n")
+
+					// COMPARAISON
+					status := "❌ ÉCHEC"
+					if observed != nil && observed.Count >= expected.MinTriggers && observed.Count <= expected.MaxTriggers {
+						status = "✅ SUCCÈS"
+					}
+					report.WriteString(fmt.Sprintf("**🎯 RÉSULTAT:** %s\n", status))
+					if observed != nil {
+						if observed.Count == expected.MinTriggers ||
+							(expected.MinTriggers != expected.MaxTriggers && observed.Count >= expected.MinTriggers && observed.Count <= expected.MaxTriggers) {
+							report.WriteString("- ✅ Nombre de tokens correct\n")
+						} else {
+							report.WriteString(fmt.Sprintf("- ❌ Nombre de tokens incorrect: attendu %d-%d, obtenu %d\n",
+								expected.MinTriggers, expected.MaxTriggers, observed.Count))
+						}
+					} else {
+						report.WriteString("- ❌ Action non déclenchée\n")
 					}
 					report.WriteString("\n")
 				}
@@ -1384,12 +1507,22 @@ func readExactFactsContent(filePath string) string {
 }
 
 // formatFactWithFields formate un fait avec tous ses champs de manière lisible
-func formatFactWithFields(fact rete.Fact) string {
+func formatFactWithFields(fact interface{}) string {
+	var factValue rete.Fact
+	switch f := fact.(type) {
+	case rete.Fact:
+		factValue = f
+	case *rete.Fact:
+		factValue = *f
+	default:
+		return "Unknown fact type"
+	}
+
 	var fields []string
-	for key, value := range fact.Fields {
+	for key, value := range factValue.Fields {
 		fields = append(fields, fmt.Sprintf("%s=%v", key, value))
 	}
-	return fmt.Sprintf("%s[%s]", fact.Type, strings.Join(fields, ", "))
+	return fmt.Sprintf("%s[%s]", factValue.Type, strings.Join(fields, ", "))
 }
 
 // generateBetaNetworkVisualization génère une visualisation du réseau RETE pour les tests Beta
@@ -1502,4 +1635,150 @@ func extractMainRule(content string) string {
 		}
 	}
 	return "Règle non trouvée"
+}
+
+// getActionVariables extrait les noms des variables d'une action donnée
+func getActionVariables(rules []BetaParsedRule, actionName string) []string {
+	for _, rule := range rules {
+		if rule.ActionName == actionName {
+			variables := make([]string, len(rule.Variables))
+			for i, variable := range rule.Variables {
+				variables[i] = variable.Name
+			}
+			return variables
+		}
+	}
+	return []string{}
+}
+
+// groupFactsIntoTokens groupe les faits en tokens combinés selon les variables de la règle
+func groupFactsIntoTokens(factIDs []string, allFacts []*rete.Fact, rules []BetaParsedRule, actionName string) []map[string]*rete.Fact {
+	// Créer une map des faits par ID pour un accès rapide
+	factsByID := make(map[string]*rete.Fact)
+	for _, fact := range allFacts {
+		factsByID[fact.ID] = fact
+	}
+
+	// Obtenir les variables de la règle et son type de nœud
+	variables := getActionVariables(rules, actionName)
+	var nodeType string
+	for _, rule := range rules {
+		if rule.ActionName == actionName {
+			nodeType = rule.NodeType
+			break
+		}
+	}
+
+	if len(variables) == 0 {
+		return []map[string]*rete.Fact{}
+	}
+
+	var tokens []map[string]*rete.Fact
+
+	// Cas spécial pour EXISTS : seule la variable principale est dans le token final
+	if nodeType == "ExistsNode" && len(variables) > 0 {
+		mainVarName := variables[0] // Variable principale (p)
+		for _, factID := range factIDs {
+			if fact, exists := factsByID[factID]; exists {
+				// Vérifier si ce fait correspond à la variable principale
+				if isMainVariableFact(fact, mainVarName, rules, actionName) {
+					token := map[string]*rete.Fact{
+						mainVarName: fact,
+					}
+					tokens = append(tokens, token)
+				}
+			}
+		}
+		return tokens
+	}
+
+	// Si une seule variable, créer un token pour chaque fait
+	if len(variables) == 1 {
+		varName := variables[0]
+		for _, factID := range factIDs {
+			if fact, exists := factsByID[factID]; exists {
+				token := map[string]*rete.Fact{
+					varName: fact,
+				}
+				tokens = append(tokens, token)
+			}
+		}
+		return tokens
+	}
+
+	// Pour plusieurs variables, essayer de grouper les faits par tokens logiques
+	// Si on a des variables [p, o] et des factIDs [P001, O001, P002, O002],
+	// on suppose que P001+O001 forment un token et P002+O002 un autre
+
+	// Grouper les faits par type
+	factsByType := make(map[string][]*rete.Fact)
+	for _, factID := range factIDs {
+		if fact, exists := factsByID[factID]; exists {
+			factsByType[fact.Type] = append(factsByType[fact.Type], fact)
+		}
+	}
+
+	// Obtenir les types des variables
+	var variableTypes []string
+	for _, rule := range rules {
+		if rule.ActionName == actionName {
+			for _, variable := range rule.Variables {
+				variableTypes = append(variableTypes, variable.DataType)
+			}
+			break
+		}
+	}
+
+	if len(variableTypes) != len(variables) {
+		// Fallback: créer un seul token avec tous les faits disponibles
+		token := make(map[string]*rete.Fact)
+		varIndex := 0
+		for _, factID := range factIDs {
+			if fact, exists := factsByID[factID]; exists && varIndex < len(variables) {
+				token[variables[varIndex]] = fact
+				varIndex++
+			}
+		}
+		if len(token) > 0 {
+			tokens = append(tokens, token)
+		}
+		return tokens
+	}
+
+	// Associer chaque variable à son type et créer des tokens combinés
+	maxTokens := 0
+	for _, facts := range factsByType {
+		if len(facts) > maxTokens {
+			maxTokens = len(facts)
+		}
+	}
+
+	for i := 0; i < maxTokens; i++ {
+		token := make(map[string]*rete.Fact)
+		for j, varType := range variableTypes {
+			if j < len(variables) && i < len(factsByType[varType]) {
+				token[variables[j]] = factsByType[varType][i]
+			}
+		}
+		if len(token) > 0 {
+			tokens = append(tokens, token)
+		}
+	}
+
+	return tokens
+}
+
+// isMainVariableFact vérifie si un fait correspond à la variable principale d'une règle
+func isMainVariableFact(fact *rete.Fact, varName string, rules []BetaParsedRule, actionName string) bool {
+	for _, rule := range rules {
+		if rule.ActionName == actionName {
+			for _, variable := range rule.Variables {
+				if variable.Name == varName && variable.Role == "primary" {
+					return fact.Type == variable.DataType
+				}
+			}
+		}
+	}
+	// Fallback : accepter tous les faits pour la variable principale
+	return true
 }

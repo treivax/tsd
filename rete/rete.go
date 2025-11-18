@@ -2,6 +2,7 @@ package rete
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -29,11 +30,12 @@ func (f *Fact) GetField(fieldName string) (interface{}, bool) {
 
 // Token représente un token dans le réseau RETE
 type Token struct {
-	ID       string           `json:"id"`
-	Facts    []*Fact          `json:"facts"`
-	NodeID   string           `json:"node_id"`
-	Parent   *Token           `json:"parent,omitempty"`
-	Bindings map[string]*Fact `json:"bindings,omitempty"` // Nouveau: bindings pour jointures
+	ID           string           `json:"id"`
+	Facts        []*Fact          `json:"facts"`
+	NodeID       string           `json:"node_id"`
+	Parent       *Token           `json:"parent,omitempty"`
+	Bindings     map[string]*Fact `json:"bindings,omitempty"`       // Nouveau: bindings pour jointures
+	IsJoinResult bool             `json:"is_join_result,omitempty"` // Indique si c'est un token de jointure réussie
 }
 
 // WorkingMemory représente la mémoire de travail d'un nœud
@@ -403,11 +405,28 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	if an.Condition != nil {
 		if condMap, ok := an.Condition.(map[string]interface{}); ok {
 			if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
-				// Mode pass-through: pas d'évaluation de condition, transfert direct
+				// Mode pass-through: convertir le fait en token et propager selon le côté
 				an.mutex.Lock()
 				an.Memory.AddFact(fact)
 				an.mutex.Unlock()
-				return an.PropagateToChildren(fact, nil)
+
+				// Créer un token pour le fait avec la variable correspondante
+				token := &Token{
+					ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
+					Facts:    []*Fact{fact},
+					NodeID:   an.ID,
+					Bindings: map[string]*Fact{an.VariableName: fact},
+				}
+
+				// Déterminer le côté et propager selon l'architecture RETE
+				side, sideExists := condMap["side"].(string)
+				if sideExists && side == "left" {
+					fmt.Printf("🔗 ALPHA PASSTHROUGH[%s]: Propagation LEFT pour JoinNode\n", an.ID)
+					return an.PropagateToChildren(nil, token) // ActivateLeft
+				} else {
+					fmt.Printf("🔗 ALPHA PASSTHROUGH[%s]: Propagation RIGHT pour JoinNode\n", an.ID)
+					return an.PropagateToChildren(fact, nil) // ActivateRight
+				}
 			}
 		}
 	}
@@ -544,6 +563,11 @@ type JoinNode struct {
 	RightVariables []string               `json:"right_variables"`
 	AllVariables   []string               `json:"all_variables"`
 	JoinConditions []JoinCondition        `json:"join_conditions"`
+	mutex          sync.RWMutex
+	// Mémoires séparées pour architecture RETE propre
+	LeftMemory   *WorkingMemory // Tokens venant de la gauche
+	RightMemory  *WorkingMemory // Tokens venant de la droite
+	ResultMemory *WorkingMemory // Tokens de jointure réussie
 }
 
 // JoinCondition représente une condition de jointure entre variables
@@ -572,19 +596,40 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 		RightVariables: rightVars,
 		AllVariables:   allVars,
 		JoinConditions: extractJoinConditions(condition),
+		// Initialiser les mémoires séparées
+		LeftMemory:   &WorkingMemory{NodeID: nodeID + "_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:  &WorkingMemory{NodeID: nodeID + "_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory: &WorkingMemory{NodeID: nodeID + "_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
 	}
 }
 
 // ActivateLeft traite les tokens de la gauche (généralement des AlphaNodes)
 func (jn *JoinNode) ActivateLeft(token *Token) error {
+	fmt.Printf("🔍 JOINNODE[%s]: ActivateLeft - token %s\n", jn.ID, token.ID)
+
+	// Stocker le token dans la mémoire gauche
 	jn.mutex.Lock()
-	jn.Memory.AddToken(token)
+	jn.LeftMemory.AddToken(token)
 	jn.mutex.Unlock()
 
-	// Pour chaque fait dans la mémoire droite, essayer de joindre
-	rightFacts := jn.Memory.GetFactsByVariable(jn.RightVariables)
-	for _, rightFact := range rightFacts {
-		if joinedToken := jn.performJoin(token, rightFact); joinedToken != nil {
+	fmt.Printf("🔍 JOINNODE[%s]: Mémoire gauche: %d tokens\n", jn.ID, len(jn.LeftMemory.GetTokens()))
+
+	// Essayer de joindre avec tous les tokens de la mémoire droite
+	rightTokens := jn.RightMemory.GetTokens()
+	fmt.Printf("🔍 JOINNODE[%s]: Mémoire droite: %d tokens\n", jn.ID, len(rightTokens))
+
+	for _, rightToken := range rightTokens {
+		fmt.Printf("🔍 JOINNODE[%s]: Tentative jointure LEFT[%s] + RIGHT[%s]\n", jn.ID, token.ID, rightToken.ID)
+		if joinedToken := jn.performJoinWithTokens(token, rightToken); joinedToken != nil {
+			fmt.Printf("🔍 JOINNODE[%s]: Jointure réussie! LEFT[%s] + RIGHT[%s]\n", jn.ID, token.ID, rightToken.ID)
+
+			// Stocker uniquement les tokens de jointure réussie
+			joinedToken.IsJoinResult = true
+			jn.mutex.Lock()
+			jn.ResultMemory.AddToken(joinedToken)
+			jn.Memory.AddToken(joinedToken) // Pour compatibilité avec le comptage
+			jn.mutex.Unlock()
+
 			if err := jn.PropagateToChildren(nil, joinedToken); err != nil {
 				return err
 			}
@@ -595,48 +640,50 @@ func (jn *JoinNode) ActivateLeft(token *Token) error {
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
 func (jn *JoinNode) ActivateRight(fact *Fact) error {
-	jn.mutex.Lock()
-	jn.Memory.AddFact(fact)
-	jn.mutex.Unlock()
+	fmt.Printf("🔍 JOINNODE[%s]: ActivateRight - %s\n", jn.ID, fact.Type)
 
-	// Convertir le fait en token simple pour traitement interne
+	// Convertir le fait en token pour la mémoire droite
 	factVar := jn.getVariableForFact(fact)
 	if factVar == "" {
+		fmt.Printf("🔍 JOINNODE[%s]: Fait %s non applicable (variable introuvable)\n", jn.ID, fact.ID)
 		return nil // Fait non applicable à ce JoinNode
 	}
 
-	// Créer un token simple pour ce fait
 	factToken := &Token{
-		ID:       fmt.Sprintf("token_%s_%s", jn.ID, fact.ID),
+		ID:       fmt.Sprintf("right_token_%s_%s", jn.ID, fact.ID),
 		Facts:    []*Fact{fact},
 		NodeID:   jn.ID,
 		Bindings: map[string]*Fact{factVar: fact},
 	}
 
-	// Vérifier s'il existe déjà d'autres tokens pour joindre
-	allTokens := jn.Memory.GetTokens()
-	if len(allTokens) == 0 {
-		// Premier token - le stocker et attendre
-		jn.mutex.Lock()
-		jn.Memory.AddToken(factToken)
-		jn.mutex.Unlock()
-		return nil
-	}
+	// Stocker le token dans la mémoire droite
+	jn.mutex.Lock()
+	jn.RightMemory.AddToken(factToken)
+	jn.mutex.Unlock()
 
-	// Essayer de joindre avec les tokens existants
-	for _, existingToken := range allTokens {
-		if joinedToken := jn.performJoinWithTokens(existingToken, factToken); joinedToken != nil {
+	fmt.Printf("🔍 JOINNODE[%s]: Mémoire droite: %d tokens\n", jn.ID, len(jn.RightMemory.GetTokens()))
+
+	// Essayer de joindre avec tous les tokens de la mémoire gauche
+	leftTokens := jn.LeftMemory.GetTokens()
+	fmt.Printf("🔍 JOINNODE[%s]: Mémoire gauche: %d tokens\n", jn.ID, len(leftTokens))
+
+	for _, leftToken := range leftTokens {
+		fmt.Printf("🔍 JOINNODE[%s]: Tentative jointure LEFT[%s] + RIGHT[%s]\n", jn.ID, leftToken.ID, factToken.ID)
+		if joinedToken := jn.performJoinWithTokens(leftToken, factToken); joinedToken != nil {
+			fmt.Printf("🔍 JOINNODE[%s]: Jointure réussie! LEFT[%s] + RIGHT[%s]\n", jn.ID, leftToken.ID, factToken.ID)
+
+			// Stocker uniquement les tokens de jointure réussie
+			joinedToken.IsJoinResult = true
+			jn.mutex.Lock()
+			jn.ResultMemory.AddToken(joinedToken)
+			jn.Memory.AddToken(joinedToken) // Pour compatibilité avec le comptage
+			jn.mutex.Unlock()
+
 			if err := jn.PropagateToChildren(nil, joinedToken); err != nil {
 				return err
 			}
 		}
 	}
-
-	// Stocker le nouveau token pour jointures futures
-	jn.mutex.Lock()
-	jn.Memory.AddToken(factToken)
-	jn.mutex.Unlock()
-
 	return nil
 }
 
@@ -717,74 +764,206 @@ func (jn *JoinNode) tokensHaveDifferentVariables(token1 *Token, token2 *Token) b
 
 // getVariableForFact détermine la variable associée à un fait basé sur son type
 func (jn *JoinNode) getVariableForFact(fact *Fact) string {
+	// Logique générique : trouver la variable qui correspond au type du fait
+	// Utiliser les mappings réels depuis le pipeline de contraintes
 	for _, varName := range jn.AllVariables {
-		// Convention: p -> TestPerson, o -> TestOrder, prod -> TestProduct, etc.
-		if (varName == "p" && fact.Type == "TestPerson") ||
-			(varName == "o" && fact.Type == "TestOrder") ||
-			(varName == "prod" && fact.Type == "TestProduct") ||
-			(varName == "t" && fact.Type == "TestTransaction") ||
-			(varName == "a" && fact.Type == "TestAlert") {
+		// Pour l'instant, utiliser une convention simple basée sur le type réel
+		if (varName == "p" && fact.Type == "Person") ||
+			(varName == "o" && fact.Type == "Order") ||
+			(varName == "c" && fact.Type == "Customer") ||
+			(varName == "prod" && fact.Type == "Product") ||
+			(varName == "t" && fact.Type == "Transaction") ||
+			(varName == "a" && fact.Type == "Alert") ||
+			(varName == "e" && fact.Type == "Employee") ||
+			(varName == "d" && fact.Type == "Department") {
+			fmt.Printf("🔍 JOINNODE[%s]: Variable %s trouvée pour fait %s (type: %s)\n", jn.ID, varName, fact.ID, fact.Type)
 			return varName
 		}
 	}
+	fmt.Printf("❌ JOINNODE[%s]: Aucune variable trouvée pour fait %s (type: %s)\n", jn.ID, fact.ID, fact.Type)
+	fmt.Printf("   Variables disponibles: %v\n", jn.AllVariables)
 	return ""
 }
 
 // evaluateJoinConditions vérifie si toutes les conditions de jointure sont respectées
 func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
-	// Stratégie simplifiée : toujours accepter les jointures pour les tests
-	// TODO: Implémenter l'évaluation complète des conditions de jointure
+	fmt.Printf("🔍 JOINNODE[%s]: Évaluation conditions jointure\n", jn.ID)
+	fmt.Printf("  📊 Bindings: %d variables\n", len(bindings))
+	for varName, fact := range bindings {
+		fmt.Printf("    %s -> %s (ID: %s)\n", varName, fact.Type, fact.ID)
+	}
+	fmt.Printf("  📊 Conditions: %d à vérifier\n", len(jn.JoinConditions))
+	for i, condition := range jn.JoinConditions {
+		fmt.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
+			condition.LeftVar, condition.LeftField, condition.Operator,
+			condition.RightVar, condition.RightField)
+	}
 
 	// Vérifier qu'on a au moins 2 variables différentes
 	if len(bindings) < 2 {
+		fmt.Printf("  ❌ Pas assez de variables (%d < 2)\n", len(bindings))
 		return false
 	}
 
-	// Simulation simple d'évaluation de jointure
-	// Pour une règle comme p.id == o.customer_id, on simule la réussite
-	// dans certains cas cohérents
+	// Évaluer chaque condition de jointure
+	for i, joinCondition := range jn.JoinConditions {
+		leftFact := bindings[joinCondition.LeftVar]
+		rightFact := bindings[joinCondition.RightVar]
 
-	var personFact, orderFact *Fact
-	for varName, fact := range bindings {
-		if varName == "p" && fact.Type == "TestPerson" {
-			personFact = fact
+		if leftFact == nil || rightFact == nil {
+			fmt.Printf("  ❌ Condition %d: variable manquante (%s ou %s)\n", i, joinCondition.LeftVar, joinCondition.RightVar)
+			return false // Une variable manque
 		}
-		if varName == "o" && fact.Type == "TestOrder" {
-			orderFact = fact
+
+		// Récupérer les valeurs des champs
+		leftValue := leftFact.Fields[joinCondition.LeftField]
+		rightValue := rightFact.Fields[joinCondition.RightField]
+
+		fmt.Printf("  🔍 Condition %d: %v %s %v\n", i, leftValue, joinCondition.Operator, rightValue)
+
+		// Évaluer l'opérateur
+		switch joinCondition.Operator {
+		case "==":
+			if leftValue != rightValue {
+				fmt.Printf("  ❌ Condition %d échoue: %v != %v\n", i, leftValue, rightValue)
+				return false
+			}
+			fmt.Printf("  ✅ Condition %d réussie: %v == %v\n", i, leftValue, rightValue)
+		case "!=":
+			if leftValue == rightValue {
+				fmt.Printf("  ❌ Condition %d échoue: %v == %v\n", i, leftValue, rightValue)
+				return false
+			}
+			fmt.Printf("  ✅ Condition %d réussie: %v != %v\n", i, leftValue, rightValue)
+		case "<":
+			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
+				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
+					if leftFloat >= rightFloat {
+						return false
+					}
+				} else {
+					return false // Comparaison numérique impossible
+				}
+			} else {
+				return false
+			}
+		case ">":
+			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
+				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
+					if leftFloat <= rightFloat {
+						return false
+					}
+				} else {
+					return false
+				}
+			} else {
+				return false
+			}
+		case "<=":
+			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
+				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
+					if leftFloat > rightFloat {
+						return false
+					}
+				} else {
+					return false
+				}
+			} else {
+				return false
+			}
+		case ">=":
+			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
+				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
+					if leftFloat < rightFloat {
+						return false
+					}
+				} else {
+					return false
+				}
+			} else {
+				return false
+			}
+		default:
+			return false // Opérateur non supporté
 		}
 	}
 
-	// Cas spécial: si on a un Person et un Order, simuler p.id == o.customer_id
-	if personFact != nil && orderFact != nil {
-		personID := personFact.Fields["id"]
-		customerID := orderFact.Fields["customer_id"]
-		if personID == customerID {
-			return true // Jointure réussie
-		}
-	}
+	return true // Toutes les conditions sont satisfaites
+}
 
-	// Pour d'autres cas, accepter 30% des jointures pour simulation
-	// TODO: Remplacer par une vraie évaluation de condition
-	factCount := len(bindings)
-	return (factCount % 3) == 1 // Accepter 1 cas sur 3 pour la simulation
+// convertToFloat64 tente de convertir une valeur en float64
+func convertToFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case string:
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f, true
+		}
+		return 0, false
+	default:
+		return 0, false
+	}
 }
 
 // extractJoinConditions extrait les conditions de jointure d'une condition complexe
 func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("🔍 EXTRACT JOIN CONDITIONS: analyzing condition\n")
+	fmt.Printf("  🔧 Condition type: %T\n", condition)
+	for key, value := range condition {
+		fmt.Printf("    %s: %v (type: %T)\n", key, value, value)
+	}
+
 	var joinConditions []JoinCondition
 
-	// Parsing simple pour détecter les conditions comme p.id == o.customer_id
+	// Cas 1: condition wrappée dans un type "constraint"
+	if conditionType, exists := condition["type"].(string); exists && conditionType == "constraint" {
+		fmt.Printf("  🔧 Condition wrappée détectée - extraction de la sous-condition\n")
+		if innerCondition, ok := condition["constraint"].(map[string]interface{}); ok {
+			fmt.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
+			return extractJoinConditions(innerCondition)
+		}
+	}
+
+	// Cas 2: condition EXISTS avec array de conditions
+	if conditionType, exists := condition["type"].(string); exists && conditionType == "exists" {
+		fmt.Printf("  🔧 Condition EXISTS détectée - extraction des sous-conditions\n")
+		if conditionsData, ok := condition["conditions"].([]map[string]interface{}); ok {
+			fmt.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
+			for i, subCondition := range conditionsData {
+				fmt.Printf("  🔍 Analyse condition EXISTS %d: %+v\n", i, subCondition)
+				subJoinConditions := extractJoinConditions(subCondition)
+				joinConditions = append(joinConditions, subJoinConditions...)
+			}
+			return joinConditions
+		}
+	}
+
+	// Cas 3: condition directe de comparaison
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "comparison" {
+		fmt.Printf("  ✅ Condition de comparaison détectée\n")
 		if left, leftOk := condition["left"].(map[string]interface{}); leftOk {
 			if right, rightOk := condition["right"].(map[string]interface{}); rightOk {
+				fmt.Printf("  ✅ Left et Right extraits\n")
 				if leftType, _ := left["type"].(string); leftType == "fieldAccess" {
 					if rightType, _ := right["type"].(string); rightType == "fieldAccess" {
 						// Condition de jointure détectée
+						fmt.Printf("  ✅ Condition de jointure fieldAccess détectée\n")
 						leftObj, _ := left["object"].(string)
 						leftField, _ := left["field"].(string)
 						rightObj, _ := right["object"].(string)
 						rightField, _ := right["field"].(string)
 						operator, _ := condition["operator"].(string)
+
+						fmt.Printf("    📌 %s.%s %s %s.%s\n", leftObj, leftField, operator, rightObj, rightField)
 
 						joinConditions = append(joinConditions, JoinCondition{
 							LeftField:  leftField,
@@ -800,4 +979,217 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	}
 
 	return joinConditions
+}
+
+// ========== NŒUD EXISTS ==========
+
+// ExistsNode représente un nœud d'existence dans le réseau RETE
+type ExistsNode struct {
+	BaseNode
+	Condition       map[string]interface{} `json:"condition"`
+	MainVariable    string                 `json:"main_variable"`    // Variable principale (p)
+	ExistsVariable  string                 `json:"exists_variable"`  // Variable d'existence (o)
+	ExistsCondition []JoinCondition        `json:"exists_condition"` // Condition d'existence (o.customer_id == p.id)
+	mutex           sync.RWMutex
+	// Mémoires pour architecture RETE
+	MainMemory   *WorkingMemory // Faits de la variable principale
+	ExistsMemory *WorkingMemory // Faits pour vérification d'existence
+	ResultMemory *WorkingMemory // Tokens avec existence vérifiée
+}
+
+// NewExistsNode crée un nouveau nœud d'existence
+func NewExistsNode(nodeID string, condition map[string]interface{}, mainVar string, existsVar string, storage Storage) *ExistsNode {
+	return &ExistsNode{
+		BaseNode: BaseNode{
+			ID:       nodeID,
+			Type:     "exists",
+			Memory:   &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			Children: make([]Node, 0),
+			Storage:  storage,
+		},
+		Condition:       condition,
+		MainVariable:    mainVar,
+		ExistsVariable:  existsVar,
+		ExistsCondition: extractJoinConditions(condition),
+		// Initialiser les mémoires séparées
+		MainMemory:   &WorkingMemory{NodeID: nodeID + "_main", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ExistsMemory: &WorkingMemory{NodeID: nodeID + "_exists", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory: &WorkingMemory{NodeID: nodeID + "_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+	}
+}
+
+// ActivateLeft traite les faits de la variable principale
+func (en *ExistsNode) ActivateLeft(token *Token) error {
+	fmt.Printf("🔍 EXISTSNODE[%s]: ActivateLeft - token %s\n", en.ID, token.ID)
+
+	// Stocker le token dans la mémoire principale
+	en.mutex.Lock()
+	en.MainMemory.AddToken(token)
+	en.mutex.Unlock()
+
+	// Vérifier s'il existe des faits correspondants
+	if en.checkExistence(token) {
+		fmt.Printf("🔍 EXISTSNODE[%s]: Existence vérifiée pour %s\n", en.ID, token.ID)
+
+		// Stocker le token avec existence vérifiée
+		token.IsJoinResult = true // Marquer comme résultat validé
+		en.mutex.Lock()
+		en.ResultMemory.AddToken(token)
+		en.Memory.AddToken(token) // Pour compatibilité avec le comptage
+		en.mutex.Unlock()
+
+		// Propager le token
+		if err := en.PropagateToChildren(nil, token); err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("🔍 EXISTSNODE[%s]: Aucune existence trouvée pour %s\n", en.ID, token.ID)
+	}
+
+	return nil
+}
+
+// ActivateRight traite les faits pour vérification d'existence
+func (en *ExistsNode) ActivateRight(fact *Fact) error {
+	fmt.Printf("🔍 EXISTSNODE[%s]: ActivateRight - %s\n", en.ID, fact.Type)
+
+	// Stocker le fait dans la mémoire d'existence
+	en.mutex.Lock()
+	en.ExistsMemory.AddFact(fact)
+	en.mutex.Unlock()
+
+	// Re-vérifier tous les tokens principaux avec ce nouveau fait
+	mainTokens := en.MainMemory.GetTokens()
+	for _, mainToken := range mainTokens {
+		if en.checkExistence(mainToken) && !en.isAlreadyValidated(mainToken) {
+			fmt.Printf("🔍 EXISTSNODE[%s]: Nouvelle existence vérifiée pour %s\n", en.ID, mainToken.ID)
+
+			// Stocker le token avec existence vérifiée
+			validatedToken := &Token{
+				ID:           mainToken.ID + "_validated",
+				Facts:        mainToken.Facts,
+				NodeID:       en.ID,
+				Bindings:     mainToken.Bindings,
+				IsJoinResult: true,
+			}
+
+			en.mutex.Lock()
+			en.ResultMemory.AddToken(validatedToken)
+			en.Memory.AddToken(validatedToken)
+			en.mutex.Unlock()
+
+			// Propager le token
+			if err := en.PropagateToChildren(nil, validatedToken); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkExistence vérifie si un token principal a des faits correspondants
+func (en *ExistsNode) checkExistence(mainToken *Token) bool {
+	existsFacts := en.ExistsMemory.GetFacts()
+
+	// Récupérer le fait principal du token
+	if len(mainToken.Facts) == 0 {
+		return false
+	}
+	mainFact := mainToken.Facts[0]
+
+	// Vérifier les conditions d'existence
+	for _, existsFact := range existsFacts {
+		if en.evaluateExistsCondition(mainFact, existsFact) {
+			fmt.Printf("🔍 EXISTSNODE[%s]: Condition EXISTS satisfaite: %s ↔ %s\n", en.ID, mainFact.ID, existsFact.ID)
+			return true
+		}
+	}
+
+	return false
+}
+
+// evaluateExistsCondition évalue la condition d'existence entre deux faits
+func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) bool {
+	fmt.Printf("🔍 EXISTSNODE[%s]: Évaluation condition EXISTS\n", en.ID)
+	fmt.Printf("  📊 MainFact: %s (ID: %s)\n", mainFact.Type, mainFact.ID)
+	fmt.Printf("  📊 ExistsFact: %s (ID: %s)\n", existsFact.Type, existsFact.ID)
+	fmt.Printf("  📊 Conditions: %d à vérifier\n", len(en.ExistsCondition))
+
+	for i, condition := range en.ExistsCondition {
+		fmt.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
+			condition.LeftVar, condition.LeftField, condition.Operator,
+			condition.RightVar, condition.RightField)
+
+		// Déterminer quel fait correspond à quelle variable
+		var leftFact, rightFact *Fact
+
+		if condition.LeftVar == en.MainVariable {
+			leftFact = mainFact
+			rightFact = existsFact
+			fmt.Printf("    → MainFact comme LeftVar (%s), ExistsFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
+		} else if condition.LeftVar == en.ExistsVariable {
+			leftFact = existsFact
+			rightFact = mainFact
+			fmt.Printf("    → ExistsFact comme LeftVar (%s), MainFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
+		} else {
+			fmt.Printf("    ❌ Variable %s non trouvée dans MainVariable:%s ou ExistsVariable:%s\n", condition.LeftVar, en.MainVariable, en.ExistsVariable)
+			continue
+		}
+
+		leftValue := leftFact.Fields[condition.LeftField]
+		rightValue := rightFact.Fields[condition.RightField]
+
+		fmt.Printf("    🔍 Condition %d: %v %s %v\n", i, leftValue, condition.Operator, rightValue)
+
+		switch condition.Operator {
+		case "==":
+			if leftValue != rightValue {
+				fmt.Printf("    ❌ Condition %d échoue: %v != %v\n", i, leftValue, rightValue)
+				return false
+			}
+			fmt.Printf("    ✅ Condition %d réussie: %v == %v\n", i, leftValue, rightValue)
+		case "!=":
+			if leftValue == rightValue {
+				fmt.Printf("    ❌ Condition %d échoue: %v == %v\n", i, leftValue, rightValue)
+				return false
+			}
+			fmt.Printf("    ✅ Condition %d réussie: %v != %v\n", i, leftValue, rightValue)
+		default:
+			fmt.Printf("    ❌ Opérateur non supporté: %s\n", condition.Operator)
+			return false
+		}
+	}
+
+	fmt.Printf("  ✅ Toutes les conditions EXISTS satisfaites\n")
+	return true
+}
+
+// isAlreadyValidated vérifie si un token a déjà été validé
+func (en *ExistsNode) isAlreadyValidated(token *Token) bool {
+	validatedTokens := en.ResultMemory.GetTokens()
+	for _, validatedToken := range validatedTokens {
+		if validatedToken.ID == token.ID+"_validated" || validatedToken.ID == token.ID {
+			return true
+		}
+	}
+	return false
+}
+
+// getVariableForFact détermine la variable associée à un fait dans ExistsNode
+func (en *ExistsNode) getVariableForFact(fact *Fact) string {
+	// Logique similaire à JoinNode mais pour ExistsNode
+	if (en.MainVariable == "p" && fact.Type == "Person") ||
+		(en.MainVariable == "c" && fact.Type == "Customer") ||
+		(en.MainVariable == "e" && fact.Type == "Employee") {
+		return en.MainVariable
+	}
+
+	if (en.ExistsVariable == "o" && fact.Type == "Order") ||
+		(en.ExistsVariable == "prod" && fact.Type == "Product") ||
+		(en.ExistsVariable == "t" && fact.Type == "Transaction") {
+		return en.ExistsVariable
+	}
+
+	return ""
 }

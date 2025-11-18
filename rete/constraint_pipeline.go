@@ -230,15 +230,24 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Créer l'action RETE
 	action := cp.createAction(actionMap)
 
-	// Analyser les contraintes pour détecter les négations
+	// Analyser les contraintes pour détecter les négations et EXISTS
 	constraintsData, hasConstraints := exprMap["constraints"]
 	var condition map[string]interface{}
+	var isExistsConstraint bool
 
 	if hasConstraints {
 		// Analyser et créer la condition appropriée
 		isNegation, negatedCondition, err := cp.analyzeConstraints(constraintsData)
 		if err != nil {
 			return fmt.Errorf("erreur analyse contraintes pour règle %s: %w", ruleID, err)
+		}
+
+		// Vérifier si c'est une contrainte EXISTS
+		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+			if constraintType, exists := constraintMap["type"].(string); exists && constraintType == "existsConstraint" {
+				isExistsConstraint = true
+				fmt.Printf("   🔍 Contrainte EXISTS détectée - création ExistsNode\n")
+			}
 		}
 
 		if isNegation {
@@ -291,6 +300,12 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 				}
 			}
 		}
+	}
+
+	// Si c'est une contrainte EXISTS, créer un ExistsNode
+	if isExistsConstraint {
+		fmt.Printf("   🔍 Création d'un ExistsNode pour contrainte EXISTS\n")
+		return cp.createExistsRule(network, ruleID, exprMap, condition, action, storage)
 	}
 
 	// Si plus d'une variable, c'est une jointure Beta - créer un JoinNode
@@ -368,11 +383,9 @@ func (cp *ConstraintPipeline) analyzeConstraints(constraints interface{}) (bool,
 			}
 		}
 		if constraintType == "existsConstraint" {
-			// Contrainte EXISTS détectée - doit créer un ExistsNode
+			// Contrainte EXISTS détectée - créer un ExistsNode
 			fmt.Printf("   📍 Contrainte EXISTS détectée: %+v\n", constraintMap)
-			fmt.Printf("   🔧 ATTENTION: EXISTS devrait créer ExistsNode, pas AlphaNode\n")
-			// Pour l'instant, passer la contrainte complète
-			return false, constraintMap, nil
+			return true, constraintMap, nil // Marquer comme complexe pour traitement spécial
 		}
 	}
 
@@ -531,26 +544,174 @@ func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string
 	joinNode := NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, storage)
 	joinNode.AddChild(terminalNode)
 
+	// Stocker le JoinNode dans les BetaNodes du réseau
+	network.BetaNodes[joinNode.ID] = joinNode
+
 	// Créer des AlphaNodes pass-through qui ne filtrent pas mais transfèrent vers JoinNode
+	fmt.Printf("   🔗 DEBUG: Création AlphaNodes pour %d variables\n", len(variableNames))
 	for i, varName := range variableNames {
 		varType := variableTypes[i]
+		fmt.Printf("   🔗 DEBUG: Variable %s -> Type %s\n", varName, varType)
 		if varType != "" {
+			fmt.Printf("   🔗 DEBUG: Recherche TypeNode %s\n", varType)
 			if typeNode, exists := network.TypeNodes[varType]; exists {
-				// Créer un AlphaNode pass-through (sans condition de filtrage)
+				fmt.Printf("   🔗 DEBUG: TypeNode trouvé: %s\n", varType)
+
+				// Déterminer le côté (gauche/droite) selon l'architecture RETE
+				side := "right"
+				if i == 0 {
+					side = "left" // Première variable va vers la gauche
+				}
+
+				// Créer un AlphaNode pass-through avec indication de côté
 				passCondition := map[string]interface{}{
-					"type": "passthrough", // Condition spéciale pour pass-through
+					"type": "passthrough",
+					"side": side, // "left" ou "right"
 				}
 				alphaNode := NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, storage)
 
 				// Connecter TypeNode -> AlphaPassthrough -> JoinNode
+				fmt.Printf("   🔗 DEBUG: Connexion %s -> %s (%s)\n", varType, alphaNode.GetID(), side)
 				typeNode.AddChild(alphaNode)
+				fmt.Printf("   🔗 DEBUG: Connexion %s -> %s\n", alphaNode.GetID(), joinNode.GetID())
 				alphaNode.AddChild(joinNode)
 
 				fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> JoinNode_%s\n", varType, varName, ruleID)
+			} else {
+				fmt.Printf("   ❌ DEBUG: TypeNode %s introuvable!\n", varType)
 			}
+		} else {
+			fmt.Printf("   ❌ DEBUG: Type vide pour variable %s\n", varName)
 		}
 	}
 
 	fmt.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+	return nil
+}
+
+// createExistsRule crée une règle EXISTS avec ExistsNode
+func (cp *ConstraintPipeline) createExistsRule(network *ReteNetwork, ruleID string, exprMap map[string]interface{}, condition map[string]interface{}, action *Action, storage Storage) error {
+	// Créer le nœud terminal pour cette règle
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Extraire les variables depuis l'expression
+	var mainVariable, existsVariable string
+	var mainVarType, existsVarType string
+
+	// Extraire la variable principale depuis "set"
+	if setData, hasSet := exprMap["set"]; hasSet {
+		if setMap, ok := setData.(map[string]interface{}); ok {
+			if varsData, hasVars := setMap["variables"]; hasVars {
+				if varsList, ok := varsData.([]interface{}); ok && len(varsList) > 0 {
+					if varMap, ok := varsList[0].(map[string]interface{}); ok {
+						if name, ok := varMap["name"].(string); ok {
+							mainVariable = name
+						}
+						if dataType, ok := varMap["dataType"].(string); ok {
+							mainVarType = dataType
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Extraire la variable d'existence depuis les contraintes
+	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
+		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+			if variable, hasVar := constraintMap["variable"]; hasVar {
+				if varMap, ok := variable.(map[string]interface{}); ok {
+					if name, ok := varMap["name"].(string); ok {
+						existsVariable = name
+					}
+					if dataType, ok := varMap["dataType"].(string); ok {
+						existsVarType = dataType
+					}
+				}
+			}
+		}
+	}
+
+	if mainVariable == "" || existsVariable == "" {
+		return fmt.Errorf("variables EXISTS non trouvées: main=%s, exists=%s", mainVariable, existsVariable)
+	}
+
+	fmt.Printf("   🔍 Variables EXISTS: %s (%s) → %s (%s)\n", mainVariable, mainVarType, existsVariable, existsVarType)
+
+	// Extraire les conditions d'EXISTS depuis exprMap["constraints"]["condition"]
+	var existsConditions []map[string]interface{}
+	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
+		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+			// Essayer d'abord "condition" (au singulier)
+			if conditionData, hasCondition := constraintMap["condition"]; hasCondition {
+				if conditionObj, ok := conditionData.(map[string]interface{}); ok {
+					existsConditions = append(existsConditions, conditionObj)
+				}
+			}
+			// Puis essayer "conditions" (au pluriel) si pas trouvé
+			if len(existsConditions) == 0 {
+				if conditionsData, hasConditions := constraintMap["conditions"]; hasConditions {
+					if conditionsList, ok := conditionsData.([]interface{}); ok {
+						for _, conditionData := range conditionsList {
+							if conditionObj, ok := conditionData.(map[string]interface{}); ok {
+								existsConditions = append(existsConditions, conditionObj)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Créer l'objet condition pour l'ExistsNode avec les conditions extraites
+	existsConditionObj := map[string]interface{}{
+		"type":       "exists",
+		"conditions": existsConditions,
+	}
+
+	fmt.Printf("   🔍 Conditions EXISTS extraites: %d conditions\n", len(existsConditions))
+
+	// Créer l'ExistsNode avec les vraies conditions
+	existsNode := NewExistsNode(ruleID+"_exists", existsConditionObj, mainVariable, existsVariable, storage)
+	existsNode.AddChild(terminalNode)
+
+	// Stocker l'ExistsNode dans les BetaNodes du réseau
+	network.BetaNodes[existsNode.ID] = existsNode
+
+	// Créer des AlphaNodes pass-through pour les deux variables
+	// Variable principale → ActivateLeft
+	if mainVarType != "" {
+		if typeNode, exists := network.TypeNodes[mainVarType]; exists {
+			mainAlphaCondition := map[string]interface{}{
+				"type": "passthrough",
+				"side": "left",
+			}
+			mainAlphaNode := NewAlphaNode(ruleID+"_pass_"+mainVariable, mainAlphaCondition, mainVariable, storage)
+
+			typeNode.AddChild(mainAlphaNode)
+			mainAlphaNode.AddChild(existsNode)
+
+			fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> ExistsNode_%s (LEFT)\n", mainVarType, mainVariable, ruleID)
+		}
+	}
+
+	// Variable d'existence → ActivateRight
+	if existsVarType != "" {
+		if typeNode, exists := network.TypeNodes[existsVarType]; exists {
+			existsAlphaCondition := map[string]interface{}{
+				"type": "passthrough",
+				"side": "right",
+			}
+			existsAlphaNode := NewAlphaNode(ruleID+"_pass_"+existsVariable, existsAlphaCondition, existsVariable, storage)
+
+			typeNode.AddChild(existsAlphaNode)
+			existsAlphaNode.AddChild(existsNode)
+
+			fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> ExistsNode_%s (RIGHT)\n", existsVarType, existsVariable, ruleID)
+		}
+	}
+
+	fmt.Printf("   ✅ ExistsNode %s créé pour %s EXISTS %s\n", existsNode.ID, mainVariable, existsVariable)
 	return nil
 }
