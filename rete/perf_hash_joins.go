@@ -313,7 +313,7 @@ func (hje *HashJoinEngine) evaluateJoinCondition(
 	}
 
 	switch joinCondition.Operator {
-	case "==", "=":
+	case "==":
 		return fmt.Sprintf("%v", leftValue) == fmt.Sprintf("%v", rightValue)
 	case "!=":
 		return fmt.Sprintf("%v", leftValue) != fmt.Sprintf("%v", rightValue)

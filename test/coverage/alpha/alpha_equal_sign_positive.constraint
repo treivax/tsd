@@ -1,4 +1,4 @@
-// Test opérateur = (égalité alternative)
+// Test opérateur == (égalité)
 type Customer : <id: string, tier: string, points: number>
 
-{c: Customer} / c.tier = "gold" ==> gold_customer_found(c.id, c.points)
+{c: Customer} / c.tier == "gold" ==> gold_customer_found(c.id, c.points)

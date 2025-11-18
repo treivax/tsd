@@ -464,7 +464,7 @@ func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator strin
 	rightVal := e.normalizeValue(right)
 
 	switch operator {
-	case "==", "=":
+	case "==":
 		return e.areEqual(leftVal, rightVal), nil
 	case "!=", "<>":
 		return !e.areEqual(leftVal, rightVal), nil

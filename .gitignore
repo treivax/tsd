@@ -1,0 +1,34 @@
+# Binaries
+bin/
+*.exe
+*_test_runner
+*_coverage_runner
+
+# Go test coverage
+*.out
+coverage.html
+coverage.txt
+
+# Debug files
+*_debug
+temp_*
+debug_*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+/build/
+/dist/

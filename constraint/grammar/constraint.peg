@@ -1,7 +1,7 @@
 // Grammaire PEG Complète et Cohérente avec le Réseau RETE
 // Cette grammaire supporte tous les constructs nécessaires pour une intégration complète
 // avec les noeuds du réseau RETE : AlphaNode, BetaNode, NotNode, ExistsNode, AccumulateNode, TerminalNode
-// 
+//
 // Commande pour générer le parser: pigeon -o parser.go constraint.peg
 {
 package constraint
@@ -17,7 +17,7 @@ Start <- _ statements:StatementList _ EOF {
     // Séparer types et expressions
     types := []interface{}{}
     expressions := []interface{}{}
-    
+
     if statements != nil {
         for _, stmt := range statements.([]interface{}) {
             if stmtMap, ok := stmt.(map[string]interface{}); ok {
@@ -29,7 +29,7 @@ Start <- _ statements:StatementList _ EOF {
             }
         }
     }
-    
+
     return map[string]interface{}{
         "types": types,
         "expressions": expressions,
@@ -115,7 +115,7 @@ Constraints <- first:Constraint rest:(_ LogicalOp _ Constraint)* {
     if rest == nil || len(rest.([]interface{})) == 0 {
         return first, nil
     }
-    
+
     operations := []map[string]interface{}{}
     for _, item := range rest.([]interface{}) {
         op := item.([]interface{})[1]
@@ -125,7 +125,7 @@ Constraints <- first:Constraint rest:(_ LogicalOp _ Constraint)* {
             "right": right,
         })
     }
-    
+
     return map[string]interface{}{
         "type": "logicalExpr",
         "left": first,
@@ -154,7 +154,7 @@ NotConstraint <- "NOT" _ "(" _ expr:Constraints _ ")" {
 
 ExistsConstraint <- "EXISTS" _ "(" _ variable:TypedVariable _ "/" _ condition:Constraints _ ")" {
     return map[string]interface{}{
-        "type": "existsConstraint", 
+        "type": "existsConstraint",
         "variable": variable,
         "condition": condition,
     }, nil
@@ -164,7 +164,7 @@ ArithmeticExpr <- first:Term rest:(_ ("+" / "-") _ Term)* {
     if rest == nil || len(rest.([]interface{})) == 0 {
         return first, nil
     }
-    
+
     result := first
     for _, item := range rest.([]interface{}) {
         op := item.([]interface{})[1]
@@ -183,7 +183,7 @@ Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
     if rest == nil || len(rest.([]interface{})) == 0 {
         return first, nil
     }
-    
+
     result := first
     for _, item := range rest.([]interface{}) {
         op := item.([]interface{})[1]
@@ -310,7 +310,6 @@ ComparisonOp <- "==" { return "==", nil } /
                 "!=" { return "!=", nil } /
                 "<=" { return "<=", nil } /
                 ">=" { return ">=", nil } /
-                "="  { return "=", nil } /
                 "<"  { return "<", nil } /
                 ">"  { return ">", nil } /
                 "IN" { return "IN", nil } /
@@ -323,15 +322,15 @@ LogicalOp <- "AND" { return "AND", nil } /
 
 BooleanLiteral <- "true" {
         return map[string]interface{}{
-            "type": "boolean", 
+            "type": "boolean",
             "value": true,
-        }, nil 
+        }, nil
     } /
-    "false" { 
+    "false" {
         return map[string]interface{}{
-            "type": "boolean", 
+            "type": "boolean",
             "value": false,
-        }, nil 
+        }, nil
     }
 
 Number <- sign:"-"? digits:[0-9]+ decimal:("." [0-9]+)? {
@@ -365,7 +364,7 @@ StringLiteral <- "\"" chars:DoubleStringChar* "\"" {
             }
         }
         return map[string]interface{}{
-            "type": "string", 
+            "type": "string",
             "value": builder.String(),
         }, nil
     }
