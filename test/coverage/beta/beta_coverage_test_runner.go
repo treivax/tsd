@@ -1478,12 +1478,23 @@ func getFactType(fact *rete.Fact) string {
 	return strings.Split(fact.ID, "{")[0]
 }
 
-func formatFactFields(fact rete.Fact) string {
-	var fields []string
-	for key, value := range fact.Fields {
-		fields = append(fields, fmt.Sprintf("%s: %v", key, value))
+// Utilitaires communs
+func formatFactWithFields(fact interface{}) string {
+	var factValue rete.Fact
+	switch f := fact.(type) {
+	case rete.Fact:
+		factValue = f
+	case *rete.Fact:
+		factValue = *f
+	default:
+		return "Unknown fact type"
 	}
-	return strings.Join(fields, ", ")
+
+	var fields []string
+	for key, value := range factValue.Fields {
+		fields = append(fields, fmt.Sprintf("%s=%v", key, value))
+	}
+	return fmt.Sprintf("%s[%s]", factValue.Type, strings.Join(fields, ", "))
 }
 
 func hasExpectedResults(expected ExpectedTestResults) bool {
@@ -1521,25 +1532,6 @@ func readExactFactsContent(filePath string) string {
 	return string(content)
 }
 
-// formatFactWithFields formate un fait avec tous ses champs de manière lisible
-func formatFactWithFields(fact interface{}) string {
-	var factValue rete.Fact
-	switch f := fact.(type) {
-	case rete.Fact:
-		factValue = f
-	case *rete.Fact:
-		factValue = *f
-	default:
-		return "Unknown fact type"
-	}
-
-	var fields []string
-	for key, value := range factValue.Fields {
-		fields = append(fields, fmt.Sprintf("%s=%v", key, value))
-	}
-	return fmt.Sprintf("%s[%s]", factValue.Type, strings.Join(fields, ", "))
-}
-
 // generateBetaNetworkVisualization génère une visualisation du réseau RETE pour les tests Beta
 func generateBetaNetworkVisualization(report *strings.Builder, network *rete.ReteNetwork) {
 	report.WriteString("```\n")
@@ -1569,7 +1561,7 @@ func generateBetaNetworkVisualization(report *strings.Builder, network *rete.Ret
 					if condType, exists := condMap["type"]; exists {
 						switch condType {
 						case "negation":
-							condition = fmt.Sprintf("NOT(...) [Négation]")
+							condition = "NOT(...) [Négation]"
 						case "constraint":
 							condition = "Condition positive"
 						case "simple":
@@ -1597,7 +1589,7 @@ func generateBetaNetworkVisualization(report *strings.Builder, network *rete.Ret
 			if joinNode, ok := betaNodeInterface.(*rete.JoinNode); ok {
 				report.WriteString(fmt.Sprintf("│   │   ├── Variables: %s\n", strings.Join(joinNode.AllVariables, " ⋈ ")))
 				report.WriteString(fmt.Sprintf("│   │   ├── Conditions: %d\n", len(joinNode.JoinConditions)))
-				report.WriteString(fmt.Sprintf("│   │   └── Type: JoinNode\n"))
+				report.WriteString("│   │   └── Type: JoinNode\n")
 			} else {
 				report.WriteString(fmt.Sprintf("│   │   └── Type: %T\n", betaNodeInterface))
 			}
