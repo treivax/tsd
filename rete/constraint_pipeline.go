@@ -2,6 +2,7 @@ package rete
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/treivax/tsd/constraint"
 )
@@ -259,28 +260,56 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 		}
 	}
 
-	// Extraire le nom de variable et son type depuis les contraintes set
-	variableName := "p" // défaut
-	variableType := ""
+	// Analyser les variables pour déterminer si c'est une jointure ou une règle Alpha
+	variables := []map[string]interface{}{}
+	variableNames := []string{}
+	variableTypes := []string{}
 
 	if setData, hasSet := exprMap["set"]; hasSet {
 		if setMap, ok := setData.(map[string]interface{}); ok {
 			if varsData, hasVars := setMap["variables"]; hasVars {
 				if varsList, ok := varsData.([]interface{}); ok && len(varsList) > 0 {
-					if varMap, ok := varsList[0].(map[string]interface{}); ok {
-						if name, ok := varMap["name"].(string); ok {
-							variableName = name
-						}
-						// Extraire aussi le type de la variable
-						if dataType, ok := varMap["dataType"].(string); ok {
-							variableType = dataType
-						} else if varType, ok := varMap["type"].(string); ok {
-							variableType = varType
+					// Extraire toutes les variables
+					for _, varInterface := range varsList {
+						if varMap, ok := varInterface.(map[string]interface{}); ok {
+							variables = append(variables, varMap)
+
+							if name, ok := varMap["name"].(string); ok {
+								variableNames = append(variableNames, name)
+							}
+
+							// Extraire le type de la variable
+							var varType string
+							if dataType, ok := varMap["dataType"].(string); ok {
+								varType = dataType
+							} else if typeField, ok := varMap["type"].(string); ok {
+								varType = typeField
+							}
+							variableTypes = append(variableTypes, varType)
 						}
 					}
 				}
 			}
 		}
+	}
+
+	// Si plus d'une variable, c'est une jointure Beta - créer un JoinNode
+	if len(variables) > 1 {
+		fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variables), variableNames)
+		fmt.Printf("   🔗 Création d'un JoinNode au lieu d'AlphaNode\n")
+
+		return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)
+	}
+
+	// Sinon, traitement Alpha normal avec une seule variable
+	variableName := "p" // défaut
+	variableType := ""
+
+	if len(variables) > 0 {
+		if name, ok := variables[0]["name"].(string); ok {
+			variableName = name
+		}
+		variableType = variableTypes[0]
 	}
 
 	// Créer un nœud Alpha avec la condition appropriée
@@ -337,6 +366,13 @@ func (cp *ConstraintPipeline) analyzeConstraints(constraints interface{}) (bool,
 				fmt.Printf("   📍 Contrainte NOT détectée: %+v\n", expression)
 				return true, expression, nil
 			}
+		}
+		if constraintType == "existsConstraint" {
+			// Contrainte EXISTS détectée - doit créer un ExistsNode
+			fmt.Printf("   📍 Contrainte EXISTS détectée: %+v\n", constraintMap)
+			fmt.Printf("   🔧 ATTENTION: EXISTS devrait créer ExistsNode, pas AlphaNode\n")
+			// Pour l'instant, passer la contrainte complète
+			return false, constraintMap, nil
 		}
 	}
 
@@ -477,4 +513,44 @@ func getStringField(m map[string]interface{}, key, defaultValue string) string {
 		}
 	}
 	return defaultValue
+}
+
+// createJoinRule crée une règle Beta avec JoinNode pour les règles multi-variables
+func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string, variables []map[string]interface{}, variableNames []string, variableTypes []string, condition map[string]interface{}, action *Action, storage Storage) error {
+
+	fmt.Printf("   🔗 IMPLÉMENTATION JOINNODE: Création vraie jointure pour %d variables\n", len(variables))
+
+	// Créer le nœud terminal pour cette règle
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Créer le JoinNode
+	leftVars := []string{variableNames[0]} // Variable primaire
+	rightVars := variableNames[1:]         // Variables secondaires
+
+	joinNode := NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, storage)
+	joinNode.AddChild(terminalNode)
+
+	// Créer des AlphaNodes pass-through qui ne filtrent pas mais transfèrent vers JoinNode
+	for i, varName := range variableNames {
+		varType := variableTypes[i]
+		if varType != "" {
+			if typeNode, exists := network.TypeNodes[varType]; exists {
+				// Créer un AlphaNode pass-through (sans condition de filtrage)
+				passCondition := map[string]interface{}{
+					"type": "passthrough", // Condition spéciale pour pass-through
+				}
+				alphaNode := NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, storage)
+
+				// Connecter TypeNode -> AlphaPassthrough -> JoinNode
+				typeNode.AddChild(alphaNode)
+				alphaNode.AddChild(joinNode)
+
+				fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> JoinNode_%s\n", varType, varName, ruleID)
+			}
+		}
+	}
+
+	fmt.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+	return nil
 }
