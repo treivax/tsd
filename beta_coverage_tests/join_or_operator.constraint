@@ -1,0 +1,7 @@
+// Test opérateur OR dans jointures beta
+type Person : <id: string, name: string, age: number, priority: string>
+type Order : <id: string, customer_id: string, amount: number, urgent: bool>
+
+{p: Person, o: Order} / p.id == o.customer_id AND (o.amount > 500 OR o.urgent == true) AND p.priority != "" ==> priority_order(p.id, o.id)
+{p: Person, o: Order} / p.id == o.customer_id AND (p.priority == "high" OR p.age >= 65) AND o.amount > 0 ==> special_customer_order(p.id, o.id)
+{p: Person, o: Order} / p.id == o.customer_id AND (o.urgent == false OR o.amount < 100) AND p.age >= 18 ==> standard_order(p.id, o.id)

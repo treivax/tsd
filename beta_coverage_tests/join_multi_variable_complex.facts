@@ -1,0 +1,8 @@
+User[id=U001, name=Alice, role=manager, team_id=T001]
+User[id=U002, name=Bob, role=lead, team_id=T001]
+User[id=U003, name=Carol, role=developer, team_id=T002]
+Team[id=T001, name=Alpha, budget=10000, manager_id=U001]
+Team[id=T002, name=Beta, budget=5000, manager_id=U003]
+Task[id=TASK001, assignee_id=U002, team_id=T001, priority=high, effort=50]
+Task[id=TASK002, assignee_id=U003, team_id=T002, priority=medium, effort=20]
+Task[id=TASK003, assignee_id=U001, team_id=T001, priority=high, effort=30]

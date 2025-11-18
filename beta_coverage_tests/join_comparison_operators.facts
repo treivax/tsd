@@ -1,0 +1,7 @@
+User[id=U001, name=Alice, score=75, created=1700000000]
+User[id=U002, name=Bob, score=60, created=1700100000]
+User[id=U003, name=Carol, score=90, created=1700200000]
+Activity[id=A001, user_id=U001, points=80, timestamp=1700000100]
+Activity[id=A002, user_id=U002, points=45, timestamp=1700050000]
+Activity[id=A003, user_id=U001, points=75, timestamp=1699900000]
+Activity[id=A004, user_id=U003, points=95, timestamp=1700300000]

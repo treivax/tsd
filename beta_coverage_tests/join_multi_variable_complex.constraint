@@ -1,0 +1,8 @@
+// Test jointures complexes multi-variables
+type User : <id: string, name: string, role: string, team_id: string>
+type Team : <id: string, name: string, budget: number, manager_id: string>
+type Task : <id: string, assignee_id: string, team_id: string, priority: string, effort: number>
+
+{u: User, t: Team, task: Task} / u.id == t.manager_id AND t.id == task.team_id AND task.priority == "high" ==> manager_high_priority_task(u.id, t.id, task.id)
+{u: User, t: Team, task: Task} / u.team_id == t.id AND u.id == task.assignee_id AND t.budget > task.effort * 100 ==> affordable_task_assignment(u.id, t.id, task.id)
+{u: User, t: Team, task: Task} / u.role == "lead" AND u.team_id == t.id AND task.team_id == t.id AND task.effort >= 40 ==> lead_complex_task(u.id, t.id, task.id)

@@ -562,6 +562,7 @@ type JoinNode struct {
 	LeftVariables  []string               `json:"left_variables"`
 	RightVariables []string               `json:"right_variables"`
 	AllVariables   []string               `json:"all_variables"`
+	VariableTypes  map[string]string      `json:"variable_types"` // Nouveau: mapping variable -> type
 	JoinConditions []JoinCondition        `json:"join_conditions"`
 	mutex          sync.RWMutex
 	// Mémoires séparées pour architecture RETE propre
@@ -580,7 +581,7 @@ type JoinCondition struct {
 }
 
 // NewJoinNode crée un nouveau nœud de jointure
-func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []string, rightVars []string, storage Storage) *JoinNode {
+func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []string, rightVars []string, varTypes map[string]string, storage Storage) *JoinNode {
 	allVars := append(leftVars, rightVars...)
 
 	return &JoinNode{
@@ -595,6 +596,7 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 		LeftVariables:  leftVars,
 		RightVariables: rightVars,
 		AllVariables:   allVars,
+		VariableTypes:  varTypes,
 		JoinConditions: extractJoinConditions(condition),
 		// Initialiser les mémoires séparées
 		LeftMemory:   &WorkingMemory{NodeID: nodeID + "_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
@@ -764,24 +766,19 @@ func (jn *JoinNode) tokensHaveDifferentVariables(token1 *Token, token2 *Token) b
 
 // getVariableForFact détermine la variable associée à un fait basé sur son type
 func (jn *JoinNode) getVariableForFact(fact *Fact) string {
-	// Logique générique : trouver la variable qui correspond au type du fait
-	// Utiliser les mappings réels depuis le pipeline de contraintes
+	// Utiliser le mapping variable -> type du JoinNode
 	for _, varName := range jn.AllVariables {
-		// Pour l'instant, utiliser une convention simple basée sur le type réel
-		if (varName == "p" && fact.Type == "Person") ||
-			(varName == "o" && fact.Type == "Order") ||
-			(varName == "c" && fact.Type == "Customer") ||
-			(varName == "prod" && fact.Type == "Product") ||
-			(varName == "t" && fact.Type == "Transaction") ||
-			(varName == "a" && fact.Type == "Alert") ||
-			(varName == "e" && fact.Type == "Employee") ||
-			(varName == "d" && fact.Type == "Department") {
-			fmt.Printf("🔍 JOINNODE[%s]: Variable %s trouvée pour fait %s (type: %s)\n", jn.ID, varName, fact.ID, fact.Type)
-			return varName
+		if expectedType, exists := jn.VariableTypes[varName]; exists {
+			if expectedType == fact.Type {
+				fmt.Printf("🔍 JOINNODE[%s]: Variable %s trouvée pour fait %s (type: %s)\n", jn.ID, varName, fact.ID, fact.Type)
+				return varName
+			}
 		}
 	}
+
 	fmt.Printf("❌ JOINNODE[%s]: Aucune variable trouvée pour fait %s (type: %s)\n", jn.ID, fact.ID, fact.Type)
 	fmt.Printf("   Variables disponibles: %v\n", jn.AllVariables)
+	fmt.Printf("   Types attendus: %v\n", jn.VariableTypes)
 	return ""
 }
 
@@ -989,6 +986,7 @@ type ExistsNode struct {
 	Condition       map[string]interface{} `json:"condition"`
 	MainVariable    string                 `json:"main_variable"`    // Variable principale (p)
 	ExistsVariable  string                 `json:"exists_variable"`  // Variable d'existence (o)
+	VariableTypes   map[string]string      `json:"variable_types"`   // Mapping variable -> type
 	ExistsCondition []JoinCondition        `json:"exists_condition"` // Condition d'existence (o.customer_id == p.id)
 	mutex           sync.RWMutex
 	// Mémoires pour architecture RETE
@@ -998,7 +996,7 @@ type ExistsNode struct {
 }
 
 // NewExistsNode crée un nouveau nœud d'existence
-func NewExistsNode(nodeID string, condition map[string]interface{}, mainVar string, existsVar string, storage Storage) *ExistsNode {
+func NewExistsNode(nodeID string, condition map[string]interface{}, mainVar string, existsVar string, varTypes map[string]string, storage Storage) *ExistsNode {
 	return &ExistsNode{
 		BaseNode: BaseNode{
 			ID:       nodeID,
@@ -1010,6 +1008,7 @@ func NewExistsNode(nodeID string, condition map[string]interface{}, mainVar stri
 		Condition:       condition,
 		MainVariable:    mainVar,
 		ExistsVariable:  existsVar,
+		VariableTypes:   varTypes,
 		ExistsCondition: extractJoinConditions(condition),
 		// Initialiser les mémoires séparées
 		MainMemory:   &WorkingMemory{NodeID: nodeID + "_main", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
@@ -1178,17 +1177,17 @@ func (en *ExistsNode) isAlreadyValidated(token *Token) bool {
 
 // getVariableForFact détermine la variable associée à un fait dans ExistsNode
 func (en *ExistsNode) getVariableForFact(fact *Fact) string {
-	// Logique similaire à JoinNode mais pour ExistsNode
-	if (en.MainVariable == "p" && fact.Type == "Person") ||
-		(en.MainVariable == "c" && fact.Type == "Customer") ||
-		(en.MainVariable == "e" && fact.Type == "Employee") {
-		return en.MainVariable
+	// Utiliser le mapping variable -> type de l'ExistsNode
+	if expectedType, exists := en.VariableTypes[en.MainVariable]; exists {
+		if expectedType == fact.Type {
+			return en.MainVariable
+		}
 	}
 
-	if (en.ExistsVariable == "o" && fact.Type == "Order") ||
-		(en.ExistsVariable == "prod" && fact.Type == "Product") ||
-		(en.ExistsVariable == "t" && fact.Type == "Transaction") {
-		return en.ExistsVariable
+	if expectedType, exists := en.VariableTypes[en.ExistsVariable]; exists {
+		if expectedType == fact.Type {
+			return en.ExistsVariable
+		}
 	}
 
 	return ""

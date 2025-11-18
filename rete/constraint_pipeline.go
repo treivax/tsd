@@ -541,7 +541,13 @@ func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string
 	leftVars := []string{variableNames[0]} // Variable primaire
 	rightVars := variableNames[1:]         // Variables secondaires
 
-	joinNode := NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, storage)
+	// Créer le mapping variable -> type
+	varTypes := make(map[string]string)
+	for i, varName := range variableNames {
+		varTypes[varName] = variableTypes[i]
+	}
+
+	joinNode := NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, storage)
 	joinNode.AddChild(terminalNode)
 
 	// Stocker le JoinNode dans les BetaNodes du réseau
@@ -672,8 +678,13 @@ func (cp *ConstraintPipeline) createExistsRule(network *ReteNetwork, ruleID stri
 
 	fmt.Printf("   🔍 Conditions EXISTS extraites: %d conditions\n", len(existsConditions))
 
+	// Créer le mapping variable -> type pour l'ExistsNode
+	varTypes := make(map[string]string)
+	varTypes[mainVariable] = mainVarType
+	varTypes[existsVariable] = existsVarType
+
 	// Créer l'ExistsNode avec les vraies conditions
-	existsNode := NewExistsNode(ruleID+"_exists", existsConditionObj, mainVariable, existsVariable, storage)
+	existsNode := NewExistsNode(ruleID+"_exists", existsConditionObj, mainVariable, existsVariable, varTypes, storage)
 	existsNode.AddChild(terminalNode)
 
 	// Stocker l'ExistsNode dans les BetaNodes du réseau
