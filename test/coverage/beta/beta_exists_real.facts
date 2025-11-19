@@ -1,6 +1,6 @@
-Vendor[id=V001, name=Apple, category=electronics]
-Vendor[id=V002, name=Nike, category=clothing]
-Vendor[id=V003, name=Sony, category=electronics]
-Product[id=P001, vendor_id=V001, name=iPhone, price=999]
-Product[id=P002, vendor_id=V001, name=MacBook, price=1999]
-Product[id=P003, vendor_id=V003, name=PlayStation, price=499]
+Vendor(id:V001, name:Apple, category:electronics)
+Vendor(id:V002, name:Nike, category:clothing)
+Vendor(id:V003, name:Sony, category:electronics)
+Product(id:P001, vendor_id:V001, name:iPhone, price:999)
+Product(id:P002, vendor_id:V001, name:MacBook, price:1999)
+Product(id:P003, vendor_id:V003, name:PlayStation, price:499)

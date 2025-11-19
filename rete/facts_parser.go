@@ -101,11 +101,11 @@ func (fp *FactsParser) parseMetadata(line string) error {
 
 // parseFactLine analyse une ligne de fait
 func (fp *FactsParser) parseFactLine(line string, lineNumber int) (*Fact, error) {
-	// Format attendu: TypeName[id=value, field=value, ...]
-	// Exemple: Utilisateur[id=U001, nom=Martin, prenom=Pierre, age=25]
+	// Format attendu: TypeName(id:value, field:value, ...)
+	// Exemple: Utilisateur(id:U001, nom:Martin, prenom:Pierre, age:25)
 
 	// Regex pour extraire le type et les champs
-	factRegex := regexp.MustCompile(`^(\w+)\[(.+)\]$`)
+	factRegex := regexp.MustCompile(`^(\w+)\((.+)\)$`)
 	matches := factRegex.FindStringSubmatch(line)
 
 	if len(matches) != 3 {
@@ -157,8 +157,8 @@ func (fp *FactsParser) parseFields(fieldsStr string, typeDef TypeDefinition) (ma
 			continue
 		}
 
-		// Format: nom=valeur
-		parts := strings.SplitN(fieldPart, "=", 2)
+		// Format: nom:valeur
+		parts := strings.SplitN(fieldPart, ":", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("format champ invalide: %s", fieldPart)
 		}

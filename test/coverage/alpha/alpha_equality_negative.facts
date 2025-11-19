@@ -1,3 +1,3 @@
-Person[id=P001, age=25, status=active]
-Person[id=P002, age=30, status=active]
-Person[id=P003, age=25, status=inactive]
+Person(id:P001, age:25, status:active)
+Person(id:P002, age:30, status:active)
+Person(id:P003, age:25, status:inactive)

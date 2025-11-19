@@ -55,11 +55,11 @@ func (tn *TerminalNode) executeAction(token *Token) error {
             if i > 0 {
                 fmt.Print(", ")
             }
-            fmt.Printf("%s[", fact.Type)
+            fmt.Printf("%s(", fact.Type)
             for key, value := range fact.Fields {
-                fmt.Printf("%s=%v", key, value)
+                fmt.Printf("%s:%v", key, value)
             }
-            fmt.Print("]")
+            fmt.Print(")")
         }
         fmt.Print(")")
     }

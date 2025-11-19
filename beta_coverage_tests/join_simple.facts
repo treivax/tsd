@@ -1,4 +1,4 @@
-Person[id=P001, name=Alice, age=25]
-Person[id=P002, name=Bob, age=30]
-Order[id=O001, customer_id=P001, amount=100]
-Order[id=O002, customer_id=P002, amount=200]
+Person(id:P001, name:Alice, age:25)
+Person(id:P002, name:Bob, age:30)
+Order(id:O001, customer_id:P001, amount:100)
+Order(id:O002, customer_id:P002, amount:200)

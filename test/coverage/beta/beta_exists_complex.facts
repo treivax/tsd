@@ -1,9 +1,9 @@
-Customer[id=C001, name=Alice, vip=true]
-Customer[id=C002, name=Bob, vip=false]
-Customer[id=C003, name=Charlie, vip=true]
-Customer[id=C004, name=David, vip=true]
-Purchase[id=PUR001, customer_id=C001, amount=600, product=laptop]
-Purchase[id=PUR002, customer_id=C001, amount=200, product=mouse]
-Purchase[id=PUR003, customer_id=C002, amount=800, product=phone]
-Purchase[id=PUR004, customer_id=C003, amount=300, product=keyboard]
-Purchase[id=PUR005, customer_id=C003, amount=750, product=tablet]
+Customer(id:C001, name:Alice, vip:true)
+Customer(id:C002, name:Bob, vip:false)
+Customer(id:C003, name:Charlie, vip:true)
+Customer(id:C004, name:David, vip:true)
+Purchase(id:PUR001, customer_id:C001, amount:600, product:laptop)
+Purchase(id:PUR002, customer_id:C001, amount:200, product:mouse)
+Purchase(id:PUR003, customer_id:C002, amount:800, product:phone)
+Purchase(id:PUR004, customer_id:C003, amount:300, product:keyboard)
+Purchase(id:PUR005, customer_id:C003, amount:750, product:tablet)

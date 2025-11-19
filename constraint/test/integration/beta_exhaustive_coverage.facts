@@ -1,5 +1,5 @@
 // Faits de test exhaustifs pour la couverture des noeuds Beta
-// ===========================================================
+// :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // Dataset complet pour tester tous les types de noeuds Beta avec :
 // - Jointures (JoinNode) avec tous opérateurs et conditions
 // - Négations (NotNode) avec cas succès/échec
@@ -8,106 +8,106 @@
 // - Combinaisons complexes multi-noeuds
 
 // Personnes de test - 20 profils variés
-TestPerson[id=P001, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active, department=sales, level=2]
-TestPerson[id=P002, name=Bob, age=35, salary=75000, active=true, score=9.2, tags=senior, status=active, department=engineering, level=5]
-TestPerson[id=P003, name=Charlie, age=16, salary=0, active=false, score=6.0, tags=intern, status=inactive, department=hr, level=1]
-TestPerson[id=P004, name=Diana, age=45, salary=85000, active=true, score=7.8, tags=manager, status=active, department=marketing, level=7]
-TestPerson[id=P005, name=Eve, age=30, salary=55000, active=false, score=8.0, tags=employee, status=inactive, department=sales, level=3]
-TestPerson[id=P006, name=Frank, age=0, salary=-5000, active=true, score=0.0, tags=test, status=active, department=qa, level=1]
-TestPerson[id=P007, name=Grace, age=65, salary=95000, active=true, score=10.0, tags=executive, status=active, department=management, level=9]
-TestPerson[id=P008, name=Henry, age=18, salary=25000, active=false, score=5.5, tags=junior, status=inactive, department=support, level=1]
-TestPerson[id=P009, name=Ivy, age=40, salary=68000, active=true, score=8.7, tags=senior, status=active, department=engineering, level=6]
-TestPerson[id=P010, name=Jack, age=28, salary=52000, active=true, score=7.9, tags=employee, status=active, department=sales, level=4]
-TestPerson[id=P011, name=Kate, age=55, salary=120000, active=true, score=9.5, tags=director, status=active, department=management, level=8]
-TestPerson[id=P012, name=Leo, age=32, salary=61000, active=false, score=6.8, tags=employee, status=inactive, department=marketing, level=3]
-TestPerson[id=P013, name=Mia, age=27, salary=48000, active=true, score=8.1, tags=employee, status=active, department=design, level=3]
-TestPerson[id=P014, name=Noah, age=38, salary=72000, active=true, score=8.9, tags=senior, status=active, department=engineering, level=5]
-TestPerson[id=P015, name=Olivia, age=22, salary=38000, active=false, score=7.2, tags=junior, status=inactive, department=hr, level=2]
-TestPerson[id=P016, name=Paul, age=50, salary=88000, active=true, score=9.1, tags=manager, status=active, department=operations, level=6]
-TestPerson[id=P017, name=Quinn, age=26, salary=44000, active=true, score=7.6, tags=employee, status=active, department=support, level=2]
-TestPerson[id=P018, name=Rosa, age=42, salary=79000, active=true, score=8.4, tags=senior, status=active, department=finance, level=5]
-TestPerson[id=P019, name=Sam, age=19, salary=28000, active=false, score=6.5, tags=trainee, status=inactive, department=qa, level=1]
-TestPerson[id=P020, name=Tina, age=33, salary=58000, active=true, score=8.2, tags=employee, status=active, department=marketing, level=4]
+TestPerson(id:P001, name:Alice, age:25, salary:45000, active:true, score:8.5, tags:junior, status:active, department:sales, level:2)
+TestPerson(id:P002, name:Bob, age:35, salary:75000, active:true, score:9.2, tags:senior, status:active, department:engineering, level:5)
+TestPerson(id:P003, name:Charlie, age:16, salary:0, active:false, score:6.0, tags:intern, status:inactive, department:hr, level:1)
+TestPerson(id:P004, name:Diana, age:45, salary:85000, active:true, score:7.8, tags:manager, status:active, department:marketing, level:7)
+TestPerson(id:P005, name:Eve, age:30, salary:55000, active:false, score:8.0, tags:employee, status:inactive, department:sales, level:3)
+TestPerson(id:P006, name:Frank, age:0, salary:-5000, active:true, score:0.0, tags:test, status:active, department:qa, level:1)
+TestPerson(id:P007, name:Grace, age:65, salary:95000, active:true, score:10.0, tags:executive, status:active, department:management, level:9)
+TestPerson(id:P008, name:Henry, age:18, salary:25000, active:false, score:5.5, tags:junior, status:inactive, department:support, level:1)
+TestPerson(id:P009, name:Ivy, age:40, salary:68000, active:true, score:8.7, tags:senior, status:active, department:engineering, level:6)
+TestPerson(id:P010, name:Jack, age:28, salary:52000, active:true, score:7.9, tags:employee, status:active, department:sales, level:4)
+TestPerson(id:P011, name:Kate, age:55, salary:120000, active:true, score:9.5, tags:director, status:active, department:management, level:8)
+TestPerson(id:P012, name:Leo, age:32, salary:61000, active:false, score:6.8, tags:employee, status:inactive, department:marketing, level:3)
+TestPerson(id:P013, name:Mia, age:27, salary:48000, active:true, score:8.1, tags:employee, status:active, department:design, level:3)
+TestPerson(id:P014, name:Noah, age:38, salary:72000, active:true, score:8.9, tags:senior, status:active, department:engineering, level:5)
+TestPerson(id:P015, name:Olivia, age:22, salary:38000, active:false, score:7.2, tags:junior, status:inactive, department:hr, level:2)
+TestPerson(id:P016, name:Paul, age:50, salary:88000, active:true, score:9.1, tags:manager, status:active, department:operations, level:6)
+TestPerson(id:P017, name:Quinn, age:26, salary:44000, active:true, score:7.6, tags:employee, status:active, department:support, level:2)
+TestPerson(id:P018, name:Rosa, age:42, salary:79000, active:true, score:8.4, tags:senior, status:active, department:finance, level:5)
+TestPerson(id:P019, name:Sam, age:19, salary:28000, active:false, score:6.5, tags:trainee, status:inactive, department:qa, level:1)
+TestPerson(id:P020, name:Tina, age:33, salary:58000, active:true, score:8.2, tags:employee, status:active, department:marketing, level:4)
 
 // Commandes de test - 25 commandes variées
-TestOrder[id=O001, customer_id=P001, product_id=PROD001, amount=2, total=1999.98, date=2024-01-15, status=pending, priority=normal, discount=50.0, region=north]
-TestOrder[id=O002, customer_id=P002, product_id=PROD002, amount=1, total=25.50, date=2024-01-20, status=confirmed, priority=low, discount=0.0, region=south]
-TestOrder[id=O003, customer_id=P001, product_id=PROD003, amount=3, total=225.00, date=2024-02-01, status=shipped, priority=high, discount=15.0, region=north]
-TestOrder[id=O004, customer_id=P004, product_id=PROD004, amount=1, total=299.99, date=2024-02-05, status=delivered, priority=normal, discount=0.0, region=east]
-TestOrder[id=O005, customer_id=P002, product_id=PROD001, amount=1, total=999.99, date=2024-02-10, status=confirmed, priority=high, discount=100.0, region=south]
-TestOrder[id=O006, customer_id=P005, product_id=PROD005, amount=2, total=999.98, date=2024-02-15, status=cancelled, priority=low, discount=0.0, region=west]
-TestOrder[id=O007, customer_id=P007, product_id=PROD006, amount=4, total=600.00, date=2024-03-01, status=shipped, priority=urgent, discount=50.0, region=north]
-TestOrder[id=O008, customer_id=P010, product_id=PROD002, amount=10, total=255.00, date=2024-03-05, status=pending, priority=normal, discount=0.0, region=south]
-TestOrder[id=O009, customer_id=P001, product_id=PROD007, amount=1, total=89.99, date=2024-03-10, status=completed, priority=low, discount=10.0, region=north]
-TestOrder[id=O010, customer_id=P011, product_id=PROD008, amount=2, total=399.98, date=2024-03-15, status=confirmed, priority=high, discount=0.0, region=east]
-TestOrder[id=O011, customer_id=P013, product_id=PROD003, amount=1, total=75.00, date=2024-04-01, status=shipped, priority=normal, discount=5.0, region=west]
-TestOrder[id=O012, customer_id=P014, product_id=PROD001, amount=1, total=999.99, date=2024-04-05, status=delivered, priority=urgent, discount=0.0, region=south]
-TestOrder[id=O013, customer_id=P016, product_id=PROD004, amount=3, total=899.97, date=2024-04-10, status=confirmed, priority=high, discount=100.0, region=north]
-TestOrder[id=O014, customer_id=P018, product_id=PROD006, amount=1, total=150.00, date=2024-04-15, status=pending, priority=low, discount=0.0, region=east]
-TestOrder[id=O015, customer_id=P020, product_id=PROD002, amount=5, total=127.50, date=2024-05-01, status=shipped, priority=normal, discount=12.5, region=west]
-TestOrder[id=O016, customer_id=P002, product_id=PROD005, amount=1, total=499.99, date=2024-05-05, status=cancelled, priority=low, discount=0.0, region=south]
-TestOrder[id=O017, customer_id=P007, product_id=PROD007, amount=2, total=179.98, date=2024-05-10, status=completed, priority=normal, discount=0.0, region=north]
-TestOrder[id=O018, customer_id=P009, product_id=PROD008, amount=1, total=199.99, date=2024-05-15, status=delivered, priority=urgent, discount=0.0, region=east]
-TestOrder[id=O019, customer_id=P004, product_id=PROD001, amount=2, total=1999.98, date=2024-06-01, status=confirmed, priority=high, discount=200.0, region=east]
-TestOrder[id=O020, customer_id=P011, product_id=PROD003, amount=4, total=300.00, date=2024-06-05, status=shipped, priority=normal, discount=0.0, region=north]
-TestOrder[id=O021, customer_id=P001, product_id=PROD002, amount=20, total=510.00, date=2024-06-10, status=pending, priority=low, discount=0.0, region=north]
-TestOrder[id=O022, customer_id=P013, product_id=PROD004, amount=1, total=299.99, date=2024-06-15, status=confirmed, priority=normal, discount=0.0, region=west]
-TestOrder[id=O023, customer_id=P016, product_id=PROD006, amount=3, total=450.00, date=2024-07-01, status=delivered, priority=high, discount=0.0, region=north]
-TestOrder[id=O024, customer_id=P020, product_id=PROD005, amount=1, total=499.99, date=2024-07-05, status=shipped, priority=urgent, discount=25.0, region=west]
-TestOrder[id=O025, customer_id=P018, product_id=PROD007, amount=3, total=269.97, date=2024-07-10, status=completed, priority=normal, discount=0.0, region=east]
+TestOrder(id:O001, customer_id:P001, product_id:PROD001, amount:2, total:1999.98, date:2024-01-15, status:pending, priority:normal, discount:50.0, region:north)
+TestOrder(id:O002, customer_id:P002, product_id:PROD002, amount:1, total:25.50, date:2024-01-20, status:confirmed, priority:low, discount:0.0, region:south)
+TestOrder(id:O003, customer_id:P001, product_id:PROD003, amount:3, total:225.00, date:2024-02-01, status:shipped, priority:high, discount:15.0, region:north)
+TestOrder(id:O004, customer_id:P004, product_id:PROD004, amount:1, total:299.99, date:2024-02-05, status:delivered, priority:normal, discount:0.0, region:east)
+TestOrder(id:O005, customer_id:P002, product_id:PROD001, amount:1, total:999.99, date:2024-02-10, status:confirmed, priority:high, discount:100.0, region:south)
+TestOrder(id:O006, customer_id:P005, product_id:PROD005, amount:2, total:999.98, date:2024-02-15, status:cancelled, priority:low, discount:0.0, region:west)
+TestOrder(id:O007, customer_id:P007, product_id:PROD006, amount:4, total:600.00, date:2024-03-01, status:shipped, priority:urgent, discount:50.0, region:north)
+TestOrder(id:O008, customer_id:P010, product_id:PROD002, amount:10, total:255.00, date:2024-03-05, status:pending, priority:normal, discount:0.0, region:south)
+TestOrder(id:O009, customer_id:P001, product_id:PROD007, amount:1, total:89.99, date:2024-03-10, status:completed, priority:low, discount:10.0, region:north)
+TestOrder(id:O010, customer_id:P011, product_id:PROD008, amount:2, total:399.98, date:2024-03-15, status:confirmed, priority:high, discount:0.0, region:east)
+TestOrder(id:O011, customer_id:P013, product_id:PROD003, amount:1, total:75.00, date:2024-04-01, status:shipped, priority:normal, discount:5.0, region:west)
+TestOrder(id:O012, customer_id:P014, product_id:PROD001, amount:1, total:999.99, date:2024-04-05, status:delivered, priority:urgent, discount:0.0, region:south)
+TestOrder(id:O013, customer_id:P016, product_id:PROD004, amount:3, total:899.97, date:2024-04-10, status:confirmed, priority:high, discount:100.0, region:north)
+TestOrder(id:O014, customer_id:P018, product_id:PROD006, amount:1, total:150.00, date:2024-04-15, status:pending, priority:low, discount:0.0, region:east)
+TestOrder(id:O015, customer_id:P020, product_id:PROD002, amount:5, total:127.50, date:2024-05-01, status:shipped, priority:normal, discount:12.5, region:west)
+TestOrder(id:O016, customer_id:P002, product_id:PROD005, amount:1, total:499.99, date:2024-05-05, status:cancelled, priority:low, discount:0.0, region:south)
+TestOrder(id:O017, customer_id:P007, product_id:PROD007, amount:2, total:179.98, date:2024-05-10, status:completed, priority:normal, discount:0.0, region:north)
+TestOrder(id:O018, customer_id:P009, product_id:PROD008, amount:1, total:199.99, date:2024-05-15, status:delivered, priority:urgent, discount:0.0, region:east)
+TestOrder(id:O019, customer_id:P004, product_id:PROD001, amount:2, total:1999.98, date:2024-06-01, status:confirmed, priority:high, discount:200.0, region:east)
+TestOrder(id:O020, customer_id:P011, product_id:PROD003, amount:4, total:300.00, date:2024-06-05, status:shipped, priority:normal, discount:0.0, region:north)
+TestOrder(id:O021, customer_id:P001, product_id:PROD002, amount:20, total:510.00, date:2024-06-10, status:pending, priority:low, discount:0.0, region:north)
+TestOrder(id:O022, customer_id:P013, product_id:PROD004, amount:1, total:299.99, date:2024-06-15, status:confirmed, priority:normal, discount:0.0, region:west)
+TestOrder(id:O023, customer_id:P016, product_id:PROD006, amount:3, total:450.00, date:2024-07-01, status:delivered, priority:high, discount:0.0, region:north)
+TestOrder(id:O024, customer_id:P020, product_id:PROD005, amount:1, total:499.99, date:2024-07-05, status:shipped, priority:urgent, discount:25.0, region:west)
+TestOrder(id:O025, customer_id:P018, product_id:PROD007, amount:3, total:269.97, date:2024-07-10, status:completed, priority:normal, discount:0.0, region:east)
 
 // Produits de test - 15 produits variés
-TestProduct[id=PROD001, name=Laptop, category=electronics, price=999.99, available=true, rating=4.5, keywords=computer, brand=TechCorp, stock=50, supplier=TechSupply]
-TestProduct[id=PROD002, name=Mouse, category=accessories, price=25.50, available=true, rating=4.0, keywords=peripheral, brand=TechCorp, stock=200, supplier=TechSupply]
-TestProduct[id=PROD003, name=Keyboard, category=accessories, price=75.00, available=false, rating=3.5, keywords=typing, brand=KeyTech, stock=0, supplier=KeySupply]
-TestProduct[id=PROD004, name=Monitor, category=electronics, price=299.99, available=true, rating=4.8, keywords=display, brand=ScreenPro, stock=30, supplier=ScreenSupply]
-TestProduct[id=PROD005, name=Tablet, category=electronics, price=499.99, available=false, rating=4.2, keywords=mobile, brand=TabletInc, stock=0, supplier=TabletSupply]
-TestProduct[id=PROD006, name=Headphones, category=audio, price=150.00, available=true, rating=4.6, keywords=sound, brand=AudioMax, stock=75, supplier=AudioSupply]
-TestProduct[id=PROD007, name=Webcam, category=electronics, price=89.99, available=true, rating=3.8, keywords=video, brand=CamTech, stock=25, supplier=CamSupply]
-TestProduct[id=PROD008, name=Chair, category=furniture, price=199.99, available=true, rating=4.1, keywords=office, brand=ComfortSeats, stock=15, supplier=FurnitureSupply]
-TestProduct[id=PROD009, name=Desk, category=furniture, price=299.99, available=false, rating=4.3, keywords=workspace, brand=WorkSpace, stock=0, supplier=FurnitureSupply]
-TestProduct[id=PROD010, name=Phone, category=electronics, price=699.99, available=true, rating=4.7, keywords=mobile, brand=PhoneCorp, stock=40, supplier=PhoneSupply]
-TestProduct[id=PROD011, name=Printer, category=electronics, price=249.99, available=true, rating=3.9, keywords=printing, brand=PrintTech, stock=20, supplier=PrintSupply]
-TestProduct[id=PROD012, name=Scanner, category=electronics, price=199.99, available=false, rating=4.0, keywords=scanning, brand=ScanTech, stock=0, supplier=ScanSupply]
-TestProduct[id=PROD013, name=Speakers, category=audio, price=120.00, available=true, rating=4.4, keywords=sound, brand=AudioMax, stock=60, supplier=AudioSupply]
-TestProduct[id=PROD014, name=Cable, category=accessories, price=15.99, available=true, rating=3.5, keywords=connection, brand=CableTech, stock=500, supplier=CableSupply]
-TestProduct[id=PROD015, name=Lamp, category=furniture, price=79.99, available=true, rating=4.2, keywords=lighting, brand=LightCorp, stock=35, supplier=LightSupply]
+TestProduct(id:PROD001, name:Laptop, category:electronics, price:999.99, available:true, rating:4.5, keywords:computer, brand:TechCorp, stock:50, supplier:TechSupply)
+TestProduct(id:PROD002, name:Mouse, category:accessories, price:25.50, available:true, rating:4.0, keywords:peripheral, brand:TechCorp, stock:200, supplier:TechSupply)
+TestProduct(id:PROD003, name:Keyboard, category:accessories, price:75.00, available:false, rating:3.5, keywords:typing, brand:KeyTech, stock:0, supplier:KeySupply)
+TestProduct(id:PROD004, name:Monitor, category:electronics, price:299.99, available:true, rating:4.8, keywords:display, brand:ScreenPro, stock:30, supplier:ScreenSupply)
+TestProduct(id:PROD005, name:Tablet, category:electronics, price:499.99, available:false, rating:4.2, keywords:mobile, brand:TabletInc, stock:0, supplier:TabletSupply)
+TestProduct(id:PROD006, name:Headphones, category:audio, price:150.00, available:true, rating:4.6, keywords:sound, brand:AudioMax, stock:75, supplier:AudioSupply)
+TestProduct(id:PROD007, name:Webcam, category:electronics, price:89.99, available:true, rating:3.8, keywords:video, brand:CamTech, stock:25, supplier:CamSupply)
+TestProduct(id:PROD008, name:Chair, category:furniture, price:199.99, available:true, rating:4.1, keywords:office, brand:ComfortSeats, stock:15, supplier:FurnitureSupply)
+TestProduct(id:PROD009, name:Desk, category:furniture, price:299.99, available:false, rating:4.3, keywords:workspace, brand:WorkSpace, stock:0, supplier:FurnitureSupply)
+TestProduct(id:PROD010, name:Phone, category:electronics, price:699.99, available:true, rating:4.7, keywords:mobile, brand:PhoneCorp, stock:40, supplier:PhoneSupply)
+TestProduct(id:PROD011, name:Printer, category:electronics, price:249.99, available:true, rating:3.9, keywords:printing, brand:PrintTech, stock:20, supplier:PrintSupply)
+TestProduct(id:PROD012, name:Scanner, category:electronics, price:199.99, available:false, rating:4.0, keywords:scanning, brand:ScanTech, stock:0, supplier:ScanSupply)
+TestProduct(id:PROD013, name:Speakers, category:audio, price:120.00, available:true, rating:4.4, keywords:sound, brand:AudioMax, stock:60, supplier:AudioSupply)
+TestProduct(id:PROD014, name:Cable, category:accessories, price:15.99, available:true, rating:3.5, keywords:connection, brand:CableTech, stock:500, supplier:CableSupply)
+TestProduct(id:PROD015, name:Lamp, category:furniture, price:79.99, available:true, rating:4.2, keywords:lighting, brand:LightCorp, stock:35, supplier:LightSupply)
 
 // Transactions de test - 20 transactions variées
-TestTransaction[id=T001, account_id=P001, amount=1999.98, type=purchase, timestamp=1700000000, approved=true, currency=USD, reference=ORD-O001]
-TestTransaction[id=T002, account_id=P002, amount=25.50, type=purchase, timestamp=1700100000, approved=true, currency=USD, reference=ORD-O002]
-TestTransaction[id=T003, account_id=P001, amount=225.00, type=purchase, timestamp=1700200000, approved=true, currency=USD, reference=ORD-O003]
-TestTransaction[id=T004, account_id=P004, amount=299.99, type=purchase, timestamp=1700300000, approved=true, currency=USD, reference=ORD-O004]
-TestTransaction[id=T005, account_id=P002, amount=999.99, type=purchase, timestamp=1700400000, approved=false, currency=USD, reference=ORD-O005]
-TestTransaction[id=T006, account_id=P005, amount=-999.98, type=refund, timestamp=1700500000, approved=true, currency=USD, reference=ORD-O006]
-TestTransaction[id=T007, account_id=P007, amount=600.00, type=purchase, timestamp=1700600000, approved=true, currency=USD, reference=ORD-O007]
-TestTransaction[id=T008, account_id=P010, amount=255.00, type=purchase, timestamp=1700700000, approved=true, currency=USD, reference=ORD-O008]
-TestTransaction[id=T009, account_id=P001, amount=89.99, type=purchase, timestamp=1700800000, approved=true, currency=USD, reference=ORD-O009]
-TestTransaction[id=T010, account_id=P011, amount=399.98, type=purchase, timestamp=1700900000, approved=true, currency=USD, reference=ORD-O010]
-TestTransaction[id=T011, account_id=P013, amount=75.00, type=purchase, timestamp=1701000000, approved=true, currency=USD, reference=ORD-O011]
-TestTransaction[id=T012, account_id=P014, amount=999.99, type=purchase, timestamp=1701100000, approved=false, currency=USD, reference=ORD-O012]
-TestTransaction[id=T013, account_id=P016, amount=899.97, type=purchase, timestamp=1701200000, approved=true, currency=USD, reference=ORD-O013]
-TestTransaction[id=T014, account_id=P018, amount=150.00, type=purchase, timestamp=1701300000, approved=true, currency=USD, reference=ORD-O014]
-TestTransaction[id=T015, account_id=P020, amount=127.50, type=purchase, timestamp=1701400000, approved=true, currency=USD, reference=ORD-O015]
-TestTransaction[id=T016, account_id=P009, amount=199.99, type=purchase, timestamp=1701500000, approved=true, currency=USD, reference=ORD-O018]
-TestTransaction[id=T017, account_id=P004, amount=1999.98, type=purchase, timestamp=1701600000, approved=true, currency=USD, reference=ORD-O019]
-TestTransaction[id=T018, account_id=P011, amount=300.00, type=purchase, timestamp=1701700000, approved=true, currency=USD, reference=ORD-O020]
-TestTransaction[id=T019, account_id=P001, amount=510.00, type=purchase, timestamp=1701800000, approved=false, currency=USD, reference=ORD-O021]
-TestTransaction[id=T020, account_id=P007, amount=50000.00, type=withdrawal, timestamp=1701900000, approved=true, currency=USD, reference=WITHDRAW-001]
+TestTransaction(id:T001, account_id:P001, amount:1999.98, type:purchase, timestamp:1700000000, approved:true, currency:USD, reference:ORD-O001)
+TestTransaction(id:T002, account_id:P002, amount:25.50, type:purchase, timestamp:1700100000, approved:true, currency:USD, reference:ORD-O002)
+TestTransaction(id:T003, account_id:P001, amount:225.00, type:purchase, timestamp:1700200000, approved:true, currency:USD, reference:ORD-O003)
+TestTransaction(id:T004, account_id:P004, amount:299.99, type:purchase, timestamp:1700300000, approved:true, currency:USD, reference:ORD-O004)
+TestTransaction(id:T005, account_id:P002, amount:999.99, type:purchase, timestamp:1700400000, approved:false, currency:USD, reference:ORD-O005)
+TestTransaction(id:T006, account_id:P005, amount:-999.98, type:refund, timestamp:1700500000, approved:true, currency:USD, reference:ORD-O006)
+TestTransaction(id:T007, account_id:P007, amount:600.00, type:purchase, timestamp:1700600000, approved:true, currency:USD, reference:ORD-O007)
+TestTransaction(id:T008, account_id:P010, amount:255.00, type:purchase, timestamp:1700700000, approved:true, currency:USD, reference:ORD-O008)
+TestTransaction(id:T009, account_id:P001, amount:89.99, type:purchase, timestamp:1700800000, approved:true, currency:USD, reference:ORD-O009)
+TestTransaction(id:T010, account_id:P011, amount:399.98, type:purchase, timestamp:1700900000, approved:true, currency:USD, reference:ORD-O010)
+TestTransaction(id:T011, account_id:P013, amount:75.00, type:purchase, timestamp:1701000000, approved:true, currency:USD, reference:ORD-O011)
+TestTransaction(id:T012, account_id:P014, amount:999.99, type:purchase, timestamp:1701100000, approved:false, currency:USD, reference:ORD-O012)
+TestTransaction(id:T013, account_id:P016, amount:899.97, type:purchase, timestamp:1701200000, approved:true, currency:USD, reference:ORD-O013)
+TestTransaction(id:T014, account_id:P018, amount:150.00, type:purchase, timestamp:1701300000, approved:true, currency:USD, reference:ORD-O014)
+TestTransaction(id:T015, account_id:P020, amount:127.50, type:purchase, timestamp:1701400000, approved:true, currency:USD, reference:ORD-O015)
+TestTransaction(id:T016, account_id:P009, amount:199.99, type:purchase, timestamp:1701500000, approved:true, currency:USD, reference:ORD-O018)
+TestTransaction(id:T017, account_id:P004, amount:1999.98, type:purchase, timestamp:1701600000, approved:true, currency:USD, reference:ORD-O019)
+TestTransaction(id:T018, account_id:P011, amount:300.00, type:purchase, timestamp:1701700000, approved:true, currency:USD, reference:ORD-O020)
+TestTransaction(id:T019, account_id:P001, amount:510.00, type:purchase, timestamp:1701800000, approved:false, currency:USD, reference:ORD-O021)
+TestTransaction(id:T020, account_id:P007, amount:50000.00, type:withdrawal, timestamp:1701900000, approved:true, currency:USD, reference:WITHDRAW-001)
 
 // Alertes de test - 15 alertes variées
-TestAlert[id=A001, user_id=P001, level=high, message=Multiple large orders detected, timestamp=1700050000, resolved=false, category=fraud]
-TestAlert[id=A002, user_id=P002, level=medium, message=Unusual purchase pattern, timestamp=1700150000, resolved=true, category=behavior]
-TestAlert[id=A003, user_id=P005, level=low, message=Account inactive warning, timestamp=1700250000, resolved=false, category=account]
-TestAlert[id=A004, user_id=P007, level=critical, message=Large withdrawal detected, timestamp=1701950000, resolved=false, category=security]
-TestAlert[id=A005, user_id=P010, level=medium, message=Payment method updated, timestamp=1700750000, resolved=true, category=payment]
-TestAlert[id=A006, user_id=P011, level=high, message=VIP customer activity spike, timestamp=1700950000, resolved=false, category=vip]
-TestAlert[id=A007, user_id=P013, level=low, message=Profile incomplete, timestamp=1701050000, resolved=true, category=profile]
-TestAlert[id=A008, user_id=P001, level=medium, message=Shipping address changed, timestamp=1701850000, resolved=false, category=shipping]
-TestAlert[id=A009, user_id=P016, level=high, message=Bulk order processing, timestamp=1701250000, resolved=true, category=orders]
-TestAlert[id=A010, user_id=P018, level=critical, message=Suspicious transaction blocked, timestamp=1701350000, resolved=false, category=security]
-TestAlert[id=A011, user_id=P020, level=low, message=Promotional offer available, timestamp=1701450000, resolved=true, category=promotion]
-TestAlert[id=A012, user_id=P004, level=medium, message=Repeated purchases detected, timestamp=1701650000, resolved=false, category=behavior]
-TestAlert[id=A013, user_id=P009, level=high, message=Account verification required, timestamp=1701550000, resolved=true, category=verification]
-TestAlert[id=A014, user_id=P014, level=low, message=Newsletter subscription confirmed, timestamp=1701150000, resolved=true, category=newsletter]
-TestAlert[id=A015, user_id=P007, level=critical, message=Executive account access, timestamp=1702000000, resolved=false, category=executive]
+TestAlert(id:A001, user_id:P001, level:high, message:Multiple large orders detected, timestamp:1700050000, resolved:false, category:fraud)
+TestAlert(id:A002, user_id:P002, level:medium, message:Unusual purchase pattern, timestamp:1700150000, resolved:true, category:behavior)
+TestAlert(id:A003, user_id:P005, level:low, message:Account inactive warning, timestamp:1700250000, resolved:false, category:account)
+TestAlert(id:A004, user_id:P007, level:critical, message:Large withdrawal detected, timestamp:1701950000, resolved:false, category:security)
+TestAlert(id:A005, user_id:P010, level:medium, message:Payment method updated, timestamp:1700750000, resolved:true, category:payment)
+TestAlert(id:A006, user_id:P011, level:high, message:VIP customer activity spike, timestamp:1700950000, resolved:false, category:vip)
+TestAlert(id:A007, user_id:P013, level:low, message:Profile incomplete, timestamp:1701050000, resolved:true, category:profile)
+TestAlert(id:A008, user_id:P001, level:medium, message:Shipping address changed, timestamp:1701850000, resolved:false, category:shipping)
+TestAlert(id:A009, user_id:P016, level:high, message:Bulk order processing, timestamp:1701250000, resolved:true, category:orders)
+TestAlert(id:A010, user_id:P018, level:critical, message:Suspicious transaction blocked, timestamp:1701350000, resolved:false, category:security)
+TestAlert(id:A011, user_id:P020, level:low, message:Promotional offer available, timestamp:1701450000, resolved:true, category:promotion)
+TestAlert(id:A012, user_id:P004, level:medium, message:Repeated purchases detected, timestamp:1701650000, resolved:false, category:behavior)
+TestAlert(id:A013, user_id:P009, level:high, message:Account verification required, timestamp:1701550000, resolved:true, category:verification)
+TestAlert(id:A014, user_id:P014, level:low, message:Newsletter subscription confirmed, timestamp:1701150000, resolved:true, category:newsletter)
+TestAlert(id:A015, user_id:P007, level:critical, message:Executive account access, timestamp:1702000000, resolved:false, category:executive)

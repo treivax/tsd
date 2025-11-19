@@ -780,8 +780,8 @@ func createDefaultBetaTests(testDir string) error {
 	constraint := `// Test simple
 {x: TestType} / x.value > 0 ==> test_action(x.id)`
 
-	facts := `TestType[id=T001, value=1]
-TestType[id=T002, value=0]`
+	facts := `TestType(id:T001, value:1)
+TestType(id:T002, value:0)`
 
 	err := os.WriteFile(filepath.Join(testDir, "simple_test.constraint"), []byte(constraint), 0644)
 	if err != nil {

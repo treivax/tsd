@@ -534,17 +534,17 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 			if i > 0 {
 				fmt.Print(", ")
 			}
-			// Format compact : Type[id=value, field=value, ...]
-			fmt.Printf("%s[", fact.Type)
+			// Format compact : Type(id:value, field:value, ...)
+			fmt.Printf("%s(", fact.Type)
 			fieldCount := 0
 			for key, value := range fact.Fields {
 				if fieldCount > 0 {
 					fmt.Print(", ")
 				}
-				fmt.Printf("%s=%v", key, value)
+				fmt.Printf("%s:%v", key, value)
 				fieldCount++
 			}
-			fmt.Print("]")
+			fmt.Print(")")
 		}
 		fmt.Print(")")
 	}

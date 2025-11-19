@@ -1,3 +1,3 @@
-Password[id="P001", value="password123", secure=true]
-Password[id="P002", value="123", secure=false]
-Password[id="P003", value="verysecurepass", secure=true]
+Password(id:"P001", value:"password123", secure:true)
+Password(id:"P002", value:"123", secure:false)
+Password(id:"P003", value:"verysecurepass", secure:true)

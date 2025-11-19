@@ -1,11 +1,11 @@
-Student[id=S001, name=Alice, grade=85, active=true]
-Student[id=S002, name=Bob, grade=45, active=true]
-Student[id=S003, name=Charlie, grade=92, active=false]
-Student[id=S004, name=Diana, grade=78, active=true]
-Course[id=C001, title=Advanced Math, level=advanced, credits=4]
-Course[id=C002, title=Basic Physics, level=beginner, credits=2]
-Course[id=C003, title=Computer Science, level=advanced, credits=3]
-Enrollment[id=EN001, student_id=S001, course_id=C001, status=enrolled]
-Enrollment[id=EN002, student_id=S002, course_id=C002, status=failed]
-Enrollment[id=EN003, student_id=S003, course_id=C001, status=dropped]
-Enrollment[id=EN004, student_id=S004, course_id=C003, status=enrolled]
+Student(id:S001, name:Alice, grade:85, active:true)
+Student(id:S002, name:Bob, grade:45, active:true)
+Student(id:S003, name:Charlie, grade:92, active:false)
+Student(id:S004, name:Diana, grade:78, active:true)
+Course(id:C001, title:Advanced Math, level:advanced, credits:4)
+Course(id:C002, title:Basic Physics, level:beginner, credits:2)
+Course(id:C003, title:Computer Science, level:advanced, credits:3)
+Enrollment(id:EN001, student_id:S001, course_id:C001, status:enrolled)
+Enrollment(id:EN002, student_id:S002, course_id:C002, status:failed)
+Enrollment(id:EN003, student_id:S003, course_id:C001, status:dropped)
+Enrollment(id:EN004, student_id:S004, course_id:C003, status:enrolled)

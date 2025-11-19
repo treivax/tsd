@@ -1,5 +1,5 @@
 // Fichier de faits pour tests massifs des nœuds Beta
-// Format: TypeName[champ1=valeur1, champ2=valeur2, ...]
+// Format: TypeName(champ1:valeur1, champ2:valeur2, ...)
 
 @author: Test Generator
 @version: 1.0
@@ -9,121 +9,121 @@
 // === UTILISATEURS (50 faits) ===
 
 // Utilisateurs mineurs (âge < 18) à Lille
-Utilisateur[id=U001, nom=Martin, prenom=Pierre, age=16]
-Utilisateur[id=U002, nom=Bernard, prenom=Sophie, age=15]
-Utilisateur[id=U003, nom=Dubois, prenom=Lucas, age=17]
-Utilisateur[id=U004, nom=Moreau, prenom=Emma, age=14]
-Utilisateur[id=U005, nom=Simon, prenom=Tom, age=16]
+Utilisateur(id:U001, nom:Martin, prenom:Pierre, age:16)
+Utilisateur(id:U002, nom:Bernard, prenom:Sophie, age:15)
+Utilisateur(id:U003, nom:Dubois, prenom:Lucas, age:17)
+Utilisateur(id:U004, nom:Moreau, prenom:Emma, age:14)
+Utilisateur(id:U005, nom:Simon, prenom:Tom, age:16)
 
-// Utilisateurs majeurs (18 <= âge < 65) à Paris
-Utilisateur[id=U006, nom=Dupont, prenom=Marie, age=25]
-Utilisateur[id=U007, nom=Rousseau, prenom=Jean, age=30]
-Utilisateur[id=U008, nom=Garnier, prenom=Julie, age=35]
-Utilisateur[id=U009, nom=Fabre, prenom=Paul, age=28]
-Utilisateur[id=U010, nom=Lemoine, prenom=Claire, age=32]
+// Utilisateurs majeurs (18 <: âge < 65) à Paris
+Utilisateur(id:U006, nom:Dupont, prenom:Marie, age:25)
+Utilisateur(id:U007, nom:Rousseau, prenom:Jean, age:30)
+Utilisateur(id:U008, nom:Garnier, prenom:Julie, age:35)
+Utilisateur(id:U009, nom:Fabre, prenom:Paul, age:28)
+Utilisateur(id:U010, nom:Lemoine, prenom:Claire, age:32)
 
-// Utilisateurs seniors (âge >= 65)
-Utilisateur[id=U011, nom=Girard, prenom=Jacques, age=70]
-Utilisateur[id=U012, nom=Andre, prenom=Monique, age=68]
-Utilisateur[id=U013, nom=Roux, prenom=Henri, age=72]
-Utilisateur[id=U014, nom=David, prenom=Françoise, age=66]
-Utilisateur[id=U015, nom=Bertrand, prenom=Michel, age=75]
+// Utilisateurs seniors (âge >: 65)
+Utilisateur(id:U011, nom:Girard, prenom:Jacques, age:70)
+Utilisateur(id:U012, nom:Andre, prenom:Monique, age:68)
+Utilisateur(id:U013, nom:Roux, prenom:Henri, age:72)
+Utilisateur(id:U014, nom:David, prenom:Françoise, age:66)
+Utilisateur(id:U015, nom:Bertrand, prenom:Michel, age:75)
 
-// Jeunes adultes (18 <= âge <= 30) à Lyon
-Utilisateur[id=U016, nom=Moreau, prenom=Sophie, age=22]
-Utilisateur[id=U017, nom=Blanc, prenom=Julien, age=24]
-Utilisateur[id=U018, nom=Martinez, prenom=Camille, age=26]
-Utilisateur[id=U019, nom=Robert, prenom=Nicolas, age=28]
-Utilisateur[id=U020, nom=Petit, prenom=Laura, age=21]
+// Jeunes adultes (18 <: âge <: 30) à Lyon
+Utilisateur(id:U016, nom:Moreau, prenom:Sophie, age:22)
+Utilisateur(id:U017, nom:Blanc, prenom:Julien, age:24)
+Utilisateur(id:U018, nom:Martinez, prenom:Camille, age:26)
+Utilisateur(id:U019, nom:Robert, prenom:Nicolas, age:28)
+Utilisateur(id:U020, nom:Petit, prenom:Laura, age:21)
 
 // Utilisateurs divers - mix d'âges
-Utilisateur[id=U021, nom=Leroy, prenom=Antoine, age=33]
-Utilisateur[id=U022, nom=Moreau, prenom=Isabelle, age=41]
-Utilisateur[id=U023, nom=Fournier, prenom=Maxime, age=19]
-Utilisateur[id=U024, nom=Girard, prenom=Valentine, age=52]
-Utilisateur[id=U025, nom=Bonnet, prenom=Rémi, age=27]
-Utilisateur[id=U026, nom=Dupuis, prenom=Nathalie, age=45]
-Utilisateur[id=U027, nom=Laurent, prenom=Florian, age=23]
-Utilisateur[id=U028, nom=Michel, prenom=Céline, age=38]
-Utilisateur[id=U029, nom=Garcia, prenom=Thomas, age=31]
-Utilisateur[id=U030, nom=Muller, prenom=Sarah, age=29]
-Utilisateur[id=U031, nom=Lefevre, prenom=Kevin, age=26]
-Utilisateur[id=U032, nom=Lopez, prenom=Marine, age=34]
-Utilisateur[id=U033, nom=Roche, prenom=Alexandre, age=42]
-Utilisateur[id=U034, nom=Rey, prenom=Elodie, age=37]
-Utilisateur[id=U035, nom=Clement, prenom=Damien, age=39]
-Utilisateur[id=U036, nom=Gauthier, prenom=Amélie, age=28]
-Utilisateur[id=U037, nom=Mercier, prenom=Jordan, age=25]
-Utilisateur[id=U038, nom=Barbier, prenom=Manon, age=32]
-Utilisateur[id=U039, nom=Renard, prenom=Quentin, age=24]
-Utilisateur[id=U040, nom=Arnaud, prenom=Lucie, age=35]
-Utilisateur[id=U041, nom=Lemaire, prenom=Adrien, age=27]
-Utilisateur[id=U042, nom=Durand, prenom=Caroline, age=43]
-Utilisateur[id=U043, nom=Guillot, prenom=Benjamin, age=30]
-Utilisateur[id=U044, nom=Meyer, prenom=Jessica, age=26]
-Utilisateur[id=U045, nom=Marchand, prenom=Vincent, age=33]
-Utilisateur[id=U046, nom=Perrin, prenom=Audrey, age=29]
-Utilisateur[id=U047, nom=Robin, prenom=Lucas, age=22]
-Utilisateur[id=U048, nom=Morel, prenom=Emilie, age=31]
-Utilisateur[id=U049, nom=Francois, prenom=Maxime, age=24]
-Utilisateur[id=U050, nom=Giraud, prenom=Océane, age=28]
+Utilisateur(id:U021, nom:Leroy, prenom:Antoine, age:33)
+Utilisateur(id:U022, nom:Moreau, prenom:Isabelle, age:41)
+Utilisateur(id:U023, nom:Fournier, prenom:Maxime, age:19)
+Utilisateur(id:U024, nom:Girard, prenom:Valentine, age:52)
+Utilisateur(id:U025, nom:Bonnet, prenom:Rémi, age:27)
+Utilisateur(id:U026, nom:Dupuis, prenom:Nathalie, age:45)
+Utilisateur(id:U027, nom:Laurent, prenom:Florian, age:23)
+Utilisateur(id:U028, nom:Michel, prenom:Céline, age:38)
+Utilisateur(id:U029, nom:Garcia, prenom:Thomas, age:31)
+Utilisateur(id:U030, nom:Muller, prenom:Sarah, age:29)
+Utilisateur(id:U031, nom:Lefevre, prenom:Kevin, age:26)
+Utilisateur(id:U032, nom:Lopez, prenom:Marine, age:34)
+Utilisateur(id:U033, nom:Roche, prenom:Alexandre, age:42)
+Utilisateur(id:U034, nom:Rey, prenom:Elodie, age:37)
+Utilisateur(id:U035, nom:Clement, prenom:Damien, age:39)
+Utilisateur(id:U036, nom:Gauthier, prenom:Amélie, age:28)
+Utilisateur(id:U037, nom:Mercier, prenom:Jordan, age:25)
+Utilisateur(id:U038, nom:Barbier, prenom:Manon, age:32)
+Utilisateur(id:U039, nom:Renard, prenom:Quentin, age:24)
+Utilisateur(id:U040, nom:Arnaud, prenom:Lucie, age:35)
+Utilisateur(id:U041, nom:Lemaire, prenom:Adrien, age:27)
+Utilisateur(id:U042, nom:Durand, prenom:Caroline, age:43)
+Utilisateur(id:U043, nom:Guillot, prenom:Benjamin, age:30)
+Utilisateur(id:U044, nom:Meyer, prenom:Jessica, age:26)
+Utilisateur(id:U045, nom:Marchand, prenom:Vincent, age:33)
+Utilisateur(id:U046, nom:Perrin, prenom:Audrey, age:29)
+Utilisateur(id:U047, nom:Robin, prenom:Lucas, age:22)
+Utilisateur(id:U048, nom:Morel, prenom:Emilie, age:31)
+Utilisateur(id:U049, nom:Francois, prenom:Maxime, age:24)
+Utilisateur(id:U050, nom:Giraud, prenom:Océane, age:28)
 
-// === ADRESSES (50 faits) ===
+// ::: ADRESSES (50 faits) :::
 
 // Adresses à Lille (pour utilisateurs U001-U005 + autres)
-Adresse[utilisateur_id=U001, rue="Rue de la Paix", ville=Lille]
-Adresse[utilisateur_id=U002, rue="Avenue du Général de Gaulle", ville=Lille]
-Adresse[utilisateur_id=U003, rue="Place du Théâtre", ville=Lille]
-Adresse[utilisateur_id=U004, rue="Rue Nationale", ville=Lille]
-Adresse[utilisateur_id=U005, rue="Boulevard de la Liberté", ville=Lille]
-Adresse[utilisateur_id=U021, rue="Rue de Béthune", ville=Lille]
-Adresse[utilisateur_id=U031, rue="Avenue de la République", ville=Lille]
-Adresse[utilisateur_id=U041, rue="Place Rihour", ville=Lille]
+Adresse(utilisateur_id:U001, rue:"Rue de la Paix", ville:Lille)
+Adresse(utilisateur_id:U002, rue:"Avenue du Général de Gaulle", ville:Lille)
+Adresse(utilisateur_id:U003, rue:"Place du Théâtre", ville:Lille)
+Adresse(utilisateur_id:U004, rue:"Rue Nationale", ville:Lille)
+Adresse(utilisateur_id:U005, rue:"Boulevard de la Liberté", ville:Lille)
+Adresse(utilisateur_id:U021, rue:"Rue de Béthune", ville:Lille)
+Adresse(utilisateur_id:U031, rue:"Avenue de la République", ville:Lille)
+Adresse(utilisateur_id:U041, rue:"Place Rihour", ville:Lille)
 
 // Adresses à Paris (pour utilisateurs U006-U010 + autres)
-Adresse[utilisateur_id=U006, rue="Avenue des Champs-Élysées", ville=Paris]
-Adresse[utilisateur_id=U007, rue="Rue de Rivoli", ville=Paris]
-Adresse[utilisateur_id=U008, rue="Boulevard Saint-Germain", ville=Paris]
-Adresse[utilisateur_id=U009, rue="Place de la Bastille", ville=Paris]
-Adresse[utilisateur_id=U010, rue="Avenue Montaigne", ville=Paris]
-Adresse[utilisateur_id=U022, rue="Rue du Faubourg Saint-Honoré", ville=Paris]
-Adresse[utilisateur_id=U032, rue="Boulevard Haussmann", ville=Paris]
-Adresse[utilisateur_id=U042, rue="Place Vendôme", ville=Paris]
+Adresse(utilisateur_id:U006, rue:"Avenue des Champs-Élysées", ville:Paris)
+Adresse(utilisateur_id:U007, rue:"Rue de Rivoli", ville:Paris)
+Adresse(utilisateur_id:U008, rue:"Boulevard Saint-Germain", ville:Paris)
+Adresse(utilisateur_id:U009, rue:"Place de la Bastille", ville:Paris)
+Adresse(utilisateur_id:U010, rue:"Avenue Montaigne", ville:Paris)
+Adresse(utilisateur_id:U022, rue:"Rue du Faubourg Saint-Honoré", ville:Paris)
+Adresse(utilisateur_id:U032, rue:"Boulevard Haussmann", ville:Paris)
+Adresse(utilisateur_id:U042, rue:"Place Vendôme", ville:Paris)
 
 // Adresses à Lyon (pour utilisateurs U016-U020 + autres)
-Adresse[utilisateur_id=U016, rue="Cours Lafayette", ville=Lyon]
-Adresse[utilisateur_id=U017, rue="Rue de la République", ville=Lyon]
-Adresse[utilisateur_id=U018, rue="Place Bellecour", ville=Lyon]
-Adresse[utilisateur_id=U019, rue="Avenue Jean Jaurès", ville=Lyon]
-Adresse[utilisateur_id=U020, rue="Quai Saint-Antoine", ville=Lyon]
-Adresse[utilisateur_id=U027, rue="Rue Victor Hugo", ville=Lyon]
-Adresse[utilisateur_id=U037, rue="Place des Terreaux", ville=Lyon]
-Adresse[utilisateur_id=U047, rue="Cours Charlemagne", ville=Lyon]
+Adresse(utilisateur_id:U016, rue:"Cours Lafayette", ville:Lyon)
+Adresse(utilisateur_id:U017, rue:"Rue de la République", ville:Lyon)
+Adresse(utilisateur_id:U018, rue:"Place Bellecour", ville:Lyon)
+Adresse(utilisateur_id:U019, rue:"Avenue Jean Jaurès", ville:Lyon)
+Adresse(utilisateur_id:U020, rue:"Quai Saint-Antoine", ville:Lyon)
+Adresse(utilisateur_id:U027, rue:"Rue Victor Hugo", ville:Lyon)
+Adresse(utilisateur_id:U037, rue:"Place des Terreaux", ville:Lyon)
+Adresse(utilisateur_id:U047, rue:"Cours Charlemagne", ville:Lyon)
 
 // Adresses diverses (autres villes)
-Adresse[utilisateur_id=U011, rue="Place de la République", ville=Lyon]
-Adresse[utilisateur_id=U012, rue="Rue de la Gare", ville=Marseille]
-Adresse[utilisateur_id=U013, rue="Avenue de la Libération", ville=Toulouse]
-Adresse[utilisateur_id=U014, rue="Boulevard des Belges", ville=Nice]
-Adresse[utilisateur_id=U015, rue="Place du Capitole", ville=Toulouse]
-Adresse[utilisateur_id=U023, rue="Rue Sainte-Catherine", ville=Bordeaux]
-Adresse[utilisateur_id=U024, rue="Avenue de l'Europe", ville=Strasbourg]
-Adresse[utilisateur_id=U025, rue="Place Stanislas", ville=Nancy]
-Adresse[utilisateur_id=U026, rue="Cours Mirabeau", ville=Aix-en-Provence]
-Adresse[utilisateur_id=U028, rue="Place Kléber", ville=Strasbourg]
-Adresse[utilisateur_id=U029, rue="Rue d'Alsace-Lorraine", ville=Toulouse]
-Adresse[utilisateur_id=U030, rue="Avenue Jean Médecin", ville=Nice]
-Adresse[utilisateur_id=U033, rue="Place de la Comédie", ville=Montpellier]
-Adresse[utilisateur_id=U034, rue="Rue de la Pompe", ville=Paris]
-Adresse[utilisateur_id=U035, rue="Avenue du Prado", ville=Marseille]
-Adresse[utilisateur_id=U036, rue="Place Wilson", ville=Lyon]
-Adresse[utilisateur_id=U038, rue="Rue Jeanne d'Arc", ville=Rouen]
-Adresse[utilisateur_id=U039, rue="Place Ducale", ville=Charleville-Mézières]
-Adresse[utilisateur_id=U040, rue="Avenue Foch", ville=Reims]
-Adresse[utilisateur_id=U043, rue="Rue des Halles", ville=Dijon]
-Adresse[utilisateur_id=U044, rue="Place de la Bourse", ville=Bordeaux]
-Adresse[utilisateur_id=U045, rue="Avenue de Champagne", ville=Épernay]
-Adresse[utilisateur_id=U046, rue="Rue du Commerce", ville=Metz]
-Adresse[utilisateur_id=U048, rue="Place Gutenberg", ville=Strasbourg]
-Adresse[utilisateur_id=U049, rue="Avenue des Vosges", ville=Épinal]
-Adresse[utilisateur_id=U050, rue="Cours Pasteur", ville=Bordeaux]
+Adresse(utilisateur_id:U011, rue:"Place de la République", ville:Lyon)
+Adresse(utilisateur_id:U012, rue:"Rue de la Gare", ville:Marseille)
+Adresse(utilisateur_id:U013, rue:"Avenue de la Libération", ville:Toulouse)
+Adresse(utilisateur_id:U014, rue:"Boulevard des Belges", ville:Nice)
+Adresse(utilisateur_id:U015, rue:"Place du Capitole", ville:Toulouse)
+Adresse(utilisateur_id:U023, rue:"Rue Sainte-Catherine", ville:Bordeaux)
+Adresse(utilisateur_id:U024, rue:"Avenue de l'Europe", ville:Strasbourg)
+Adresse(utilisateur_id:U025, rue:"Place Stanislas", ville:Nancy)
+Adresse(utilisateur_id:U026, rue:"Cours Mirabeau", ville:Aix-en-Provence)
+Adresse(utilisateur_id:U028, rue:"Place Kléber", ville:Strasbourg)
+Adresse(utilisateur_id:U029, rue:"Rue d'Alsace-Lorraine", ville:Toulouse)
+Adresse(utilisateur_id:U030, rue:"Avenue Jean Médecin", ville:Nice)
+Adresse(utilisateur_id:U033, rue:"Place de la Comédie", ville:Montpellier)
+Adresse(utilisateur_id:U034, rue:"Rue de la Pompe", ville:Paris)
+Adresse(utilisateur_id:U035, rue:"Avenue du Prado", ville:Marseille)
+Adresse(utilisateur_id:U036, rue:"Place Wilson", ville:Lyon)
+Adresse(utilisateur_id:U038, rue:"Rue Jeanne d'Arc", ville:Rouen)
+Adresse(utilisateur_id:U039, rue:"Place Ducale", ville:Charleville-Mézières)
+Adresse(utilisateur_id:U040, rue:"Avenue Foch", ville:Reims)
+Adresse(utilisateur_id:U043, rue:"Rue des Halles", ville:Dijon)
+Adresse(utilisateur_id:U044, rue:"Place de la Bourse", ville:Bordeaux)
+Adresse(utilisateur_id:U045, rue:"Avenue de Champagne", ville:Épernay)
+Adresse(utilisateur_id:U046, rue:"Rue du Commerce", ville:Metz)
+Adresse(utilisateur_id:U048, rue:"Place Gutenberg", ville:Strasbourg)
+Adresse(utilisateur_id:U049, rue:"Avenue des Vosges", ville:Épinal)
+Adresse(utilisateur_id:U050, rue:"Cours Pasteur", ville:Bordeaux)
