@@ -89,11 +89,105 @@ func ConvertResultToProgram(result interface{}) (*Program, error) {
 
 // ConvertToReteProgram convertit une structure Program des contraintes vers le format attendu par RETE
 func ConvertToReteProgram(program *Program) interface{} {
+	// Convertir les types en map[string]interface{} via JSON pour être compatible avec RETE
+	typesInterface := make([]interface{}, len(program.Types))
+	for i, typeDef := range program.Types {
+		// Sérialiser vers JSON puis désérialiser en map
+		jsonData, err := json.Marshal(typeDef)
+		if err != nil {
+			continue
+		}
+		var typeMap map[string]interface{}
+		json.Unmarshal(jsonData, &typeMap)
+		typesInterface[i] = typeMap
+	}
+
+	// Convertir les expressions en map[string]interface{} via JSON
+	expressionsInterface := make([]interface{}, len(program.Expressions))
+	for i, expr := range program.Expressions {
+		// Sérialiser vers JSON puis désérialiser en map
+		jsonData, err := json.Marshal(expr)
+		if err != nil {
+			continue
+		}
+		var exprMap map[string]interface{}
+		json.Unmarshal(jsonData, &exprMap)
+		expressionsInterface[i] = exprMap
+	}
+
 	// Créer une structure compatible avec le format attendu par RETE
-	// La structure rete.Program a seulement Types et Expressions, pas de Facts
 	reteProgram := map[string]interface{}{
-		"types":       program.Types,
-		"expressions": program.Expressions,
+		"types":       typesInterface,
+		"expressions": expressionsInterface,
 	}
 	return reteProgram
+}
+
+// NewIterativeParser creates a new iterative parser that can parse multiple files
+// and maintain state across parsing operations. This enables parsing type definitions,
+// rules, and facts from separate files while ensuring consistency.
+//
+// Example:
+//
+//	parser := NewIterativeParser()
+//	err := parser.ParseFile("types.constraint")
+//	err = parser.ParseFile("rules.constraint")
+//	err = parser.ParseFile("facts.constraint")
+//	program := parser.GetProgram()
+func NewIterativeParser() *IterativeParser {
+	return &IterativeParser{
+		state: NewProgramState(),
+	}
+}
+
+// IterativeParser provides iterative parsing capabilities with state management
+type IterativeParser struct {
+	state *ProgramState
+}
+
+// ParseFile parses a file and merges it with the current state.
+// The file can contain types, rules, facts, or any combination.
+// Validation is performed to ensure consistency with previously parsed content.
+func (ip *IterativeParser) ParseFile(filename string) error {
+	return ip.state.ParseAndMerge(filename)
+}
+
+// ParseContent parses content from a string and merges it with current state.
+func (ip *IterativeParser) ParseContent(content, filename string) error {
+	return ip.state.ParseAndMergeContent(content, filename)
+}
+
+// GetProgram returns the current combined program state
+func (ip *IterativeParser) GetProgram() *Program {
+	return ip.state.ToProgram()
+}
+
+// GetState returns the internal state for advanced usage
+func (ip *IterativeParser) GetState() *ProgramState {
+	return ip.state
+}
+
+// Reset clears all parsed content and resets to empty state
+func (ip *IterativeParser) Reset() {
+	ip.state = NewProgramState()
+}
+
+// GetParsingStatistics returns statistics about the parsing process
+func (ip *IterativeParser) GetParsingStatistics() ParsingStatistics {
+	return ParsingStatistics{
+		TypesCount:       len(ip.state.Types),
+		RulesCount:       len(ip.state.Rules),
+		FactsCount:       len(ip.state.Facts),
+		FilesParsedCount: len(ip.state.FilesParsed),
+		FilesParsed:      ip.state.FilesParsed,
+	}
+}
+
+// ParsingStatistics contains statistics about the parsing process
+type ParsingStatistics struct {
+	TypesCount       int      `json:"types_count"`
+	RulesCount       int      `json:"rules_count"`
+	FactsCount       int      `json:"facts_count"`
+	FilesParsedCount int      `json:"files_parsed_count"`
+	FilesParsed      []string `json:"files_parsed"`
 }

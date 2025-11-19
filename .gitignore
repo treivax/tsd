@@ -3,6 +3,7 @@ bin/
 *.exe
 *_test_runner
 *_coverage_runner
+integration
 
 # Go test coverage
 *.out
