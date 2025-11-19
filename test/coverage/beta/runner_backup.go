@@ -515,11 +515,241 @@ func evaluateJoinConditionWithFacts(combination map[string]DetailedFact, conditi
 }
 
 func evaluateSingleCondition(combination map[string]DetailedFact, condition string) bool {
-	return evaluateConditionUnified(combination, condition, nil, true)
+	fmt.Printf("        DEBUG evaluateSingleCondition - condition: '%s'\n", condition)
+
+	// Traiter NOT
+	if strings.HasPrefix(strings.TrimSpace(condition), "NOT ") {
+		innerCondition := strings.TrimSpace(condition[4:])
+		// Enlever les parenthèses si présentes
+		if strings.HasPrefix(innerCondition, "(") && strings.HasSuffix(innerCondition, ")") {
+			innerCondition = innerCondition[1 : len(innerCondition)-1]
+		}
+		result := evaluateSingleCondition(combination, innerCondition)
+		fmt.Printf("          NOT condition result: %v -> %v\n", result, !result)
+		return !result
+	}
+
+	// Traiter les parenthèses
+	if strings.HasPrefix(condition, "(") && strings.HasSuffix(condition, ")") {
+		innerCondition := condition[1 : len(condition)-1]
+		return evaluateJoinCondition(combination, innerCondition)
+	}
+
+	// Égalité simple
+	if strings.Contains(condition, "==") {
+		parts := strings.Split(condition, "==")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			fmt.Printf("        Comparing '%s' == '%s'\n", left, right)
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' == '%s'\n", leftVal, rightVal)
+
+			return leftVal != "" && rightVal != "" && leftVal == rightVal
+		}
+	}
+
+	// Inégalité !=
+	if strings.Contains(condition, "!=") {
+		parts := strings.Split(condition, "!=")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' != '%s' -> %v\n", leftVal, rightVal, leftVal != rightVal)
+
+			return leftVal != rightVal
+		}
+	}
+
+	// Opérateur IN
+	if strings.Contains(condition, " IN ") {
+		parts := strings.Split(condition, " IN ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+
+			// Parser la liste [val1, val2, ...]
+			if strings.HasPrefix(right, "[") && strings.HasSuffix(right, "]") {
+				listStr := right[1 : len(right)-1]
+				values := strings.Split(listStr, ",")
+				for _, val := range values {
+					val = strings.TrimSpace(val)
+					val = strings.Trim(val, "\"") // Enlever les guillemets
+					if leftVal == val {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+
+	// Opérateur CONTAINS
+	if strings.Contains(condition, " CONTAINS ") {
+		parts := strings.Split(condition, " CONTAINS ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := strings.Trim(right, "\"") // Enlever les guillemets
+
+			result := strings.Contains(leftVal, rightVal)
+			fmt.Printf("        '%s' CONTAINS '%s' -> %v\n", leftVal, rightVal, result)
+			return result
+		}
+	}
+
+	// Opérateur EXISTS
+	if strings.HasPrefix(strings.TrimSpace(condition), "EXISTS ") {
+		return evaluateExistsCondition(combination, condition)
+	}
+
+	// Comparaisons numériques
+	if strings.Contains(condition, " >= ") {
+		return evaluateNumericComparison(combination, condition, ">=")
+	}
+	if strings.Contains(condition, " <= ") {
+		return evaluateNumericComparison(combination, condition, "<=")
+	}
+	if strings.Contains(condition, " > ") {
+		return evaluateNumericComparison(combination, condition, ">")
+	}
+	if strings.Contains(condition, " < ") {
+		return evaluateNumericComparison(combination, condition, "<")
+	}
+
+	fmt.Printf("        Unhandled condition format\n")
+	return false
 }
 
 func evaluateSingleConditionWithFacts(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
-	return evaluateConditionUnified(combination, condition, allFacts, true)
+	fmt.Printf("        DEBUG evaluateSingleConditionWithFacts - condition: '%s'\n", condition)
+
+	// Traiter NOT
+	if strings.HasPrefix(strings.TrimSpace(condition), "NOT ") {
+		innerCondition := strings.TrimSpace(condition[4:])
+		// Enlever les parenthèses si présentes
+		if strings.HasPrefix(innerCondition, "(") && strings.HasSuffix(innerCondition, ")") {
+			innerCondition = innerCondition[1 : len(innerCondition)-1]
+		}
+		result := evaluateSingleConditionWithFacts(combination, innerCondition, allFacts)
+		fmt.Printf("          NOT condition result: %v -> %v\n", result, !result)
+		return !result
+	}
+
+	// Opérateur EXISTS - version avec faits globaux (priorité haute car contient d'autres opérateurs)
+	if strings.HasPrefix(strings.TrimSpace(condition), "EXISTS ") {
+		return evaluateExistsConditionWithFacts(combination, condition, allFacts)
+	}
+
+	// Traiter les parenthèses
+	if strings.HasPrefix(condition, "(") && strings.HasSuffix(condition, ")") {
+		innerCondition := condition[1 : len(condition)-1]
+		return evaluateJoinConditionWithFacts(combination, innerCondition, allFacts)
+	}
+
+	// Égalité simple
+	if strings.Contains(condition, "==") {
+		parts := strings.Split(condition, "==")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			fmt.Printf("        Comparing '%s' == '%s'\n", left, right)
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' == '%s'\n", leftVal, rightVal)
+
+			return leftVal != "" && rightVal != "" && leftVal == rightVal
+		}
+	}
+
+	// Inégalité !=
+	if strings.Contains(condition, "!=") {
+		parts := strings.Split(condition, "!=")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' != '%s' -> %v\n", leftVal, rightVal, leftVal != rightVal)
+
+			return leftVal != rightVal
+		}
+	}
+
+	// Opérateur IN
+	if strings.Contains(condition, " IN ") {
+		parts := strings.Split(condition, " IN ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+
+			// Parser la liste [val1, val2, ...]
+			if strings.HasPrefix(right, "[") && strings.HasSuffix(right, "]") {
+				listStr := right[1 : len(right)-1]
+				values := strings.Split(listStr, ",")
+				for _, val := range values {
+					val = strings.TrimSpace(val)
+					val = strings.Trim(val, "\"") // Enlever les guillemets
+					if leftVal == val {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+
+	// Opérateur CONTAINS
+	if strings.Contains(condition, " CONTAINS ") {
+		parts := strings.Split(condition, " CONTAINS ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := strings.Trim(right, "\"") // Enlever les guillemets
+
+			result := strings.Contains(leftVal, rightVal)
+			fmt.Printf("        '%s' CONTAINS '%s' -> %v\n", leftVal, rightVal, result)
+			return result
+		}
+	}
+
+	// Comparaisons numériques
+	if strings.Contains(condition, " >= ") {
+		return evaluateNumericComparison(combination, condition, ">=")
+	}
+	if strings.Contains(condition, " <= ") {
+		return evaluateNumericComparison(combination, condition, "<=")
+	}
+	if strings.Contains(condition, " > ") {
+		return evaluateNumericComparison(combination, condition, ">")
+	}
+	if strings.Contains(condition, " < ") {
+		return evaluateNumericComparison(combination, condition, "<")
+	}
+
+	fmt.Printf("        Unhandled condition format\n")
+	return false
 }
 
 func evaluateNumericComparison(combination map[string]DetailedFact, condition, operator string) bool {
@@ -561,6 +791,13 @@ func parseNumber(s string) float64 {
 		return val
 	}
 	return 0
+}
+
+func evaluateExistsCondition(combination map[string]DetailedFact, condition string) bool {
+	fmt.Printf("        DEBUG evaluateExistsCondition - condition: '%s'\n", condition)
+	// Version sans faits globaux - retourne false pour les tests legacy
+	fmt.Printf("        EXISTS: Version legacy sans faits globaux - retourne false\n")
+	return false
 }
 
 func evaluateExistsConditionWithFacts(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
@@ -1230,128 +1467,4 @@ func getTestType(result TestResult) string {
 		return fmt.Sprintf("Jointure (%s)", strings.Join(result.JointureTypes, ", "))
 	}
 	return "Simple"
-}
-
-// ===== UNIFIED CONDITION EVALUATION (REFACTORED) =====
-
-// evaluateConditionUnified est la nouvelle fonction unifiée qui remplace toutes les variantes
-func evaluateConditionUnified(combination map[string]DetailedFact, condition string, allFacts []DetailedFact, debug bool) bool {
-	if debug {
-		if allFacts != nil {
-			fmt.Printf("        DEBUG evaluateConditionUnified (WITH FACTS) - condition: '%s'\n", condition)
-		} else {
-			fmt.Printf("        DEBUG evaluateConditionUnified - condition: '%s'\n", condition)
-		}
-	}
-
-	condition = strings.TrimSpace(condition)
-
-	// Traiter NOT en premier
-	if strings.HasPrefix(condition, "NOT ") {
-		innerCondition := strings.TrimSpace(condition[4:])
-		if strings.HasPrefix(innerCondition, "(") && strings.HasSuffix(innerCondition, ")") {
-			innerCondition = innerCondition[1 : len(innerCondition)-1]
-		}
-		result := evaluateConditionUnified(combination, innerCondition, allFacts, debug)
-		if debug {
-			fmt.Printf("          NOT condition result: %v -> %v\n", result, !result)
-		}
-		return !result
-	}
-
-	// Traiter EXISTS (priorité haute car il peut contenir d'autres opérateurs)
-	if strings.HasPrefix(condition, "EXISTS ") && allFacts != nil {
-		return evaluateExistsConditionWithFacts(combination, condition, allFacts)
-	}
-
-	// Traiter les parenthèses
-	if strings.HasPrefix(condition, "(") && strings.HasSuffix(condition, ")") {
-		innerCondition := condition[1 : len(condition)-1]
-		return evaluateConditionUnified(combination, innerCondition, allFacts, debug)
-	}
-
-	// Traiter AND/OR
-	if strings.Contains(condition, " AND ") {
-		parts := strings.Split(condition, " AND ")
-		for _, part := range parts {
-			if !evaluateConditionUnified(combination, strings.TrimSpace(part), allFacts, debug) {
-				return false
-			}
-		}
-		return true
-	}
-
-	if strings.Contains(condition, " OR ") {
-		parts := strings.Split(condition, " OR ")
-		for _, part := range parts {
-			if evaluateConditionUnified(combination, strings.TrimSpace(part), allFacts, debug) {
-				return true
-			}
-		}
-		return false
-	}
-
-	// Évaluer condition atomique (comparaisons, IN, CONTAINS)
-	return evaluateAtomicCondition(combination, condition)
-}
-
-// evaluateAtomicCondition traite les conditions atomiques (==, !=, >, <, >=, <=, IN, CONTAINS)
-func evaluateAtomicCondition(combination map[string]DetailedFact, condition string) bool {
-	// Ordre important: opérateurs complexes en premier
-	operators := []string{" CONTAINS ", " IN ", ">=", "<=", "!=", "==", ">", "<"}
-
-	for _, op := range operators {
-		if strings.Contains(condition, op) {
-			parts := strings.Split(condition, op)
-			if len(parts) != 2 {
-				continue
-			}
-
-			left := strings.TrimSpace(parts[0])
-			right := strings.TrimSpace(parts[1])
-
-			switch op {
-			case "==":
-				leftVal := getValueFromCondition(combination, left)
-				rightVal := getValueFromCondition(combination, right)
-				return leftVal != "" && rightVal != "" && leftVal == rightVal
-			case "!=":
-				leftVal := getValueFromCondition(combination, left)
-				rightVal := getValueFromCondition(combination, right)
-				return leftVal != rightVal
-			case ">=", "<=", ">", "<":
-				return evaluateNumericComparison(combination, condition, op)
-			case " IN ":
-				return evaluateInCondition(combination, left, right)
-			case " CONTAINS ":
-				return evaluateContainsCondition(combination, left, right)
-			}
-		}
-	}
-
-	return false
-}
-
-// evaluateInCondition traite les conditions IN
-func evaluateInCondition(combination map[string]DetailedFact, left, right string) bool {
-	leftVal := getValueFromCondition(combination, left)
-	if strings.HasPrefix(right, "[") && strings.HasSuffix(right, "]") {
-		listStr := right[1 : len(right)-1]
-		values := strings.Split(listStr, ",")
-		for _, val := range values {
-			val = strings.TrimSpace(val)
-			val = strings.Trim(val, "\"")
-			if leftVal == val {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// evaluateContainsCondition traite les conditions CONTAINS
-func evaluateContainsCondition(combination map[string]DetailedFact, left, right string) bool {
-	leftVal := getValueFromCondition(combination, left)
-	rightVal := strings.Trim(right, "\"")
-	return strings.Contains(leftVal, rightVal)
 }
