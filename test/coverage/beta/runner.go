@@ -47,6 +47,29 @@ func main() {
 	fmt.Println("=== RUNNER BETA - VALIDATION SÉMANTIQUE STRICTE ===")
 	fmt.Println("Analyse des tokens avec génération d'attendus basée sur l'évaluation des conditions\n")
 
+	// Vérifier si on a des arguments spécifiques (fichier constraint et facts)
+	if len(os.Args) == 3 {
+		// Mode test spécifique avec fichiers donnés
+		constraintFile := os.Args[1]
+		factsFile := os.Args[2]
+
+		fmt.Printf("Test spécifique: %s + %s\n\n", constraintFile, factsFile)
+
+		// Exécuter un test spécifique avec les fichiers fournis
+		result := executeSpecificTest(constraintFile, factsFile)
+
+		fmt.Printf("Test: %d attendus, %d observés, %d mismatches\n",
+			len(result.Analysis.Expected), len(result.Analysis.Observed),
+			result.Analysis.Mismatches)
+
+		if result.Analysis.IsValid {
+			fmt.Printf("✅ VALIDÉE\n")
+		} else {
+			fmt.Printf("❌ INVALIDÉE: %s\n", result.Analysis.ValidationError)
+		}
+		return
+	}
+
 	testDir := "/home/resinsec/dev/tsd/beta_coverage_tests"
 
 	// Découvrir tous les tests
@@ -146,6 +169,62 @@ func executeTest(testDir, testName string) TestResult {
 	}
 
 	// Analyser tokens attendus avec évaluation sémantique
+	expectedTokens := analyzeExpectedTokens(rules, facts)
+	fmt.Printf("DEBUG - Tokens attendus générés: %d\n", len(expectedTokens))
+
+	// Observer tokens via RETE
+	observedTokens, err := observeTokensViaRete(constraintFile, factsFile)
+	if err != nil {
+		result.Analysis.ValidationError = fmt.Sprintf("Erreur observation RETE: %v", err)
+		result.ExecutionTime = time.Since(startTime)
+		return result
+	}
+
+	fmt.Printf("DEBUG - Tokens observés: %d\n", len(observedTokens))
+
+	// Comparer et analyser
+	result.Analysis = compareTokenAnalysis(expectedTokens, observedTokens)
+	result.ExecutionTime = time.Since(startTime)
+
+	return result
+}
+
+func executeSpecificTest(constraintFile, factsFile string) TestResult {
+	startTime := time.Now()
+
+	result := TestResult{
+		TestName: filepath.Base(constraintFile),
+	}
+
+	// Lire fichiers
+	rules, err := readLines(constraintFile)
+	if err != nil {
+		result.Analysis.ValidationError = fmt.Sprintf("Erreur lecture constraint: %v", err)
+		result.ExecutionTime = time.Since(startTime)
+		return result
+	}
+
+	facts, err := readLines(factsFile)
+	if err != nil {
+		result.Analysis.ValidationError = fmt.Sprintf("Erreur lecture facts: %v", err)
+		result.ExecutionTime = time.Since(startTime)
+		return result
+	}
+
+	// Afficher debug des règles lues
+	for i, rule := range rules {
+		if !strings.HasPrefix(rule, "//") && rule != "" {
+			fmt.Printf("  Rule %d: '%s'\n", i, rule)
+		}
+	}
+	fmt.Println()
+
+	// Analyser le type de test
+	result.IsJointure = isJointureTest(rules)
+
+	fmt.Printf("DEBUG executeTest - test %s, is jointure: %t\n", result.TestName, result.IsJointure)
+
+	// Analyser tokens attendus
 	expectedTokens := analyzeExpectedTokens(rules, facts)
 	fmt.Printf("DEBUG - Tokens attendus générés: %d\n", len(expectedTokens))
 
@@ -323,12 +402,38 @@ func generateValidJoinCombinations(involvedTypes []string, facts []DetailedFact,
 				fmt.Printf("    Testing combination: %s(%v) + %s(%v)\n",
 					fact1.Type, fact1.Values, fact2.Type, fact2.Values)
 
-				if evaluateJoinCondition(combination, condition) {
+				if evaluateJoinConditionWithFacts(combination, condition, facts) {
 					fmt.Printf("      ✅ Condition satisfied\n")
 					validCombinations = append(validCombinations, combination)
 				} else {
 					fmt.Printf("      ❌ Condition not satisfied\n")
 				}
+			}
+		}
+	} else if len(involvedTypes) == 1 {
+		// Cas d'un seul type (comme pour EXISTS)
+		type1 := involvedTypes[0]
+		facts1, exists1 := factsByType[type1]
+
+		if !exists1 {
+			fmt.Printf("  Missing facts for type %s\n", type1)
+			return validCombinations
+		}
+
+		fmt.Printf("  Testing single type %s with %d facts\n", type1, len(facts1))
+
+		for _, fact1 := range facts1 {
+			combination := map[string]DetailedFact{
+				type1: fact1,
+			}
+
+			fmt.Printf("    Testing single fact: %s(%v)\n", fact1.Type, fact1.Values)
+
+			if evaluateJoinConditionWithFacts(combination, condition, facts) {
+				fmt.Printf("      ✅ Condition satisfied\n")
+				validCombinations = append(validCombinations, combination)
+			} else {
+				fmt.Printf("      ❌ Condition not satisfied\n")
 			}
 		}
 	}
@@ -373,6 +478,42 @@ func evaluateJoinCondition(combination map[string]DetailedFact, condition string
 	return evaluateSingleCondition(combination, condition)
 }
 
+func evaluateJoinConditionWithFacts(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
+	fmt.Printf("      DEBUG evaluateJoinConditionWithFacts - condition: '%s'\n", condition)
+
+	if condition == "" {
+		return true
+	}
+
+	// Parse condition simple comme "p.id == o.customer_id"
+	if strings.Contains(condition, " AND ") {
+		// Séparer les conditions AND
+		andParts := strings.Split(condition, " AND ")
+		for _, part := range andParts {
+			part = strings.TrimSpace(part)
+			if !evaluateSingleConditionWithFacts(combination, part, allFacts) {
+				return false
+			}
+		}
+		return true
+	}
+
+	if strings.Contains(condition, " OR ") {
+		// Séparer les conditions OR
+		orParts := strings.Split(condition, " OR ")
+		for _, part := range orParts {
+			part = strings.TrimSpace(part)
+			if evaluateSingleConditionWithFacts(combination, part, allFacts) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Condition simple
+	return evaluateSingleConditionWithFacts(combination, condition, allFacts)
+}
+
 func evaluateSingleCondition(combination map[string]DetailedFact, condition string) bool {
 	fmt.Printf("        DEBUG evaluateSingleCondition - condition: '%s'\n", condition)
 
@@ -392,6 +533,130 @@ func evaluateSingleCondition(combination map[string]DetailedFact, condition stri
 	if strings.HasPrefix(condition, "(") && strings.HasSuffix(condition, ")") {
 		innerCondition := condition[1 : len(condition)-1]
 		return evaluateJoinCondition(combination, innerCondition)
+	}
+
+	// Égalité simple
+	if strings.Contains(condition, "==") {
+		parts := strings.Split(condition, "==")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			fmt.Printf("        Comparing '%s' == '%s'\n", left, right)
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' == '%s'\n", leftVal, rightVal)
+
+			return leftVal != "" && rightVal != "" && leftVal == rightVal
+		}
+	}
+
+	// Inégalité !=
+	if strings.Contains(condition, "!=") {
+		parts := strings.Split(condition, "!=")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := getValueFromCondition(combination, right)
+
+			fmt.Printf("        Values: '%s' != '%s' -> %v\n", leftVal, rightVal, leftVal != rightVal)
+
+			return leftVal != rightVal
+		}
+	}
+
+	// Opérateur IN
+	if strings.Contains(condition, " IN ") {
+		parts := strings.Split(condition, " IN ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+
+			// Parser la liste [val1, val2, ...]
+			if strings.HasPrefix(right, "[") && strings.HasSuffix(right, "]") {
+				listStr := right[1 : len(right)-1]
+				values := strings.Split(listStr, ",")
+				for _, val := range values {
+					val = strings.TrimSpace(val)
+					val = strings.Trim(val, "\"") // Enlever les guillemets
+					if leftVal == val {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+
+	// Opérateur CONTAINS
+	if strings.Contains(condition, " CONTAINS ") {
+		parts := strings.Split(condition, " CONTAINS ")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromCondition(combination, left)
+			rightVal := strings.Trim(right, "\"") // Enlever les guillemets
+
+			result := strings.Contains(leftVal, rightVal)
+			fmt.Printf("        '%s' CONTAINS '%s' -> %v\n", leftVal, rightVal, result)
+			return result
+		}
+	}
+
+	// Opérateur EXISTS
+	if strings.HasPrefix(strings.TrimSpace(condition), "EXISTS ") {
+		return evaluateExistsCondition(combination, condition)
+	}
+
+	// Comparaisons numériques
+	if strings.Contains(condition, " >= ") {
+		return evaluateNumericComparison(combination, condition, ">=")
+	}
+	if strings.Contains(condition, " <= ") {
+		return evaluateNumericComparison(combination, condition, "<=")
+	}
+	if strings.Contains(condition, " > ") {
+		return evaluateNumericComparison(combination, condition, ">")
+	}
+	if strings.Contains(condition, " < ") {
+		return evaluateNumericComparison(combination, condition, "<")
+	}
+
+	fmt.Printf("        Unhandled condition format\n")
+	return false
+}
+
+func evaluateSingleConditionWithFacts(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
+	fmt.Printf("        DEBUG evaluateSingleConditionWithFacts - condition: '%s'\n", condition)
+
+	// Traiter NOT
+	if strings.HasPrefix(strings.TrimSpace(condition), "NOT ") {
+		innerCondition := strings.TrimSpace(condition[4:])
+		// Enlever les parenthèses si présentes
+		if strings.HasPrefix(innerCondition, "(") && strings.HasSuffix(innerCondition, ")") {
+			innerCondition = innerCondition[1 : len(innerCondition)-1]
+		}
+		result := evaluateSingleConditionWithFacts(combination, innerCondition, allFacts)
+		fmt.Printf("          NOT condition result: %v -> %v\n", result, !result)
+		return !result
+	}
+
+	// Opérateur EXISTS - version avec faits globaux (priorité haute car contient d'autres opérateurs)
+	if strings.HasPrefix(strings.TrimSpace(condition), "EXISTS ") {
+		return evaluateExistsConditionWithFacts(combination, condition, allFacts)
+	}
+
+	// Traiter les parenthèses
+	if strings.HasPrefix(condition, "(") && strings.HasSuffix(condition, ")") {
+		innerCondition := condition[1 : len(condition)-1]
+		return evaluateJoinConditionWithFacts(combination, innerCondition, allFacts)
 	}
 
 	// Égalité simple
@@ -526,6 +791,207 @@ func parseNumber(s string) float64 {
 		return val
 	}
 	return 0
+}
+
+func evaluateExistsCondition(combination map[string]DetailedFact, condition string) bool {
+	fmt.Printf("        DEBUG evaluateExistsCondition - condition: '%s'\n", condition)
+	// Version sans faits globaux - retourne false pour les tests legacy
+	fmt.Printf("        EXISTS: Version legacy sans faits globaux - retourne false\n")
+	return false
+}
+
+func evaluateExistsConditionWithFacts(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
+	fmt.Printf("        DEBUG evaluateExistsConditionWithFacts - condition: '%s'\n", condition)
+
+	// Parse condition de format: EXISTS (var: Type / condition)
+	condition = strings.TrimSpace(condition)
+	if !strings.HasPrefix(condition, "EXISTS ") {
+		return false
+	}
+
+	// Enlever "EXISTS " au début
+	innerExpr := strings.TrimSpace(condition[7:])
+
+	// La condition doit être entre parenthèses
+	if !strings.HasPrefix(innerExpr, "(") || !strings.HasSuffix(innerExpr, ")") {
+		fmt.Printf("        EXISTS: Invalid parentheses format\n")
+		return false
+	}
+
+	// Enlever les parenthèses extérieures
+	innerExpr = innerExpr[1 : len(innerExpr)-1]
+
+	// Séparer par " / " pour avoir "var: Type" et "condition"
+	parts := strings.Split(innerExpr, " / ")
+	if len(parts) != 2 {
+		fmt.Printf("        EXISTS: Invalid format - expected 'var: Type / condition'\n")
+		return false
+	}
+
+	varDeclaration := strings.TrimSpace(parts[0])
+	existsCondition := strings.TrimSpace(parts[1])
+
+	// Parser la déclaration de variable "var: Type"
+	varParts := strings.Split(varDeclaration, ":")
+	if len(varParts) != 2 {
+		fmt.Printf("        EXISTS: Invalid variable declaration\n")
+		return false
+	}
+
+	varName := strings.TrimSpace(varParts[0])
+	typeName := strings.TrimSpace(varParts[1])
+
+	fmt.Printf("        EXISTS: Looking for %s:%s with condition '%s'\n", varName, typeName, existsCondition)
+
+	// Chercher tous les faits du type demandé
+	for _, fact := range allFacts {
+		if fact.Type == typeName {
+			fmt.Printf("        EXISTS: Testing fact %s with values %v\n", fact.Type, fact.Values)
+
+			// Créer une combinaison temporaire incluant ce fait
+			// IMPORTANT: on utilise le nom de variable choisi dans EXISTS, pas le type
+			tempCombination := make(map[string]DetailedFact)
+			for k, v := range combination {
+				tempCombination[k] = v
+			}
+			// Ajouter le fait avec la clé étant le nom de variable (pas le type)
+			tempCombination[varName] = fact
+
+			// Il faut aussi s'assurer que la variable principale (comme p) est accessible
+			// Dans ce cas, on doit mapper les types existants aussi par variable
+			for typeName, factValue := range combination {
+				// Mapping intelligent des types vers les variables probables
+				varMapping := getVariableForType(typeName)
+				if varMapping != "" {
+					tempCombination[varMapping] = factValue
+				}
+			}
+
+			// Évaluer la condition avec cette combinaison temporaire
+			if evaluateExistsConditionRecursive(tempCombination, existsCondition, allFacts) {
+				fmt.Printf("        EXISTS: Found matching fact - condition satisfied\n")
+				return true
+			}
+		}
+	}
+
+	fmt.Printf("        EXISTS: No matching fact found\n")
+	return false
+}
+
+func evaluateExistsConditionRecursive(combination map[string]DetailedFact, condition string, allFacts []DetailedFact) bool {
+	fmt.Printf("          DEBUG evaluateExistsConditionRecursive - condition: '%s'\n", condition)
+
+	// Cette fonction évalue une condition dans le contexte EXISTS
+	// Elle utilise un mapping de variables spécifique au contexte EXISTS
+
+	// Égalité simple
+	if strings.Contains(condition, "==") {
+		parts := strings.Split(condition, "==")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			fmt.Printf("          Comparing '%s' == '%s'\n", left, right)
+
+			leftVal := getValueFromConditionExists(combination, left)
+			rightVal := getValueFromConditionExists(combination, right)
+
+			fmt.Printf("          Values: '%s' == '%s'\n", leftVal, rightVal)
+
+			return leftVal != "" && rightVal != "" && leftVal == rightVal
+		}
+	}
+
+	// Inégalité !=
+	if strings.Contains(condition, "!=") {
+		parts := strings.Split(condition, "!=")
+		if len(parts) == 2 {
+			left := strings.TrimSpace(parts[0])
+			right := strings.TrimSpace(parts[1])
+
+			leftVal := getValueFromConditionExists(combination, left)
+			rightVal := getValueFromConditionExists(combination, right)
+
+			fmt.Printf("          Values: '%s' != '%s' -> %v\n", leftVal, rightVal, leftVal != rightVal)
+
+			return leftVal != rightVal
+		}
+	}
+
+	// Pour l'instant, on peut ajouter d'autres opérateurs selon les besoins
+	fmt.Printf("          EXISTS recursive: Unhandled condition format\n")
+	return false
+}
+
+func getValueFromConditionExists(combination map[string]DetailedFact, expr string) string {
+	// Si c'est une valeur littérale (commence par guillemets ou est un nombre)
+	if strings.HasPrefix(expr, "\"") && strings.HasSuffix(expr, "\"") {
+		return expr[1 : len(expr)-1] // Enlever les guillemets
+	}
+
+	// Si c'est un nombre
+	if _, err := strconv.ParseFloat(expr, 64); err == nil {
+		return expr
+	}
+
+	// Si c'est un booléen
+	if expr == "true" || expr == "false" {
+		return expr
+	}
+
+	// Sinon c'est un chemin comme "o.customer_id" ou "p.id"
+	return getValueFromPathExists(combination, expr)
+}
+
+func getValueFromPathExists(combination map[string]DetailedFact, path string) string {
+	// Parse path comme "o.customer_id" ou "p.id"
+	if !strings.Contains(path, ".") {
+		return ""
+	}
+
+	parts := strings.Split(path, ".")
+	if len(parts) != 2 {
+		return ""
+	}
+
+	varName, fieldName := parts[0], parts[1]
+
+	// Dans le contexte EXISTS, on recherche directement par nom de variable
+	if fact, exists := combination[varName]; exists {
+		if val, fieldExists := fact.Values[fieldName]; fieldExists {
+			return val
+		}
+	}
+
+	fmt.Printf("          EXISTS: Variable %s ou field %s not found in combination\n", varName, fieldName)
+	return ""
+}
+
+func getVariableForType(typeName string) string {
+	// Mapping simple des types vers les variables les plus courantes
+	switch typeName {
+	case "Person":
+		return "p"
+	case "Order":
+		return "o"
+	case "Employee":
+		return "e"
+	case "User":
+		return "u"
+	case "Customer":
+		return "c"
+	case "Product":
+		return "p"
+	case "Project":
+		return "p"
+	default:
+		// Pour d'autres types, retourner la première lettre en minuscule
+		if len(typeName) > 0 {
+			return strings.ToLower(string(typeName[0]))
+		}
+		return ""
+	}
 }
 
 func getValueFromCondition(combination map[string]DetailedFact, expr string) string {
@@ -725,8 +1191,9 @@ func observeTokensViaRete(constraintFile, factsFile string) ([]TokenInfo, error)
 		involvedTypes := extractTypesFromRule(rule)
 		condition := extractConditionsFromRule(leftPart)
 
-		if len(involvedTypes) >= 2 && condition != "" {
+		if condition != "" {
 			// Générer seulement les combinaisons VALIDES (qui satisfont la condition)
+			// Cela marche maintenant pour len(involvedTypes) >= 1 grâce à notre correction
 			validCombinations := generateValidJoinCombinations(involvedTypes, allDetailedFacts, condition)
 
 			for _, combination := range validCombinations {

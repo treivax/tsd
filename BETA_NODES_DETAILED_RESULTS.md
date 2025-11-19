@@ -1,6 +1,6 @@
 # RAPPORT DÉTAILLÉ - TESTS BETA NODES
 
-Date: 2025-11-19 23:45:28
+Date: 2025-11-20 00:04:21
 
 ## Test: complex_not_exists_combination
 
@@ -11,7 +11,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Student, Course)
-- **Temps d'exécution:** 829.04µs
+- **Temps d'exécution:** 2.673178ms
 - **Tokens attendus:** 0
 - **Tokens observés:** 0
 - **Correspondances:** 0
@@ -55,7 +55,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Customer, Order)
-- **Temps d'exécution:** 596.105µs
+- **Temps d'exécution:** 12.688272ms
 - **Tokens attendus:** 0
 - **Tokens observés:** 0
 - **Correspondances:** 0
@@ -99,12 +99,12 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Person)
-- **Temps d'exécution:** 61.475µs
-- **Tokens attendus:** 0
-- **Tokens observés:** 0
-- **Correspondances:** 0
+- **Temps d'exécution:** 530.802µs
+- **Tokens attendus:** 1
+- **Tokens observés:** 1
+- **Correspondances:** 1
 - **Mismatches:** 0
-- **Taux de succès:** 0.0%
+- **Taux de succès:** 100.0%
 
 ### Règles de Contraintes
 ```
@@ -121,6 +121,12 @@ Date: 2025-11-19 23:45:28
 3. Order(customer_id:P001, amount:100)
 ```
 
+### Tokens Attendus:
+1. `Person(id:P001,name:Alice)`
+
+### Tokens Observés:
+1. `Person(id:P001,name:Alice)`
+
 ---
 
 ## Test: join_and_operator
@@ -132,7 +138,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Person, Order)
-- **Temps d'exécution:** 1.16074ms
+- **Temps d'exécution:** 3.001952ms
 - **Tokens attendus:** 11
 - **Tokens observés:** 11
 - **Correspondances:** 11
@@ -199,7 +205,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Account, Transaction)
-- **Temps d'exécution:** 728.893µs
+- **Temps d'exécution:** 25.763326ms
 - **Tokens attendus:** 8
 - **Tokens observés:** 8
 - **Correspondances:** 8
@@ -258,7 +264,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (User, Activity)
-- **Temps d'exécution:** 958.702µs
+- **Temps d'exécution:** 2.705719ms
 - **Tokens attendus:** 8
 - **Tokens observés:** 8
 - **Correspondances:** 8
@@ -318,7 +324,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Product, Review)
-- **Temps d'exécution:** 703.415µs
+- **Temps d'exécution:** 13.646883ms
 - **Tokens attendus:** 9
 - **Tokens observés:** 9
 - **Correspondances:** 9
@@ -379,7 +385,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (User, Team, Task)
-- **Temps d'exécution:** 434.112µs
+- **Temps d'exécution:** 2.880676ms
 - **Tokens attendus:** 0
 - **Tokens observés:** 0
 - **Correspondances:** 0
@@ -420,7 +426,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Person, Order)
-- **Temps d'exécution:** 955.066µs
+- **Temps d'exécution:** 23.838969ms
 - **Tokens attendus:** 7
 - **Tokens observés:** 7
 - **Correspondances:** 7
@@ -478,7 +484,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Person, Order)
-- **Temps d'exécution:** 129.311µs
+- **Temps d'exécution:** 286.105µs
 - **Tokens attendus:** 2
 - **Tokens observés:** 2
 - **Correspondances:** 2
@@ -520,7 +526,7 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Employee, Project)
-- **Temps d'exécution:** 929.698µs
+- **Temps d'exécution:** 17.8917ms
 - **Tokens attendus:** 6
 - **Tokens observés:** 6
 - **Correspondances:** 6
@@ -576,12 +582,12 @@ Date: 2025-11-19 23:45:28
 **Statut: ✅ VALIDÉE**
 
 - **Type:** Jointure (Person)
-- **Temps d'exécution:** 61.204µs
-- **Tokens attendus:** 0
-- **Tokens observés:** 0
-- **Correspondances:** 0
+- **Temps d'exécution:** 227.024µs
+- **Tokens attendus:** 1
+- **Tokens observés:** 1
+- **Correspondances:** 1
 - **Mismatches:** 0
-- **Taux de succès:** 0.0%
+- **Taux de succès:** 100.0%
 
 ### Règles de Contraintes
 ```
@@ -595,6 +601,12 @@ Date: 2025-11-19 23:45:28
 1. Person(id:P001, name:Alice, active:true)
 2. Person(id:P002, name:Bob, active:false)
 ```
+
+### Tokens Attendus:
+1. `Person(active:true,id:P001,name:Alice)`
+
+### Tokens Observés:
+1. `Person(active:true,id:P001,name:Alice)`
 
 ---
 

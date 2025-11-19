@@ -1,6 +1,6 @@
 # RAPPORT COMPLET - COUVERTURE BETA NODES
 
-Date: 2025-11-19 23:45:28
+Date: 2025-11-20 00:04:21
 
 ## RÉSULTATS GLOBAUX
 
@@ -16,7 +16,7 @@ Date: 2025-11-19 23:45:28
 |------|--------|----------|----------|------------|
 | complex_not_exists_combination | ✅ | 0 | 0 | 0 |
 | exists_complex_operator | ✅ | 0 | 0 | 0 |
-| exists_simple | ✅ | 0 | 0 | 0 |
+| exists_simple | ✅ | 1 | 1 | 0 |
 | join_and_operator | ✅ | 11 | 11 | 0 |
 | join_arithmetic_operators | ✅ | 8 | 8 | 0 |
 | join_comparison_operators | ✅ | 8 | 8 | 0 |
@@ -25,4 +25,4 @@ Date: 2025-11-19 23:45:28
 | join_or_operator | ✅ | 7 | 7 | 0 |
 | join_simple | ✅ | 2 | 2 | 0 |
 | not_complex_operator | ✅ | 6 | 6 | 0 |
-| not_simple | ✅ | 0 | 0 | 0 |
+| not_simple | ✅ | 1 | 1 | 0 |
