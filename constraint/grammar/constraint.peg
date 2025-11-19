@@ -373,9 +373,36 @@ StringLiteral <- "\"" chars:DoubleStringChar* "\"" {
         }, nil
     }
 
-DoubleStringChar <- !'"' char:. { return string(char.([]byte)), nil }
+DoubleStringChar <- EscapeSequence / (!'"' UnicodeChar) {
+    return string(c.text), nil
+}
 
-SingleStringChar <- !'\'' char:. { return string(char.([]byte)), nil }
+SingleStringChar <- EscapeSequence / (!'\'' UnicodeChar) {
+    return string(c.text), nil
+}
+
+EscapeSequence <- "\\" char:EscapeChar {
+    switch char {
+    case "n":
+        return "\n", nil
+    case "t":
+        return "\t", nil
+    case "r":
+        return "\r", nil
+    case "\\":
+        return "\\", nil
+    case "\"":
+        return "\"", nil
+    case "'":
+        return "'", nil
+    default:
+        return "\\" + char.(string), nil
+    }
+}
+
+EscapeChar <- "n" / "t" / "r" / "\\" / "\"" / "'" / .
+
+UnicodeChar <- .
 
 // Fact définit le parsing d'un fait avec le nouveau format TypeName(field:value, ...)
 Fact <- typeName:IdentName "(" _ fields:FactFieldList _ ")" {
@@ -411,13 +438,42 @@ FactValue <- StringLiteral / Number / BooleanLiteral / IdentName {
     }, nil
 }
 
-IdentName <- [a-zA-Z][a-zA-Z0-9_]* {
+IdentName <- IdentStart IdentContinue* {
     return string(c.text), nil
 }
 
-_ <- ([ \t\r\n] / Comment)*
+IdentStart <- [a-zA-Z_] / UnicodeLetterStart
 
-Comment <- "//" [^\r\n]* /
-           "/*" (!"*/" .)* "*/"
+IdentContinue <- [a-zA-Z0-9_] / UnicodeLetterContinue / PunctuationChar
+
+// Support pour les caractères étendus les plus courants (Latin étendu, accents français)
+UnicodeLetterStart <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
+                      [\u0100-\u024F] / [\u1E00-\u1EFF] / [\u0370-\u03FF] /
+                      [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF]
+
+UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
+                         [\u0100-\u024F] / [\u1E00-\u1EFF] / [\u0370-\u03FF] /
+                         [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF] /
+                         [\u0300-\u036F] / [\u1AB0-\u1AFF] / [\u1DC0-\u1DFF]
+
+PunctuationChar <- [-] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
+
+_ <- (Whitespace / Comment)*
+
+Whitespace <- [ \t\r\n]
+
+Comment <- LineComment / BlockComment / EndOfLineComment
+
+LineComment <- "//" CommentText:(![\r\n] .)* {
+    return nil, nil  // Les commentaires ne retournent rien
+}
+
+BlockComment <- "/*" CommentText:(!"*/" .)* "*/" {
+    return nil, nil  // Les commentaires ne retournent rien
+}
+
+EndOfLineComment <- "#" CommentText:(![\r\n] .)* {
+    return nil, nil  // Support pour commentaires style shell/Python
+}
 
 EOF <- !.

@@ -1,11 +1,11 @@
-// Fichier de faits pour tests massifs des nœuds Beta
+// Fichier de faits pour tests massifs des noeuds Beta
 // Format: TypeName(champ1:valeur1, champ2:valeur2, ...)
 
 // === UTILISATEURS (50 faits) ===
 
-// Utilisateurs mineurs (âge < 18) à Lille
-Utilisateur(id:U001, nom:Martin, prenom:"José", age:16)
-Utilisateur(id:U002, nom:Bernard, prenom:"Stéphanie", age:15)
+// Utilisateurs mineurs (age < 18) a Lille
+Utilisateur(id:U001, nom:Martin, prenom:Pierre, age:16)
+Utilisateur(id:U002, nom:Bernard, prenom:Sophie, age:15)
 Utilisateur(id:U003, nom:Dubois, prenom:Lucas, age:17)
 Utilisateur(id:U004, nom:Moreau, prenom:Emma, age:14)
 Utilisateur(id:U005, nom:Simon, prenom:Tom, age:16)
@@ -76,7 +76,7 @@ Adresse(utilisateur_id:U031, rue:"Avenue de la Republique", ville:Lille)
 Adresse(utilisateur_id:U041, rue:"Place Rihour", ville:Lille)
 
 // Adresses a Paris (pour utilisateurs U006-U010 + autres)
-Adresse(utilisateur_id:U006, rue:"Avenue des Champs-Élysées", ville:Paris)
+Adresse(utilisateur_id:U006, rue:"Avenue des Champs_Elysees", ville:Paris)
 Adresse(utilisateur_id:U007, rue:"Rue de Rivoli", ville:Paris)
 Adresse(utilisateur_id:U008, rue:"Boulevard Saint_Germain", ville:Paris)
 Adresse(utilisateur_id:U009, rue:"Place de la Bastille", ville:Paris)

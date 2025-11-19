@@ -441,26 +441,35 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 
 	fmt.Printf("\n🔍 Étape 5/6: Parsing et validation fichier faits...\n")
 
-	// Extraire les définitions de types du réseau pour validation des faits
-	typeDefinitions := make(map[string]TypeDefinition)
-	for typeName, typeNode := range network.TypeNodes {
-		typeDefinitions[typeName] = typeNode.TypeDefinition
-	}
-
-	// Parser les faits
-	factsParser := NewFactsParser()
-	facts, err := factsParser.ParseFactsFile(factsFile, typeDefinitions)
+	// Parser les faits avec la grammaire PEG étendue
+	factsResult, err := constraint.ParseFactsFile(factsFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("erreur parsing faits: %w", err)
+		return nil, nil, fmt.Errorf("erreur parsing fichier faits: %w", err)
 	}
 
-	// Afficher les métadonnées du fichier faits
-	metadata := factsParser.GetMetadata()
-	if len(metadata) > 0 {
-		fmt.Printf("📋 Métadonnées fichier faits:\n")
-		for key, value := range metadata {
-			fmt.Printf("   %s: %s\n", key, value)
+	// Extraire les faits parsés
+	parsedFactsData, err := constraint.ExtractFactsFromProgram(factsResult)
+	if err != nil {
+		return nil, nil, fmt.Errorf("erreur extraction faits: %w", err)
+	}
+
+	// Convertir au format RETE Facts
+	facts := make([]*Fact, 0, len(parsedFactsData))
+	for _, factData := range parsedFactsData {
+		fact := &Fact{
+			ID:     factData["id"].(string),
+			Type:   factData["type"].(string),
+			Fields: make(map[string]interface{}),
 		}
+
+		// Copier tous les champs sauf id et type
+		for key, value := range factData {
+			if key != "id" && key != "type" {
+				fact.Fields[key] = value
+			}
+		}
+
+		facts = append(facts, fact)
 	}
 
 	fmt.Printf("✅ %d faits parsés et validés\n", len(facts))

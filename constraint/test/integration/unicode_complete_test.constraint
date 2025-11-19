@@ -1,0 +1,27 @@
+// Test complet de la grammaire Unicode avec types et faits
+# Commentaire style shell
+/* Commentaire multi-lignes
+   avec accents français : éàèùâêîôûç */
+
+// === DÉFINITIONS DE TYPES ===
+type Utilisateur : < id:string, nom:string, prenom:string, age:number >
+type Adresse : < utilisateur_id:string, rue:string, ville:string >
+
+// === FAITS AVEC CARACTÈRES UNICODE ===
+// Utilisateurs avec noms français
+Utilisateur(id:U001, nom:"François", prenom:"José", age:25)  // Commentaire fin de ligne
+Utilisateur(id:U002, nom:"Stéphanie", prenom:"Zoé", age:28)
+Utilisateur(id:U003, nom:"Jérôme", prenom:"Gaëlle", age:32) # Autre style de commentaire
+Utilisateur(id:U004, nom:"Valérie", prenom:"Anaïs", age:29)
+
+// Adresses avec traits d'union et apostrophes
+Adresse(utilisateur_id:U001, rue:"Rue d'Alsace-Lorraine", ville:"Aix-en-Provence")
+Adresse(utilisateur_id:U002, rue:"Avenue des Champs-Élysées", ville:"Paris")
+Adresse(utilisateur_id:U003, rue:"Place Stanislas", ville:"Nancy")
+Adresse(utilisateur_id:U004, rue:"Quai Saint-Antoine", ville:"Lyon")
+
+// === CONTRAINTES AVEC UNICODE ===
+{u:Utilisateur, a:Adresse} / (u.id == a.utilisateur_id AND u.age >= 25 AND a.ville == "Paris") ==> notify_parisien(u.nom, a.rue)
+
+/* Fin du fichier avec commentaire multi-lignes
+   et caractères spéciaux : ñ ü ß α β γ */

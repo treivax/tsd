@@ -1,0 +1,24 @@
+// Test Unicode et caractères étendus
+// Fichier de test pour valider le support des caractères non-ASCII
+
+# Commentaire style shell
+/* Commentaire multi-lignes
+   avec des caractères accentués : àáâãäåæçèéêëìíîïñòóôõöøùúûüý */
+
+// Utilisateurs avec noms français
+Utilisateur(id:U001, nom:"François", prenom:"José", age:25)  // Commentaire fin de ligne
+Utilisateur(id:U002, nom:"Stéphanie", prenom:"Zoé", age:28)
+Utilisateur(id:U003, nom:"Jérôme", prenom:"Gaëlle", age:32)
+Utilisateur(id:U004, nom:"Valérie", prenom:"Anaïs", age:29)
+
+// Adresses avec caractères spéciaux et ponctuation
+Adresse(utilisateur_id:U001, rue:"Rue d'Alsace-Lorraine", ville:"Aix-en-Provence")
+Adresse(utilisateur_id:U002, rue:"Avenue des Champs-Élysées", ville:"Paris")
+Adresse(utilisateur_id:U003, rue:"Place Stanislas", ville:"Nancy")
+Adresse(utilisateur_id:U004, rue:"Quai Saint-Antoine", ville:"Lyon")
+
+// Caractères de différentes langues
+Utilisateur(id:U005, nom:"Müller", prenom:"José", age:35)  # Allemand
+Utilisateur(id:U006, nom:"González", prenom:"María", age:30)  # Espagnol
+Utilisateur(id:U007, nom:"Πέτρου", prenom:"Νίκος", age:40)  # Grec (si supporté)
+Utilisateur(id:U008, nom:"Петров", prenom:"Иван", age:33)  # Cyrillique (si supporté)
