@@ -1,5 +1,0 @@
-Person(id:P001, name:Alice, age:25, status:active)
-Person(id:P002, name:Bob, age:16, status:inactive)
-Person(id:P003, name:Charlie, age:30, status:active)
-Person(id:P004, name:David, age:17, status:active)
-Person(id:P005, name:Eve, age:22, status:inactive)

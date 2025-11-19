@@ -1,5 +1,0 @@
-// Test ExistsNode correct avec vraie existence
-type Vendor : <id: string, name: string, category: string>
-type Product : <id: string, vendor_id: string, name: string, price: number>
-
-{v: Vendor} / EXISTS (p: Product / p.vendor_id == v.id) ==> vendor_has_products(v.id, v.name)

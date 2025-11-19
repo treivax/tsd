@@ -345,7 +345,7 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(parsedFacts []map[string]interface
 		// Créer un objet Fact à partir des données parsées
 		fact := &Fact{
 			ID:        factData["id"].(string),
-			Type:      factData["type"].(string),
+			Type:      factData["reteType"].(string),
 			Fields:    make(map[string]interface{}),
 			Timestamp: time.Now(),
 		}
@@ -353,7 +353,7 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(parsedFacts []map[string]interface
 		// Copier tous les champs, y compris l'id dans Fields
 		// Le réseau RETE s'attend à ce que l'ID soit aussi dans Fields
 		for key, value := range factData {
-			if key != "type" { // Copier tous les champs sauf "type"
+			if key != "reteType" { // Copier tous les champs sauf "reteType"
 				fact.Fields[key] = value
 			}
 		}

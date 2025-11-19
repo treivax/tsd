@@ -587,13 +587,13 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	for _, factData := range parsedFactsData {
 		fact := &Fact{
 			ID:     factData["id"].(string),
-			Type:   factData["type"].(string),
+			Type:   factData["reteType"].(string), // Utiliser le type RETE
 			Fields: make(map[string]interface{}),
 		}
 
-		// Copier tous les champs sauf id et type
+		// Copier tous les champs sauf id et reteType
 		for key, value := range factData {
-			if key != "id" && key != "type" {
+			if key != "id" && key != "reteType" {
 				fact.Fields[key] = value
 			}
 		}

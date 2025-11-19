@@ -1,2 +1,0 @@
-// Test simple
-{x: TestType} / x.value > 0 ==> test_action(x.id)

@@ -430,13 +430,24 @@ FactField <- name:IdentName ":" _ value:FactValue {
     }, nil
 }
 
-FactValue <- StringLiteral / Number / BooleanLiteral / IdentName {
-    // IdentName pour les valeurs non-quotées comme des IDs
+FactValue <- StringLiteral / Number / BooleanLiteral / ComplexIdentifier {
+    // ComplexIdentifier pour les valeurs non-quotées complexes comme des IDs
     return map[string]interface{}{
         "type": "identifier",
         "value": string(c.text),
     }, nil
 }
+
+ComplexIdentifier <- ComplexIdentStart ComplexIdentContinue* {
+    return string(c.text), nil
+}
+
+ComplexIdentStart <- [a-zA-Z0-9_] / UnicodeLetterStart
+
+ComplexIdentContinue <- [a-zA-Z0-9_-] / UnicodeLetterContinue / SpecialFactChar
+
+// Caractères spéciaux autorisés dans les valeurs de faits
+SpecialFactChar <- [-_:.]
 
 IdentName <- IdentStart IdentContinue* {
     return string(c.text), nil
@@ -444,7 +455,7 @@ IdentName <- IdentStart IdentContinue* {
 
 IdentStart <- [a-zA-Z_] / UnicodeLetterStart
 
-IdentContinue <- [a-zA-Z0-9_] / UnicodeLetterContinue / PunctuationChar
+IdentContinue <- [a-zA-Z0-9_-] / UnicodeLetterContinue / PunctuationChar
 
 // Support pour les caractères étendus les plus courants (Latin étendu, accents français)
 UnicodeLetterStart <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
@@ -456,7 +467,7 @@ UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
                          [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF] /
                          [\u0300-\u036F] / [\u1AB0-\u1AFF] / [\u1DC0-\u1DFF]
 
-PunctuationChar <- [-] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
+PunctuationChar <- [-_] / ['] / [.] / [\u2010-\u2015] / [\u2032-\u2037]
 
 _ <- (Whitespace / Comment)*
 

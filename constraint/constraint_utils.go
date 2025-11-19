@@ -521,7 +521,7 @@ func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
 
 	for i, fact := range program.Facts {
 		reteFact := map[string]interface{}{
-			"type": fact.TypeName,
+			"reteType": fact.TypeName, // Type RETE (ex: "Balance")
 		}
 
 		// Variables pour gérer l'ID du fait
@@ -575,6 +575,9 @@ func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
 
 		// Définir l'ID du fait (nécessaire pour le réseau RETE)
 		reteFact["id"] = factID
+
+		// CORRECTION CRITIQUE: Assurer que le type RETE est toujours préservé
+		reteFact["reteType"] = fact.TypeName
 
 		reteFacts = append(reteFacts, reteFact)
 	}

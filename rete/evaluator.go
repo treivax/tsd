@@ -442,6 +442,16 @@ func (e *AlphaConditionEvaluator) evaluateVariable(variable constraint.Variable)
 
 // evaluateVariableByName évalue une variable par nom
 func (e *AlphaConditionEvaluator) evaluateVariableByName(name string) (interface{}, error) {
+	// CORRECTION: Traiter les accès aux champs mal parsés comme "d.name"
+	if strings.Contains(name, ".") {
+		parts := strings.Split(name, ".")
+		if len(parts) == 2 {
+			objectName := parts[0]
+			fieldName := parts[1]
+			return e.evaluateFieldAccessByName(objectName, fieldName)
+		}
+	}
+
 	fact, exists := e.variableBindings[name]
 	if !exists {
 		return nil, fmt.Errorf("variable non liée: %s", name)

@@ -4,6 +4,9 @@ bin/
 *_test_runner
 *_coverage_runner
 integration
+runner
+*/runner
+*/alpha_detailed_runner
 
 # Go test coverage
 *.out

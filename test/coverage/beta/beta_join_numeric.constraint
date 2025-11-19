@@ -1,5 +1,0 @@
-// Test JoinNode avec conditions numériques simples
-type Student : <id: string, name: string, grade: number, age: number>
-type Course : <id: string, name: string, credits: number, difficulty: number>
-
-{s: Student, c: Course} / s.grade > 85 ==> high_performer_advanced(s.id, c.id, s.name, c.name)

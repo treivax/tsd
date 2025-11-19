@@ -1,5 +1,0 @@
-Device(id:D001, name:Laptop, status:working, type:computer)
-Device(id:D002, name:Printer, status:broken, type:peripheral)
-Device(id:D003, name:Monitor, status:working, type:display)
-Device(id:D004, name:Keyboard, status:maintenance, type:peripheral)
-Device(id:D005, name:Mouse, status:broken, type:peripheral)

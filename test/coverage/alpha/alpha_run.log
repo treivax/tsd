@@ -1,0 +1,625 @@
+🔬 TESTS DE COUVERTURE ALPHA NODES - FORMAT DÉTAILLÉ
+=====================================================
+📊 26 tests Alpha découverts
+
+🧪 Test 1/26: alpha_abs_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_abs_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_abs_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Balance
+   📍 Contrainte NOT détectée: map[left:map[args:[map[name:b.amount type:variable]] name:ABS type:functionCall] operator:> right:map[type:number value:100] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Balance
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B001, Type:credit, Fields:map[amount:150 id:B001]}
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B002, Type:debit, Fields:map[amount:-25 id:B002]}
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B003, Type:credit, Fields:map[amount:75 id:B003]}
+✅ Succès (958.966µs) - 3 tokens, 0 actions
+
+🧪 Test 2/26: alpha_abs_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_abs_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_abs_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Balance
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Balance
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B001, Type:credit, Fields:map[amount:150 id:B001]}
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B002, Type:debit, Fields:map[amount:-200 id:B002]}
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:B003, Type:credit, Fields:map[amount:50 id:B003]}
+✅ Succès (762.023µs) - 3 tokens, 0 actions
+
+🧪 Test 3/26: alpha_boolean_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_boolean_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_boolean_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Account
+   📍 Contrainte NOT détectée: map[left:map[name:a.active type:variable] operator:== right:map[type:boolean value:true] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Account
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:ACC001, Type:Account, Fields:map[active:true balance:1000 id:ACC001]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Account: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: a.active
+
+🧪 Test 4/26: alpha_boolean_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_boolean_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_boolean_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Account
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Account
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:ACC001, Type:Account, Fields:map[active:true balance:1000 id:ACC001]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Account: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: a.active
+
+🧪 Test 5/26: alpha_comparison_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_comparison_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_comparison_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Product
+   📍 Contrainte NOT détectée: map[left:map[name:prod.price type:variable] operator:> right:map[type:number value:100] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Product
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:PROD001, Type:Product, Fields:map[category:electronics id:PROD001 price:150]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Product: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: prod.price
+
+🧪 Test 6/26: alpha_comparison_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_comparison_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_comparison_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Product
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Product
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:PROD001, Type:Product, Fields:map[category:electronics id:PROD001 price:150]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Product: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: prod.price
+
+🧪 Test 7/26: alpha_contains_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_contains_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_contains_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Message
+   📍 Contrainte NOT détectée: map[left:map[name:m.content type:variable] operator:CONTAINS right:map[type:string value:urgent] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Message
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:M001, Type:Message, Fields:map[content:This is urgent please respond id:M001 urgent:true]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Message: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: m.content
+
+🧪 Test 8/26: alpha_contains_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_contains_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_contains_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Message
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Message
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:M001, Type:Message, Fields:map[content:This is urgent please respond id:M001 urgent:true]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Message: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: m.content
+
+🧪 Test 9/26: alpha_equal_sign_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_equal_sign_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_equal_sign_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Customer
+   📍 Contrainte NOT détectée: map[left:map[name:c.tier type:variable] operator:== right:map[type:string value:gold] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Customer
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:C001, Type:Customer, Fields:map[id:C001 points:5000 tier:gold]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Customer: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: c.tier
+
+🧪 Test 10/26: alpha_equal_sign_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_equal_sign_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_equal_sign_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Customer
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Customer
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:C001, Type:Customer, Fields:map[id:C001 points:5000 tier:gold]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Customer: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: c.tier
+
+🧪 Test 11/26: alpha_equality_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_equality_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_equality_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Person
+   📍 Contrainte NOT détectée: map[left:map[name:p.age type:variable] operator:== right:map[type:number value:25] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Person
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P001, Type:Person, Fields:map[age:25 id:P001 status:active]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Person: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: p.age
+
+🧪 Test 12/26: alpha_equality_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_equality_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_equality_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Person
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Person
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P001, Type:Person, Fields:map[age:25 id:P001 status:active]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Person: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: p.age
+
+🧪 Test 13/26: alpha_in_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_in_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_in_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Status
+   📍 Contrainte NOT détectée: map[left:map[name:s.state type:variable] operator:IN right:map[elements:[map[type:string value:active] map[type:string value:pending]] type:arrayLiteral] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Status
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:S001, Type:Status, Fields:map[id:S001 priority:1 state:active]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Status: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: s.state
+
+🧪 Test 14/26: alpha_in_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_in_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_in_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Status
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Status
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:S001, Type:Status, Fields:map[id:S001 priority:1 state:active]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Status: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: s.state
+
+🧪 Test 15/26: alpha_inequality_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_inequality_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_inequality_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Order
+   📍 Contrainte NOT détectée: map[left:map[name:o.status type:variable] operator:!= right:map[type:string value:cancelled] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Order
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:ORD001, Type:Order, Fields:map[id:ORD001 status:pending total:100]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Order: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: o.status
+
+🧪 Test 16/26: alpha_inequality_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_inequality_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_inequality_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Order
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Order
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:ORD001, Type:Order, Fields:map[id:ORD001 status:pending total:100]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Order: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: o.status
+
+🧪 Test 17/26: alpha_length_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_length_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_length_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Password
+   📍 Contrainte NOT détectée: map[left:map[args:[map[name:p.value type:variable]] name:LENGTH type:functionCall] operator:>= right:map[type:number value:8] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Password
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P001, Type:Password, Fields:map[id:P001 secure:true value:password123]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Password: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: erreur évaluation argument[0] pour LENGTH: variable non liée: p.value
+
+🧪 Test 18/26: alpha_length_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_length_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_length_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Password
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Password
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P001, Type:Password, Fields:map[id:P001 secure:true value:password123]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Password: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: erreur évaluation argument[0] pour LENGTH: variable non liée: p.value
+
+🧪 Test 19/26: alpha_like_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_like_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_like_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Email
+   📍 Contrainte NOT détectée: map[left:map[name:e.address type:variable] operator:LIKE right:map[type:string value:%@company.com] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Email
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:E001, Type:Email, Fields:map[address:john@company.com id:E001 verified:true]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Email: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: e.address
+
+🧪 Test 20/26: alpha_like_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_like_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_like_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Email
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Email
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:E001, Type:Email, Fields:map[address:john@company.com id:E001 verified:true]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Email: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: e.address
+
+🧪 Test 21/26: alpha_matches_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_matches_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_matches_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Code
+   📍 Contrainte NOT détectée: map[left:map[name:c.value type:variable] operator:MATCHES right:map[type:string value:CODE[0-9]+] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Code
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:C001, Type:Code, Fields:map[active:true id:C001 value:CODE123]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Code: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: c.value
+
+🧪 Test 22/26: alpha_matches_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_matches_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_matches_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Code
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Code
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:C001, Type:Code, Fields:map[active:true id:C001 value:CODE123]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Code: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: c.value
+
+🧪 Test 23/26: alpha_string_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_string_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_string_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: User
+   📍 Contrainte NOT détectée: map[left:map[name:u.role type:variable] operator:== right:map[type:string value:admin] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode User
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:U001, Type:User, Fields:map[id:U001 name:Alice role:admin]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_User: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: variable non liée: u.role
+
+🧪 Test 24/26: alpha_string_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_string_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_string_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: User
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode User
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:U001, Type:User, Fields:map[id:U001 name:Alice role:admin]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_User: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: variable non liée: u.role
+
+🧪 Test 25/26: alpha_upper_negative
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_upper_negative.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_upper_negative.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Department
+   📍 Contrainte NOT détectée: map[left:map[args:[map[name:d.name type:variable]] name:UPPER type:functionCall] operator:== right:map[type:string value:FINANCE] type:comparison]
+   🚫 Détection contrainte NOT - création d'un AlphaNode de négation
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Department
+   ✓ AlphaNode de négation créé: rule_0_alpha -> rule_0_terminal
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:D001, Type:Department, Fields:map[active:true id:D001 name:finance]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Department: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation condition niée: erreur évaluation côté gauche: erreur évaluation argument[0] pour UPPER: variable non liée: d.name
+
+🧪 Test 26/26: alpha_upper_positive
+🔧 PIPELINE MULTIFILES CONSTRAINT → RETE
+========================================
+📁 Fichiers: [/home/resinsec/dev/tsd/test/coverage/alpha/alpha_upper_positive.constraint]
+🔍 Étape 1/4: Parsing itératif des fichiers...
+  📄 Parsing fichier 1/1: /home/resinsec/dev/tsd/test/coverage/alpha/alpha_upper_positive.constraint
+✅ Parsing itératif réussi
+📊 Statistiques: 1 types, 1 règles, 0 faits de 1 fichiers
+🔍 Étape 2/4: Conversion au format RETE...
+🔍 Étape 3/4: Extraction composants pour RETE...
+✅ Trouvé 1 types et 1 expressions
+🔍 Étape 4/4: Construction réseau RETE...
+   ✓ TypeNode créé: Department
+   ✓ AlphaNode rule_0_alpha connecté au TypeNode Department
+   ✓ Règle créée: rule_0
+✅ Réseau construit avec 1 nœuds terminaux
+🎯 PIPELINE MULTIFILES TERMINÉ
+========================================
+
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:D001, Type:Department, Fields:map[active:true id:D001 name:finance]}
+❌ Échec: Erreur soumission fait: erreur propagation fait vers type_Department: erreur propagation fait vers rule_0_alpha: erreur évaluation condition Alpha: erreur évaluation côté gauche: erreur évaluation argument[0] pour UPPER: variable non liée: d.name
+
+🎯 RÉSUMÉ FINAL - ALPHA DÉTAILLÉ
+===============================
+✅ Tests réussis: 2/26 (7.7%)
+🔢 Total tokens: 30
+⚡ Total actions: 0
+📄 Rapport détaillé: /home/resinsec/dev/tsd/ALPHA_NODES_DETAILED_RESULTS.md

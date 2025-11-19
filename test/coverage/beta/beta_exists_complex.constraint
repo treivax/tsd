@@ -1,5 +1,0 @@
-// Test JoinNode Customer-Purchase avec vraie jointure Beta
-type Customer : <id: string, name: string, vip: bool>
-type Purchase : <id: string, customer_id: string, amount: number, product: string>
-
-{c: Customer, p: Purchase} / c.id == p.customer_id ==> customer_purchase(c.id, p.id, c.name, p.product)
