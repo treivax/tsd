@@ -1,7 +1,9 @@
 package rete
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -85,6 +87,42 @@ func (rn *ReteNetwork) LoadFromAST(program *Program) error {
 	fmt.Printf("   - %d TerminalNodes\n", len(rn.TerminalNodes))
 
 	return nil
+}
+
+// LoadFromGenericAST construit le réseau RETE à partir d'un AST générique (interface{})
+func (rn *ReteNetwork) LoadFromGenericAST(programData interface{}) error {
+	fmt.Printf("🏗️  Construction du réseau RETE à partir d'un AST générique\n")
+
+	// Convertir l'interface{} en Program
+	program, err := rn.convertToProgram(programData)
+	if err != nil {
+		return fmt.Errorf("erreur conversion AST: %w", err)
+	}
+
+	// Utiliser la méthode standard
+	return rn.LoadFromAST(program)
+}
+
+// convertToProgram convertit des données génériques en structure Program
+func (rn *ReteNetwork) convertToProgram(data interface{}) (*Program, error) {
+	// Première approche: essayer une conversion directe
+	if program, ok := data.(*Program); ok {
+		return program, nil
+	}
+
+	// Deuxième approche: conversion via JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("erreur sérialisation JSON: %w", err)
+	}
+
+	var program Program
+	err = json.Unmarshal(jsonData, &program)
+	if err != nil {
+		return nil, fmt.Errorf("erreur désérialisation JSON: %w", err)
+	}
+
+	return &program, nil
 }
 
 // createAlphaNodes crée les nœuds alpha pour une expression
@@ -297,4 +335,43 @@ func (rn *ReteNetwork) GetAdvancedNodeStatistics() map[string]interface{} {
 	}
 
 	return stats
+}
+
+// SubmitFactsFromGrammar traite les faits parsés par la grammaire de contraintes
+func (rn *ReteNetwork) SubmitFactsFromGrammar(parsedFacts []map[string]interface{}) error {
+	fmt.Printf("🔥 Soumission de %d faits parsés par la grammaire au réseau RETE\n", len(parsedFacts))
+
+	for i, factData := range parsedFacts {
+		// Créer un objet Fact à partir des données parsées
+		fact := &Fact{
+			ID:        factData["id"].(string),
+			Type:      factData["type"].(string),
+			Fields:    make(map[string]interface{}),
+			Timestamp: time.Now(),
+		}
+
+		// Copier tous les champs, y compris l'id dans Fields
+		// Le réseau RETE s'attend à ce que l'ID soit aussi dans Fields
+		for key, value := range factData {
+			if key != "type" { // Copier tous les champs sauf "type"
+				fact.Fields[key] = value
+			}
+		}
+
+		fmt.Printf("📋 Fait %d parsé: %s (Type: %s)\n", i+1, fact.ID, fact.Type)
+
+		// Vérifier que le type existe dans le réseau
+		if _, exists := rn.TypeNodes[fact.Type]; !exists {
+			return fmt.Errorf("fait %d: type '%s' non défini dans le réseau RETE", i+1, fact.Type)
+		}
+
+		// Soumettre le fait au réseau
+		err := rn.SubmitFact(fact)
+		if err != nil {
+			return fmt.Errorf("erreur soumission fait %d (%s): %w", i+1, fact.ID, err)
+		}
+	}
+
+	fmt.Printf("✅ Tous les faits parsés ont été soumis avec succès au réseau RETE\n")
+	return nil
 }

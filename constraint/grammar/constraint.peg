@@ -14,9 +14,10 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types et expressions
+    // Séparer types, expressions et faits
     types := []interface{}{}
     expressions := []interface{}{}
+    facts := []interface{}{}
 
     if statements != nil {
         for _, stmt := range statements.([]interface{}) {
@@ -25,6 +26,8 @@ Start <- _ statements:StatementList _ EOF {
                     types = append(types, stmt)
                 } else if stmtMap["type"] == "expression" {
                     expressions = append(expressions, stmt)
+                } else if stmtMap["type"] == "fact" {
+                    facts = append(facts, stmt)
                 }
             }
         }
@@ -33,6 +36,7 @@ Start <- _ statements:StatementList _ EOF {
     return map[string]interface{}{
         "types": types,
         "expressions": expressions,
+        "facts": facts,
     }, nil
 }
 
@@ -46,7 +50,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / Expression
+Statement <- TypeDefinition / Expression / Fact
 
 TypeDefinition <- "type" _ name:IdentName _ ":" _ "<" _ fields:FieldList _ ">" {
     return map[string]interface{}{
@@ -372,6 +376,40 @@ StringLiteral <- "\"" chars:DoubleStringChar* "\"" {
 DoubleStringChar <- !'"' char:. { return string(char.([]byte)), nil }
 
 SingleStringChar <- !'\'' char:. { return string(char.([]byte)), nil }
+
+// Fact définit le parsing d'un fait avec le nouveau format TypeName(field:value, ...)
+Fact <- typeName:IdentName "(" _ fields:FactFieldList _ ")" {
+    return map[string]interface{}{
+        "type": "fact",
+        "typeName": typeName,
+        "fields": fields,
+    }, nil
+}
+
+FactFieldList <- first:FactField rest:(_ "," _ FactField)* {
+    fields := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            fields = append(fields, item.([]interface{})[3])
+        }
+    }
+    return fields, nil
+}
+
+FactField <- name:IdentName ":" _ value:FactValue {
+    return map[string]interface{}{
+        "name": name,
+        "value": value,
+    }, nil
+}
+
+FactValue <- StringLiteral / Number / BooleanLiteral / IdentName {
+    // IdentName pour les valeurs non-quotées comme des IDs
+    return map[string]interface{}{
+        "type": "identifier",
+        "value": string(c.text),
+    }, nil
+}
 
 IdentName <- [a-zA-Z][a-zA-Z0-9_]* {
     return string(c.text), nil

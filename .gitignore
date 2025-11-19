@@ -9,6 +9,10 @@ bin/
 coverage.html
 coverage.txt
 
+# Test reports
+complete_test_report.txt
+*_test_report.txt
+
 # Debug files
 *_debug
 temp_*

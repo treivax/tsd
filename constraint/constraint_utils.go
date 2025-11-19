@@ -194,104 +194,135 @@ func GetValueType(value interface{}) string {
 }
 
 // ValidateTypeCompatibility vérifie la compatibilité des types dans les comparaisons
+// ValidateTypeCompatibility validates type compatibility within constraints
 func ValidateTypeCompatibility(program Program, constraint interface{}, expressionIndex int) error {
-	switch c := constraint.(type) {
-	case map[string]interface{}:
-		constraintType, ok := c["type"].(string)
+	constraintMap, ok := constraint.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	constraintType, ok := constraintMap["type"].(string)
+	if !ok {
+		return nil
+	}
+
+	switch constraintType {
+	case "comparison":
+		return validateComparisonConstraint(program, constraintMap, expressionIndex)
+	case "logicalExpr":
+		return validateLogicalExpressionConstraint(program, constraintMap, expressionIndex)
+	case "binaryOp":
+		return validateBinaryOpConstraint(program, constraintMap, expressionIndex)
+	}
+	return nil
+}
+
+// validateComparisonConstraint handles comparison constraint validation
+func validateComparisonConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
+	left := c["left"]
+	right := c["right"]
+
+	if left == nil || right == nil {
+		return nil
+	}
+
+	// Validate type compatibility between operands
+	if err := validateOperandTypeCompatibility(program, left, right, expressionIndex); err != nil {
+		return err
+	}
+
+	// Recursive validation for operands
+	if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
+		return err
+	}
+	if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateOperandTypeCompatibility checks if two operands have compatible types
+func validateOperandTypeCompatibility(program Program, left, right interface{}, expressionIndex int) error {
+	leftType, err := getOperandType(program, left, expressionIndex)
+	if err != nil {
+		return err
+	}
+
+	rightType, err := getOperandType(program, right, expressionIndex)
+	if err != nil {
+		return err
+	}
+
+	// Check compatibility
+	if leftType != "unknown" && rightType != "unknown" && rightType != "variable" {
+		if leftType != rightType {
+			return fmt.Errorf("incompatibilité de types dans la comparaison: %s vs %s", leftType, rightType)
+		}
+	}
+
+	return nil
+}
+
+// getOperandType determines the type of an operand in a constraint
+func getOperandType(program Program, operand interface{}, expressionIndex int) (string, error) {
+	operandMap, ok := operand.(map[string]interface{})
+	if !ok {
+		return GetValueType(operand), nil
+	}
+
+	if operandMap["type"] == "fieldAccess" {
+		object := operandMap["object"].(string)
+		field := operandMap["field"].(string)
+		return GetFieldType(program, object, field, expressionIndex)
+	}
+
+	return GetValueType(operand), nil
+}
+
+// validateLogicalExpressionConstraint handles logical expression validation
+func validateLogicalExpressionConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
+	if left := c["left"]; left != nil {
+		if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
+			return err
+		}
+	}
+
+	operations, ok := c["operations"].([]interface{})
+	if !ok {
+		return nil
+	}
+
+	for _, op := range operations {
+		opMap, ok := op.(map[string]interface{})
 		if !ok {
-			return nil
+			continue
 		}
 
-		switch constraintType {
-		case "comparison":
-			left := c["left"]
-			right := c["right"]
-
-			if left != nil && right != nil {
-				var leftType, rightType string
-				var err error
-
-				// Déterminer le type de la partie gauche
-				if leftMap, ok := left.(map[string]interface{}); ok {
-					if leftMap["type"] == "fieldAccess" {
-						object := leftMap["object"].(string)
-						field := leftMap["field"].(string)
-						leftType, err = GetFieldType(program, object, field, expressionIndex)
-						if err != nil {
-							return err
-						}
-					} else {
-						leftType = GetValueType(left)
-					}
-				}
-
-				// Déterminer le type de la partie droite
-				if rightMap, ok := right.(map[string]interface{}); ok {
-					if rightMap["type"] == "fieldAccess" {
-						object := rightMap["object"].(string)
-						field := rightMap["field"].(string)
-						rightType, err = GetFieldType(program, object, field, expressionIndex)
-						if err != nil {
-							return err
-						}
-					} else {
-						rightType = GetValueType(right)
-					}
-				} else {
-					rightType = GetValueType(right)
-				}
-
-				// Vérifier la compatibilité
-				if leftType != "unknown" && rightType != "unknown" && rightType != "variable" {
-					if leftType != rightType {
-						return fmt.Errorf("incompatibilité de types dans la comparaison: %s vs %s", leftType, rightType)
-					}
-				}
-			}
-
-			// Validation récursive pour les opérands
-			if left != nil {
-				if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if right != nil {
-				if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
-					return err
-				}
-			}
-
-		case "logicalExpr":
-			if left := c["left"]; left != nil {
-				if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if operations, ok := c["operations"].([]interface{}); ok {
-				for _, op := range operations {
-					if opMap, ok := op.(map[string]interface{}); ok {
-						if right := opMap["right"]; right != nil {
-							if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
-								return err
-							}
-						}
-					}
-				}
-			}
-
-		case "binaryOp":
-			if left := c["left"]; left != nil {
-				if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if right := c["right"]; right != nil {
-				if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
-					return err
-				}
+		if right := opMap["right"]; right != nil {
+			if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
+				return err
 			}
 		}
 	}
+
+	return nil
+}
+
+// validateBinaryOpConstraint handles binary operation validation
+func validateBinaryOpConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
+	if left := c["left"]; left != nil {
+		if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
+			return err
+		}
+	}
+
+	if right := c["right"]; right != nil {
+		if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -380,6 +411,12 @@ func ValidateProgram(result interface{}) error {
 		return fmt.Errorf("erreur validation types: %v", err)
 	}
 
+	// Validation des faits
+	err = ValidateFacts(program)
+	if err != nil {
+		return fmt.Errorf("erreur validation faits: %v", err)
+	}
+
 	// Validation des accès aux champs dans les contraintes
 	for i, expression := range program.Expressions {
 		if expression.Constraints != nil {
@@ -413,6 +450,134 @@ func ValidateProgram(result interface{}) error {
 		}
 	}
 
-	fmt.Printf("✓ Programme valide avec %d type(s) et %d expression(s)\n", len(program.Types), len(program.Expressions))
+	fmt.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
 	return nil
+}
+
+// ValidateFacts vérifie que tous les faits parsés sont cohérents avec les définitions de types
+func ValidateFacts(program Program) error {
+	definedTypes := make(map[string]TypeDefinition)
+	for _, typeDef := range program.Types {
+		definedTypes[typeDef.Name] = typeDef
+	}
+
+	for i, fact := range program.Facts {
+		// Vérifier que le type du fait existe
+		typeDef, exists := definedTypes[fact.TypeName]
+		if !exists {
+			return fmt.Errorf("fait %d: type non défini: %s", i+1, fact.TypeName)
+		}
+
+		// Créer une map des champs définis pour ce type
+		definedFields := make(map[string]string)
+		for _, field := range typeDef.Fields {
+			definedFields[field.Name] = field.Type
+		}
+
+		// Vérifier chaque champ du fait
+		for j, factField := range fact.Fields {
+			// Vérifier que le champ existe dans le type
+			expectedType, exists := definedFields[factField.Name]
+			if !exists {
+				return fmt.Errorf("fait %d, champ %d: champ '%s' non défini dans le type %s", i+1, j+1, factField.Name, fact.TypeName)
+			}
+
+			// Vérifier la compatibilité du type de la valeur
+			err := ValidateFactFieldType(factField.Value, expectedType, fact.TypeName, factField.Name)
+			if err != nil {
+				return fmt.Errorf("fait %d, champ %d: %v", i+1, j+1, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidateFactFieldType vérifie que la valeur d'un champ de fait correspond au type attendu
+func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName string) error {
+	switch expectedType {
+	case "string":
+		if value.Type != "string" && value.Type != "identifier" {
+			return fmt.Errorf("champ '%s' du type %s attend une valeur string, reçu %s", fieldName, typeName, value.Type)
+		}
+	case "number":
+		if value.Type != "number" {
+			return fmt.Errorf("champ '%s' du type %s attend une valeur number, reçu %s", fieldName, typeName, value.Type)
+		}
+	case "bool", "boolean":
+		if value.Type != "boolean" {
+			return fmt.Errorf("champ '%s' du type %s attend une valeur boolean, reçu %s", fieldName, typeName, value.Type)
+		}
+	default:
+		// Type non reconnu, on accepte pour l'instant
+		return nil
+	}
+	return nil
+}
+
+// ConvertFactsToReteFormat convertit les faits parsés par la grammaire vers le format attendu par le réseau RETE
+func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
+	var reteFacts []map[string]interface{}
+
+	for i, fact := range program.Facts {
+		reteFact := map[string]interface{}{
+			"type": fact.TypeName,
+		}
+
+		// Variables pour gérer l'ID du fait
+		var factID string
+		hasExplicitID := false
+
+		// Convertir les champs
+		for _, field := range fact.Fields {
+			var convertedValue interface{}
+			switch field.Value.Type {
+			case "string":
+				if strVal, ok := field.Value.Value.(map[string]interface{}); ok {
+					convertedValue = strVal["value"]
+				} else {
+					convertedValue = field.Value.Value
+				}
+			case "number":
+				if numVal, ok := field.Value.Value.(map[string]interface{}); ok {
+					convertedValue = numVal["value"]
+				} else {
+					convertedValue = field.Value.Value
+				}
+			case "boolean":
+				if boolVal, ok := field.Value.Value.(map[string]interface{}); ok {
+					convertedValue = boolVal["value"]
+				} else {
+					convertedValue = field.Value.Value
+				}
+			case "identifier":
+				// Les identifiants non-quotés sont traités comme des strings
+				convertedValue = field.Value.Value
+			default:
+				convertedValue = field.Value.Value
+			}
+
+			// Ajouter le champ au fact, y compris l'ID s'il existe
+			reteFact[field.Name] = convertedValue
+
+			// Vérifier si c'est un champ ID
+			if field.Name == "id" {
+				factID = convertedValue.(string)
+				hasExplicitID = true
+			}
+		}
+
+		// Générer un ID si pas fourni explicitement
+		if !hasExplicitID {
+			factID = fmt.Sprintf("parsed_fact_%d", i+1)
+			reteFact["id"] = factID
+		}
+
+		// Définir l'ID du fait (nécessaire pour le réseau RETE)
+		reteFact["id"] = factID
+
+		reteFacts = append(reteFacts, reteFact)
+	}
+
+	return reteFacts
 }
