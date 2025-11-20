@@ -11,6 +11,23 @@ import (
 	"github.com/treivax/tsd/internal/validation"
 )
 
+// Types locaux pour les résultats de tests
+type RETETestResult struct {
+	TestName       string
+	Rules          []string
+	Facts          []string
+	ObservedTokens []RETETokenInfo
+	Success        bool
+	ValidationNote string
+	ExecutionTime  time.Duration
+}
+
+type RETETokenInfo struct {
+	ID     string
+	Facts  []string
+	RuleID string
+}
+
 const (
 	// Couleurs pour l'affichage
 	ColorReset  = "\033[0m"
@@ -53,23 +70,68 @@ func NewUnifiedTestRunner(projectRoot string) *UnifiedTestRunner {
 }
 
 // executeTestWithCompleteRete exécute un test avec la nouvelle implémentation RETE complète
-func (u *UnifiedTestRunner) executeTestWithCompleteRete(constraintFile, factsFile string) validation.RETETestResult {
-	testPath := strings.TrimSuffix(constraintFile, ".constraint")
+func (u *UnifiedTestRunner) executeTestWithCompleteRete(constraintFile, factsFile string) RETETestResult {
+	start := time.Now()
+	testName := filepath.Base(constraintFile)
 
-	// Utiliser la fonction de validation RETE complète
-	result, err := validation.ValidateRETEWithFile(testPath, 5*time.Minute)
+	// Créer un nouveau réseau RETE
+	network := validation.NewRETEValidationNetwork()
+
+	// Charger les contraintes
+	err := network.ParseConstraintFile(constraintFile)
 	if err != nil {
-		return validation.RETETestResult{
-			TestName:       filepath.Base(constraintFile),
+		return RETETestResult{
+			TestName:       testName,
 			Rules:          []string{},
 			Facts:          []string{},
-			ObservedTokens: []validation.RETETokenInfo{},
+			ObservedTokens: []RETETokenInfo{},
 			Success:        false,
-			ValidationNote: fmt.Sprintf("Erreur: %v", err),
+			ValidationNote: fmt.Sprintf("Erreur parsing contraintes: %v", err),
+			ExecutionTime:  time.Since(start),
 		}
 	}
 
-	return *result
+	// Charger les faits
+	err = network.LoadFactsFile(factsFile)
+	if err != nil {
+		return RETETestResult{
+			TestName:       testName,
+			Rules:          []string{},
+			Facts:          []string{},
+			ObservedTokens: []RETETokenInfo{},
+			Success:        false,
+			ValidationNote: fmt.Sprintf("Erreur chargement faits: %v", err),
+			ExecutionTime:  time.Since(start),
+		}
+	}
+
+	// Obtenir les résultats
+	tokensCount, rulesCount := network.GetValidationResults()
+	terminals := network.GetTerminalTokens()
+
+	// Convertir les tokens en format d'affichage
+	observedTokens := make([]RETETokenInfo, 0, len(terminals))
+	for i, token := range terminals {
+		factStrs := make([]string, len(token.Facts))
+		for j, fact := range token.Facts {
+			factStrs[j] = fmt.Sprintf("%s:%s", fact.ID, fact.Type)
+		}
+		observedTokens = append(observedTokens, RETETokenInfo{
+			ID:     fmt.Sprintf("token_%d", i+1),
+			Facts:  factStrs,
+			RuleID: token.RuleName,
+		})
+	}
+
+	return RETETestResult{
+		TestName:       testName,
+		Rules:          []string{fmt.Sprintf("rules_loaded_%d", rulesCount)},
+		Facts:          []string{fmt.Sprintf("facts_processed")},
+		ObservedTokens: observedTokens,
+		Success:        tokensCount > 0,
+		ValidationNote: fmt.Sprintf("Tokens générés: %d", tokensCount),
+		ExecutionTime:  time.Since(start),
+	}
 }
 
 func (u *UnifiedTestRunner) DiscoverTests() error {
@@ -185,11 +247,11 @@ func (u *UnifiedTestRunner) categorizeTest(testName string) string {
 	}
 }
 
-func (u *UnifiedTestRunner) RunAllTests() ([]validation.RETETestResult, error) {
+func (u *UnifiedTestRunner) RunAllTests() ([]RETETestResult, error) {
 	fmt.Printf("%s🚀 EXÉCUTION COMPLÈTE DE TOUS LES TESTS RETE%s\n", ColorBlue+ColorBold, ColorReset)
 	fmt.Printf("==============================================\n\n")
 
-	var allResults []validation.RETETestResult
+	var allResults []RETETestResult
 	totalTests := 0
 	for _, suite := range u.suites {
 		totalTests += len(suite.Tests)
@@ -242,7 +304,7 @@ func (u *UnifiedTestRunner) RunAllTests() ([]validation.RETETestResult, error) {
 	return allResults, nil
 }
 
-func (u *UnifiedTestRunner) GenerateDetailedReport(results []validation.RETETestResult) string {
+func (u *UnifiedTestRunner) GenerateDetailedReport(results []RETETestResult) string {
 	report := strings.Builder{}
 	now := time.Now()
 
@@ -346,12 +408,12 @@ func (u *UnifiedTestRunner) GenerateDetailedReport(results []validation.RETETest
 		if len(result.ObservedTokens) > 0 {
 			for i, token := range result.ObservedTokens {
 				report.WriteString(fmt.Sprintf("**Token %d:**\n", i+1))
-				report.WriteString(fmt.Sprintf("- **Règle:** %s\n", token.RuleName))
-				report.WriteString(fmt.Sprintf("- **Clé:** `%s`\n", token.Key))
+				report.WriteString(fmt.Sprintf("- **Règle:** %s\n", token.RuleID))
+				report.WriteString(fmt.Sprintf("- **ID:** `%s`\n", token.ID))
 				report.WriteString("- **Faits composant le token:**\n")
 				j := 1
 				for _, fact := range token.Facts {
-					report.WriteString(fmt.Sprintf("  %d. %s: %s (ID: %s)\n", j, fact.Type, fact.Values, fact.ID))
+					report.WriteString(fmt.Sprintf("  %d. %s\n", j, fact))
 					j++
 				}
 				report.WriteString("\n")
@@ -421,7 +483,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var results []validation.RETETestResult
+	var results []RETETestResult
 	var err error
 
 	if !reportOnly {
