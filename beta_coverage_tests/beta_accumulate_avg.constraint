@@ -1,0 +1,6 @@
+// Test AccumulateNode - Fonction AVG
+type Employee : <id: string, name: string, department: string, salary: number>
+type Performance : <id: string, employee_id: string, score: number, quarter: string>
+
+{e: Employee} / e.department == "sales" AND AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5 ==> top_performer(e.id)
+{e: Employee} / e.department == "engineering" AND AVG(p: Performance / p.employee_id == e.id ; p.score) >= 9.0 ==> senior_engineer_candidate(e.id)

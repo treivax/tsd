@@ -1,0 +1,6 @@
+// Test AccumulateNode - Fonction SUM
+type Sale : <id: string, customer_id: string, amount: number, region: string>
+type Customer : <id: string, name: string, status: string>
+
+{c: Customer} / c.status == "premium" AND SUM(s: Sale / s.customer_id == c.id ; s.amount) > 1000 ==> high_value_customer(c.id)
+{c: Customer} / c.status == "regular" AND SUM(s: Sale / s.customer_id == c.id ; s.amount) > 500 ==> upgrade_candidate(c.id)

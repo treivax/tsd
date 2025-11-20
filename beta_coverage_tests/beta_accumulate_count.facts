@@ -1,0 +1,13 @@
+Product(id:"PROD001", category:"electronics", price:299.99, in_stock:true)
+Product(id:"PROD002", category:"books", price:19.99, in_stock:true)
+Product(id:"PROD003", category:"electronics", price:599.99, in_stock:false)
+
+Review(id:"REV001", product_id:"PROD001", rating:5, verified:true)
+Review(id:"REV002", product_id:"PROD001", rating:4, verified:true)
+Review(id:"REV003", product_id:"PROD001", rating:5, verified:true)
+Review(id:"REV004", product_id:"PROD001", rating:3, verified:false)
+Review(id:"REV005", product_id:"PROD001", rating:4, verified:true)
+Review(id:"REV006", product_id:"PROD001", rating:5, verified:true)
+Review(id:"REV007", product_id:"PROD002", rating:4, verified:true)
+Review(id:"REV008", product_id:"PROD002", rating:3, verified:true)
+Review(id:"REV009", product_id:"PROD003", rating:5, verified:true)

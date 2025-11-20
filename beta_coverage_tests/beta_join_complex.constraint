@@ -1,0 +1,7 @@
+// Test JoinNode complex - Jointures multiples avec conditions complexes
+type User : <id: string, name: string, age: number, city: string, status: string>
+type Order : <id: string, user_id: string, product_id: string, amount: number, date: string>  
+type Product : <id: string, name: string, category: string, price: number>
+
+{u: User, o: Order, p: Product} / u.id == o.user_id AND o.product_id == p.id AND u.age >= 25 AND p.price > 100 AND o.amount >= 2 ==> premium_customer_order(u.id, o.id, p.id)
+{u: User, o: Order, p: Product} / u.status == "vip" AND o.user_id == u.id AND p.id == o.product_id AND p.category == "luxury" ==> vip_luxury_purchase(u.id, p.name)

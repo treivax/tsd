@@ -1,0 +1,12 @@
+Sensor(id:"SENS001", location:"warehouse", type:"temperature")
+Sensor(id:"SENS002", location:"critical", type:"temperature")  
+Sensor(id:"SENS003", location:"office", type:"humidity")
+
+Reading(id:"READ001", sensor_id:"SENS001", value:-2, timestamp:"2025-01-01T08:00:00")
+Reading(id:"READ002", sensor_id:"SENS001", value:5, timestamp:"2025-01-01T12:00:00")
+Reading(id:"READ003", sensor_id:"SENS001", value:18, timestamp:"2025-01-01T16:00:00")
+Reading(id:"READ004", sensor_id:"SENS002", value:25, timestamp:"2025-01-01T08:00:00")
+Reading(id:"READ005", sensor_id:"SENS002", value:45, timestamp:"2025-01-01T12:00:00")
+Reading(id:"READ006", sensor_id:"SENS002", value:15, timestamp:"2025-01-01T16:00:00")
+Reading(id:"READ007", sensor_id:"SENS003", value:65, timestamp:"2025-01-01T08:00:00")
+Reading(id:"READ008", sensor_id:"SENS003", value:70, timestamp:"2025-01-01T12:00:00")

@@ -1,0 +1,8 @@
+// Test ExistsNode complex - Quantifications existentielles complexes
+type Company : <id: string, name: string, industry: string, size: string>
+type Department : <id: string, company_id: string, name: string, budget: number>
+type Employee : <id: string, department_id: string, name: string, position: string, salary: number>
+
+{c: Company} / c.industry == "tech" AND EXISTS (d: Department / d.company_id == c.id AND d.budget > 1000000) ==> well_funded_tech_company(c.id)
+{d: Department} / d.name == "engineering" AND EXISTS (e: Employee / e.department_id == d.id AND e.position == "senior" AND e.salary > 120000) ==> has_senior_talent(d.id)
+{c: Company} / c.size == "large" AND EXISTS (d: Department, e: Employee / d.company_id == c.id AND e.department_id == d.id AND e.position == "director" AND d.budget > 500000) ==> well_managed_large_company(c.id)

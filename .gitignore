@@ -7,6 +7,8 @@ integration
 runner
 */runner
 */alpha_detailed_runner
+rete-validate
+unified-rete-runner
 
 # Go test coverage
 *.out
@@ -16,6 +18,17 @@ coverage.txt
 # Test reports
 complete_test_report.txt
 *_test_report.txt
+RAPPORT_RETE_*.md
+RAPPORT_CORRECTIF_*.md
+VALIDATION_*.md
+BETA_VALIDATION_*.md
+NETTOYAGE_*.md
+RAPPORT_UNIFIE*.md
+
+# Backup files
+*.backup
+*.bak
+*.old
 
 # Debug files
 *_debug

@@ -1,0 +1,14 @@
+Company(id:"COMP001", name:"TechCorp", industry:"tech", size:"large")
+Company(id:"COMP002", name:"FinanceInc", industry:"finance", size:"medium")
+Company(id:"COMP003", name:"StartupXYZ", industry:"tech", size:"small")
+
+Department(id:"DEPT001", company_id:"COMP001", name:"engineering", budget:2500000)
+Department(id:"DEPT002", company_id:"COMP001", name:"marketing", budget:800000)
+Department(id:"DEPT003", company_id:"COMP002", name:"engineering", budget:1200000)  
+Department(id:"DEPT004", company_id:"COMP003", name:"engineering", budget:300000)
+
+Employee(id:"EMP001", department_id:"DEPT001", name:"Alice Director", position:"director", salary:180000)
+Employee(id:"EMP002", department_id:"DEPT001", name:"Bob Senior", position:"senior", salary:135000)
+Employee(id:"EMP003", department_id:"DEPT001", name:"Charlie Junior", position:"junior", salary:85000)
+Employee(id:"EMP004", department_id:"DEPT003", name:"Diana Senior", position:"senior", salary:125000)
+Employee(id:"EMP005", department_id:"DEPT004", name:"Eve Intern", position:"intern", salary:45000)

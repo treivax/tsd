@@ -1,0 +1,6 @@
+// Test AccumulateNode - Fonction COUNT
+type Product : <id: string, category: string, price: number, in_stock: bool>
+type Review : <id: string, product_id: string, rating: number, verified: bool>
+
+{p: Product} / p.in_stock == true AND COUNT(r: Review / r.product_id == p.id AND r.verified == true) >= 5 ==> well_reviewed_product(p.id)
+{p: Product} / p.category == "electronics" AND COUNT(r: Review / r.product_id == p.id AND r.rating >= 4) >= 3 ==> top_electronic(p.id)

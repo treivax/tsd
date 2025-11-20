@@ -1,0 +1,7 @@
+// Test AccumulateNode - Fonctions MIN et MAX  
+type Sensor : <id: string, location: string, type: string>
+type Reading : <id: string, sensor_id: string, value: number, timestamp: string>
+
+{s: Sensor} / s.type == "temperature" AND MIN(r: Reading / r.sensor_id == s.id ; r.value) < 0 ==> freezing_alert(s.id)
+{s: Sensor} / s.type == "temperature" AND MAX(r: Reading / r.sensor_id == s.id ; r.value) > 40 ==> overheating_alert(s.id)
+{s: Sensor} / s.location == "critical" AND MAX(r: Reading / r.sensor_id == s.id ; r.value) - MIN(r: Reading / r.sensor_id == s.id ; r.value) > 20 ==> high_variance_alert(s.id)

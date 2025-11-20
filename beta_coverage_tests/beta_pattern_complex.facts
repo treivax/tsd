@@ -1,0 +1,14 @@
+Customer(id:"CUST001", name:"Alice Smith", risk_level:"low", country:"US")
+Customer(id:"CUST002", name:"Bob Johnson", risk_level:"medium", country:"CA")
+Customer(id:"CUST003", name:"Charlie Brown", risk_level:"high", country:"US")
+
+Account(id:"ACC001", customer_id:"CUST001", balance:75000, type:"savings", status:"active")
+Account(id:"ACC002", customer_id:"CUST001", balance:25000, type:"checking", status:"active")  
+Account(id:"ACC003", customer_id:"CUST002", balance:45000, type:"savings", status:"active")
+Account(id:"ACC004", customer_id:"CUST003", balance:15000, type:"checking", status:"suspended")
+
+Transaction(id:"TXN001", account_id:"ACC001", amount:5000, type:"withdrawal", timestamp:"2025-01-15T10:00:00")
+Transaction(id:"TXN002", account_id:"ACC002", amount:15000, type:"withdrawal", timestamp:"2025-01-15T11:00:00")
+Transaction(id:"TXN003", account_id:"ACC001", amount:12000, type:"transfer", timestamp:"2025-01-15T12:00:00")
+Transaction(id:"TXN004", account_id:"ACC003", amount:8000, type:"deposit", timestamp:"2025-01-15T13:00:00")
+Transaction(id:"TXN005", account_id:"ACC004", amount:20000, type:"transfer", timestamp:"2025-01-15T14:00:00")

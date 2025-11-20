@@ -1,0 +1,18 @@
+Student(id:"STU001", name:"Alice", major:"computer_science", gpa:3.8)
+Student(id:"STU002", name:"Bob", major:"mathematics", gpa:3.2)
+Student(id:"STU003", name:"Charlie", major:"computer_science", gpa:2.9)
+Student(id:"STU004", name:"Diana", major:"physics", gpa:1.8)
+
+Enrollment(id:"ENR001", student_id:"STU001", course_id:"CS101", grade:"A")
+Enrollment(id:"ENR002", student_id:"STU001", course_id:"CS201", grade:"B") 
+Enrollment(id:"ENR003", student_id:"STU002", course_id:"MATH301", grade:"A")
+Enrollment(id:"ENR004", student_id:"STU002", course_id:"MATH401", grade:"F")
+Enrollment(id:"ENR005", student_id:"STU003", course_id:"CS101", grade:"B")
+Enrollment(id:"ENR006", student_id:"STU004", course_id:"PHY101", grade:"I")
+
+Course(id:"CS101", name:"Intro to Programming", credits:3, difficulty:"beginner")
+Course(id:"CS201", name:"Data Structures", credits:4, difficulty:"intermediate")
+Course(id:"CS401", name:"Machine Learning", credits:4, difficulty:"advanced")
+Course(id:"MATH301", name:"Linear Algebra", credits:3, difficulty:"intermediate") 
+Course(id:"MATH401", name:"Advanced Calculus", credits:4, difficulty:"advanced")
+Course(id:"PHY101", name:"Physics I", credits:3, difficulty:"beginner")
