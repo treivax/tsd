@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/treivax/tsd/internal/validation"
-	"github.com/treivax/tsd/pkg/testing"
 )
 
 const (
@@ -43,14 +42,12 @@ type TestPair struct {
 // UnifiedTestRunner gère l'exécution de tous les tests RETE
 type UnifiedTestRunner struct {
 	projectRoot string
-	testRunner  *testing.TestRunner
 	suites      []TestSuite
 }
 
 func NewUnifiedTestRunner(projectRoot string) *UnifiedTestRunner {
 	return &UnifiedTestRunner{
 		projectRoot: projectRoot,
-		testRunner:  testing.NewTestRunner(projectRoot),
 		suites:      make([]TestSuite, 0),
 	}
 }

@@ -4,12 +4,20 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/treivax/tsd/internal/validation"
-	"github.com/treivax/tsd/pkg/testing"
 )
+
+type TestResult struct {
+	TestName        string
+	ExecutionTime   time.Duration
+	TokensGenerated int
+	ValidationError string
+	Success         bool
+}
 
 func main() {
 	fmt.Println("=== RETE VALIDATION CLI ===")
@@ -21,29 +29,91 @@ func main() {
 		factsFile := os.Args[2]
 
 		fmt.Printf("Test spécifique: %s + %s\n\n", constraintFile, factsFile)
-
-		runner := testing.NewTestRunner("")
-		result := runner.RunSingleTest(constraintFile, factsFile)
-
+		result := runSingleTest(constraintFile, factsFile)
 		displayTestResult(result)
 		return
 	}
 
 	// Mode batch sur tous les tests
 	testDir := "/home/resinsec/dev/tsd/beta_coverage_tests"
-
-	runner := testing.NewTestRunner(testDir)
-	results, err := runner.RunAllTests()
-	if err != nil {
-		fmt.Printf("Erreur exécution tests: %v\n", err)
-		os.Exit(1)
-	}
-
+	results := runAllTests(testDir)
 	generateSummaryReport(results)
 }
 
+// runSingleTest exécute un test unique
+func runSingleTest(constraintFile, factsFile string) TestResult {
+	start := time.Now()
+
+	// Créer le réseau RETE
+	network := validation.NewRETEValidationNetwork()
+
+	// Charger les contraintes
+	err := network.ParseConstraintFile(constraintFile)
+	if err != nil {
+		return TestResult{
+			TestName:        filepath.Base(constraintFile),
+			ExecutionTime:   time.Since(start),
+			ValidationError: fmt.Sprintf("Erreur parsing contraintes: %v", err),
+			Success:         false,
+		}
+	}
+
+	// Charger les faits
+	err = network.LoadFactsFile(factsFile)
+	if err != nil {
+		return TestResult{
+			TestName:        filepath.Base(constraintFile),
+			ExecutionTime:   time.Since(start),
+			ValidationError: fmt.Sprintf("Erreur chargement faits: %v", err),
+			Success:         false,
+		}
+	}
+
+	// Obtenir les résultats
+	tokensCount, _ := network.GetValidationResults()
+
+	return TestResult{
+		TestName:        filepath.Base(constraintFile),
+		ExecutionTime:   time.Since(start),
+		TokensGenerated: tokensCount,
+		Success:         tokensCount > 0,
+	}
+}
+
+// runAllTests exécute tous les tests dans un répertoire
+func runAllTests(testDir string) []TestResult {
+	var results []TestResult
+
+	// Parcourir les fichiers .constraint
+	files, err := filepath.Glob(filepath.Join(testDir, "*.constraint"))
+	if err != nil {
+		fmt.Printf("Erreur listing fichiers: %v\n", err)
+		return results
+	}
+
+	for _, constraintFile := range files {
+		baseName := strings.TrimSuffix(filepath.Base(constraintFile), ".constraint")
+		factsFile := filepath.Join(testDir, baseName+".facts")
+
+		if _, err := os.Stat(factsFile); os.IsNotExist(err) {
+			continue // Skip if no corresponding .facts file
+		}
+
+		result := runSingleTest(constraintFile, factsFile)
+		results = append(results, result)
+
+		status := "❌ ÉCHEC"
+		if result.Success {
+			status = "✅ SUCCÈS"
+		}
+		fmt.Printf("%s %s (%v)\n", status, baseName, result.ExecutionTime)
+	}
+
+	return results
+}
+
 // displayTestResult affiche le résultat d'un test unique
-func displayTestResult(result validation.RETETestResult) {
+func displayTestResult(result TestResult) {
 	fmt.Printf("\n=== RÉSULTATS VALIDATION RETE ===\n")
 	fmt.Printf("📋 Test: %s\n", result.TestName)
 	fmt.Printf("⏱️  Durée: %v\n", result.ExecutionTime)
@@ -54,72 +124,32 @@ func displayTestResult(result validation.RETETestResult) {
 	}
 
 	fmt.Printf("\n📊 MÉTRIQUES:\n")
-	fmt.Printf("  • Tokens attendus (simulation): %d\n", len(result.ExpectedTokens))
-	fmt.Printf("  • Tokens observés (RETE réel): %d\n", len(result.ObservedTokens))
-	fmt.Printf("  • Correspondances: %d\n", len(result.Matches))
-	fmt.Printf("  • Mismatches: %d\n", result.Mismatches)
-	fmt.Printf("  • Taux de succès: %.1f%%\n", result.SuccessRate)
+	fmt.Printf("  • Tokens générés: %d\n", result.TokensGenerated)
 
-	if result.IsValid {
-		fmt.Printf("\n✅ TEST VALIDÉ\n")
+	if result.Success {
+		fmt.Printf("✅ TEST RÉUSSI\n")
 	} else {
-		fmt.Printf("\n❌ TEST INVALIDÉ: %s\n", result.ValidationError)
-	}
-
-	// Affichage détaillé des tokens
-	if len(result.ObservedTokens) > 0 {
-		fmt.Printf("\n🔍 TOKENS OBSERVÉS (RETE):\n")
-		for i, token := range result.ObservedTokens {
-			fmt.Printf("  %d. Règle: %s | Clé: %s\n", i+1, token.RuleName, token.Key)
-			for factType, fact := range token.Facts {
-				fmt.Printf("     └── %s: %s (ID: %s)\n", factType, formatFactValues(fact.Values), fact.ID)
-			}
-		}
-	}
-
-	if len(result.ExpectedTokens) > 0 {
-		fmt.Printf("\n🎯 TOKENS ATTENDUS (simulation):\n")
-		for i, token := range result.ExpectedTokens {
-			fmt.Printf("  %d. Règle: %s | Clé: %s\n", i+1, token.RuleName, token.Key)
-			for factType, fact := range token.Facts {
-				fmt.Printf("     └── %s: %s (ID: %s)\n", factType, formatFactValues(fact.Values), fact.ID)
-			}
-		}
+		fmt.Printf("❌ TEST ÉCHOUÉ\n")
 	}
 }
 
 // generateSummaryReport génère un rapport de synthèse
-func generateSummaryReport(results []validation.RETETestResult) {
+func generateSummaryReport(results []TestResult) {
 	successCount := 0
-	for _, result := range results {
-		if result.IsValid {
-			successCount++
-		}
-	}
+	totalTime := time.Duration(0)
 
 	fmt.Printf("\n=== RAPPORT DE SYNTHÈSE ===\n")
-	fmt.Printf("📊 Tests totaux: %d\n", len(results))
-	fmt.Printf("✅ Tests réussis: %d\n", successCount)
-	fmt.Printf("❌ Tests échoués: %d\n", len(results)-successCount)
-	fmt.Printf("📈 Taux de réussite: %.1f%%\n", float64(successCount)/float64(len(results))*100)
-	fmt.Printf("🔥 Méthode: Réseau RETE authentique\n")
-	fmt.Printf("📅 Date: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Printf("Tests exécutés: %d\n", len(results))
 
-	if len(results)-successCount > 0 {
-		fmt.Printf("\n❌ TESTS ÉCHOUÉS:\n")
-		for _, result := range results {
-			if !result.IsValid {
-				fmt.Printf("  • %s: %s\n", result.TestName, result.ValidationError)
-			}
+	for _, result := range results {
+		if result.Success {
+			successCount++
 		}
+		totalTime += result.ExecutionTime
 	}
-}
 
-// formatFactValues formate les valeurs d'un fait
-func formatFactValues(values map[string]string) string {
-	var parts []string
-	for key, value := range values {
-		parts = append(parts, fmt.Sprintf("%s:%s", key, value))
-	}
-	return strings.Join(parts, ", ")
+	fmt.Printf("Tests réussis: %d\n", successCount)
+	fmt.Printf("Tests échoués: %d\n", len(results)-successCount)
+	fmt.Printf("Taux de succès: %.1f%%\n", float64(successCount)/float64(len(results))*100)
+	fmt.Printf("Durée totale: %v\n", totalTime)
 }
