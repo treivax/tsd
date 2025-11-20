@@ -52,11 +52,11 @@ func (a *RETEAlphaNodeNew) AddToken(token *RETEToken) {
 
 // Noeud Beta (jointure)
 type RETEBetaNodeNew struct {
-	ID            string
-	LeftInput     RETENodeInterface
-	RightInput    RETENodeInterface
-	JoinCondition string
-	Tokens        map[string]*RETEToken
+	ID             string
+	LeftInput      RETENodeInterface
+	RightInput     RETENodeInterface
+	JoinConditions []string // Conditions à évaluer à ce niveau
+	Tokens         map[string]*RETEToken
 }
 
 func (b *RETEBetaNodeNew) GetID() string {
@@ -137,12 +137,15 @@ func (r *RETEValidationNetwork) AddRule(rule RETERule) {
 		for i := 1; i < len(variables); i++ {
 			betaNodeID := fmt.Sprintf("beta_%s_%d", rule.ID, i)
 
+			// Déterminer les conditions applicables à ce nœud
+			nodeConditions := r.extractConditionsForJoin(rule, variables[:i+1])
+
 			betaNode := &RETEBetaNodeNew{
-				ID:            betaNodeID,
-				LeftInput:     lastNode,
-				RightInput:    alphaNodes[variables[i]],
-				JoinCondition: "true", // Simple pour le moment
-				Tokens:        make(map[string]*RETEToken),
+				ID:             betaNodeID,
+				LeftInput:      lastNode,
+				RightInput:     alphaNodes[variables[i]],
+				JoinConditions: nodeConditions,
+				Tokens:         make(map[string]*RETEToken),
 			}
 
 			r.BetaNodes[betaNodeID] = betaNode
@@ -162,7 +165,7 @@ func (r *RETEValidationNetwork) populateNewBetaNode(betaNode *RETEBetaNodeNew) {
 
 	for _, leftToken := range leftTokens {
 		for _, rightToken := range rightTokens {
-			if r.evaluateJoinCondition(leftToken, rightToken) {
+			if r.evaluateJoinCondition(leftToken, rightToken, betaNode) {
 				joinedFacts := append(leftToken.Facts, rightToken.Facts...)
 				joinToken := &RETEToken{
 					ID:       fmt.Sprintf("join_%s_%s_%s", betaNode.ID, leftToken.ID, rightToken.ID),
@@ -230,7 +233,7 @@ func (r *RETEValidationNetwork) attemptJoin(betaNode *RETEBetaNodeNew, newToken 
 			leftToken, rightToken = oppositeToken, newToken
 		}
 
-		if r.evaluateJoinCondition(leftToken, rightToken) {
+		if r.evaluateJoinCondition(leftToken, rightToken, betaNode) {
 			// Créer un nouveau token joint
 			joinedFacts := append(leftToken.Facts, rightToken.Facts...)
 			joinToken := &RETEToken{
@@ -256,9 +259,20 @@ func (r *RETEValidationNetwork) propagateFromBeta(betaNode *RETEBetaNodeNew, tok
 	}
 }
 
-func (r *RETEValidationNetwork) evaluateJoinCondition(leftToken, rightToken *RETEToken) bool {
-	// Pour les jointures binaires, nous acceptons toutes les combinaisons valides
-	// L'évaluation des conditions complètes se fait seulement sur les tokens terminaux
+func (r *RETEValidationNetwork) evaluateJoinCondition(leftToken, rightToken *RETEToken, betaNode *RETEBetaNodeNew) bool {
+	// Combiner les faits pour l'évaluation
+	combinedFacts := append(leftToken.Facts, rightToken.Facts...)
+
+	// Créer un mapping variable -> fait temporaire
+	varToFact := r.createVarToFactMapping(combinedFacts)
+
+	// Évaluer seulement les conditions locales à ce nœud
+	for _, condition := range betaNode.JoinConditions {
+		if !r.evaluateCondition(condition, varToFact) {
+			return false
+		}
+	}
+
 	return true
 }
 
@@ -850,4 +864,88 @@ func RunAllBetaTestsNew() {
 
 	fmt.Printf("\n" + strings.Repeat("=", 60) + "\n")
 	fmt.Printf("RÉSUMÉ: %d/%d tests réussis\n", successCount, len(tests))
+}
+
+// extractConditionsForJoin extrait les conditions applicables à un niveau de jointure
+func (r *RETEValidationNetwork) extractConditionsForJoin(rule RETERule, availableVars []string) []string {
+	availableVarSet := make(map[string]bool)
+	for _, v := range availableVars {
+		availableVarSet[v] = true
+	}
+
+	var applicableConditions []string
+	for _, condition := range rule.Conditions {
+		if r.conditionUsesOnlyVars(condition, availableVarSet) {
+			applicableConditions = append(applicableConditions, condition)
+		}
+	}
+
+	return applicableConditions
+}
+
+// conditionUsesOnlyVars vérifie si une condition utilise uniquement les variables disponibles
+func (r *RETEValidationNetwork) conditionUsesOnlyVars(condition string, availableVars map[string]bool) bool {
+	vars := r.extractVariablesFromCondition(condition)
+
+	// Vérifier que toutes les variables référencées sont disponibles
+	for varName := range vars {
+		if !availableVars[varName] {
+			return false
+		}
+	}
+
+	// S'assurer qu'au moins une variable est référencée
+	return len(vars) > 0
+}
+
+// extractVariablesFromCondition extrait les noms de variables d'une condition
+func (r *RETEValidationNetwork) extractVariablesFromCondition(condition string) map[string]bool {
+	vars := make(map[string]bool)
+
+	// Chercher les patterns "variable.champ"
+	words := strings.Fields(condition)
+	for _, word := range words {
+		if strings.Contains(word, ".") {
+			parts := strings.Split(word, ".")
+			if len(parts) >= 2 {
+				varName := parts[0]
+				// Nettoyer les caractères spéciaux
+				varName = strings.Trim(varName, "()[]")
+				vars[varName] = true
+			}
+		}
+	}
+
+	return vars
+}
+
+// createVarToFactMapping crée un mapping variable -> fait pour l'évaluation
+func (r *RETEValidationNetwork) createVarToFactMapping(facts []*RETEFact) map[string]*RETEFact {
+	varToFact := make(map[string]*RETEFact)
+
+	// Mapping intelligent basé sur les types des faits
+	typeToVar := map[string]string{
+		"User":        "u",
+		"Order":       "o",
+		"Product":     "p",
+		"Address":     "a",
+		"Employee":    "e",
+		"Performance": "perf",
+		"TestUser":    "u",
+		"TestOrder":   "o",
+		"TestProduct": "p",
+		"TestPerson":  "p",
+	}
+
+	for _, fact := range facts {
+		if varName, exists := typeToVar[fact.Type]; exists {
+			varToFact[varName] = fact
+		} else {
+			// Fallback: utiliser les premières lettres du type en minuscule
+			varName := strings.ToLower(string(fact.Type[0]))
+			varToFact[varName] = fact
+		}
+	}
+
+	return varToFact
 }
