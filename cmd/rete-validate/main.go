@@ -21,14 +21,14 @@ type TestResult struct {
 
 func main() {
 	fmt.Println("=== RETE VALIDATION CLI ===")
-	fmt.Println("Validation authentique avec réseau RETE réel\n")
+	fmt.Println("Validation authentique avec réseau RETE réel")
 
 	if len(os.Args) == 3 {
 		// Mode test spécifique
 		constraintFile := os.Args[1]
 		factsFile := os.Args[2]
 
-		fmt.Printf("Test spécifique: %s + %s\n\n", constraintFile, factsFile)
+		fmt.Printf("Test spécifique: %s + %s\n", constraintFile, factsFile)
 		result := runSingleTest(constraintFile, factsFile)
 		displayTestResult(result)
 		return

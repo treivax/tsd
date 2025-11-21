@@ -2,101 +2,101 @@
 // Couvre tous les cas de succès et d'échec avec le pipeline complet
 
 // Types de test
-type TestPerson : <id: string, name: string, age: number, salary: number, active: bool, score: number>
-type TestProduct : <id: string, name: string, price: number, category: string, available: bool, rating: number>
+type TestPerson : <name: string, age: number, salary: number, active: bool, score: number>
+type TestProduct : <name: string, price: number, category: string, available: bool, rating: number>
 
 // === TESTS ÉGALITÉ (== et =) ===
 
 // Test égalité string
-{p: TestPerson} / p.name == "Alice" ==> test_string_equality_success(p.id)
+{p: TestPerson} / p.name == "Alice" ==> test_string_equality_success(p.name)
 
 // Test égalité number entier
-{p: TestPerson} / p.age == 25 ==> test_number_equality_success(p.id)
+{p: TestPerson} / p.age == 25 ==> test_number_equality_success(p.name)
 
 // Test égalité number décimal
-{prod: TestProduct} / prod.price == 99.99 ==> test_decimal_equality_success(prod.id)
+{prod: TestProduct} / prod.price == 99.99 ==> test_decimal_equality_success(prod.name)
 
 // Test égalité boolean true
-{p: TestPerson} / p.active == true ==> test_boolean_true_success(p.id)
+{p: TestPerson} / p.active == true ==> test_boolean_true_success(p.name)
 
 // Test égalité boolean false
-{prod: TestProduct} / prod.available == false ==> test_boolean_false_success(prod.id)
+{prod: TestProduct} / prod.available == false ==> test_boolean_false_success(prod.name)
 
 // Test égalité avec opérateur alternatif =
-{p: TestPerson} / p.name = "Bob" ==> test_alt_equality_success(p.id)
+{p: TestPerson} / p.name == "Bob" ==> test_alt_equality_success(p.name)
 
 // === TESTS INÉGALITÉ (!= et <>) ===
 
 // Test inégalité string
-{p: TestPerson} / p.name != "Charlie" ==> test_string_inequality_success(p.id)
+{p: TestPerson} / p.name != "Charlie" ==> test_string_inequality_success(p.name)
 
 // Test inégalité number
-{p: TestPerson} / p.age != 30 ==> test_number_inequality_success(p.id)
+{p: TestPerson} / p.age != 30 ==> test_number_inequality_success(p.name)
 
 // Test inégalité boolean
-{p: TestPerson} / p.active != false ==> test_boolean_inequality_success(p.id)
+{p: TestPerson} / p.active != false ==> test_boolean_inequality_success(p.name)
 
 // Test inégalité avec opérateur alternatif !=
-{prod: TestProduct} / prod.category != "Electronics" ==> test_alt_inequality_success(prod.id)
+{prod: TestProduct} / prod.category != "Electronics" ==> test_alt_inequality_success(prod.name)
 
 // === TESTS COMPARAISONS NUMÉRIQUES (<, <=, >, >=) ===
 
 // Test inférieur strict <
-{p: TestPerson} / p.age < 30 ==> test_less_than_success(p.id)
+{p: TestPerson} / p.age < 30 ==> test_less_than_success(p.name)
 
 // Test inférieur ou égal <=
-{p: TestPerson} / p.salary <= 50000 ==> test_less_equal_success(p.id)
+{p: TestPerson} / p.salary <= 50000 ==> test_less_equal_success(p.name)
 
 // Test supérieur strict >
-{p: TestPerson} / p.score > 85.5 ==> test_greater_than_success(p.id)
+{p: TestPerson} / p.score > 85.5 ==> test_greater_than_success(p.name)
 
 // Test supérieur ou égal >=
-{prod: TestProduct} / prod.rating >= 4.0 ==> test_greater_equal_success(prod.id)
+{prod: TestProduct} / prod.rating >= 4.0 ==> test_greater_equal_success(prod.name)
 
 // === TESTS COMPARAISONS STRING (lexicographique) ===
 
 // Test string inférieur
-{p: TestPerson} / p.name < "M" ==> test_string_less_success(p.id)
+{p: TestPerson} / p.name < "M" ==> test_string_less_success(p.name)
 
 // Test string supérieur
-{prod: TestProduct} / prod.name > "Product_A" ==> test_string_greater_success(prod.id)
+{prod: TestProduct} / prod.name > "Product_A" ==> test_string_greater_success(prod.name)
 
 // === TESTS CAS LIMITES ET VALEURS SPÉCIALES ===
 
 // Test avec zéro
-{p: TestPerson} / p.age > 0 ==> test_positive_age_success(p.id)
+{p: TestPerson} / p.age > 0 ==> test_positive_age_success(p.name)
 
 // Test avec valeur négative
-{p: TestPerson} / p.salary >= -1000 ==> test_negative_handling_success(p.id)
+{p: TestPerson} / p.salary >= -1000 ==> test_negative_handling_success(p.name)
 
 // Test avec décimales
-{prod: TestProduct} / prod.price <= 999.99 ==> test_decimal_comparison_success(prod.id)
+{prod: TestProduct} / prod.price <= 999.99 ==> test_decimal_comparison_success(prod.name)
 
 // Test égalité exacte décimale
-{prod: TestProduct} / prod.rating == 3.14159 ==> test_precise_decimal_success(prod.id)
+{prod: TestProduct} / prod.rating == 3.14159 ==> test_precise_decimal_success(prod.name)
 
 // === TESTS COMBINAISONS DE TYPES ===
 
 // Test age exactement 18 (majorité)
-{p: TestPerson} / p.age == 18 ==> test_exact_age_success(p.id)
+{p: TestPerson} / p.age == 18 ==> test_exact_age_success(p.name)
 
 // Test senior (65+)
-{p: TestPerson} / p.age >= 65 ==> test_senior_success(p.id)
+{p: TestPerson} / p.age >= 65 ==> test_senior_success(p.name)
 
 // Test mineur (< 18)
-{p: TestPerson} / p.age < 18 ==> test_minor_success(p.id)
+{p: TestPerson} / p.age < 18 ==> test_minor_success(p.name)
 
 // Test salaire élevé
-{p: TestPerson} / p.salary > 100000 ==> test_high_salary_success(p.id)
+{p: TestPerson} / p.salary > 100000 ==> test_high_salary_success(p.name)
 
 // Test produit gratuit
-{prod: TestProduct} / prod.price == 0 ==> test_free_product_success(prod.id)
+{prod: TestProduct} / prod.price == 0 ==> test_free_product_success(prod.name)
 
 // Test produit cher
-{prod: TestProduct} / prod.price > 1000 ==> test_expensive_product_success(prod.id)
+{prod: TestProduct} / prod.price > 1000 ==> test_expensive_product_success(prod.name)
 
 // Test note parfaite
-{prod: TestProduct} / prod.rating == 5.0 ==> test_perfect_rating_success(prod.id)
+{prod: TestProduct} / prod.rating == 5.0 ==> test_perfect_rating_success(prod.name)
 
 // Test note faible
-{prod: TestProduct} / prod.rating < 2.0 ==> test_low_rating_success(prod.id)
+{prod: TestProduct} / prod.rating < 2.0 ==> test_low_rating_success(prod.name)

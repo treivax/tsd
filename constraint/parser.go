@@ -2469,20 +2469,13 @@ var g = &grammar{
 					},
 					&charClassMatcher{
 						pos:        position{line: 470, col: 33, offset: 13098},
-						val:        "[.]",
-						chars:      []rune{'.'},
-						ignoreCase: false,
-						inverted:   false,
-					},
-					&charClassMatcher{
-						pos:        position{line: 470, col: 39, offset: 13104},
 						val:        "[\\u2010-\\u2015]",
 						ranges:     []rune{'‐', '―'},
 						ignoreCase: false,
 						inverted:   false,
 					},
 					&charClassMatcher{
-						pos:        position{line: 470, col: 57, offset: 13122},
+						pos:        position{line: 470, col: 51, offset: 13116},
 						val:        "[\\u2032-\\u2037]",
 						ranges:     []rune{'′', '‷'},
 						ignoreCase: false,
@@ -2493,18 +2486,18 @@ var g = &grammar{
 		},
 		{
 			name: "_",
-			pos:  position{line: 472, col: 1, offset: 13139},
+			pos:  position{line: 472, col: 1, offset: 13133},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 472, col: 6, offset: 13144},
+				pos: position{line: 472, col: 6, offset: 13138},
 				expr: &choiceExpr{
-					pos: position{line: 472, col: 7, offset: 13145},
+					pos: position{line: 472, col: 7, offset: 13139},
 					alternatives: []any{
 						&ruleRefExpr{
-							pos:  position{line: 472, col: 7, offset: 13145},
+							pos:  position{line: 472, col: 7, offset: 13139},
 							name: "Whitespace",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 472, col: 20, offset: 13158},
+							pos:  position{line: 472, col: 20, offset: 13152},
 							name: "Comment",
 						},
 					},
@@ -2513,9 +2506,9 @@ var g = &grammar{
 		},
 		{
 			name: "Whitespace",
-			pos:  position{line: 474, col: 1, offset: 13169},
+			pos:  position{line: 474, col: 1, offset: 13163},
 			expr: &charClassMatcher{
-				pos:        position{line: 474, col: 15, offset: 13183},
+				pos:        position{line: 474, col: 15, offset: 13177},
 				val:        "[ \\t\\r\\n]",
 				chars:      []rune{' ', '\t', '\r', '\n'},
 				ignoreCase: false,
@@ -2524,20 +2517,20 @@ var g = &grammar{
 		},
 		{
 			name: "Comment",
-			pos:  position{line: 476, col: 1, offset: 13194},
+			pos:  position{line: 476, col: 1, offset: 13188},
 			expr: &choiceExpr{
-				pos: position{line: 476, col: 12, offset: 13205},
+				pos: position{line: 476, col: 12, offset: 13199},
 				alternatives: []any{
 					&ruleRefExpr{
-						pos:  position{line: 476, col: 12, offset: 13205},
+						pos:  position{line: 476, col: 12, offset: 13199},
 						name: "LineComment",
 					},
 					&ruleRefExpr{
-						pos:  position{line: 476, col: 26, offset: 13219},
+						pos:  position{line: 476, col: 26, offset: 13213},
 						name: "BlockComment",
 					},
 					&ruleRefExpr{
-						pos:  position{line: 476, col: 41, offset: 13234},
+						pos:  position{line: 476, col: 41, offset: 13228},
 						name: "EndOfLineComment",
 					},
 				},
@@ -2545,31 +2538,31 @@ var g = &grammar{
 		},
 		{
 			name: "LineComment",
-			pos:  position{line: 478, col: 1, offset: 13252},
+			pos:  position{line: 478, col: 1, offset: 13246},
 			expr: &actionExpr{
-				pos: position{line: 478, col: 16, offset: 13267},
+				pos: position{line: 478, col: 16, offset: 13261},
 				run: (*parser).callonLineComment1,
 				expr: &seqExpr{
-					pos: position{line: 478, col: 16, offset: 13267},
+					pos: position{line: 478, col: 16, offset: 13261},
 					exprs: []any{
 						&litMatcher{
-							pos:        position{line: 478, col: 16, offset: 13267},
+							pos:        position{line: 478, col: 16, offset: 13261},
 							val:        "//",
 							ignoreCase: false,
 							want:       "\"//\"",
 						},
 						&labeledExpr{
-							pos:   position{line: 478, col: 21, offset: 13272},
+							pos:   position{line: 478, col: 21, offset: 13266},
 							label: "CommentText",
 							expr: &zeroOrMoreExpr{
-								pos: position{line: 478, col: 33, offset: 13284},
+								pos: position{line: 478, col: 33, offset: 13278},
 								expr: &seqExpr{
-									pos: position{line: 478, col: 34, offset: 13285},
+									pos: position{line: 478, col: 34, offset: 13279},
 									exprs: []any{
 										&notExpr{
-											pos: position{line: 478, col: 34, offset: 13285},
+											pos: position{line: 478, col: 34, offset: 13279},
 											expr: &charClassMatcher{
-												pos:        position{line: 478, col: 35, offset: 13286},
+												pos:        position{line: 478, col: 35, offset: 13280},
 												val:        "[\\r\\n]",
 												chars:      []rune{'\r', '\n'},
 												ignoreCase: false,
@@ -2577,7 +2570,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 478, col: 42, offset: 13293,
+											line: 478, col: 42, offset: 13287,
 										},
 									},
 								},
@@ -2589,45 +2582,45 @@ var g = &grammar{
 		},
 		{
 			name: "BlockComment",
-			pos:  position{line: 482, col: 1, offset: 13362},
+			pos:  position{line: 482, col: 1, offset: 13356},
 			expr: &actionExpr{
-				pos: position{line: 482, col: 17, offset: 13378},
+				pos: position{line: 482, col: 17, offset: 13372},
 				run: (*parser).callonBlockComment1,
 				expr: &seqExpr{
-					pos: position{line: 482, col: 17, offset: 13378},
+					pos: position{line: 482, col: 17, offset: 13372},
 					exprs: []any{
 						&litMatcher{
-							pos:        position{line: 482, col: 17, offset: 13378},
+							pos:        position{line: 482, col: 17, offset: 13372},
 							val:        "/*",
 							ignoreCase: false,
 							want:       "\"/*\"",
 						},
 						&labeledExpr{
-							pos:   position{line: 482, col: 22, offset: 13383},
+							pos:   position{line: 482, col: 22, offset: 13377},
 							label: "CommentText",
 							expr: &zeroOrMoreExpr{
-								pos: position{line: 482, col: 34, offset: 13395},
+								pos: position{line: 482, col: 34, offset: 13389},
 								expr: &seqExpr{
-									pos: position{line: 482, col: 35, offset: 13396},
+									pos: position{line: 482, col: 35, offset: 13390},
 									exprs: []any{
 										&notExpr{
-											pos: position{line: 482, col: 35, offset: 13396},
+											pos: position{line: 482, col: 35, offset: 13390},
 											expr: &litMatcher{
-												pos:        position{line: 482, col: 36, offset: 13397},
+												pos:        position{line: 482, col: 36, offset: 13391},
 												val:        "*/",
 												ignoreCase: false,
 												want:       "\"*/\"",
 											},
 										},
 										&anyMatcher{
-											line: 482, col: 41, offset: 13402,
+											line: 482, col: 41, offset: 13396,
 										},
 									},
 								},
 							},
 						},
 						&litMatcher{
-							pos:        position{line: 482, col: 45, offset: 13406},
+							pos:        position{line: 482, col: 45, offset: 13400},
 							val:        "*/",
 							ignoreCase: false,
 							want:       "\"*/\"",
@@ -2638,31 +2631,31 @@ var g = &grammar{
 		},
 		{
 			name: "EndOfLineComment",
-			pos:  position{line: 486, col: 1, offset: 13476},
+			pos:  position{line: 486, col: 1, offset: 13470},
 			expr: &actionExpr{
-				pos: position{line: 486, col: 21, offset: 13496},
+				pos: position{line: 486, col: 21, offset: 13490},
 				run: (*parser).callonEndOfLineComment1,
 				expr: &seqExpr{
-					pos: position{line: 486, col: 21, offset: 13496},
+					pos: position{line: 486, col: 21, offset: 13490},
 					exprs: []any{
 						&litMatcher{
-							pos:        position{line: 486, col: 21, offset: 13496},
+							pos:        position{line: 486, col: 21, offset: 13490},
 							val:        "#",
 							ignoreCase: false,
 							want:       "\"#\"",
 						},
 						&labeledExpr{
-							pos:   position{line: 486, col: 25, offset: 13500},
+							pos:   position{line: 486, col: 25, offset: 13494},
 							label: "CommentText",
 							expr: &zeroOrMoreExpr{
-								pos: position{line: 486, col: 37, offset: 13512},
+								pos: position{line: 486, col: 37, offset: 13506},
 								expr: &seqExpr{
-									pos: position{line: 486, col: 38, offset: 13513},
+									pos: position{line: 486, col: 38, offset: 13507},
 									exprs: []any{
 										&notExpr{
-											pos: position{line: 486, col: 38, offset: 13513},
+											pos: position{line: 486, col: 38, offset: 13507},
 											expr: &charClassMatcher{
-												pos:        position{line: 486, col: 39, offset: 13514},
+												pos:        position{line: 486, col: 39, offset: 13508},
 												val:        "[\\r\\n]",
 												chars:      []rune{'\r', '\n'},
 												ignoreCase: false,
@@ -2670,7 +2663,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 486, col: 46, offset: 13521,
+											line: 486, col: 46, offset: 13515,
 										},
 									},
 								},
@@ -2682,11 +2675,11 @@ var g = &grammar{
 		},
 		{
 			name: "EOF",
-			pos:  position{line: 490, col: 1, offset: 13599},
+			pos:  position{line: 490, col: 1, offset: 13593},
 			expr: &notExpr{
-				pos: position{line: 490, col: 8, offset: 13606},
+				pos: position{line: 490, col: 8, offset: 13600},
 				expr: &anyMatcher{
-					line: 490, col: 9, offset: 13607,
+					line: 490, col: 9, offset: 13601,
 				},
 			},
 		},

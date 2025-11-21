@@ -122,8 +122,13 @@ type EventListener interface {
 }
 
 // AccumulateFunction définit une fonction d'agrégation
+
+// AccumulateFunction définit une fonction d'agrégation
 type AccumulateFunction struct {
-	FunctionType string      // SUM, COUNT, AVG, MIN, MAX
-	Field        string      // Champ sur lequel appliquer la fonction
-	Condition    interface{} // Condition optionnelle
+	FunctionType string        // SUM, COUNT, AVG, MIN, MAX
+	Variable     TypedVariable // Variable à itérer
+	Condition    interface{}   // Condition de filtrage
+	Field        string        // Champ sur lequel appliquer la fonction
+	Operator     string        // Opérateur de comparaison (>=, <=, ==, etc.)
+	Threshold    interface{}   // Seuil pour la comparaison
 }

@@ -45,7 +45,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 
 // 1.6 Jointures avec fonctions string
 {p: TestPerson, o: TestOrder} / UPPER(p.tags) == UPPER(o.status) ==> join_tags_status_case_insensitive(p.id, o.id)
-{p: TestPerson, o: TestOrder} / LENGTH(p.name) >= LENGTH(o.region) ==> join_name_length_geq_region_length(p.id, o.id)
+{p: TestPerson, o: TestOrder} / LENGTH(p.id) >= LENGTH(o.region) ==> join_name_length_geq_region_length(p.id, o.id)
 {o: TestOrder, prod: TestProduct} / prod.keywords CONTAINS o.status ==> join_keywords_contains_status(o.id, prod.id)
 
 // 1.7 Jointures avec opérateur IN
@@ -85,7 +85,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 {o: TestOrder} / NOT (o.status == "pending" OR o.priority == "low") ==> not_pending_or_low_priority(o.id)
 
 // 2.5 Négations de fonctions string
-{p: TestPerson} / NOT (LENGTH(p.name) < 3) ==> not_short_name(p.id)
+{p: TestPerson} / NOT (LENGTH(p.id) < 3) ==> not_short_name(p.id)
 {prod: TestProduct} / NOT (prod.keywords CONTAINS "obsolete") ==> not_obsolete_product(prod.id)
 
 // 2.6 Négations d'opérateur IN
@@ -194,7 +194,7 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 {o: TestOrder} / o.amount > 0 AND o.total > 0 ==> valid_positive_order(o.id)
 
 // 6.2 Chaînes vides et longueurs
-{p: TestPerson} / LENGTH(p.name) > 0 ==> valid_person_name(p.id)
+{p: TestPerson} / LENGTH(p.id) > 0 ==> valid_person_name(p.id)
 
 // 6.3 Conditions avec précision décimale
 {p: TestPerson} / p.score >= 7.5 AND p.score <= 9.99 ==> high_score_person(p.id)

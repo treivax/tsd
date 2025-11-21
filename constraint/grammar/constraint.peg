@@ -467,7 +467,7 @@ UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
                          [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF] /
                          [\u0300-\u036F] / [\u1AB0-\u1AFF] / [\u1DC0-\u1DFF]
 
-PunctuationChar <- [-_] / ['] / [.] / [\u2010-\u2015] / [\u2032-\u2037]
+PunctuationChar <- [-_] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
 
 _ <- (Whitespace / Comment)*
 

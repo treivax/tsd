@@ -115,11 +115,11 @@ func TestExhaustiveBetaCoverage(t *testing.T) {
 	}
 
 	factsStr := string(factsContent)
-	personFacts := strings.Count(factsStr, "TestPerson[")
-	orderFacts := strings.Count(factsStr, "TestOrder[")
-	productFacts := strings.Count(factsStr, "TestProduct[")
-	transactionFacts := strings.Count(factsStr, "TestTransaction[")
-	alertFacts := strings.Count(factsStr, "TestAlert[")
+	personFacts := strings.Count(factsStr, "TestPerson(")
+	orderFacts := strings.Count(factsStr, "TestOrder(")
+	productFacts := strings.Count(factsStr, "TestProduct(")
+	transactionFacts := strings.Count(factsStr, "TestTransaction(")
+	alertFacts := strings.Count(factsStr, "TestAlert(")
 
 	totalFacts := personFacts + orderFacts + productFacts + transactionFacts + alertFacts
 
