@@ -149,11 +149,17 @@ func TestProgramStateTypeValidation(t *testing.T) {
 		t.Fatalf("Failed to parse types: %v", err)
 	}
 
-	// Try to parse facts with undefined type - should fail
+	// Try to parse facts with undefined type - should not fail (non-blocking)
+	// but should record validation errors
 	err = ps.ParseAndMerge(invalidFactsFile)
-	if err == nil {
-		t.Error("Expected validation error for undefined type, but got none")
+	if err != nil {
+		t.Fatalf("ParseAndMerge should not fail with validation errors: %v", err)
+	}
+
+	// Check that validation errors were recorded
+	if !ps.HasErrors() {
+		t.Error("Expected validation errors to be recorded for undefined type")
 	} else {
-		t.Logf("Correctly detected validation error: %v", err)
+		t.Logf("Correctly detected %d validation error(s)", ps.GetErrorCount())
 	}
 }

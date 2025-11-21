@@ -11,6 +11,7 @@ type ProgramState struct {
 	Rules       []*Expression              `json:"rules"`
 	Facts       []*Fact                    `json:"facts"`
 	FilesParsed []string                   `json:"files_parsed"`
+	Errors      []ValidationError          `json:"errors"`
 }
 
 // NewProgramState creates a new empty program state
@@ -20,6 +21,7 @@ func NewProgramState() *ProgramState {
 		Rules:       make([]*Expression, 0),
 		Facts:       make([]*Fact, 0),
 		FilesParsed: make([]string, 0),
+		Errors:      make([]ValidationError, 0),
 	}
 }
 
@@ -65,6 +67,16 @@ func (ps *ProgramState) ParseAndMerge(filename string) error {
 // ParseAndMergeContent parses content from a string and merges the results into the program state
 // It validates that new rules and facts are compatible with existing type definitions
 func (ps *ProgramState) ParseAndMergeContent(content, filename string) error {
+	if ps == nil {
+		return fmt.Errorf("ProgramState is nil")
+	}
+	if filename == "" {
+		return fmt.Errorf("filename cannot be empty")
+	}
+	if content == "" {
+		return fmt.Errorf("content cannot be empty")
+	}
+
 	// Parse the content
 	result, err := ParseConstraint(filename, []byte(content))
 	if err != nil {
@@ -103,6 +115,13 @@ func (ps *ProgramState) ParseAndMergeContent(content, filename string) error {
 
 // mergeTypes merges new type definitions into the program state
 func (ps *ProgramState) mergeTypes(newTypes []TypeDefinition, filename string) error {
+	if ps == nil {
+		return fmt.Errorf("ProgramState is nil")
+	}
+	if ps.Types == nil {
+		ps.Types = make(map[string]*TypeDefinition)
+	}
+
 	for _, typeDef := range newTypes {
 		// Create a copy with filename information
 		newType := &TypeDefinition{
@@ -132,6 +151,10 @@ func (ps *ProgramState) mergeTypes(newTypes []TypeDefinition, filename string) e
 
 // mergeRules merges new rules and validates them against existing types
 func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error {
+	if ps == nil {
+		return fmt.Errorf("ProgramState is nil")
+	}
+
 	for _, rule := range newRules {
 		// Create a copy of the rule
 		newRule := &Expression{
@@ -144,7 +167,15 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 		// Validate rule against existing types
 		err := ps.validateRule(newRule, filename)
 		if err != nil {
-			return fmt.Errorf("rule validation failed in %s: %w", filename, err)
+			// Non-blocking error: record and continue
+			ps.Errors = append(ps.Errors, ValidationError{
+				File:    filename,
+				Type:    "rule",
+				Message: err.Error(),
+				Line:    0,
+			})
+			fmt.Printf("⚠️  Skipping invalid rule in %s: %v\n", filename, err)
+			continue
 		}
 
 		ps.Rules = append(ps.Rules, newRule)
@@ -155,6 +186,10 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 
 // mergeFacts merges new facts and validates them against existing types
 func (ps *ProgramState) mergeFacts(newFacts []Fact, filename string) error {
+	if ps == nil {
+		return fmt.Errorf("ProgramState is nil")
+	}
+
 	for _, fact := range newFacts {
 		// Create a copy of the fact
 		newFact := &Fact{
@@ -166,7 +201,15 @@ func (ps *ProgramState) mergeFacts(newFacts []Fact, filename string) error {
 		// Validate fact against existing types
 		err := ps.validateFact(newFact, filename)
 		if err != nil {
-			return fmt.Errorf("fact validation failed in %s: %w", filename, err)
+			// Non-blocking error: record and continue
+			ps.Errors = append(ps.Errors, ValidationError{
+				File:    filename,
+				Type:    "fact",
+				Message: err.Error(),
+				Line:    0,
+			})
+			fmt.Printf("⚠️  Skipping invalid fact in %s: %v\n", filename, err)
+			continue
 		}
 
 		ps.Facts = append(ps.Facts, newFact)
