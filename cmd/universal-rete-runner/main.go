@@ -39,15 +39,15 @@ func main() {
 	for _, dir := range testDirs {
 		pattern := filepath.Join(dir.path, "*.constraint")
 		matches, _ := filepath.Glob(pattern)
-		
+
 		for _, constraintFile := range matches {
 			base := strings.TrimSuffix(constraintFile, ".constraint")
 			factsFile := base + ".facts"
-			
+
 			if _, err := os.Stat(factsFile); os.IsNotExist(err) {
 				continue
 			}
-			
+
 			baseName := filepath.Base(base)
 			allTestFiles = append(allTestFiles, TestFile{
 				name:       baseName,
@@ -82,7 +82,7 @@ func main() {
 
 		// Si c'est un test d'erreur, l'échec est un succès
 		isErrorTest := errorTests[testFile.name]
-		
+
 		if err != nil {
 			if isErrorTest {
 				fmt.Printf("✅ PASSED (error detected as expected)\n")

@@ -15,7 +15,7 @@ type Incident : <id: string, system_id: string, type: string, priority: string, 
 {s: System, i: Incident} / s.id == i.system_id AND s.cpu_usage > 80 AND i.resolved == false ==> notify_admin(s.name, i.type)
 
 // Actions avec agrégation
-{s: System, a: Alarm} / s.id == a.source AND COUNT(a.id) > 5 ==> shutdown_system(s.id)
+{s: System} / COUNT(a: Alarm / a.source == s.id) > 5 ==> shutdownSys(s.id)
 
 // Actions avec négation
 {s: System} / s.status == "running" AND NOT (s.cpu_usage < 10) ==> throttle_processes(s.id)

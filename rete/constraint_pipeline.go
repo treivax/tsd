@@ -7,6 +7,21 @@ import (
 	"github.com/treivax/tsd/constraint"
 )
 
+// AggregationInfo contient les informations extraites d'une agrégation
+type AggregationInfo struct {
+	Function      string      // AVG, SUM, COUNT, MIN, MAX
+	MainVariable  string      // Variable principale (ex: "e" pour Employee)
+	MainType      string      // Type principal (ex: "Employee")
+	AggVariable   string      // Variable à agréger (ex: "p" pour Performance)
+	AggType       string      // Type à agréger (ex: "Performance")
+	Field         string      // Champ à agréger (ex: "score")
+	Operator      string      // Opérateur de comparaison (>=, >, etc.)
+	Threshold     float64     // Valeur de seuil
+	JoinField     string      // Champ de jointure dans faits agrégés (ex: "employee_id")
+	MainField     string      // Champ de jointure dans fait principal (ex: "id")
+	JoinCondition interface{} // Condition de jointure complète
+}
+
 // ConstraintPipeline implémente le pipeline complet :
 // fichier .constraint → parseur PEG → conversion AST → réseau RETE
 type ConstraintPipeline struct{}
@@ -363,33 +378,52 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	constraintsData, hasConstraints := exprMap["constraints"]
 	var condition map[string]interface{}
 	var isExistsConstraint bool
+	var hasAggregation bool
 
 	if hasConstraints {
-		// Analyser et créer la condition appropriée
-		isNegation, negatedCondition, err := cp.analyzeConstraints(constraintsData)
-		if err != nil {
-			return fmt.Errorf("erreur analyse contraintes pour règle %s: %w", ruleID, err)
+		// Vérifier si la contrainte contient une agrégation
+		if constraintStr := fmt.Sprintf("%v", constraintsData); constraintStr != "" {
+			hasAggregation = strings.Contains(constraintStr, "AVG") ||
+				strings.Contains(constraintStr, "SUM") ||
+				strings.Contains(constraintStr, "COUNT") ||
+				strings.Contains(constraintStr, "MIN") ||
+				strings.Contains(constraintStr, "MAX") ||
+				strings.Contains(constraintStr, "ACCUMULATE")
 		}
 
-		// Vérifier si c'est une contrainte EXISTS
-		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
-			if constraintType, exists := constraintMap["type"].(string); exists && constraintType == "existsConstraint" {
-				isExistsConstraint = true
-				fmt.Printf("   🔍 Contrainte EXISTS détectée - création ExistsNode\n")
-			}
-		}
-
-		if isNegation {
-			fmt.Printf("   🚫 Détection contrainte NOT - création d'un AlphaNode de négation\n")
+		// Si c'est une agrégation, créer un passthrough
+		if hasAggregation {
+			fmt.Printf("   📊 Agrégation détectée - création AlphaNode passthrough\n")
 			condition = map[string]interface{}{
-				"type":      "negation",
-				"negated":   true,
-				"condition": negatedCondition,
+				"type": "passthrough",
 			}
 		} else {
-			condition = map[string]interface{}{
-				"type":       "constraint",
-				"constraint": constraintsData,
+			// Analyser et créer la condition appropriée
+			isNegation, negatedCondition, err := cp.analyzeConstraints(constraintsData)
+			if err != nil {
+				return fmt.Errorf("erreur analyse contraintes pour règle %s: %w", ruleID, err)
+			}
+
+			// Vérifier si c'est une contrainte EXISTS
+			if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+				if constraintType, exists := constraintMap["type"].(string); exists && constraintType == "existsConstraint" {
+					isExistsConstraint = true
+					fmt.Printf("   🔍 Contrainte EXISTS détectée - création ExistsNode\n")
+				}
+			}
+
+			if isNegation {
+				fmt.Printf("   🚫 Détection contrainte NOT - création d'un AlphaNode de négation\n")
+				condition = map[string]interface{}{
+					"type":      "negation",
+					"negated":   true,
+					"condition": negatedCondition,
+				}
+			} else {
+				condition = map[string]interface{}{
+					"type":       "constraint",
+					"constraint": constraintsData,
+				}
 			}
 		}
 	} else {
@@ -435,6 +469,23 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	if isExistsConstraint {
 		fmt.Printf("   🔍 Création d'un ExistsNode pour contrainte EXISTS\n")
 		return cp.createExistsRule(network, ruleID, exprMap, condition, action, storage)
+	}
+
+	// Si c'est une agrégation, forcer la création d'un JoinNode même avec 1 variable
+	if hasAggregation {
+		fmt.Printf("   📊 Règle avec agrégation détectée\n")
+
+		// Extraire les informations d'agrégation
+		aggInfo, err := cp.extractAggregationInfo(constraintsData)
+		if err != nil {
+			fmt.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
+			fmt.Printf("   🔗 Création d'un JoinNode pour traiter l'agrégation\n")
+			return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)
+		}
+
+		fmt.Printf("   📊 Agrégation extraite: %s(%s) %s %v\n", aggInfo.Function, aggInfo.Field, aggInfo.Operator, aggInfo.Threshold)
+		fmt.Printf("   🔗 Création d'un AccumulatorNode pour traiter l'agrégation\n")
+		return cp.createAccumulatorRule(network, ruleID, variables, variableNames, variableTypes, aggInfo, action, storage)
 	}
 
 	// Si plus d'une variable, c'est une jointure Beta - créer un JoinNode
@@ -862,5 +913,176 @@ func (cp *ConstraintPipeline) createExistsRule(network *ReteNetwork, ruleID stri
 	}
 
 	fmt.Printf("   ✅ ExistsNode %s créé pour %s EXISTS %s\n", existsNode.ID, mainVariable, existsVariable)
+	return nil
+}
+
+// extractAggregationInfo extrait les informations d'une agrégation depuis les contraintes
+func (cp *ConstraintPipeline) extractAggregationInfo(constraintsData interface{}) (*AggregationInfo, error) {
+	constraintMap, ok := constraintsData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("contrainte invalide: %T", constraintsData)
+	}
+
+	// Vérifier que c'est bien une accumulateConstraint
+	constraintType, ok := constraintMap["type"].(string)
+	if !ok || constraintType != "accumulateConstraint" {
+		return nil, fmt.Errorf("pas une accumulateConstraint: %s", constraintType)
+	}
+
+	info := &AggregationInfo{}
+
+	// Extraire la fonction d'agrégation
+	function, ok := constraintMap["function"].(string)
+	if !ok {
+		return nil, fmt.Errorf("fonction d'agrégation manquante")
+	}
+	info.Function = function
+
+	// Extraire la variable à agréger (ex: p: Performance)
+	variableData, ok := constraintMap["variable"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("variable d'agrégation manquante")
+	}
+
+	aggVarName, ok := variableData["name"].(string)
+	if !ok {
+		return nil, fmt.Errorf("nom de variable d'agrégation manquant")
+	}
+	info.AggVariable = aggVarName
+
+	aggVarType, ok := variableData["dataType"].(string)
+	if !ok {
+		return nil, fmt.Errorf("type de variable d'agrégation manquant")
+	}
+	info.AggType = aggVarType
+
+	// Extraire le champ à agréger (ex: score)
+	if field, ok := constraintMap["field"].(string); ok {
+		info.Field = field
+	}
+	// Pour COUNT, le champ peut être vide
+
+	// Extraire l'opérateur et le seuil
+	operator, ok := constraintMap["operator"].(string)
+	if !ok {
+		return nil, fmt.Errorf("opérateur manquant")
+	}
+	info.Operator = operator
+
+	thresholdData, ok := constraintMap["threshold"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("seuil manquant")
+	}
+	threshold, ok := thresholdData["value"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("valeur de seuil invalide")
+	}
+	info.Threshold = threshold
+
+	// Extraire la condition de jointure (ex: p.employee_id == e.id)
+	conditionData, ok := constraintMap["condition"].(map[string]interface{})
+	if ok {
+		info.JoinCondition = conditionData
+
+		// Extraire les champs de jointure depuis la condition
+		if condType, ok := conditionData["type"].(string); ok && condType == "comparison" {
+			// Left side: p.employee_id
+			if leftData, ok := conditionData["left"].(map[string]interface{}); ok {
+				if leftType, ok := leftData["type"].(string); ok && leftType == "fieldAccess" {
+					if joinField, ok := leftData["field"].(string); ok {
+						info.JoinField = joinField // "employee_id"
+					}
+				}
+			}
+
+			// Right side: e.id
+			if rightData, ok := conditionData["right"].(map[string]interface{}); ok {
+				if rightType, ok := rightData["type"].(string); ok && rightType == "fieldAccess" {
+					if mainField, ok := rightData["field"].(string); ok {
+						info.MainField = mainField // "id"
+					}
+				}
+			}
+		}
+	}
+
+	return info, nil
+}
+
+// createAccumulatorRule crée une règle avec AccumulatorNode
+func (cp *ConstraintPipeline) createAccumulatorRule(network *ReteNetwork, ruleID string, variables []map[string]interface{}, variableNames []string, variableTypes []string, aggInfo *AggregationInfo, action *Action, storage Storage) error {
+
+	fmt.Printf("   🔗 IMPLÉMENTATION ACCUMULATOR: Création pour %s\n", aggInfo.Function)
+
+	// Extraire la variable principale et son type depuis variables
+	if len(variables) == 0 || len(variableTypes) == 0 {
+		return fmt.Errorf("aucune variable principale trouvée")
+	}
+
+	mainVariable := variableNames[0]
+	mainType := variableTypes[0]
+
+	// Stocker dans aggInfo
+	aggInfo.MainVariable = mainVariable
+	aggInfo.MainType = mainType
+
+	// Créer le nœud terminal
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Créer la condition de comparaison
+	condition := map[string]interface{}{
+		"type":     "comparison",
+		"operator": aggInfo.Operator,
+		"value":    aggInfo.Threshold,
+	}
+
+	// Créer l'AccumulatorNode avec tous les paramètres
+	accumNode := NewAccumulatorNode(
+		ruleID+"_accum",
+		aggInfo.MainVariable, // "e"
+		aggInfo.MainType,     // "Employee"
+		aggInfo.AggVariable,  // "p"
+		aggInfo.AggType,      // "Performance"
+		aggInfo.Field,        // "score"
+		aggInfo.JoinField,    // "employee_id"
+		aggInfo.MainField,    // "id"
+		aggInfo.Function,     // "AVG"
+		condition,
+		storage,
+	)
+	accumNode.AddChild(terminalNode)
+	network.BetaNodes[accumNode.ID] = accumNode
+
+	// Connecter le TypeNode principal (Employee) à l'AccumulatorNode
+	if typeNode, exists := network.TypeNodes[mainType]; exists {
+		// Créer un AlphaNode passthrough pour la variable principale
+		passCondition := map[string]interface{}{
+			"type": "passthrough",
+		}
+		alphaNode := NewAlphaNode(ruleID+"_pass_"+mainVariable, passCondition, mainVariable, storage)
+
+		typeNode.AddChild(alphaNode)
+		alphaNode.AddChild(accumNode)
+
+		fmt.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s]\n", mainType, aggInfo.Function)
+	}
+
+	// CRUCIAL: Connecter aussi le TypeNode des faits à agréger (Performance) à l'AccumulatorNode
+	if aggTypeNode, exists := network.TypeNodes[aggInfo.AggType]; exists {
+		// Créer un AlphaNode passthrough pour la variable d'agrégation
+		passConditionAgg := map[string]interface{}{
+			"type": "passthrough",
+		}
+		alphaNodeAgg := NewAlphaNode(ruleID+"_pass_"+aggInfo.AggVariable, passConditionAgg, aggInfo.AggVariable, storage)
+
+		aggTypeNode.AddChild(alphaNodeAgg)
+		alphaNodeAgg.AddChild(accumNode)
+
+		fmt.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s] (pour agrégation)\n", aggInfo.AggType, aggInfo.Function)
+	}
+
+	fmt.Printf("   ✅ AccumulatorNode %s créé pour %s(%s.%s) %s %.2f\n",
+		accumNode.ID, aggInfo.Function, aggInfo.AggVariable, aggInfo.Field, aggInfo.Operator, aggInfo.Threshold)
 	return nil
 }

@@ -4,12 +4,14 @@
 
 # Variables
 PROJECT_NAME := tsd
-BINARY_NAME := rete-validate
-UNIFIED_RUNNER := unified-rete-runner
+BINARY_NAME := tsd
+RETE_VALIDATE := rete-validate
+UNIVERSAL_RUNNER := universal-rete-runner
 GO_VERSION := 1.21
 BUILD_DIR := ./bin
-CMD_DIR := ./cmd/rete-validate
-UNIFIED_CMD_DIR := ./cmd/unified-rete-runner
+CMD_TSD_DIR := ./cmd/tsd
+CMD_RETE_VALIDATE_DIR := ./cmd/rete-validate
+CMD_UNIVERSAL_DIR := ./cmd/universal-rete-runner
 GO_FILES := $(shell find . -name "*.go" -not -path "./vendor/*")
 TEST_TIMEOUT := 300s
 BETA_TESTS_DIR := ./beta_coverage_tests
@@ -27,7 +29,9 @@ help: ## Afficher cette aide
 	@echo "================================="
 	@echo ""
 	@echo "$(CYAN)🏗️  BUILD & INSTALL:$(NC)"
-	@echo "$(GREEN)build$(NC)                - Compiler le binaire RETE"
+	@echo "$(GREEN)build$(NC)                - Compiler tous les binaires"
+	@echo "$(GREEN)build-tsd$(NC)            - Compiler l'outil CLI principal"
+	@echo "$(GREEN)build-runners$(NC)        - Compiler les runners de test"
 	@echo "$(GREEN)install$(NC)              - Installation complète"
 	@echo "$(GREEN)clean$(NC)                - Nettoyer les artefacts"
 	@echo ""
@@ -66,18 +70,27 @@ help: ## Afficher cette aide
 # BUILD & COMPILATION
 # ================================
 
-build: ## BUILD - Compiler le binaire RETE
-	@echo "$(BLUE)🔨 Compilation du projet $(PROJECT_NAME)...$(NC)"
+build: build-tsd build-runners ## BUILD - Compiler tous les binaires
+
+build-tsd: ## BUILD - Compiler l'outil CLI principal
+	@echo "$(BLUE)🔨 Compilation de TSD CLI...$(NC)"
 	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
-	@go build -o $(BUILD_DIR)/$(UNIFIED_RUNNER) $(UNIFIED_CMD_DIR)
-	@echo "$(GREEN)✅ Binaires créés:$(NC)"
-	@echo "   - $(BUILD_DIR)/$(BINARY_NAME)"
-	@echo "   - $(BUILD_DIR)/$(UNIFIED_RUNNER)"
+	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_TSD_DIR)
+	@echo "$(GREEN)✅ Binaire créé: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
+
+build-runners: ## BUILD - Compiler les runners de test
+	@echo "$(BLUE)🔨 Compilation des runners...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@go build -o $(BUILD_DIR)/$(RETE_VALIDATE) $(CMD_RETE_VALIDATE_DIR)
+	@go build -o $(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(CMD_UNIVERSAL_DIR)
+	@echo "$(GREEN)✅ Runners compilés:$(NC)"
+	@echo "   - $(BUILD_DIR)/$(RETE_VALIDATE)"
+	@echo "   - $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
 
 install: deps build ## BUILD - Installation complète
 	@echo "$(GREEN)🚀 Installation terminée$(NC)"
-	@echo "   Binaire disponible: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "   TSD CLI: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "   Test Runners: $(BUILD_DIR)/$(RETE_VALIDATE), $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
 
 clean: ## BUILD - Nettoyer les artefacts
 	@echo "$(BLUE)🧹 Nettoyage...$(NC)"
@@ -90,14 +103,14 @@ clean: ## BUILD - Nettoyer les artefacts
 # VALIDATION RETE
 # ================================
 
-rete-validate: build ## RETE - Valider un test spécifique (make rete-validate TEST=join_simple)
+rete-validate: build-runners ## RETE - Valider un test spécifique (make rete-validate TEST=join_simple)
 	@if [ -z "$(TEST)" ]; then \
 		echo "$(RED)❌ Erreur: Spécifiez un test avec TEST=nom_du_test$(NC)"; \
 		echo "   $(YELLOW)Exemple: make rete-validate TEST=join_simple$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(CYAN)🎯 Validation RETE du test: $(TEST)$(NC)"
-	@$(BUILD_DIR)/$(BINARY_NAME) $(BETA_TESTS_DIR)/$(TEST).constraint $(BETA_TESTS_DIR)/$(TEST).facts
+	@$(BUILD_DIR)/$(RETE_VALIDATE) $(BETA_TESTS_DIR)/$(TEST).constraint $(BETA_TESTS_DIR)/$(TEST).facts
 
 rete-all: build ## RETE - Valider tous les tests beta
 	@echo "$(BLUE)🔥 Validation de tous les tests RETE...$(NC)"
@@ -113,14 +126,14 @@ rete-dev: ## RETE - Interface développeur (cd test/coverage/beta)
 	@echo "   Commande: go run runner.go [constraint] [facts]"
 	@cd test/coverage/beta && bash
 
-rete-unified: build ## RETE - Exécuter TOUS les tests (Alpha+Beta+Intégration)
-	@echo "$(BLUE)🚀 RUNNER UNIFIÉ - TOUS LES TESTS RETE$(NC)"
+rete-unified: build-runners ## RETE - Exécuter TOUS les tests (Alpha+Beta+Intégration)
+	@echo "$(BLUE)🚀 RUNNER UNIVERSEL - TOUS LES TESTS RETE$(NC)"
 	@echo "========================================"
-	@$(BUILD_DIR)/$(UNIFIED_RUNNER) $(PWD)
+	@$(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(PWD)
 
-rete-unified-report: build ## RETE - Générer seulement le rapport unifié
-	@echo "$(CYAN)📄 Génération rapport unifié...$(NC)"
-	@$(BUILD_DIR)/$(UNIFIED_RUNNER) $(PWD) report
+rete-unified-report: build-runners ## RETE - Générer seulement le rapport universel
+	@echo "$(CYAN)📄 Génération rapport universel...$(NC)"
+	@$(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(PWD) report
 
 # ================================
 # TESTS & QUALITÉ
@@ -237,16 +250,17 @@ info: ## Informations sur le projet
 	@echo "$(BLUE)📊 INFORMATIONS PROJET TSD$(NC)"
 	@echo "=========================="
 	@echo "$(YELLOW)Nom:$(NC) $(PROJECT_NAME)"
-	@echo "$(YELLOW)Binaire:$(NC) $(BINARY_NAME)"
+	@echo "$(YELLOW)CLI:$(NC) $(BINARY_NAME)"
 	@echo "$(YELLOW)Go version:$(NC) $(GO_VERSION)"
 	@echo "$(YELLOW)Fichiers Go:$(NC) $(shell echo $(GO_FILES) | wc -w)"
 	@echo "$(YELLOW)Packages:$(NC) $(shell find . -name "*.go" -not -path "./vendor/*" -exec dirname {} \; | sort -u | wc -l)"
 	@echo ""
-	@echo "$(CYAN)🏗️ ARCHITECTURE:$(NC)"
-	@echo "• cmd/          - Interface CLI"
-	@echo "• internal/     - Logique métier"
-	@echo "• pkg/          - Packages réutilisables"
-	@echo "• test/         - Tests et validation"
+	@echo "$(CYAN)🏗️  ARCHITECTURE:$(NC)"
+	@echo "• cmd/tsd/              - CLI principal"
+	@echo "• cmd/*-runner/         - Runners de tests"
+	@echo "• constraint/           - Parseur de contraintes"
+	@echo "• rete/                 - Moteur RETE"
+	@echo "• test/                 - Tests et validation"
 
 demo: rete-quick ## Démonstration rapide
 	@echo ""

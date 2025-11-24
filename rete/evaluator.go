@@ -24,6 +24,13 @@ func NewAlphaConditionEvaluator() *AlphaConditionEvaluator {
 
 // EvaluateCondition évalue une condition sur un fait
 func (e *AlphaConditionEvaluator) EvaluateCondition(condition interface{}, fact *Fact, variableName string) (bool, error) {
+	// Si c'est un passthrough (agrégation), laisser passer tous les faits
+	if condMap, ok := condition.(map[string]interface{}); ok {
+		if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
+			return true, nil
+		}
+	}
+
 	// Lier la variable au fait pour l'évaluation
 	if variableName != "" {
 		e.variableBindings[variableName] = fact
@@ -116,6 +123,14 @@ func (e *AlphaConditionEvaluator) evaluateBinaryOperationMap(expr map[string]int
 		if operator, ok = expr["op"].(string); !ok {
 			return false, fmt.Errorf("opérateur manquant (recherché 'operator' ou 'op')")
 		}
+	}
+
+	// Debug: vérifier si left et right existent
+	if expr["left"] == nil {
+		return false, fmt.Errorf("côté gauche nil dans expr: %+v", expr)
+	}
+	if expr["right"] == nil {
+		return false, fmt.Errorf("côté droit nil dans expr: %+v", expr)
 	}
 
 	left, err := e.evaluateValue(expr["left"])
@@ -264,6 +279,12 @@ func (e *AlphaConditionEvaluator) evaluateConstraintMap(expr map[string]interfac
 
 // evaluateValue évalue une valeur (littéral, accès de champ, variable)
 func (e *AlphaConditionEvaluator) evaluateValue(value interface{}) (interface{}, error) {
+	// Check for nil values
+	if value == nil {
+		// Essayer d'obtenir un stacktrace pour débugger
+		return nil, fmt.Errorf("valeur nil reçue dans evaluateValue (check caller)")
+	}
+
 	switch val := value.(type) {
 	case map[string]interface{}:
 		return e.evaluateValueFromMap(val)
@@ -294,7 +315,7 @@ func (e *AlphaConditionEvaluator) evaluateValue(value interface{}) (interface{},
 func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{}) (interface{}, error) {
 	valType, ok := val["type"].(string)
 	if !ok {
-		return nil, fmt.Errorf("type de valeur manquant")
+		return nil, fmt.Errorf("type de valeur manquant dans map: %+v", val)
 	}
 
 	switch valType {
@@ -425,6 +446,11 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string
 			availableVars = append(availableVars, k)
 		}
 		return nil, fmt.Errorf("variable non liée: %s (variables disponibles: %v)", object, availableVars)
+	}
+
+	// Cas spécial : le champ 'id' est stocké dans fact.ID, pas dans fact.Fields
+	if field == "id" {
+		return fact.ID, nil
 	}
 
 	value, exists := fact.Fields[field]
@@ -755,6 +781,13 @@ func (e *AlphaConditionEvaluator) evaluateFunctionCall(val map[string]interface{
 	if !ok {
 		// Pas d'arguments
 		args = []interface{}{}
+	}
+
+	// Debug: vérifier si les arguments contiennent des nil
+	for i, arg := range args {
+		if arg == nil {
+			return nil, fmt.Errorf("argument[%d] de %s est nil, args complets: %+v", i, functionName, args)
+		}
 	}
 
 	// Évaluer les arguments

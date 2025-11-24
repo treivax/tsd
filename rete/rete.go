@@ -2,6 +2,7 @@ package rete
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -58,6 +59,12 @@ func (wm *WorkingMemory) RemoveFact(factID string) {
 	delete(wm.Facts, factID)
 }
 
+// GetFact récupère un fait par son ID
+func (wm *WorkingMemory) GetFact(factID string) (*Fact, bool) {
+	fact, exists := wm.Facts[factID]
+	return fact, exists
+}
+
 // GetFacts retourne tous les faits de la mémoire
 func (wm *WorkingMemory) GetFacts() []*Fact {
 	facts := make([]*Fact, 0, len(wm.Facts))
@@ -110,6 +117,7 @@ type Node interface {
 	GetMemory() *WorkingMemory
 	ActivateLeft(token *Token) error
 	ActivateRight(fact *Fact) error
+	ActivateRetract(factID string) error
 	AddChild(child Node)
 	GetChildren() []Node
 }
@@ -229,6 +237,16 @@ func (bn *BaseNode) PropagateToChildren(fact *Fact, token *Token) error {
 	return nil
 }
 
+// PropagateRetractToChildren propage la rétractation d'un fait aux nœuds enfants
+func (bn *BaseNode) PropagateRetractToChildren(factID string) error {
+	for _, child := range bn.GetChildren() {
+		if err := child.ActivateRetract(factID); err != nil {
+			return fmt.Errorf("erreur propagation rétractation vers %s: %w", child.GetID(), err)
+		}
+	}
+	return nil
+}
+
 // SaveMemory sauvegarde la mémoire du nœud
 func (bn *BaseNode) SaveMemory() error {
 	if bn.Storage != nil {
@@ -260,6 +278,15 @@ func NewRootNode(storage Storage) *RootNode {
 // ActivateLeft (non utilisé pour le nœud racine)
 func (rn *RootNode) ActivateLeft(token *Token) error {
 	return fmt.Errorf("le nœud racine ne peut pas recevoir de tokens")
+}
+
+// ActivateRetract retire le fait de la mémoire racine et propage aux enfants
+func (rn *RootNode) ActivateRetract(factID string) error {
+	rn.mutex.Lock()
+	rn.Memory.RemoveFact(factID)
+	rn.mutex.Unlock()
+	fmt.Printf("🗑️  [ROOT] Rétractation du fait: %s\n", factID)
+	return rn.PropagateRetractToChildren(factID)
 }
 
 // ActivateRight distribue les faits aux nœuds de type
@@ -306,6 +333,21 @@ func (tn *TypeNode) ActivateLeft(token *Token) error {
 	return fmt.Errorf("les nœuds de type ne reçoivent pas de tokens")
 }
 
+// ActivateRetract retire le fait de la mémoire de type et propage aux enfants
+func (tn *TypeNode) ActivateRetract(factID string) error {
+	tn.mutex.Lock()
+	_, exists := tn.Memory.GetFact(factID)
+	if exists {
+		tn.Memory.RemoveFact(factID)
+	}
+	tn.mutex.Unlock()
+	if !exists {
+		return nil
+	}
+	fmt.Printf("��️  [TYPE_%s] Rétractation du fait: %s\n", tn.TypeName, factID)
+	return tn.PropagateRetractToChildren(factID)
+}
+
 // ActivateRight filtre les faits par type et les propage
 func (tn *TypeNode) ActivateRight(fact *Fact) error {
 	// Vérifier si le fait correspond au type de ce nœud
@@ -334,6 +376,14 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 // validateFact valide qu'un fait respecte la définition de type
 func (tn *TypeNode) validateFact(fact *Fact) error {
 	for _, field := range tn.TypeDefinition.Fields {
+		// Le champ "id" est stocké dans fact.ID, pas dans Fields
+		if field.Name == "id" {
+			if fact.ID == "" {
+				return fmt.Errorf("champ manquant: %s", field.Name)
+			}
+			continue
+		}
+
 		value, exists := fact.Fields[field.Name]
 		if !exists {
 			return fmt.Errorf("champ manquant: %s", field.Name)
@@ -394,6 +444,21 @@ func NewAlphaNode(nodeID string, condition interface{}, variableName string, sto
 // ActivateLeft (non utilisé pour les nœuds alpha)
 func (an *AlphaNode) ActivateLeft(token *Token) error {
 	return fmt.Errorf("les nœuds alpha ne reçoivent pas de tokens")
+}
+
+// ActivateRetract retire le fait de la mémoire alpha et propage aux enfants
+func (an *AlphaNode) ActivateRetract(factID string) error {
+	an.mutex.Lock()
+	_, exists := an.Memory.GetFact(factID)
+	if exists {
+		an.Memory.RemoveFact(factID)
+	}
+	an.mutex.Unlock()
+	if !exists {
+		return nil
+	}
+	fmt.Printf("🗑️  [ALPHA_%s] Rétractation du fait: %s\n", an.ID, factID)
+	return an.PropagateRetractToChildren(factID)
 }
 
 // ActivateRight teste la condition sur le fait
@@ -505,6 +570,40 @@ func (tn *TerminalNode) ActivateLeft(token *Token) error {
 
 	// Déclencher l'action
 	return tn.executeAction(token)
+}
+
+// ActivateRetract retrait des tokens contenant le fait rétracté
+func (tn *TerminalNode) ActivateRetract(factID string) error {
+	tn.mutex.Lock()
+	var tokensToRemove []string
+	for tokenID, token := range tn.Memory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				tokensToRemove = append(tokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range tokensToRemove {
+		delete(tn.Memory.Tokens, tokenID)
+	}
+	tn.mutex.Unlock()
+	if len(tokensToRemove) > 0 {
+		fmt.Printf("🗑️  [TERMINAL_%s] Rétractation: %d tokens retirés\n", tn.ID, len(tokensToRemove))
+	}
+	return nil
+}
+
+// GetTriggeredActions retourne les actions déclenchées (pour les tests)
+func (tn *TerminalNode) GetTriggeredActions() []*Action {
+	tn.mutex.RLock()
+	defer tn.mutex.RUnlock()
+
+	actions := make([]*Action, 0, len(tn.Memory.Tokens))
+	for range tn.Memory.Tokens {
+		actions = append(actions, tn.Action)
+	}
+	return actions
 }
 
 // ActivateRight (non utilisé pour les nœuds terminaux)
@@ -638,6 +737,54 @@ func (jn *JoinNode) ActivateLeft(token *Token) error {
 		}
 	}
 	return nil
+}
+
+// ActivateRetract retrait des tokens contenant le fait rétracté des 3 mémoires
+func (jn *JoinNode) ActivateRetract(factID string) error {
+	jn.mutex.Lock()
+	var leftTokensToRemove []string
+	for tokenID, token := range jn.LeftMemory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				leftTokensToRemove = append(leftTokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range leftTokensToRemove {
+		delete(jn.LeftMemory.Tokens, tokenID)
+	}
+	var rightTokensToRemove []string
+	for tokenID, token := range jn.RightMemory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				rightTokensToRemove = append(rightTokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range rightTokensToRemove {
+		delete(jn.RightMemory.Tokens, tokenID)
+	}
+	var resultTokensToRemove []string
+	for tokenID, token := range jn.ResultMemory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				resultTokensToRemove = append(resultTokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range resultTokensToRemove {
+		delete(jn.ResultMemory.Tokens, tokenID)
+		delete(jn.Memory.Tokens, tokenID)
+	}
+	jn.mutex.Unlock()
+	totalRemoved := len(leftTokensToRemove) + len(rightTokensToRemove) + len(resultTokensToRemove)
+	if totalRemoved > 0 {
+		fmt.Printf("🗑️  [JOIN_%s] Rétractation: %d tokens retirés (L:%d R:%d RES:%d)\n", jn.ID, totalRemoved, len(leftTokensToRemove), len(rightTokensToRemove), len(resultTokensToRemove))
+	}
+	return jn.PropagateRetractToChildren(factID)
 }
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
@@ -949,6 +1096,295 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	return joinConditions
 }
 
+// ========== NŒUD ACCUMULATOR ==========
+
+// AccumulatorNode représente un nœud d'agrégation (AVG, SUM, COUNT, MIN, MAX)
+type AccumulatorNode struct {
+	BaseNode
+	AggregateFunc string                 `json:"aggregate_func"` // "AVG", "SUM", "COUNT", "MIN", "MAX"
+	MainVariable  string                 `json:"main_variable"`  // Variable principale (ex: "e")
+	MainType      string                 `json:"main_type"`      // Type principal (ex: "Employee")
+	AggVariable   string                 `json:"agg_variable"`   // Variable à agréger (ex: "p")
+	AggType       string                 `json:"agg_type"`       // Type à agréger (ex: "Performance")
+	Field         string                 `json:"field"`          // Champ à agréger (ex: "score"), vide pour COUNT
+	JoinField     string                 `json:"join_field"`     // Champ de jointure (ex: "employee_id")
+	MainField     string                 `json:"main_field"`     // Champ principal pour jointure (ex: "id")
+	Condition     map[string]interface{} `json:"condition"`      // Condition de comparaison du résultat
+	MainFacts     map[string]*Fact       `json:"-"`              // Faits principaux indexés par ID
+	AllFacts      map[string]*Fact       `json:"-"`              // Tous les faits (principaux + agrégés) par ID
+	mutex         sync.RWMutex
+}
+
+// NewAccumulatorNode crée un nouveau nœud d'agrégation
+func NewAccumulatorNode(id string, mainVar, mainType, aggVar, aggType, field, joinField, mainField, aggregateFunc string, condition map[string]interface{}, storage Storage) *AccumulatorNode {
+	return &AccumulatorNode{
+		BaseNode: BaseNode{
+			ID:       id,
+			Type:     "accumulator",
+			Children: make([]Node, 0),
+			Memory:   &WorkingMemory{Tokens: make(map[string]*Token), Facts: make(map[string]*Fact)},
+		},
+		AggregateFunc: aggregateFunc,
+		MainVariable:  mainVar,
+		MainType:      mainType,
+		AggVariable:   aggVar,
+		AggType:       aggType,
+		Field:         field,
+		JoinField:     joinField,
+		MainField:     mainField,
+		Condition:     condition,
+		MainFacts:     make(map[string]*Fact),
+		AllFacts:      make(map[string]*Fact),
+	}
+}
+
+// Activate traite un fait dans le nœud d'agrégation
+func (an *AccumulatorNode) Activate(fact *Fact, token *Token) error {
+	an.mutex.Lock()
+	defer an.mutex.Unlock()
+
+	// Stocker tous les faits
+	an.AllFacts[fact.ID] = fact
+
+	// Si c'est un fait principal, stocker et calculer l'agrégation
+	if fact.Type == an.MainType {
+		an.MainFacts[fact.ID] = fact
+		fmt.Printf("📊 ACCUMULATOR[%s]: Fait principal reçu %s\n", an.ID, fact.ID)
+
+		// Calculer l'agrégation pour ce fait principal
+		return an.processMainFact(fact)
+	}
+
+	// Si c'est un fait à agréger, recalculer pour tous les faits principaux
+	if fact.Type == an.AggType {
+		fmt.Printf("📊 ACCUMULATOR[%s]: Fait agrégé reçu %s\n", an.ID, fact.ID)
+		// Recalculer pour tous les faits principaux existants
+		for _, mainFact := range an.MainFacts {
+			if err := an.processMainFact(mainFact); err != nil {
+				fmt.Printf("⚠️  ACCUMULATOR[%s]: Erreur recalcul pour %s: %v\n", an.ID, mainFact.ID, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// processMainFact calcule l'agrégation pour un fait principal donné
+func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
+	// Collecter les faits à agréger qui correspondent à ce fait principal
+	aggregatedFacts := an.collectAggregatedFacts(mainFact)
+
+	fmt.Printf("📊 ACCUMULATOR[%s]: %d faits agrégés trouvés pour %s\n", an.ID, len(aggregatedFacts), mainFact.ID)
+
+	// Calculer l'agrégation
+	aggregatedValue, err := an.calculateAggregateForFacts(aggregatedFacts)
+	if err != nil {
+		return fmt.Errorf("erreur calcul agrégation: %w", err)
+	}
+
+	fmt.Printf("📊 ACCUMULATOR[%s]: Valeur agrégée = %.2f pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+
+	// Évaluer la condition
+	satisfied, err := an.evaluateCondition(aggregatedValue)
+	if err != nil {
+		return fmt.Errorf("erreur évaluation condition agrégation: %w", err)
+	}
+
+	if satisfied {
+		fmt.Printf("✅ ACCUMULATOR[%s]: Condition satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+
+		// Créer un token avec le fait et le résultat de l'agrégation
+		newToken := &Token{
+			ID:       fmt.Sprintf("accum_%s", mainFact.ID),
+			Facts:    []*Fact{mainFact},
+			Bindings: map[string]*Fact{an.MainVariable: mainFact},
+		}
+		an.Memory.AddToken(newToken)
+
+		// Propager aux enfants - ne passer que le token, pas le fait
+		// car TerminalNode ne veut que des tokens
+		return an.PropagateToChildren(nil, newToken)
+	} else {
+		fmt.Printf("❌ ACCUMULATOR[%s]: Condition NON satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+	}
+
+	return nil
+}
+
+// collectAggregatedFacts collecte les faits à agréger pour un fait principal
+func (an *AccumulatorNode) collectAggregatedFacts(mainFact *Fact) []*Fact {
+	collected := make([]*Fact, 0)
+
+	// Obtenir la valeur du champ de jointure du fait principal
+	mainValue, exists := mainFact.Fields[an.MainField]
+	if !exists {
+		// Essayer aussi dans fact.ID si c'est le champ "id"
+		if an.MainField == "id" {
+			mainValue = mainFact.ID
+		} else {
+			fmt.Printf("⚠️  ACCUMULATOR[%s]: Champ principal %s non trouvé dans %s\n", an.ID, an.MainField, mainFact.ID)
+			return collected
+		}
+	}
+
+	// Parcourir tous les faits pour trouver ceux qui correspondent
+	for _, fact := range an.AllFacts {
+		if fact.Type == an.AggType {
+			// Vérifier la condition de jointure
+			joinValue, exists := fact.Fields[an.JoinField]
+			if exists && joinValue == mainValue {
+				collected = append(collected, fact)
+			}
+		}
+	}
+
+	return collected
+}
+
+// calculateAggregateForFacts calcule la valeur agrégée pour une liste de faits
+func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, error) {
+	if len(facts) == 0 {
+		// Pas de faits à agréger - retourner 0
+		return 0, nil
+	}
+
+	switch an.AggregateFunc {
+	case "COUNT":
+		return float64(len(facts)), nil
+
+	case "SUM":
+		sum := 0.0
+		for _, f := range facts {
+			if val, ok := f.Fields[an.Field]; ok {
+				if numVal, ok := val.(float64); ok {
+					sum += numVal
+				}
+			}
+		}
+		return sum, nil
+
+	case "AVG":
+		sum := 0.0
+		count := 0
+		for _, f := range facts {
+			if val, ok := f.Fields[an.Field]; ok {
+				if numVal, ok := val.(float64); ok {
+					sum += numVal
+					count++
+				}
+			}
+		}
+		if count == 0 {
+			return 0, nil
+		}
+		return sum / float64(count), nil
+
+	case "MIN":
+		minVal := math.MaxFloat64
+		for _, f := range facts {
+			if val, ok := f.Fields[an.Field]; ok {
+				if numVal, ok := val.(float64); ok {
+					if numVal < minVal {
+						minVal = numVal
+					}
+				}
+			}
+		}
+		if minVal == math.MaxFloat64 {
+			return 0, nil
+		}
+		return minVal, nil
+
+	case "MAX":
+		maxVal := -math.MaxFloat64
+		for _, f := range facts {
+			if val, ok := f.Fields[an.Field]; ok {
+				if numVal, ok := val.(float64); ok {
+					if numVal > maxVal {
+						maxVal = numVal
+					}
+				}
+			}
+		}
+		if maxVal == -math.MaxFloat64 {
+			return 0, nil
+		}
+		return maxVal, nil
+
+	default:
+		return 0, fmt.Errorf("fonction d'agrégation non supportée: %s", an.AggregateFunc)
+	}
+}
+
+// ActivateLeft traite un token venant de la gauche (compatible avec interface Node)
+func (an *AccumulatorNode) ActivateLeft(token *Token) error {
+	// Pour AccumulatorNode, on traite le premier fait du token
+	if len(token.Facts) > 0 {
+		return an.Activate(token.Facts[0], token)
+	}
+	return nil
+}
+
+// ActivateRight traite un fait venant de la droite
+func (an *AccumulatorNode) ActivateRight(fact *Fact) error {
+	return an.Activate(fact, nil)
+}
+
+// evaluateCondition évalue si la valeur agrégée satisfait la condition
+func (an *AccumulatorNode) evaluateCondition(aggregatedValue float64) (bool, error) {
+	if an.Condition == nil {
+		return true, nil
+	}
+
+	condType, ok := an.Condition["type"].(string)
+	if !ok || condType != "comparison" {
+		return false, fmt.Errorf("type de condition invalide")
+	}
+
+	operator, ok := an.Condition["operator"].(string)
+	if !ok {
+		return false, fmt.Errorf("opérateur manquant")
+	}
+
+	threshold, ok := an.Condition["value"].(float64)
+	if !ok {
+		return false, fmt.Errorf("valeur de comparaison invalide")
+	}
+
+	switch operator {
+	case ">=":
+		return aggregatedValue >= threshold, nil
+	case ">":
+		return aggregatedValue > threshold, nil
+	case "<=":
+		return aggregatedValue <= threshold, nil
+	case "<":
+		return aggregatedValue < threshold, nil
+	case "==":
+		return aggregatedValue == threshold, nil
+	case "!=":
+		return aggregatedValue != threshold, nil
+	default:
+		return false, fmt.Errorf("opérateur non supporté: %s", operator)
+	}
+}
+
+// ActivateRetract gère la rétractation dans le nœud d'agrégation
+func (an *AccumulatorNode) ActivateRetract(factID string) error {
+	an.mutex.Lock()
+	defer an.mutex.Unlock()
+
+	// Retirer des faits principaux et de tous les faits
+	delete(an.MainFacts, factID)
+	delete(an.AllFacts, factID)
+
+	// Retirer des tokens
+	an.Memory.RemoveToken(factID)
+
+	fmt.Printf("🗑️  [ACCUMULATOR_%s] Rétractation: fait %s retiré\n", an.ID, factID)
+	return an.PropagateRetractToChildren(factID)
+}
+
 // ========== NŒUD EXISTS ==========
 
 // ExistsNode représente un nœud d'existence dans le réseau RETE
@@ -1017,6 +1453,49 @@ func (en *ExistsNode) ActivateLeft(token *Token) error {
 	}
 
 	return nil
+}
+
+// ActivateRetract retrait des tokens et faits contenant le fait rétracté
+func (en *ExistsNode) ActivateRetract(factID string) error {
+	en.mutex.Lock()
+	var mainTokensToRemove []string
+	for tokenID, token := range en.MainMemory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				mainTokensToRemove = append(mainTokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range mainTokensToRemove {
+		delete(en.MainMemory.Tokens, tokenID)
+	}
+	_, existsInExistsMemory := en.ExistsMemory.GetFact(factID)
+	if existsInExistsMemory {
+		en.ExistsMemory.RemoveFact(factID)
+	}
+	var resultTokensToRemove []string
+	for tokenID, token := range en.ResultMemory.Tokens {
+		for _, fact := range token.Facts {
+			if fact.ID == factID {
+				resultTokensToRemove = append(resultTokensToRemove, tokenID)
+				break
+			}
+		}
+	}
+	for _, tokenID := range resultTokensToRemove {
+		delete(en.ResultMemory.Tokens, tokenID)
+		delete(en.Memory.Tokens, tokenID)
+	}
+	en.mutex.Unlock()
+	totalRemoved := len(mainTokensToRemove) + len(resultTokensToRemove)
+	if existsInExistsMemory {
+		totalRemoved++
+	}
+	if totalRemoved > 0 {
+		fmt.Printf("🗑️  [EXISTS_%s] Rétractation: %d éléments retirés (MAIN:%d EXISTS:%v RES:%d)\n", en.ID, totalRemoved, len(mainTokensToRemove), existsInExistsMemory, len(resultTokensToRemove))
+	}
+	return en.PropagateRetractToChildren(factID)
 }
 
 // ActivateRight traite les faits pour vérification d'existence

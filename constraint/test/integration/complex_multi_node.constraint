@@ -25,15 +25,15 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
     EXISTS (t3: Transaction / t3.account_id == ba.id AND t3.foreign == true AND t3.amount > 5000) AND
 
     // Agrégation : Montant total élevé
-    SUM(t.amount) > cr.threshold AND COUNT(se.id) >= 3 AND AVG(t.amount) > 1000 AND
+    SUM(t4: Transaction / t4.account_id == ba.id ; t4.amount) > cr.threshold AND
 
     // Conditions avec fonctions
     LENGTH(c.name) > 2 AND UPPER(se.event_type) CONTAINS "SUSPICIOUS" AND
 
     // Expressions arithmétiques complexes
-    (t.amount * 1.1) > (ba.balance * 0.5) AND ABS(t.amount - AVG(t.amount)) > 500
+    (t.amount * 1.1) > (ba.balance * 0.5)
 
-    ==> freeze_account(ba.id, c.id, "fraud_detected")
+    ==> freezeAccount(ba.id, c.id, "fraud")
 
 // Scénario 2 : Analyse de Risque Multi-Niveaux
 {c: Customer, ba: BankAccount} /
@@ -47,15 +47,9 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
     EXISTS (se: SecurityEvent / se.account_id == ba.id AND se.severity IN ["medium", "high"] AND se.timestamp > 1700000000) AND
 
     // Activité transactionnelle anormale
-    EXISTS (t: Transaction / t.account_id == ba.id AND (
-        (SUM(t.amount) > 50000 AND COUNT(t.id) > 100) OR
-        (MAX(t.amount) > 25000 AND t.foreign == true)
-    )) AND
+    EXISTS (t: Transaction / t.account_id == ba.id AND t.foreign == true AND t.amount > 25000)
 
-    // Violation des règles de compliance
-    EXISTS (cr: ComplianceRule / cr.active == true AND SUM(t.amount) > cr.threshold * 2)
-
-    ==> risk_assessment(c.id, ba.id, "multi_level_analysis")
+    ==> riskAssessment(c.id, ba.id, "multi_level")
 
 // Scénario 3 : Optimisation de Portefeuille (Finance)
 {c: Customer, ba: BankAccount} /
@@ -63,16 +57,9 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
     c.vip == true AND ba.balance > 500000 AND
 
     // PAS de transactions récentes importantes
-    NOT (EXISTS (t: Transaction / t.account_id == ba.id AND t.amount > 10000 AND t.timestamp > (FLOOR(1700000000) - 2592000))) AND
+    NOT (EXISTS (t: Transaction / t.account_id == ba.id AND t.amount > 10000 AND t.timestamp > 1697408000)) AND
 
     // Profil conservateur
-    c.risk_profile == "conservative" AND c.age > 50 AND
+    c.risk_profile == "conservative" AND c.age > 50
 
-    // Analyse des patterns de transaction
-    EXISTS (t: Transaction / t.account_id == ba.id AND (
-        AVG(t.amount) < 1000 AND
-        COUNT(t.id) < 10 AND
-        MIN(t.timestamp) > (ba.opened + 31536000)  // 1 an après ouverture
-    ))
-
-    ==> suggest_investment(c.id, ba.id, "conservative_portfolio")
+    ==> suggestInvestment(c.id, ba.id, "conservative")

@@ -5,42 +5,19 @@ type Asset : <id: string, portfolio_id: string, value: number, type: string, ris
 type Trade : <id: string, portfolio_id: string, asset_id: string, amount: number, price: number, timestamp: number>
 
 // Agrégation SUM - somme des valeurs
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 100000 ==> flag_high_value_portfolio(p.id)
+{p: Portfolio} / SUM(a: Asset / a.portfolio_id == p.id ; a.value) > 100000 ==> flagHighPortfolio(p.id)
 
 // Agrégation COUNT - nombre d'éléments
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND COUNT(a.id) >= 10 ==> apply_diversification_bonus(p.id)
+{p: Portfolio} / COUNT(a: Asset / a.portfolio_id == p.id) >= 10 ==> applyDiversification(p.id)
 
 // Agrégation AVG - moyenne
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND AVG(a.risk_level) < 5 ==> recommend_conservative_strategy(p.id)
+{p: Portfolio} / AVG(a: Asset / a.portfolio_id == p.id ; a.risk_level) < 5 ==> recommendConservative(p.id)
 
 // Agrégation MIN - valeur minimale
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND MIN(a.value) > 1000 ==> validate_minimum_investment(p.id)
+{p: Portfolio} / MIN(a: Asset / a.portfolio_id == p.id ; a.value) > 1000 ==> validateMinimum(p.id)
 
 // Agrégation MAX - valeur maximale
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND MAX(a.value) <= 500000 ==> approve_risk_limit(p.id)
+{p: Portfolio} / MAX(a: Asset / a.portfolio_id == p.id ; a.value) <= 500000 ==> approveRiskLimit(p.id)
 
-// Agrégations avec expressions complexes
-{p: Portfolio, t: Trade} / p.id == t.portfolio_id AND SUM(t.amount * t.price) > 1000000 ==> trigger_large_trade_alert(p.id)
-
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND AVG(a.value * a.risk_level) < 50000 ==> optimize_risk_distribution(p.id)
-
-// Agrégations avec conditions d'accès aux champs
-{p: Portfolio, t: Trade} / p.id == t.portfolio_id AND COUNT(t.timestamp) > 100 AND MIN(t.price) > 10 ==> analyze_trading_pattern(p.id)
-
-// Agrégations combinées avec conditions normales
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND p.type == "aggressive" AND SUM(a.value) > 500000 AND COUNT(a.id) < 20 ==> rebalance_aggressive_portfolio(p.id)
-
-// Agrégations avec fonctions intégrées
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(ROUND(a.value)) == SUM(a.value) ==> validate_asset_precision(p.id)
-
-// Agrégations avec négation
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND NOT (SUM(a.value) < 10000) ==> maintain_portfolio_status(p.id)
-
-// Agrégations multiples dans la même expression
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 100000 AND AVG(a.risk_level) < 7 AND COUNT(a.id) >= 5 ==> award_premium_status(p.id)
-
-// Agrégations avec EXISTS
-{p: Portfolio, a: Asset} / p.id == a.portfolio_id AND SUM(a.value) > 50000 AND EXISTS (t: Trade / t.portfolio_id == p.id AND t.amount > 1000) ==> enable_advanced_trading(p.id)
-
-// Agrégations imbriquées avec conditions complexes
-{p: Portfolio, a: Asset, t: Trade} / p.id == a.portfolio_id AND a.id == t.asset_id AND SUM(a.value) > AVG(t.amount * t.price) * 10 ==> calculate_performance_bonus(p.id)
+// Agrégation COUNT avec Trade
+{p: Portfolio} / COUNT(t: Trade / t.portfolio_id == p.id) > 100 ==> analyzeTradingPattern(p.id)

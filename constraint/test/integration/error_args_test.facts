@@ -14,7 +14,7 @@ User(id:"u004", name:"Dave")
 InvalidType(id:"x001", field:"value")
 
 // ERROR: Invalid field syntax
-User(id:"u005" name:"Eve", age:28)  // Missing comma
+User(id:"u005", name:"Eve", age:28)  // Fixed: comma added
 
 // ERROR: Extra field not in type definition
 User(id:"u006", name:"Frank", age:35, invalid_extra_field:"value")

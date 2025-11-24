@@ -28,7 +28,7 @@ type TestResult struct {
 
 func main() {
 	fmt.Println("=== RETE VALIDATION CLI ===")
-	fmt.Println("Validation authentique avec réseau RETE réel\n")
+	fmt.Println("Validation authentique avec réseau RETE réel")
 
 	if len(os.Args) == 3 {
 		// Mode test spécifique

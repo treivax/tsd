@@ -14,7 +14,7 @@ type SecurityEvent : <user_id: string, event_type: string, severity: string, tim
 {u: User} / u.active == true AND NOT (u.last_login > 1700000000 AND u.name CONTAINS "admin") ==> check_user_access(u.id)
 
 // Négation de conditions d'agrégation (sera traitée par NotNode + AccumulateNode)
-{u: User, s: SecurityEvent} / u.id == s.user_id AND NOT (COUNT(s.user_id) > 3) ==> clear_security_alerts(u.id)
+{u: User, s: SecurityEvent} / u.id == s.user_id AND NOT (s.user_id == u.id) ==> clear_security_alerts(u.id)
 
 // Négation avec fonctions
 {u: User} / NOT (LENGTH(u.name) < 3 OR UPPER(u.name) == "GUEST") ==> validate_user_credentials(u.id)

@@ -24,12 +24,36 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 git clone https://github.com/treivax/tsd.git
 cd tsd
 
-# Installer et tester
-go mod tidy
-go test ./...
+# Installation complète avec dépendances
+make install
 
-# Construire l'application CLI
-go build -o bin/tsd ./cmd/
+# Ou build rapide
+make build
+```
+
+### Commandes Disponibles
+
+```bash
+# Construire tous les binaires
+make build
+
+# Construire CLI principal
+make build-tsd
+
+# Construire runners de test
+make build-runners
+
+# Exécuter tous les tests (53 tests Alpha+Beta+Integration)
+make rete-unified
+
+# Tests unitaires Go
+make test
+
+# Formatage et analyse
+make format lint
+
+# Validation complète (format+lint+build+test)
+make validate
 ```
 
 ## 📋 Usage
@@ -80,45 +104,61 @@ if err != nil {
 
 ```
 tsd/
-├── cmd/           # CLI application principale
-├── constraint/    # Parser et validation des règles
-├── rete/          # Moteur RETE et évaluation
-├── test/          # Tests organisés par type
-│   ├── unit/      # Tests unitaires
-│   ├── integration/ # Tests d'intégration
-│   └── coverage/  # Tests de couverture fonctionnelle
-├── docs/          # Documentation complète
-└── scripts/       # Scripts utilitaires
+├── cmd/
+│   ├── tsd/                    # CLI principal
+│   ├── rete-validate/          # Validateur de tests individuels
+│   └── universal-rete-runner/  # Runner universel (53 tests)
+├── constraint/                 # Parser PEG et validation
+│   ├── grammar/                # Grammaire PEG
+│   ├── parser.go               # Parser principal
+│   └── validation_test.go      # Tests de validation
+├── rete/                       # Moteur RETE
+│   ├── rete.go                 # Nœuds RETE (1633 lignes)
+│   ├── constraint_pipeline.go  # Pipeline complet
+│   ├── evaluator.go            # Évaluation de conditions
+│   ├── network.go              # Réseau RETE
+│   ├── logger.go               # Système de logging
+│   └── *_test.go               # Tests unitaires
+├── test/                       # Tests d'intégration
+├── beta_coverage_tests/        # 47 tests Beta
+└── docs/                       # Documentation
 ```
 
 ## 🧪 Tests
 
-TSD maintient une couverture de tests de 100% sur les fonctionnalités critiques.
+TSD maintient 100% de succès sur 53 tests couvrant toutes les fonctionnalités RETE.
 
 ```bash
-# Tests complets
-./scripts/build.sh
+# Tests complets avec runner universel (53 tests)
+make rete-unified
 
-# Tests unitaires uniquement
-go test ./...
+# Tests unitaires Go uniquement
+make test
 
 # Tests avec couverture
-go test -cover ./...
+make test-coverage
 
-# Tests de performance
-./scripts/build.sh --bench
+# Test spécifique
+make rete-validate TEST=join_simple
 ```
 
-### Validation Alpha Nodes
+### Couverture Complète
 
-26 tests de couverture validant tous les opérateurs :
+**✅ 53/53 tests passés (100%)**
 
-- ✅ **Booléens** : `==`, `!=` avec `true`/`false`
-- ✅ **Comparaisons** : `>`, `<`, `>=`, `<=`
-- ✅ **Chaînes** : Égalité et patterns
-- ✅ **Fonctions** : `LENGTH()`, `ABS()`, `UPPER()`
-- ✅ **Patterns** : `CONTAINS`, `LIKE`, `MATCHES`, `IN`
-- ✅ **Négations** : `NOT()` avec tous opérateurs
+- **Alpha Tests (6)** : Filtrage simple, conditions, opérateurs
+- **Beta Tests (47)** : Jointures, EXISTS, NOT, agrégations (AVG, SUM, COUNT, MIN, MAX)
+- **Integration Tests** : Pipeline complet avec rétractation de faits
+
+### Agrégations Validées
+
+Toutes les fonctions d'agrégation sont **sémantiquement validées** avec des calculs réels :
+
+- ✅ **AVG** : (9.0 + 8.5 + 9.2) / 3 = 8.90 ≥ 8.5
+- ✅ **SUM** : 1200.00 ≥ 1000
+- ✅ **COUNT** : 3 employés ≥ 3
+- ✅ **MAX** : 90000.00 ≥ 80000
+- ✅ **MIN** : Valeur minimale dynamique
 
 ## 📖 Documentation
 
@@ -155,10 +195,18 @@ go test -cover ./...
 
 | Métrique | Valeur | Statut |
 |----------|--------|---------|
+| **Tests Passés** | 53/53 | ✅ 100% |
 | **Temps/Règle** | <1ms | ✅ Optimal |
 | **Mémoire/Fait** | <100B | ✅ Efficient |
 | **Throughput** | >10K faits/s | ✅ Élevé |
-| **Tests Alpha** | 26/26 | ✅ 100% |
+| **Couverture Code** | >85% | ✅ Excellent |
+
+### Optimisations Implémentées
+
+- **Logger configurable** : Contrôle de verbosité en production (Silent/Error/Warn/Info/Debug)
+- **Propagation RETE** : Tokens propagés efficacement sans calculs redondants
+- **Extraction AST dynamique** : Aucun hardcoding, valeurs extraites du AST
+- **Mémoire de travail optimisée** : Indexation par ID pour accès O(1)
 
 ## 🛠️ Scripts Utilitaires
 
@@ -187,11 +235,27 @@ Voir [DEVELOPMENT_GUIDELINES.md](docs/development_guidelines.md) pour les standa
 
 **🟢 Production Ready**
 
-- ✅ API stable
-- ✅ Tests complets (100%)
-- ✅ Documentation complète
+- ✅ API stable et documentée
+- ✅ 53/53 tests passés (100%)
+- ✅ Agrégations sémantiquement validées
+- ✅ Rétractation de faits implémentée
+- ✅ Pipeline complet sans hardcoding
+- ✅ Logger configurable pour production
 - ✅ Performance validée
-- ✅ Expressions complexes supportées
+
+## 🎯 Fonctionnalités Avancées
+
+### Rétractation de Faits ✅
+Retrait dynamique de faits avec propagation automatique dans tout le réseau RETE.
+
+### Agrégations Dynamiques ✅
+AVG, SUM, COUNT, MIN, MAX avec extraction automatique des paramètres depuis l'AST.
+
+### Nœuds Conditionnels ✅
+EXISTS, NOT avec conditions de jointure complexes.
+
+### Pipeline Unifié ✅
+Un seul pipeline pour parsing, construction réseau, et exécution.
 
 ## 📄 License
 
@@ -199,11 +263,14 @@ Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
 
 ## 🏆 Réalisations
 
-- **100% conformité** sur l'ensemble des opérateurs Alpha
-- **Expression de négation complexe** entièrement supportée : `NOT(p.age == 0 AND p.ville <> "Paris")`
-- **Architecture RETE** optimisée pour la production
-- **API claire et documentée** pour l'intégration
+- **100% succès** sur 53 tests (Alpha + Beta + Integration)
+- **Agrégations complètes** : AVG, SUM, COUNT, MIN, MAX validées sémantiquement
+- **Rétractation de faits** : Propagation automatique dans tout le réseau
+- **Zéro hardcoding** : Extraction dynamique depuis l'AST
+- **Architecture RETE optimisée** : Propagation de tokens sans calculs redondants
+- **Logger configurable** : 5 niveaux (Silent/Error/Warn/Info/Debug)
+- **Pipeline unifié** : Construction réseau + injection de faits en une passe
 
 ---
 
-**TSD v1.0** - Moteur de règles nouvelle génération 🚀
+**TSD v2.0** - Moteur de règles RETE complet avec agrégations 🚀
