@@ -1,6 +1,4 @@
-// Test Beta Join - COUNT simulation (simplified)
-type Product : <id: string, category: string, price: number, in_stock: bool>
-type Review : <id: string, product_id: string, rating: number, verified: bool>
+type Department : <id: string, name: string, budget: number>
+type Employee : <id: string, name: string, department: string, salary: number>
 
-{p: Product, r: Review} / p.in_stock == true AND r.product_id == p.id AND r.verified == true ==> well_reviewed_product(p.id)
-{p: Product, r: Review} / p.category == "electronics" AND r.product_id == p.id AND r.rating >= 4 ==> top_electronic(p.id)
+{d: Department} / COUNT(e: Employee / e.department == d.name) >= 3 ==> PRINT("Department ", d.name, " has >= 3 employees")

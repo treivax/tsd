@@ -140,6 +140,7 @@ Constraints <- first:Constraint rest:(_ LogicalOp _ Constraint)* {
 Constraint <- "(" _ expr:Constraints _ ")" { return expr, nil } /
               NotConstraint /
               ExistsConstraint /
+              AccumulateConstraint /
               left:ArithmeticExpr _ op:ComparisonOp _ right:ArithmeticExpr {
     return map[string]interface{}{
         "type": "comparison",
@@ -163,6 +164,31 @@ ExistsConstraint <- "EXISTS" _ "(" _ variable:TypedVariable _ "/" _ condition:Co
         "condition": condition,
     }, nil
 }
+
+AccumulateConstraint <- accumFunc:AccumulateFunction _ "(" _ accumVar:TypedVariable _ "/" _ accumCond:Constraints _ accumField:(_ ";" _ FieldAccess)? _ ")" _ accumOp:ComparisonOp _ accumThreshold:ArithmeticExpr {
+    fieldValue := ""
+    if accumField != nil {
+        fieldAccess := accumField.([]interface{})[3].(map[string]interface{})
+        fieldValue = fieldAccess["field"].(string)
+    }
+    
+    return map[string]interface{}{
+        "type": "accumulateConstraint",
+        "function": accumFunc,
+        "variable": accumVar,
+        "condition": accumCond,
+        "field": fieldValue,
+        "operator": accumOp,
+        "threshold": accumThreshold,
+    }, nil
+}
+
+AccumulateFunction <- "AVG" { return "AVG", nil } /
+                     "COUNT" { return "COUNT", nil } /
+                     "SUM" { return "SUM", nil } /
+                     "MIN" { return "MIN", nil } /
+                     "MAX" { return "MAX", nil }
+
 
 ArithmeticExpr <- first:Term rest:(_ ("+" / "-") _ Term)* {
     if rest == nil || len(rest.([]interface{})) == 0 {
@@ -265,12 +291,7 @@ FunctionName <- "LENGTH" { return "LENGTH", nil } /
                 "ABS" { return "ABS", nil } /
                 "ROUND" { return "ROUND", nil } /
                 "FLOOR" { return "FLOOR", nil } /
-                "CEIL" { return "CEIL", nil } /
-                "COUNT" { return "COUNT", nil } /
-                "SUM" { return "SUM", nil } /
-                "AVG" { return "AVG", nil } /
-                "MIN" { return "MIN", nil } /
-                "MAX" { return "MAX", nil }
+                "CEIL" { return "CEIL", nil }
 
 FunctionArgList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     args := []interface{}{first}

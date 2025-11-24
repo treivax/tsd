@@ -11,6 +11,13 @@ import (
 	"github.com/treivax/tsd/internal/validation"
 )
 
+// TestResult represents the outcome of a single test execution in the RETE validation process.
+// It captures essential metrics and status information for each test run, including:
+// - TestName: the identifier of the executed test
+// - ExecutionTime: the duration taken to complete the test
+// - TokensGenerated: the number of tokens produced during test execution
+// - ValidationError: any error message encountered during validation (empty if successful)
+// - Success: a boolean flag indicating whether the test passed or failed
 type TestResult struct {
 	TestName        string
 	ExecutionTime   time.Duration
@@ -21,14 +28,14 @@ type TestResult struct {
 
 func main() {
 	fmt.Println("=== RETE VALIDATION CLI ===")
-	fmt.Println("Validation authentique avec réseau RETE réel")
+	fmt.Println("Validation authentique avec réseau RETE réel\n")
 
 	if len(os.Args) == 3 {
 		// Mode test spécifique
 		constraintFile := os.Args[1]
 		factsFile := os.Args[2]
 
-		fmt.Printf("Test spécifique: %s + %s\n", constraintFile, factsFile)
+		fmt.Printf("Test spécifique: %s + %s\n\n", constraintFile, factsFile)
 		result := runSingleTest(constraintFile, factsFile)
 		displayTestResult(result)
 		return
