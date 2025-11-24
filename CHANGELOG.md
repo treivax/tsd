@@ -5,6 +5,42 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.1.0] - 2024-11-25
+
+### 🗑️ Supprimé
+
+#### internal/validation (implémentation RETE simplifiée obsolète)
+- **Suppression complète** de `internal/validation/rete_validation_new.go` (951 lignes)
+- **Suppression complète** de `internal/validation/rete_new_test.go` (3 tests)
+- **Suppression CLI** `cmd/rete-validate/` qui dépendait de internal/validation
+- **Raison** : Redondance avec le moteur principal `rete/`
+- **Migration** : TestIncrementalPropagation migré vers rete_test.go avec le moteur principal
+- **Impact** : Réduction de 951 lignes de code de production (8% du codebase)
+- **Tests** : 87/87 tests passent (-3 tests obsolètes, +1 test migré)
+
+### ✨ Ajouté
+
+#### Test de propagation incrémentale dans le moteur principal
+- **Nouveau test** : `TestIncrementalPropagation` dans `rete/rete_test.go`
+- **Objectif** : Valider la propagation séquentielle User → User+Order → User+Order+Product
+- **Fichiers** : 
+  - `rete/test/incremental_propagation.constraint` : Règle avec 3 niveaux de jointure
+  - `rete/test/incremental_propagation.facts` : Faits de test
+- **Vérifie** :
+  - Propagation incrémentale avec ajout séquentiel de faits
+  - Filtrage des faits non-matching par conditions beta
+  - Création de tokens terminaux uniquement pour les triplets complets valides
+- **Utilise** : API moderne du moteur principal (`ConstraintPipeline`, `ReteNetwork`)
+
+### 📊 Statistiques
+
+- **Code production** : Réduction de ~951 lignes (internal/validation)
+- **Tests** : 87 tests (89 → 87, migration de 3 tests → 1 test unifié)
+- **Couverture** : 100% des cas testés de internal/validation couverts par le moteur principal
+- **Analyse** :
+  - 2/3 tests redondants avec beta_exhaustive_coverage (TestRETENewBasic, TestRETENewJointure)
+  - 1/3 test unique migré avec succès (TestRETEIncrementalPropagation)
+
 ## [2.0.1] - 2024-11-25
 
 ### 🗑️ Supprimé

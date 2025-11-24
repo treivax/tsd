@@ -1,0 +1,9 @@
+# Faits de test pour la propagation incrémentale
+# Ces faits seront ajoutés séquentiellement pour tester la propagation
+
+User(id="U1", age=25)
+Order(id="O1", user_id="U1", product_id="P1")
+Product(id="P1", name="TestProduct")
+
+# Fait qui ne doit PAS matcher (user_id incorrect)
+Order(id="O2", user_id="U999", product_id="P1")
