@@ -31,6 +31,7 @@ func (tn *TypeNode) ActivateLeft(token *Token) error {
 }
 
 // ActivateRetract retire le fait de la mémoire de type et propage aux enfants
+// factID doit être l'identifiant interne (Type_ID)
 func (tn *TypeNode) ActivateRetract(factID string) error {
 	tn.mutex.Lock()
 	_, exists := tn.Memory.GetFact(factID)
@@ -41,7 +42,7 @@ func (tn *TypeNode) ActivateRetract(factID string) error {
 	if !exists {
 		return nil
 	}
-	fmt.Printf("��️  [TYPE_%s] Rétractation du fait: %s\n", tn.TypeName, factID)
+	fmt.Printf("🗑️  [TYPE_%s] Rétractation du fait: %s\n", tn.ID, factID)
 	return tn.PropagateRetractToChildren(factID)
 }
 
@@ -61,7 +62,10 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 	}
 
 	tn.mutex.Lock()
-	tn.Memory.AddFact(fact)
+	if err := tn.Memory.AddFact(fact); err != nil {
+		tn.mutex.Unlock()
+		return fmt.Errorf("erreur ajout fait dans type node: %w", err)
+	}
 	tn.mutex.Unlock()
 
 	// Persistance désactivée pour les performances

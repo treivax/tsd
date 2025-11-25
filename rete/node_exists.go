@@ -73,12 +73,13 @@ func (en *ExistsNode) ActivateLeft(token *Token) error {
 }
 
 // ActivateRetract retrait des tokens et faits contenant le fait rétracté
+// factID doit être l'identifiant interne (Type_ID)
 func (en *ExistsNode) ActivateRetract(factID string) error {
 	en.mutex.Lock()
 	var mainTokensToRemove []string
 	for tokenID, token := range en.MainMemory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				mainTokensToRemove = append(mainTokensToRemove, tokenID)
 				break
 			}
@@ -94,7 +95,7 @@ func (en *ExistsNode) ActivateRetract(factID string) error {
 	var resultTokensToRemove []string
 	for tokenID, token := range en.ResultMemory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				resultTokensToRemove = append(resultTokensToRemove, tokenID)
 				break
 			}
@@ -121,7 +122,10 @@ func (en *ExistsNode) ActivateRight(fact *Fact) error {
 
 	// Stocker le fait dans la mémoire d'existence
 	en.mutex.Lock()
-	en.ExistsMemory.AddFact(fact)
+	if err := en.ExistsMemory.AddFact(fact); err != nil {
+		en.mutex.Unlock()
+		return fmt.Errorf("erreur ajout fait dans exists node: %w", err)
+	}
 	en.mutex.Unlock()
 
 	// Re-vérifier tous les tokens principaux avec ce nouveau fait

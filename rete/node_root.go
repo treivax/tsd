@@ -38,7 +38,10 @@ func (rn *RootNode) ActivateRetract(factID string) error {
 // ActivateRight distribue les faits aux nœuds de type
 func (rn *RootNode) ActivateRight(fact *Fact) error {
 	rn.mutex.Lock()
-	rn.Memory.AddFact(fact)
+	if err := rn.Memory.AddFact(fact); err != nil {
+		rn.mutex.Unlock()
+		return fmt.Errorf("erreur ajout fait dans root node: %w", err)
+	}
 	rn.mutex.Unlock()
 
 	// Log désactivé pour les performances

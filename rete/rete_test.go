@@ -59,18 +59,184 @@ func TestWorkingMemory_AddFact(t *testing.T) {
 	}
 
 	fact := &Fact{ID: "f1", Type: "Person"}
-	wm.AddFact(fact)
+	if err := wm.AddFact(fact); err != nil {
+		t.Fatalf("Failed to add fact: %v", err)
+	}
 
 	if len(wm.Facts) != 1 {
 		t.Errorf("Expected 1 fact, got %d", len(wm.Facts))
 	}
 
-	retrieved, exists := wm.GetFact("f1")
+	// Utiliser l'ID interne pour récupérer le fait
+	retrieved, exists := wm.GetFact("Person_f1")
 	if !exists {
 		t.Error("Fact should exist in working memory")
 	}
 	if retrieved.ID != "f1" {
 		t.Errorf("Expected fact ID 'f1', got '%s'", retrieved.ID)
+	}
+}
+
+func TestWorkingMemory_AddFact_DuplicateID(t *testing.T) {
+	wm := &WorkingMemory{
+		NodeID: "test_node",
+		Facts:  make(map[string]*Fact),
+	}
+
+	// Test 1: Ajouter deux faits avec même ID et même type (doit échouer)
+	fact1 := &Fact{ID: "f1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
+	if err := wm.AddFact(fact1); err != nil {
+		t.Fatalf("Failed to add first fact: %v", err)
+	}
+
+	fact2 := &Fact{ID: "f1", Type: "Person", Fields: map[string]interface{}{"name": "Bob"}}
+	err := wm.AddFact(fact2)
+
+	if err == nil {
+		t.Error("Expected error when adding fact with duplicate ID and same type, got nil")
+	}
+
+	// Test 2: Ajouter un fait avec même ID mais type différent (doit réussir maintenant)
+	fact3 := &Fact{ID: "f1", Type: "Company", Fields: map[string]interface{}{"name": "Acme Corp"}}
+	if err := wm.AddFact(fact3); err != nil {
+		t.Fatalf("Should allow same ID with different type, got error: %v", err)
+	}
+
+	// Vérifier qu'il y a maintenant 2 faits avec identifiants internes différents
+	if len(wm.Facts) != 2 {
+		t.Errorf("Expected 2 facts (Person_f1 and Company_f1), got %d", len(wm.Facts))
+	}
+
+	// Vérifier qu'on peut récupérer par identifiant interne
+	personInternal, existsPersonInternal := wm.GetFact("Person_f1")
+	if !existsPersonInternal {
+		t.Error("Should be able to get fact with internal ID 'Person_f1'")
+	}
+	if personInternal.Type != "Person" {
+		t.Errorf("Expected type 'Person', got '%s'", personInternal.Type)
+	}
+	if name, ok := personInternal.Fields["name"].(string); !ok || name != "Alice" {
+		t.Errorf("Expected name 'Alice', got '%v'", personInternal.Fields["name"])
+	}
+
+	companyInternal, existsCompanyInternal := wm.GetFact("Company_f1")
+	if !existsCompanyInternal {
+		t.Error("Should be able to get fact with internal ID 'Company_f1'")
+	}
+	if companyInternal.Type != "Company" {
+		t.Errorf("Expected type 'Company', got '%s'", companyInternal.Type)
+	}
+}
+
+func TestMakeInternalID(t *testing.T) {
+	internalID := MakeInternalID("Person", "P123")
+	expected := "Person_P123"
+	if internalID != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, internalID)
+	}
+}
+
+func TestParseInternalID(t *testing.T) {
+	// Test cas valide
+	factType, factID, ok := ParseInternalID("Person_P123")
+	if !ok {
+		t.Error("Expected successful parse")
+	}
+	if factType != "Person" {
+		t.Errorf("Expected type 'Person', got '%s'", factType)
+	}
+	if factID != "P123" {
+		t.Errorf("Expected ID 'P123', got '%s'", factID)
+	}
+
+	// Test cas avec underscore dans l'ID
+	factType2, factID2, ok2 := ParseInternalID("Company_C_456")
+	if !ok2 {
+		t.Error("Expected successful parse with underscore in ID")
+	}
+	if factType2 != "Company" {
+		t.Errorf("Expected type 'Company', got '%s'", factType2)
+	}
+	if factID2 != "C_456" {
+		t.Errorf("Expected ID 'C_456', got '%s'", factID2)
+	}
+
+	// Test cas invalide (pas d'underscore)
+	_, _, ok3 := ParseInternalID("InvalidID")
+	if ok3 {
+		t.Error("Expected parse to fail for ID without underscore")
+	}
+}
+
+func TestWorkingMemory_GetFactByInternalID(t *testing.T) {
+	wm := &WorkingMemory{
+		NodeID: "test_node",
+		Facts:  make(map[string]*Fact),
+	}
+
+	fact1 := &Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
+	fact2 := &Fact{ID: "P1", Type: "Company", Fields: map[string]interface{}{"name": "Acme"}}
+
+	if err := wm.AddFact(fact1); err != nil {
+		t.Fatalf("Failed to add fact1: %v", err)
+	}
+	if err := wm.AddFact(fact2); err != nil {
+		t.Fatalf("Failed to add fact2: %v", err)
+	}
+
+	// Récupération par ID interne exact
+	retrieved, exists := wm.GetFactByInternalID("Person_P1")
+	if !exists {
+		t.Error("Should find fact with internal ID 'Person_P1'")
+	}
+	if retrieved.Type != "Person" {
+		t.Errorf("Expected type 'Person', got '%s'", retrieved.Type)
+	}
+
+	// ID interne inexistant
+	_, exists2 := wm.GetFactByInternalID("NotFound_X")
+	if exists2 {
+		t.Error("Should not find non-existent internal ID")
+	}
+}
+
+func TestWorkingMemory_GetFactByTypeAndID(t *testing.T) {
+	wm := &WorkingMemory{
+		NodeID: "test_node",
+		Facts:  make(map[string]*Fact),
+	}
+
+	fact1 := &Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
+	fact2 := &Fact{ID: "P1", Type: "Company", Fields: map[string]interface{}{"name": "Acme"}}
+
+	if err := wm.AddFact(fact1); err != nil {
+		t.Fatalf("Failed to add fact1: %v", err)
+	}
+	if err := wm.AddFact(fact2); err != nil {
+		t.Fatalf("Failed to add fact2: %v", err)
+	}
+
+	// Récupération par type + ID
+	person, existsPerson := wm.GetFactByTypeAndID("Person", "P1")
+	if !existsPerson {
+		t.Error("Should find Person with ID 'P1'")
+	}
+	if person.Type != "Person" {
+		t.Errorf("Expected type 'Person', got '%s'", person.Type)
+	}
+
+	company, existsCompany := wm.GetFactByTypeAndID("Company", "P1")
+	if !existsCompany {
+		t.Error("Should find Company with ID 'P1'")
+	}
+	if company.Type != "Company" {
+		t.Errorf("Expected type 'Company', got '%s'", company.Type)
+	}
+
+	// Combinaison inexistante
+	_, exists3 := wm.GetFactByTypeAndID("Person", "NotFound")
+	if exists3 {
+		t.Error("Should not find non-existent Person ID")
 	}
 }
 
@@ -81,14 +247,16 @@ func TestWorkingMemory_RemoveFact(t *testing.T) {
 	}
 
 	fact := &Fact{ID: "f1", Type: "Person"}
-	wm.AddFact(fact)
-	wm.RemoveFact("f1")
+	if err := wm.AddFact(fact); err != nil {
+		t.Fatalf("Failed to add fact: %v", err)
+	}
+	wm.RemoveFact("Person_f1")
 
 	if len(wm.Facts) != 0 {
 		t.Errorf("Expected 0 facts after removal, got %d", len(wm.Facts))
 	}
 
-	_, exists := wm.GetFact("f1")
+	_, exists := wm.GetFact("Person_f1")
 	if exists {
 		t.Error("Fact should not exist after removal")
 	}
@@ -102,7 +270,7 @@ func TestRootNode_ActivateRetract(t *testing.T) {
 	root.ActivateRight(fact)
 
 	// Rétracter le fait
-	err := root.ActivateRetract("f1")
+	err := root.ActivateRetract("Person_f1")
 	if err != nil {
 		t.Errorf("ActivateRetract failed: %v", err)
 	}
@@ -130,7 +298,7 @@ func TestTypeNode_ActivateRetract(t *testing.T) {
 	}
 
 	typeNode.ActivateRight(fact)
-	typeNode.ActivateRetract("p1")
+	typeNode.ActivateRetract("Person_p1")
 
 	memory := typeNode.GetMemory()
 	if len(memory.Facts) != 0 {
@@ -145,7 +313,7 @@ func TestAlphaNode_ActivateRetract(t *testing.T) {
 	fact := &Fact{ID: "f1", Type: "Person"}
 	alphaNode.Memory.AddFact(fact)
 
-	err := alphaNode.ActivateRetract("f1")
+	err := alphaNode.ActivateRetract("Person_f1")
 	if err != nil {
 		t.Errorf("ActivateRetract failed: %v", err)
 	}
@@ -173,7 +341,7 @@ func TestTerminalNode_ActivateRetract(t *testing.T) {
 	terminal.ActivateLeft(token)
 
 	// Rétracter le fait
-	err := terminal.ActivateRetract("f1")
+	err := terminal.ActivateRetract("Person_f1")
 	if err != nil {
 		t.Errorf("ActivateRetract failed: %v", err)
 	}
@@ -206,7 +374,7 @@ func TestJoinNode_ActivateRetract(t *testing.T) {
 	joinNode.RightMemory.AddToken(token2)
 
 	// Rétracter p1
-	err := joinNode.ActivateRetract("p1")
+	err := joinNode.ActivateRetract("Person_p1")
 	if err != nil {
 		t.Errorf("ActivateRetract failed: %v", err)
 	}
@@ -229,7 +397,7 @@ func TestExistsNode_ActivateRetract(t *testing.T) {
 	existsNode.ExistsMemory.AddFact(fact)
 
 	// Rétracter le fait d'existence
-	err := existsNode.ActivateRetract("o1")
+	err := existsNode.ActivateRetract("Order_o1")
 	if err != nil {
 		t.Errorf("ActivateRetract failed: %v", err)
 	}

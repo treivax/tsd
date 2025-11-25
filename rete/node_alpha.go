@@ -31,6 +31,7 @@ func (an *AlphaNode) ActivateLeft(token *Token) error {
 }
 
 // ActivateRetract retire le fait de la mémoire alpha et propage aux enfants
+// factID doit être l'identifiant interne (Type_ID)
 func (an *AlphaNode) ActivateRetract(factID string) error {
 	an.mutex.Lock()
 	_, exists := an.Memory.GetFact(factID)
@@ -54,12 +55,13 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	if an.Condition != nil {
 		if condMap, ok := an.Condition.(map[string]interface{}); ok {
 			if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
-				// Mode pass-through: convertir le fait en token et propager selon le côté
-				an.mutex.Lock()
-				an.Memory.AddFact(fact)
+			// Mode pass-through: convertir le fait en token et propager selon le côté
+			an.mutex.Lock()
+			if err := an.Memory.AddFact(fact); err != nil {
 				an.mutex.Unlock()
-
-				// Créer un token pour le fait avec la variable correspondante
+				return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+			}
+			an.mutex.Unlock()				// Créer un token pour le fait avec la variable correspondante
 				token := &Token{
 					ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
 					Facts:    []*Fact{fact},
@@ -100,7 +102,10 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	// fmt.Printf("[ALPHA_%s] Condition satisfaite pour le fait: %s\n", an.ID, fact.String())
 
 	an.mutex.Lock()
-	an.Memory.AddFact(fact)
+	if err := an.Memory.AddFact(fact); err != nil {
+		an.mutex.Unlock()
+		return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+	}
 	an.mutex.Unlock()
 
 	// Persistance désactivée pour les performances

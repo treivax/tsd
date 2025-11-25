@@ -75,6 +75,7 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 }
 
 // RetractFact retire un fait du réseau et propage la rétractation
+// factID doit être l'identifiant interne (Type_ID)
 func (rn *ReteNetwork) RetractFact(factID string) error {
 	fmt.Printf("🗑️  Rétractation du fait: %s\n", factID)
 

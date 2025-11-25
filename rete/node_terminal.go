@@ -43,12 +43,13 @@ func (tn *TerminalNode) ActivateLeft(token *Token) error {
 }
 
 // ActivateRetract retrait des tokens contenant le fait rétracté
+// factID doit être l'identifiant interne (Type_ID)
 func (tn *TerminalNode) ActivateRetract(factID string) error {
 	tn.mutex.Lock()
 	var tokensToRemove []string
 	for tokenID, token := range tn.Memory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				tokensToRemove = append(tokensToRemove, tokenID)
 				break
 			}

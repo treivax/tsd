@@ -17,10 +17,31 @@ func (f *Fact) String() string {
 	return fmt.Sprintf("Fact{ID:%s, Type:%s, Fields:%v}", f.ID, f.Type, f.Fields)
 }
 
+// GetInternalID retourne l'identifiant interne unique (Type_ID)
+func (f *Fact) GetInternalID() string {
+	return fmt.Sprintf("%s_%s", f.Type, f.ID)
+}
+
 // GetField retourne la valeur d'un champ
 func (f *Fact) GetField(fieldName string) (interface{}, bool) {
 	value, exists := f.Fields[fieldName]
 	return value, exists
+}
+
+// MakeInternalID construit un identifiant interne à partir d'un type et d'un ID
+func MakeInternalID(factType, factID string) string {
+	return fmt.Sprintf("%s_%s", factType, factID)
+}
+
+// ParseInternalID décompose un identifiant interne en type et ID
+// Retourne (type, id, true) si le format est valide, sinon ("", "", false)
+func ParseInternalID(internalID string) (string, string, bool) {
+	for i := 0; i < len(internalID); i++ {
+		if internalID[i] == '_' {
+			return internalID[:i], internalID[i+1:], true
+		}
+	}
+	return "", "", false
 }
 
 // Token représente un token dans le réseau RETE
@@ -40,23 +61,47 @@ type WorkingMemory struct {
 	Tokens map[string]*Token `json:"tokens"`
 }
 
-// AddFact ajoute un fait à la mémoire
-func (wm *WorkingMemory) AddFact(fact *Fact) {
+// AddFact ajoute un fait à la mémoire en utilisant un identifiant interne unique (Type_ID)
+// Retourne une erreur si un fait avec le même type et ID existe déjà
+func (wm *WorkingMemory) AddFact(fact *Fact) error {
 	if wm.Facts == nil {
 		wm.Facts = make(map[string]*Fact)
 	}
-	wm.Facts[fact.ID] = fact
+
+	// Utiliser l'identifiant interne (Type_ID) pour garantir l'unicité par type
+	internalID := fact.GetInternalID()
+
+	if _, exists := wm.Facts[internalID]; exists {
+		return fmt.Errorf("fait avec ID '%s' et type '%s' existe déjà dans la mémoire", fact.ID, fact.Type)
+	}
+
+	wm.Facts[internalID] = fact
+	return nil
 }
 
 // RemoveFact supprime un fait de la mémoire
+// factID doit être l'identifiant interne (Type_ID)
 func (wm *WorkingMemory) RemoveFact(factID string) {
 	delete(wm.Facts, factID)
 }
 
-// GetFact récupère un fait par son ID
-func (wm *WorkingMemory) GetFact(factID string) (*Fact, bool) {
-	fact, exists := wm.Facts[factID]
+// GetFact récupère un fait par son identifiant interne (Type_ID)
+// Pour rechercher par type et ID séparément, utiliser GetFactByTypeAndID
+func (wm *WorkingMemory) GetFact(internalID string) (*Fact, bool) {
+	fact, exists := wm.Facts[internalID]
 	return fact, exists
+}
+
+// GetFactByInternalID récupère un fait uniquement par son identifiant interne
+func (wm *WorkingMemory) GetFactByInternalID(internalID string) (*Fact, bool) {
+	fact, exists := wm.Facts[internalID]
+	return fact, exists
+}
+
+// GetFactByTypeAndID récupère un fait par son type et son ID
+func (wm *WorkingMemory) GetFactByTypeAndID(factType, factID string) (*Fact, bool) {
+	internalID := MakeInternalID(factType, factID)
+	return wm.GetFactByInternalID(internalID)
 }
 
 // GetFacts retourne tous les faits de la mémoire

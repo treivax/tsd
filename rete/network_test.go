@@ -70,7 +70,7 @@ func TestReteNetwork_RetractFact(t *testing.T) {
 	network.SubmitFact(fact)
 
 	// Rétracter le fait
-	err := network.RetractFact("p1")
+	err := network.RetractFact("Person_p1")
 	if err != nil {
 		t.Errorf("RetractFact failed: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestReteNetwork_RetractFact_NotFound(t *testing.T) {
 	network := NewReteNetwork(storage)
 
 	// Essayer de rétracter un fait qui n'existe pas
-	err := network.RetractFact("non_existent")
+	err := network.RetractFact("Person_non_existent")
 	if err == nil {
 		t.Error("RetractFact should error when fact not found")
 	}
@@ -131,7 +131,7 @@ func TestScenario_AddAndRetractMultipleFacts(t *testing.T) {
 	}
 
 	// Rétracter le fait du milieu
-	if err := network.RetractFact("p2"); err != nil {
+	if err := network.RetractFact("Person_p2"); err != nil {
 		t.Errorf("RetractFact failed: %v", err)
 	}
 
@@ -142,13 +142,13 @@ func TestScenario_AddAndRetractMultipleFacts(t *testing.T) {
 	}
 
 	// Vérifier que p1 et p3 sont toujours là
-	if _, exists := rootMemory.GetFact("p1"); !exists {
+	if _, exists := rootMemory.GetFact("Person_p1"); !exists {
 		t.Error("p1 should still exist")
 	}
-	if _, exists := rootMemory.GetFact("p3"); !exists {
+	if _, exists := rootMemory.GetFact("Person_p3"); !exists {
 		t.Error("p3 should still exist")
 	}
-	if _, exists := rootMemory.GetFact("p2"); exists {
+	if _, exists := rootMemory.GetFact("Person_p2"); exists {
 		t.Error("p2 should be removed")
 	}
 }

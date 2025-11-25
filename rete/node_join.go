@@ -91,12 +91,13 @@ func (jn *JoinNode) ActivateLeft(token *Token) error {
 }
 
 // ActivateRetract retrait des tokens contenant le fait rétracté des 3 mémoires
+// factID doit être l'identifiant interne (Type_ID)
 func (jn *JoinNode) ActivateRetract(factID string) error {
 	jn.mutex.Lock()
 	var leftTokensToRemove []string
 	for tokenID, token := range jn.LeftMemory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				leftTokensToRemove = append(leftTokensToRemove, tokenID)
 				break
 			}
@@ -108,7 +109,7 @@ func (jn *JoinNode) ActivateRetract(factID string) error {
 	var rightTokensToRemove []string
 	for tokenID, token := range jn.RightMemory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				rightTokensToRemove = append(rightTokensToRemove, tokenID)
 				break
 			}
@@ -120,7 +121,7 @@ func (jn *JoinNode) ActivateRetract(factID string) error {
 	var resultTokensToRemove []string
 	for tokenID, token := range jn.ResultMemory.Tokens {
 		for _, fact := range token.Facts {
-			if fact.ID == factID {
+			if fact.GetInternalID() == factID {
 				resultTokensToRemove = append(resultTokensToRemove, tokenID)
 				break
 			}
