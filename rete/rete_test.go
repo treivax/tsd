@@ -249,22 +249,22 @@ func TestExistsNode_ActivateRetract(t *testing.T) {
 func TestIncrementalPropagation(t *testing.T) {
 	t.Log("🔥 TEST PROPAGATION INCRÉMENTALE MULTI-NIVEAUX")
 	t.Log("================================================")
-	
+
 	// Utiliser le pipeline pour construire le réseau depuis le fichier .constraint
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-	
+
 	network, err := pipeline.BuildNetworkFromConstraintFile("test/incremental_propagation.constraint", storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
-	
+
 	t.Logf("✅ Réseau RETE construit depuis incremental_propagation.constraint")
 	t.Logf("   TypeNodes: %d", len(network.TypeNodes))
 	t.Logf("   AlphaNodes: %d", len(network.AlphaNodes))
 	t.Logf("   BetaNodes: %d", len(network.BetaNodes))
 	t.Logf("   TerminalNodes: %d", len(network.TerminalNodes))
-	
+
 	// Compter les tokens terminaux avant injection
 	countTerminalTokens := func() int {
 		total := 0
@@ -273,10 +273,10 @@ func TestIncrementalPropagation(t *testing.T) {
 		}
 		return total
 	}
-	
+
 	t.Log("\n📊 ÉTAPE 1: Ajouter User seul")
 	t.Log("================================")
-	
+
 	// 1. Ajouter User - doit créer token alpha
 	userFact := &Fact{
 		ID:   "U1",
@@ -287,14 +287,14 @@ func TestIncrementalPropagation(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	
+
 	err = network.SubmitFact(userFact)
 	if err != nil {
 		t.Fatalf("❌ Erreur soumission User: %v", err)
 	}
-	
+
 	t.Logf("✅ Fait User soumis: %s", userFact.ID)
-	
+
 	// Pas encore de tokens terminaux (manque Order et Product)
 	terminalCount := countTerminalTokens()
 	if terminalCount != 0 {
@@ -302,10 +302,10 @@ func TestIncrementalPropagation(t *testing.T) {
 	} else {
 		t.Logf("✅ Pas de token terminal (manque Order et Product): %d", terminalCount)
 	}
-	
+
 	t.Log("\n📊 ÉTAPE 2: Ajouter Order qui match User")
 	t.Log("==========================================")
-	
+
 	// 2. Ajouter Order - doit déclencher jointure niveau 1 (User+Order)
 	orderFact := &Fact{
 		ID:   "O1",
@@ -317,23 +317,23 @@ func TestIncrementalPropagation(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	
+
 	err = network.SubmitFact(orderFact)
 	if err != nil {
 		t.Fatalf("❌ Erreur soumission Order: %v", err)
 	}
-	
+
 	t.Logf("✅ Fait Order soumis: %s", orderFact.ID)
-	
+
 	// Toujours pas de tokens terminaux (manque Product)
 	terminalCount = countTerminalTokens()
 	// NOTE: Le JoinNode actuel peut créer des tokens même avec seulement 2 faits
 	// car il traite les paires binaires indépendamment (limitation connue)
 	t.Logf("✅ Tokens terminaux après User+Order: %d", terminalCount)
-	
+
 	t.Log("\n📊 ÉTAPE 3: Ajouter Product qui complete la chaîne")
 	t.Log("====================================================")
-	
+
 	// 3. Ajouter Product - doit compléter la chaîne User+Order+Product
 	productFact := &Fact{
 		ID:   "P1",
@@ -344,14 +344,14 @@ func TestIncrementalPropagation(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	
+
 	err = network.SubmitFact(productFact)
 	if err != nil {
 		t.Fatalf("❌ Erreur soumission Product: %v", err)
 	}
-	
+
 	t.Logf("✅ Fait Product soumis: %s", productFact.ID)
-	
+
 	// Maintenant on doit avoir 1 token terminal (User+Order+Product avec u.age >= 18)
 	terminalCount = countTerminalTokens()
 	// NOTE: Le JoinNode actuel crée des tokens pour chaque paire, pas les triplets complets
@@ -361,10 +361,10 @@ func TestIncrementalPropagation(t *testing.T) {
 	} else {
 		t.Logf("✅ Tokens terminaux créés: %d tokens (propagation User→Order→Product réussie)", terminalCount)
 	}
-	
+
 	t.Log("\n📊 ÉTAPE 4: Ajouter Order qui NE match PAS (filtrage)")
 	t.Log("========================================================")
-	
+
 	// 4. Ajouter Order avec user_id incorrect - ne doit PAS créer de token terminal
 	badOrderFact := &Fact{
 		ID:   "O2",
@@ -376,14 +376,14 @@ func TestIncrementalPropagation(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	
+
 	err = network.SubmitFact(badOrderFact)
 	if err != nil {
 		t.Fatalf("❌ Erreur soumission Order incorrect: %v", err)
 	}
-	
+
 	t.Logf("✅ Fait Order incorrect soumis: %s (user_id=U999 ne match pas)", badOrderFact.ID)
-	
+
 	// Le nombre de tokens terminaux ne doit PAS changer (filtrage beta)
 	terminalCountAfter := countTerminalTokens()
 	// NOTE: Le JoinNode actuel ne filtre pas correctement les conditions u.id == o.user_id
@@ -393,7 +393,7 @@ func TestIncrementalPropagation(t *testing.T) {
 	} else {
 		t.Logf("✅ Tokens terminaux après Order incorrect: %d (attendu: filtrage par condition)", terminalCountAfter)
 	}
-	
+
 	t.Log("\n🎊 PROPAGATION INCRÉMENTALE MULTI-NIVEAUX: VALIDÉE")
 	t.Log("====================================================")
 	t.Log("✅ Niveau 1: User → Stocké, pas de match terminal")
