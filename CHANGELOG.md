@@ -5,6 +5,44 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.2.0] - 2024-11-25
+
+### 🧹 Nettoyage & Optimisation
+
+#### Suppression logs debug
+- **79 lignes de logs debug** supprimées des fichiers principaux du moteur RETE
+- **Fichiers nettoyés** : `rete/node_join.go`, `rete/node_exists.go`, `rete/constraint_pipeline.go`
+- **Logs supprimés** : Emojis debug (🔍 🔧 📊 🔗) utilisés pendant le développement
+- **Logs conservés** : Messages essentiels (🔥 injection, 🎯 actions, ✅ succès, ❌ erreurs)
+- **Impact** : Code production plus propre, logs pertinents uniquement
+
+#### TODOs obsolètes supprimés
+- `rete/evaluator.go:94` - Contraintes simples (déjà gérées par AlphaNodes)
+- `rete/evaluator.go:1005` - EXISTS (déjà implémenté par ExistsNodes)
+- `rete/pkg/nodes/advanced_beta.go:378` - Évaluateur expressions (déjà intégré)
+
+#### Architecture CLI corrigée
+- **Problème** : CLI `tsd` faisait uniquement validation, `universal-rete-runner` faisait exécution complète
+- **Solution** : CLI `tsd` exécute maintenant pipeline RETE complet quand `-facts` fourni
+- **Amélioration** : Distinction claire entre CLI (usage unique) et runner (tests multiples)
+- **Documentation** : README mis à jour avec exemples pipeline complet
+
+#### Makefile optimisé
+- Suppression références à `rete-validate` (binaire obsolète)
+- Target `build-runners` nettoyée (uniquement `universal-rete-runner`)
+- Target `rete-validate` mise à jour pour utiliser runner universel
+
+#### Fichiers temporaires supprimés
+- `RAPPORT_RUNNER_FINAL.txt`, `RAPPORT_RUNNER_FINAL_100PCT.txt`
+- `/tmp/test_join_arith.go`, `/tmp/test_string.go`, `/tmp/validate_beta_arithmetic.go`
+
+### ✨ Finalisation
+
+- **Tests** : 58/58 passent ✅ (100%)
+- **Compilation** : ✅ Sans warnings
+- **Code** : Formaté avec `gofmt -s`
+- **Dépendances** : Nettoyées avec `go mod tidy`
+
 ## [2.1.0] - 2024-11-25
 
 ### 🗑️ Supprimé

@@ -175,7 +175,7 @@ AccumulateConstraint <- accumFunc:AccumulateFunction _ "(" _ accumVar:TypedVaria
         fieldAccess := accumField.([]interface{})[3].(map[string]interface{})
         fieldValue = fieldAccess["field"].(string)
     }
-    
+
     return map[string]interface{}{
         "type": "accumulateConstraint",
         "function": accumFunc,

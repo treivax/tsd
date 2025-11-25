@@ -34,12 +34,10 @@ func NewConstraintPipeline() *ConstraintPipeline {
 // BuildNetworkFromConstraintFile construit un réseau RETE complet à partir d'un fichier .constraint
 // Cette fonction implémente le pipeline unique utilisé par TOUS les tests
 func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile string, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("🔧 PIPELINE CONSTRAINT → RETE\n")
 	fmt.Printf("========================================\n")
 	fmt.Printf("📁 Fichier: %s\n", constraintFile)
 
 	// ÉTAPE 1: Parsing avec le vrai parseur PEG
-	fmt.Printf("🔍 Étape 1/4: Parsing PEG du fichier .constraint...\n")
 	parsedAST, err := constraint.ParseConstraintFile(constraintFile)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur parsing fichier %s: %w", constraintFile, err)
@@ -53,7 +51,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	}
 
 	// ÉTAPE 2: Extraction et validation des composants
-	fmt.Printf("🔍 Étape 2/4: Extraction types et expressions...\n")
 	types, expressions, err := cp.extractComponents(resultMap)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
@@ -61,7 +58,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
 
 	// ÉTAPE 3: Construction du réseau RETE
-	fmt.Printf("🔍 Étape 3/4: Construction réseau RETE...\n")
 	network, err := cp.buildNetwork(storage, types, expressions)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
@@ -69,7 +65,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
 
 	// ÉTAPE 4: Validation finale
-	fmt.Printf("🔍 Étape 4/4: Validation réseau...\n")
 	err = cp.validateNetwork(network)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
@@ -85,7 +80,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 // BuildNetworkFromMultipleFiles construit un réseau RETE en parsant plusieurs fichiers de manière itérative
 // Cette fonction permet de parser des types, règles et faits répartis dans différents fichiers
 func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("🔧 PIPELINE MULTIFILES CONSTRAINT → RETE\n")
 	fmt.Printf("========================================\n")
 	fmt.Printf("📁 Fichiers: %v\n", filenames)
 
@@ -93,7 +87,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 	parser := constraint.NewIterativeParser()
 
 	// Parser tous les fichiers de manière itérative
-	fmt.Printf("🔍 Étape 1/4: Parsing itératif des fichiers...\n")
 	for i, filename := range filenames {
 		fmt.Printf("  📄 Parsing fichier %d/%d: %s\n", i+1, len(filenames), filename)
 		err := parser.ParseFile(filename)
@@ -107,12 +100,8 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 	program := parser.GetProgram()
 
 	// Statistiques
-	stats := parser.GetParsingStatistics()
-	fmt.Printf("📊 Statistiques: %d types, %d règles, %d faits de %d fichiers\n",
-		stats.TypesCount, stats.RulesCount, stats.FactsCount, stats.FilesParsedCount)
 
 	// Convertir au format RETE
-	fmt.Printf("🔍 Étape 2/4: Conversion au format RETE...\n")
 	reteProgram := constraint.ConvertToReteProgram(program)
 	resultMap, ok := reteProgram.(map[string]interface{})
 	if !ok {
@@ -120,7 +109,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 	}
 
 	// Extraire les composants
-	fmt.Printf("🔍 Étape 3/4: Extraction composants pour RETE...\n")
 	types, expressions, err := cp.extractComponents(resultMap)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
@@ -128,7 +116,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
 
 	// Construction du réseau RETE
-	fmt.Printf("🔍 Étape 4/4: Construction réseau RETE...\n")
 	network, err := cp.buildNetwork(storage, types, expressions)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
@@ -137,7 +124,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 
 	// Injection des faits dans le réseau
 	if len(program.Facts) > 0 {
-		fmt.Printf("🔍 Injection des faits dans le réseau...\n")
 		factsForRete := constraint.ConvertFactsToReteFormat(*program)
 
 		err := network.SubmitFactsFromGrammar(factsForRete)
@@ -157,19 +143,14 @@ func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, 
 // BuildNetworkFromIterativeParser construit un réseau RETE à partir d'un parser itératif existant
 // Cette méthode est utile quand le parsing a déjà été fait et qu'on veut juste construire le réseau
 func (cp *ConstraintPipeline) BuildNetworkFromIterativeParser(parser *constraint.IterativeParser, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("🔧 PIPELINE DEPUIS PARSER ITÉRATIF → RETE\n")
 	fmt.Printf("========================================\n")
 
 	// Obtenir le programme combiné
 	program := parser.GetProgram()
 
 	// Statistiques
-	stats := parser.GetParsingStatistics()
-	fmt.Printf("📊 Utilisation parser existant: %d types, %d règles, %d faits de %d fichiers\n",
-		stats.TypesCount, stats.RulesCount, stats.FactsCount, stats.FilesParsedCount)
 
 	// Convertir au format RETE
-	fmt.Printf("🔍 Étape 1/3: Conversion au format RETE...\n")
 	reteProgram := constraint.ConvertToReteProgram(program)
 	resultMap, ok := reteProgram.(map[string]interface{})
 	if !ok {
@@ -177,7 +158,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromIterativeParser(parser *constraint
 	}
 
 	// Extraire les composants
-	fmt.Printf("🔍 Étape 2/3: Extraction composants pour RETE...\n")
 	types, expressions, err := cp.extractComponents(resultMap)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
@@ -185,7 +165,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromIterativeParser(parser *constraint
 	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
 
 	// Construction du réseau RETE
-	fmt.Printf("🔍 Étape 3/3: Construction réseau RETE...\n")
 	network, err := cp.buildNetwork(storage, types, expressions)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
@@ -194,7 +173,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromIterativeParser(parser *constraint
 
 	// Injection des faits dans le réseau
 	if len(program.Facts) > 0 {
-		fmt.Printf("🔍 Injection des faits dans le réseau...\n")
 		factsForRete := constraint.ConvertFactsToReteFormat(*program)
 
 		err := network.SubmitFactsFromGrammar(factsForRete)
@@ -393,7 +371,6 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 
 		// Si c'est une agrégation, créer un passthrough
 		if hasAggregation {
-			fmt.Printf("   📊 Agrégation détectée - création AlphaNode passthrough\n")
 			condition = map[string]interface{}{
 				"type": "passthrough",
 			}
@@ -408,7 +385,6 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 			if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
 				if constraintType, exists := constraintMap["type"].(string); exists && constraintType == "existsConstraint" {
 					isExistsConstraint = true
-					fmt.Printf("   🔍 Contrainte EXISTS détectée - création ExistsNode\n")
 				}
 			}
 
@@ -467,31 +443,25 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 
 	// Si c'est une contrainte EXISTS, créer un ExistsNode
 	if isExistsConstraint {
-		fmt.Printf("   🔍 Création d'un ExistsNode pour contrainte EXISTS\n")
 		return cp.createExistsRule(network, ruleID, exprMap, condition, action, storage)
 	}
 
 	// Si c'est une agrégation, forcer la création d'un JoinNode même avec 1 variable
 	if hasAggregation {
-		fmt.Printf("   📊 Règle avec agrégation détectée\n")
 
 		// Extraire les informations d'agrégation
 		aggInfo, err := cp.extractAggregationInfo(constraintsData)
 		if err != nil {
 			fmt.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
-			fmt.Printf("   🔗 Création d'un JoinNode pour traiter l'agrégation\n")
 			return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)
 		}
 
-		fmt.Printf("   📊 Agrégation extraite: %s(%s) %s %v\n", aggInfo.Function, aggInfo.Field, aggInfo.Operator, aggInfo.Threshold)
-		fmt.Printf("   🔗 Création d'un AccumulatorNode pour traiter l'agrégation\n")
 		return cp.createAccumulatorRule(network, ruleID, variables, variableNames, variableTypes, aggInfo, action, storage)
 	}
 
 	// Si plus d'une variable, c'est une jointure Beta - créer un JoinNode
 	if len(variables) > 1 {
 		fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variables), variableNames)
-		fmt.Printf("   🔗 Création d'un JoinNode au lieu d'AlphaNode\n")
 
 		return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)
 	}
@@ -608,7 +578,6 @@ func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Ac
 
 // BuildNetworkFromConstraintFileWithFacts construit un réseau RETE et injecte des faits massifs
 func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraintFile, factsFile string, storage Storage) (*ReteNetwork, []*Fact, error) {
-	fmt.Printf("🔧 PIPELINE CONSTRAINT + FAITS → RETE\n")
 	fmt.Printf("========================================\n")
 	fmt.Printf("📁 Fichier contraintes: %s\n", constraintFile)
 	fmt.Printf("📁 Fichier faits: %s\n", factsFile)
@@ -618,8 +587,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	if err != nil {
 		return nil, nil, fmt.Errorf("erreur construction réseau RETE: %w", err)
 	}
-
-	fmt.Printf("\n🔍 Étape 5/6: Parsing et validation fichier faits...\n")
 
 	// Parser les faits avec la grammaire PEG étendue
 	factsResult, err := constraint.ParseFactsFile(factsFile)
@@ -653,8 +620,6 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	}
 
 	fmt.Printf("✅ %d faits parsés et validés\n", len(facts))
-
-	fmt.Printf("\n🔍 Étape 6/6: Injection des faits dans le réseau RETE...\n")
 
 	// Injecter tous les faits
 	successCount := 0
@@ -720,8 +685,6 @@ func getStringField(m map[string]interface{}, key, defaultValue string) string {
 // createJoinRule crée une règle Beta avec JoinNode pour les règles multi-variables
 func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string, variables []map[string]interface{}, variableNames []string, variableTypes []string, condition map[string]interface{}, action *Action, storage Storage) error {
 
-	fmt.Printf("   🔗 IMPLÉMENTATION JOINNODE: Création vraie jointure pour %d variables\n", len(variables))
-
 	// Créer le nœud terminal pour cette règle
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
@@ -743,14 +706,10 @@ func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string
 	network.BetaNodes[joinNode.ID] = joinNode
 
 	// Créer des AlphaNodes pass-through qui ne filtrent pas mais transfèrent vers JoinNode
-	fmt.Printf("   🔗 DEBUG: Création AlphaNodes pour %d variables\n", len(variableNames))
 	for i, varName := range variableNames {
 		varType := variableTypes[i]
-		fmt.Printf("   🔗 DEBUG: Variable %s -> Type %s\n", varName, varType)
 		if varType != "" {
-			fmt.Printf("   🔗 DEBUG: Recherche TypeNode %s\n", varType)
 			if typeNode, exists := network.TypeNodes[varType]; exists {
-				fmt.Printf("   🔗 DEBUG: TypeNode trouvé: %s\n", varType)
 
 				// Déterminer le côté (gauche/droite) selon l'architecture RETE
 				side := "right"
@@ -766,17 +725,15 @@ func (cp *ConstraintPipeline) createJoinRule(network *ReteNetwork, ruleID string
 				alphaNode := NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, storage)
 
 				// Connecter TypeNode -> AlphaPassthrough -> JoinNode
-				fmt.Printf("   🔗 DEBUG: Connexion %s -> %s (%s)\n", varType, alphaNode.GetID(), side)
 				typeNode.AddChild(alphaNode)
-				fmt.Printf("   🔗 DEBUG: Connexion %s -> %s\n", alphaNode.GetID(), joinNode.GetID())
 				alphaNode.AddChild(joinNode)
 
 				fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> JoinNode_%s\n", varType, varName, ruleID)
 			} else {
-				fmt.Printf("   ❌ DEBUG: TypeNode %s introuvable!\n", varType)
+				fmt.Printf("   ⚠️ TypeNode %s introuvable!\n", varType)
 			}
 		} else {
-			fmt.Printf("   ❌ DEBUG: Type vide pour variable %s\n", varName)
+			fmt.Printf("   ⚠️ Type vide pour variable %s\n", varName)
 		}
 	}
 
@@ -832,8 +789,6 @@ func (cp *ConstraintPipeline) createExistsRule(network *ReteNetwork, ruleID stri
 		return fmt.Errorf("variables EXISTS non trouvées: main=%s, exists=%s", mainVariable, existsVariable)
 	}
 
-	fmt.Printf("   🔍 Variables EXISTS: %s (%s) → %s (%s)\n", mainVariable, mainVarType, existsVariable, existsVarType)
-
 	// Extraire les conditions d'EXISTS depuis exprMap["constraints"]["condition"]
 	var existsConditions []map[string]interface{}
 	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
@@ -864,8 +819,6 @@ func (cp *ConstraintPipeline) createExistsRule(network *ReteNetwork, ruleID stri
 		"type":       "exists",
 		"conditions": existsConditions,
 	}
-
-	fmt.Printf("   🔍 Conditions EXISTS extraites: %d conditions\n", len(existsConditions))
 
 	// Créer le mapping variable -> type pour l'ExistsNode
 	varTypes := make(map[string]string)
@@ -1011,8 +964,6 @@ func (cp *ConstraintPipeline) extractAggregationInfo(constraintsData interface{}
 
 // createAccumulatorRule crée une règle avec AccumulatorNode
 func (cp *ConstraintPipeline) createAccumulatorRule(network *ReteNetwork, ruleID string, variables []map[string]interface{}, variableNames []string, variableTypes []string, aggInfo *AggregationInfo, action *Action, storage Storage) error {
-
-	fmt.Printf("   🔗 IMPLÉMENTATION ACCUMULATOR: Création pour %s\n", aggInfo.Function)
 
 	// Extraire la variable principale et son type depuis variables
 	if len(variables) == 0 || len(variableTypes) == 0 {

@@ -165,7 +165,7 @@ remove Product PROD-123-ABC
 
 	parsed := result.(map[string]interface{})
 	retractions := parsed["retractions"].([]interface{})
-	
+
 	if len(retractions) != 1 {
 		t.Fatalf("Expected 1 retraction, got %d", len(retractions))
 	}

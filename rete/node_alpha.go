@@ -55,13 +55,13 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	if an.Condition != nil {
 		if condMap, ok := an.Condition.(map[string]interface{}); ok {
 			if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
-			// Mode pass-through: convertir le fait en token et propager selon le côté
-			an.mutex.Lock()
-			if err := an.Memory.AddFact(fact); err != nil {
-				an.mutex.Unlock()
-				return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
-			}
-			an.mutex.Unlock()				// Créer un token pour le fait avec la variable correspondante
+				// Mode pass-through: convertir le fait en token et propager selon le côté
+				an.mutex.Lock()
+				if err := an.Memory.AddFact(fact); err != nil {
+					an.mutex.Unlock()
+					return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+				}
+				an.mutex.Unlock() // Créer un token pour le fait avec la variable correspondante
 				token := &Token{
 					ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
 					Facts:    []*Fact{fact},

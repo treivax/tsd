@@ -2,8 +2,8 @@ package rete
 
 import (
 	"fmt"
-	"sync"
 	"strconv"
+	"sync"
 )
 
 type JoinNode struct {
@@ -57,23 +57,16 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 
 // ActivateLeft traite les tokens de la gauche (généralement des AlphaNodes)
 func (jn *JoinNode) ActivateLeft(token *Token) error {
-	fmt.Printf("🔍 JOINNODE[%s]: ActivateLeft - token %s\n", jn.ID, token.ID)
-
 	// Stocker le token dans la mémoire gauche
 	jn.mutex.Lock()
 	jn.LeftMemory.AddToken(token)
 	jn.mutex.Unlock()
 
-	fmt.Printf("🔍 JOINNODE[%s]: Mémoire gauche: %d tokens\n", jn.ID, len(jn.LeftMemory.GetTokens()))
-
 	// Essayer de joindre avec tous les tokens de la mémoire droite
 	rightTokens := jn.RightMemory.GetTokens()
-	fmt.Printf("🔍 JOINNODE[%s]: Mémoire droite: %d tokens\n", jn.ID, len(rightTokens))
 
 	for _, rightToken := range rightTokens {
-		fmt.Printf("🔍 JOINNODE[%s]: Tentative jointure LEFT[%s] + RIGHT[%s]\n", jn.ID, token.ID, rightToken.ID)
 		if joinedToken := jn.performJoinWithTokens(token, rightToken); joinedToken != nil {
-			fmt.Printf("🔍 JOINNODE[%s]: Jointure réussie! LEFT[%s] + RIGHT[%s]\n", jn.ID, token.ID, rightToken.ID)
 
 			// Stocker uniquement les tokens de jointure réussie
 			joinedToken.IsJoinResult = true
@@ -141,12 +134,9 @@ func (jn *JoinNode) ActivateRetract(factID string) error {
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
 func (jn *JoinNode) ActivateRight(fact *Fact) error {
-	fmt.Printf("🔍 JOINNODE[%s]: ActivateRight - %s\n", jn.ID, fact.Type)
-
 	// Convertir le fait en token pour la mémoire droite
 	factVar := jn.getVariableForFact(fact)
 	if factVar == "" {
-		fmt.Printf("🔍 JOINNODE[%s]: Fait %s non applicable (variable introuvable)\n", jn.ID, fact.ID)
 		return nil // Fait non applicable à ce JoinNode
 	}
 
@@ -162,16 +152,11 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 	jn.RightMemory.AddToken(factToken)
 	jn.mutex.Unlock()
 
-	fmt.Printf("🔍 JOINNODE[%s]: Mémoire droite: %d tokens\n", jn.ID, len(jn.RightMemory.GetTokens()))
-
 	// Essayer de joindre avec tous les tokens de la mémoire gauche
 	leftTokens := jn.LeftMemory.GetTokens()
-	fmt.Printf("🔍 JOINNODE[%s]: Mémoire gauche: %d tokens\n", jn.ID, len(leftTokens))
 
 	for _, leftToken := range leftTokens {
-		fmt.Printf("🔍 JOINNODE[%s]: Tentative jointure LEFT[%s] + RIGHT[%s]\n", jn.ID, leftToken.ID, factToken.ID)
 		if joinedToken := jn.performJoinWithTokens(leftToken, factToken); joinedToken != nil {
-			fmt.Printf("🔍 JOINNODE[%s]: Jointure réussie! LEFT[%s] + RIGHT[%s]\n", jn.ID, leftToken.ID, factToken.ID)
 
 			// Stocker uniquement les tokens de jointure réussie
 			joinedToken.IsJoinResult = true
@@ -240,7 +225,6 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 	for _, varName := range jn.AllVariables {
 		if expectedType, exists := jn.VariableTypes[varName]; exists {
 			if expectedType == fact.Type {
-				fmt.Printf("🔍 JOINNODE[%s]: Variable %s trouvée pour fait %s (type: %s)\n", jn.ID, varName, fact.ID, fact.Type)
 				return varName
 			}
 		}
@@ -254,12 +238,9 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 
 // evaluateJoinConditions vérifie si toutes les conditions de jointure sont respectées
 func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
-	fmt.Printf("🔍 JOINNODE[%s]: Évaluation conditions jointure\n", jn.ID)
-	fmt.Printf("  📊 Bindings: %d variables\n", len(bindings))
 	for varName, fact := range bindings {
 		fmt.Printf("    %s -> %s (ID: %s)\n", varName, fact.Type, fact.ID)
 	}
-	fmt.Printf("  📊 Conditions: %d à vérifier\n", len(jn.JoinConditions))
 	for i, condition := range jn.JoinConditions {
 		fmt.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
 			condition.LeftVar, condition.LeftField, condition.Operator,
@@ -272,7 +253,26 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 		return false
 	}
 
-	// Évaluer chaque condition de jointure
+	// NOUVEAU: Évaluer la condition complète qui peut contenir des expressions arithmétiques
+	if jn.Condition != nil {
+		evaluator := NewAlphaConditionEvaluator()
+		// Lier toutes les variables aux faits
+		for varName, fact := range bindings {
+			evaluator.variableBindings[varName] = fact
+		}
+
+		result, err := evaluator.evaluateExpression(jn.Condition)
+		if err != nil {
+			fmt.Printf("  ❌ Erreur évaluation condition complète: %v\n", err)
+			return false
+		}
+
+		return result
+	}
+
+	// LEGACY: Évaluer les conditions de jointure extraites (simples comparaisons)
+	// Note: Ce code est maintenant redondant si jn.Condition est évalué ci-dessus,
+	// mais conservé pour compatibilité avec les anciens tests
 	for i, joinCondition := range jn.JoinConditions {
 		leftFact := bindings[joinCondition.LeftVar]
 		rightFact := bindings[joinCondition.RightVar]
@@ -285,8 +285,6 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 		// Récupérer les valeurs des champs
 		leftValue := leftFact.Fields[joinCondition.LeftField]
 		rightValue := rightFact.Fields[joinCondition.RightField]
-
-		fmt.Printf("  🔍 Condition %d: %v %s %v\n", i, leftValue, joinCondition.Operator, rightValue)
 
 		// Évaluer l'opérateur
 		switch joinCondition.Operator {
@@ -383,8 +381,6 @@ func convertToFloat64(value interface{}) (float64, bool) {
 
 // extractJoinConditions extrait les conditions de jointure d'une condition complexe
 func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
-	fmt.Printf("🔍 EXTRACT JOIN CONDITIONS: analyzing condition\n")
-	fmt.Printf("  🔧 Condition type: %T\n", condition)
 	for key, value := range condition {
 		fmt.Printf("    %s: %v (type: %T)\n", key, value, value)
 	}
@@ -393,7 +389,6 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 
 	// Cas 1: condition wrappée dans un type "constraint"
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "constraint" {
-		fmt.Printf("  🔧 Condition wrappée détectée - extraction de la sous-condition\n")
 		if innerCondition, ok := condition["constraint"].(map[string]interface{}); ok {
 			fmt.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
 			return extractJoinConditions(innerCondition)
@@ -402,11 +397,9 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 
 	// Cas 2: condition EXISTS avec array de conditions
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "exists" {
-		fmt.Printf("  🔧 Condition EXISTS détectée - extraction des sous-conditions\n")
 		if conditionsData, ok := condition["conditions"].([]map[string]interface{}); ok {
 			fmt.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
-			for i, subCondition := range conditionsData {
-				fmt.Printf("  🔍 Analyse condition EXISTS %d: %+v\n", i, subCondition)
+			for _, subCondition := range conditionsData {
 				subJoinConditions := extractJoinConditions(subCondition)
 				joinConditions = append(joinConditions, subJoinConditions...)
 			}

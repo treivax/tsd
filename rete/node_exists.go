@@ -43,7 +43,6 @@ func NewExistsNode(nodeID string, condition map[string]interface{}, mainVar stri
 
 // ActivateLeft traite les faits de la variable principale
 func (en *ExistsNode) ActivateLeft(token *Token) error {
-	fmt.Printf("🔍 EXISTSNODE[%s]: ActivateLeft - token %s\n", en.ID, token.ID)
 
 	// Stocker le token dans la mémoire principale
 	en.mutex.Lock()
@@ -52,7 +51,6 @@ func (en *ExistsNode) ActivateLeft(token *Token) error {
 
 	// Vérifier s'il existe des faits correspondants
 	if en.checkExistence(token) {
-		fmt.Printf("🔍 EXISTSNODE[%s]: Existence vérifiée pour %s\n", en.ID, token.ID)
 
 		// Stocker le token avec existence vérifiée
 		token.IsJoinResult = true // Marquer comme résultat validé
@@ -66,7 +64,6 @@ func (en *ExistsNode) ActivateLeft(token *Token) error {
 			return err
 		}
 	} else {
-		fmt.Printf("🔍 EXISTSNODE[%s]: Aucune existence trouvée pour %s\n", en.ID, token.ID)
 	}
 
 	return nil
@@ -118,7 +115,6 @@ func (en *ExistsNode) ActivateRetract(factID string) error {
 
 // ActivateRight traite les faits pour vérification d'existence
 func (en *ExistsNode) ActivateRight(fact *Fact) error {
-	fmt.Printf("🔍 EXISTSNODE[%s]: ActivateRight - %s\n", en.ID, fact.Type)
 
 	// Stocker le fait dans la mémoire d'existence
 	en.mutex.Lock()
@@ -132,7 +128,6 @@ func (en *ExistsNode) ActivateRight(fact *Fact) error {
 	mainTokens := en.MainMemory.GetTokens()
 	for _, mainToken := range mainTokens {
 		if en.checkExistence(mainToken) && !en.isAlreadyValidated(mainToken) {
-			fmt.Printf("🔍 EXISTSNODE[%s]: Nouvelle existence vérifiée pour %s\n", en.ID, mainToken.ID)
 
 			// Stocker le token avec existence vérifiée
 			validatedToken := &Token{
@@ -171,7 +166,6 @@ func (en *ExistsNode) checkExistence(mainToken *Token) bool {
 	// Vérifier les conditions d'existence
 	for _, existsFact := range existsFacts {
 		if en.evaluateExistsCondition(mainFact, existsFact) {
-			fmt.Printf("🔍 EXISTSNODE[%s]: Condition EXISTS satisfaite: %s ↔ %s\n", en.ID, mainFact.ID, existsFact.ID)
 			return true
 		}
 	}
@@ -181,10 +175,6 @@ func (en *ExistsNode) checkExistence(mainToken *Token) bool {
 
 // evaluateExistsCondition évalue la condition d'existence entre deux faits
 func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) bool {
-	fmt.Printf("🔍 EXISTSNODE[%s]: Évaluation condition EXISTS\n", en.ID)
-	fmt.Printf("  📊 MainFact: %s (ID: %s)\n", mainFact.Type, mainFact.ID)
-	fmt.Printf("  📊 ExistsFact: %s (ID: %s)\n", existsFact.Type, existsFact.ID)
-	fmt.Printf("  📊 Conditions: %d à vérifier\n", len(en.ExistsCondition))
 
 	for i, condition := range en.ExistsCondition {
 		fmt.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
@@ -209,8 +199,6 @@ func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) 
 
 		leftValue := leftFact.Fields[condition.LeftField]
 		rightValue := rightFact.Fields[condition.RightField]
-
-		fmt.Printf("    🔍 Condition %d: %v %s %v\n", i, leftValue, condition.Operator, rightValue)
 
 		switch condition.Operator {
 		case "==":

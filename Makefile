@@ -81,16 +81,14 @@ build-tsd: ## BUILD - Compiler l'outil CLI principal
 build-runners: ## BUILD - Compiler les runners de test
 	@echo "$(BLUE)🔨 Compilation des runners...$(NC)"
 	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(RETE_VALIDATE) $(CMD_RETE_VALIDATE_DIR)
 	@go build -o $(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(CMD_UNIVERSAL_DIR)
-	@echo "$(GREEN)✅ Runners compilés:$(NC)"
-	@echo "   - $(BUILD_DIR)/$(RETE_VALIDATE)"
+	@echo "$(GREEN)✅ Runner compilé:$(NC)"
 	@echo "   - $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
 
 install: deps build ## BUILD - Installation complète
 	@echo "$(GREEN)🚀 Installation terminée$(NC)"
 	@echo "   TSD CLI: $(BUILD_DIR)/$(BINARY_NAME)"
-	@echo "   Test Runners: $(BUILD_DIR)/$(RETE_VALIDATE), $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
+	@echo "   Test Runner: $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
 
 clean: ## BUILD - Nettoyer les artefacts
 	@echo "$(BLUE)🧹 Nettoyage...$(NC)"
@@ -110,7 +108,7 @@ rete-validate: build-runners ## RETE - Valider un test spécifique (make rete-va
 		exit 1; \
 	fi
 	@echo "$(CYAN)🎯 Validation RETE du test: $(TEST)$(NC)"
-	@$(BUILD_DIR)/$(RETE_VALIDATE) $(BETA_TESTS_DIR)/$(TEST).constraint $(BETA_TESTS_DIR)/$(TEST).facts
+	@$(BUILD_DIR)/$(UNIVERSAL_RUNNER) single $(TEST)
 
 rete-all: build ## RETE - Valider tous les tests beta
 	@echo "$(BLUE)🔥 Validation de tous les tests RETE...$(NC)"

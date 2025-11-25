@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/treivax/tsd/constraint"
+	"github.com/treivax/tsd/rete"
 )
 
 func main() {
@@ -118,16 +119,84 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("✅ Contraintes validées avec succès\n")
-
 	if *verbose {
-		fmt.Printf("\n🎉 Analyse terminée!\n")
-		fmt.Printf("Les contraintes sont syntaxiquement correctes.\n")
+		fmt.Printf("✅ Contraintes validées avec succès\n")
 	}
 
-	// TODO: Intégration avec le moteur RETE pour l'exécution complète
+	// Si un fichier de faits est fourni, exécuter le pipeline RETE complet
 	if *factsFile != "" {
-		fmt.Printf("ℹ️ Fichier faits spécifié: %s (intégration RETE à venir)\n", *factsFile)
+		if *verbose {
+			fmt.Printf("\n🔧 PIPELINE RETE COMPLET\n")
+			fmt.Printf("========================\n")
+			fmt.Printf("Fichier faits: %s\n\n", *factsFile)
+		}
+
+		// Vérifier que le fichier facts existe
+		if _, statErr := os.Stat(*factsFile); os.IsNotExist(statErr) {
+			fmt.Fprintf(os.Stderr, "Fichier faits non trouvé: %s\n", *factsFile)
+			os.Exit(1)
+		}
+
+		pipeline := rete.NewConstraintPipeline()
+		storage := rete.NewMemoryStorage()
+
+		network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
+			sourceName,
+			*factsFile,
+			storage,
+		)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Erreur pipeline RETE: %v\n", err)
+			os.Exit(1)
+		}
+
+		if *verbose {
+			fmt.Printf("\n📊 RÉSULTATS\n")
+			fmt.Printf("============\n")
+			fmt.Printf("Faits injectés: %d\n", len(facts))
+		}
+
+		// Compter les actions disponibles (activations dans les TerminalNodes)
+		activations := 0
+		for _, terminal := range network.TerminalNodes {
+			if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+				activations += len(terminal.Memory.Tokens)
+			}
+		}
+
+		if activations > 0 {
+			fmt.Printf("\n🎯 ACTIONS DISPONIBLES: %d\n", activations)
+			if *verbose {
+				count := 0
+				for _, terminal := range network.TerminalNodes {
+					if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+						actionName := "unknown"
+						if terminal.Action != nil {
+							actionName = terminal.Action.Job.Name
+						}
+						for _, token := range terminal.Memory.Tokens {
+							count++
+							fmt.Printf("  %d. %s() - %d bindings\n", count, actionName, len(token.Facts))
+						}
+					}
+				}
+			}
+		} else {
+			fmt.Printf("\nℹ️  Aucune action déclenchée\n")
+		}
+
+		if *verbose {
+			fmt.Printf("\n✅ Pipeline RETE exécuté avec succès\n")
+		}
+	} else {
+		// Pas de fichier facts, juste validation
+		fmt.Printf("✅ Contraintes validées avec succès\n")
+		if *verbose {
+			fmt.Printf("\n🎉 Validation terminée!\n")
+			fmt.Printf("Les contraintes sont syntaxiquement correctes.\n")
+			fmt.Printf("ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
+		}
 	}
 }
 

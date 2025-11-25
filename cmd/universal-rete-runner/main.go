@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,11 +76,37 @@ func main() {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
 
+		// Capturer stdout pour détecter les erreurs d'injection
+		oldStdout := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		// Canal pour lire la sortie en temps réel
+		outputChan := make(chan string)
+		go func() {
+			var buf bytes.Buffer
+			io.Copy(&buf, r)
+			outputChan <- buf.String()
+		}()
+
 		network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
 			testFile.constraint,
 			testFile.facts,
 			storage,
 		)
+
+		// Restaurer stdout
+		w.Close()
+		os.Stdout = oldStdout
+
+		// Lire la sortie capturée
+		output := <-outputChan
+
+		// Afficher la sortie capturée
+		fmt.Print(output)
+
+		// Détecter si des erreurs d'injection ont eu lieu
+		hasInjectionErrors := strings.Contains(output, "⚠️ Erreur injection fait")
 
 		// Si c'est un test d'erreur, l'échec est un succès
 		isErrorTest := errorTests[testFile.name]
@@ -94,10 +122,15 @@ func main() {
 			continue
 		}
 
-		// Si un test d'erreur ne détecte pas l'erreur, c'est un échec
+		// Pour les tests d'erreur, vérifier si des erreurs d'injection ont été détectées
 		if isErrorTest {
-			fmt.Printf("❌ FAILED (error should have been detected)\n")
-			failed++
+			if hasInjectionErrors {
+				fmt.Printf("✅ PASSED (injection errors detected as expected)\n")
+				passed++
+			} else {
+				fmt.Printf("❌ FAILED (error should have been detected)\n")
+				failed++
+			}
 			continue
 		}
 

@@ -58,17 +58,55 @@ make validate
 
 ## 📋 Usage
 
-### CLI Application
+### CLI Application - Pipeline Complet
+
+Le binaire `tsd` exécute automatiquement le **pipeline RETE complet** (parsing → construction réseau → injection faits → évaluation) lorsqu'un fichier de faits est fourni:
 
 ```bash
-# Analyser un fichier de contraintes
-./bin/tsd -constraint examples/rules.constraint
+# Validation seule (parsing + validation syntaxique)
+./bin/tsd -constraint rules.constraint
 
-# Mode verbeux
-./bin/tsd -constraint examples/rules.constraint -v
+# Pipeline complet avec exécution RETE
+./bin/tsd -constraint rules.constraint -facts data.facts
 
-# Afficher l'aide
-./bin/tsd -h
+# Mode verbeux (détails du réseau et actions)
+./bin/tsd -constraint rules.constraint -facts data.facts -v
+
+# Exemple avec un test
+./bin/tsd -constraint beta_coverage_tests/join_simple.constraint \
+          -facts beta_coverage_tests/join_simple.facts -v
+```
+
+**Sortie typique:**
+```
+✅ Contraintes validées avec succès
+
+🔧 PIPELINE RETE COMPLET
+========================
+Fichier faits: data.facts
+
+📊 RÉSULTATS
+============
+Faits injectés: 10
+
+🎯 ACTIONS DISPONIBLES: 3
+  1. alert_action() - 2 bindings
+  2. process_order() - 3 bindings
+  3. validate_user() - 1 bindings
+
+✅ Pipeline RETE exécuté avec succès
+```
+
+### Runner Universel (Tests)
+
+Pour exécuter une suite complète de tests:
+
+```bash
+# Exécuter TOUS les tests (Alpha+Beta+Integration)
+./bin/universal-rete-runner
+
+# Via Makefile
+make rete-unified
 ```
 
 ### Exemple de Règle

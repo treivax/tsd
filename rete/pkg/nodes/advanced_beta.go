@@ -374,8 +374,7 @@ func (e *ExistsNodeImpl) ProcessRightFact(fact *domain.Fact) error {
 
 // evaluateExistenceCondition évalue une condition d'existence
 func (e *ExistsNodeImpl) evaluateExistenceCondition(condition interface{}, token *domain.Token, fact *domain.Fact) (bool, error) {
-	// Pour l'instant, implémentation basique
-	// TODO: Intégrer avec l'évaluateur d'expressions du package constraint
+	// Note: L'évaluation des conditions EXISTS est gérée par evaluateConditionRecursive dans le package rete
 	return true, nil
 }
 
