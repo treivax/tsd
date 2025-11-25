@@ -469,6 +469,48 @@ Product(price=99.99, stock=42, discount=-10)
 Account(active=true, verified=false)
 \`\`\`
 
+### Rétractation de faits
+
+TSD supporte la rétractation (suppression) de faits avec la commande `remove` :
+
+\`\`\`tsd
+# Syntaxe : remove TypeName FactID
+remove Person P1
+remove Order O123
+\`\`\`
+
+**Exemple complet avec ajout et rétractation :**
+
+\`\`\`tsd
+type Person : <id:string, name:string, age:number>
+type Order : <id:string, customer_id:string, total:number>
+
+# Ajouter des faits
+Person(id:P1, name:Alice, age:25)
+Person(id:P2, name:Bob, age:35)
+Order(id:O1, customer_id:P1, total:100)
+Order(id:O2, customer_id:P2, total:200)
+
+# Rétracter des faits (suppression du réseau RETE)
+remove Person P1
+remove Order O2
+
+# Ajouter d'autres faits après les rétractions
+Person(id:P3, name:Charlie, age:45)
+\`\`\`
+
+**Notes importantes :**
+- L'ID du fait doit correspondre exactement à l'ID utilisé lors de la création
+- La rétractation propage la suppression à travers tout le réseau RETE
+- Les tokens contenant le fait rétracté sont automatiquement retirés
+- La rétractation utilise les IDs internes (format `Type_ID`)
+
+**Cas d'usage :**
+- Mise à jour de données (rétracter puis ajouter avec nouvelles valeurs)
+- Simulation de scénarios dynamiques
+- Tests de comportement du réseau RETE
+- Gestion d'événements temporaires
+
 ---
 
 ## Exemples avancés

@@ -1,0 +1,17 @@
+// Test de la fonctionnalité remove pour rétracter des faits
+
+type Person : <id:string, name:string, age:number>
+type Order : <id:string, customer_id:string, total:number>
+
+// Ajouter des faits
+Person(id:P1, name:Alice, age:25)
+Person(id:P2, name:Bob, age:35)
+Order(id:O1, customer_id:P1, total:100)
+Order(id:O2, customer_id:P2, total:200)
+
+// Rétracter des faits
+remove Person P1
+remove Order O2
+
+// Ajouter d'autres faits après les rétractions
+Person(id:P3, name:Charlie, age:45)

@@ -14,10 +14,11 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types, expressions et faits
+    // Séparer types, expressions, faits et retractions
     types := []interface{}{}
     expressions := []interface{}{}
     facts := []interface{}{}
+    retractions := []interface{}{}
 
     if statements != nil {
         for _, stmt := range statements.([]interface{}) {
@@ -28,6 +29,8 @@ Start <- _ statements:StatementList _ EOF {
                     expressions = append(expressions, stmt)
                 } else if stmtMap["type"] == "fact" {
                     facts = append(facts, stmt)
+                } else if stmtMap["type"] == "retraction" {
+                    retractions = append(retractions, stmt)
                 }
             }
         }
@@ -37,6 +40,7 @@ Start <- _ statements:StatementList _ EOF {
         "types": types,
         "expressions": expressions,
         "facts": facts,
+        "retractions": retractions,
     }, nil
 }
 
@@ -50,7 +54,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / Expression / Fact
+Statement <- TypeDefinition / Expression / RemoveFact / Fact
 
 TypeDefinition <- "type" _ name:IdentName _ ":" _ "<" _ fields:FieldList _ ">" {
     return map[string]interface{}{
@@ -424,6 +428,20 @@ EscapeSequence <- "\\" char:EscapeChar {
 EscapeChar <- "n" / "t" / "r" / "\\" / "\"" / "'" / .
 
 UnicodeChar <- .
+
+// RemoveFact définit le parsing d'une rétractation de fait avec le format: remove TypeName ID
+RemoveFact <- "remove" _ typeName:IdentName _ factID:FactID {
+    return map[string]interface{}{
+        "type": "retraction",
+        "typeName": typeName,
+        "factID": factID,
+    }, nil
+}
+
+// FactID est un identifiant pour un fait (peut contenir des caractères spéciaux)
+FactID <- chars:([a-zA-Z0-9_-] / SpecialFactChar)+ {
+    return string(c.text), nil
+}
 
 // Fact définit le parsing d'un fait avec le nouveau format TypeName(field:value, ...)
 Fact <- typeName:IdentName "(" _ fields:FactFieldList _ ")" {
