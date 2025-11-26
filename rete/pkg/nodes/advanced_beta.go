@@ -7,6 +7,15 @@ import (
 	"github.com/treivax/tsd/rete/pkg/domain"
 )
 
+// Aggregate function type constants
+const (
+	AggregateFunctionSum   = "SUM"
+	AggregateFunctionCount = "COUNT"
+	AggregateFunctionAvg   = "AVG"
+	AggregateFunctionMin   = "MIN"
+	AggregateFunctionMax   = "MAX"
+)
+
 // NotNodeImpl implémente l'interface NotNode pour la négation
 type NotNodeImpl struct {
 	*BaseBetaNode
@@ -421,16 +430,16 @@ func (a *AccumulateNodeImpl) ComputeAggregate(token *domain.Token, facts []*doma
 	}
 
 	switch accumulator.FunctionType {
-	case "SUM":
+	case AggregateFunctionSum:
 		return a.computeSum(facts, accumulator.Field)
-	case "COUNT":
+	case AggregateFunctionCount:
 		return len(facts), nil
-	case "AVG":
+	case AggregateFunctionAvg:
 		return a.computeAverage(facts, accumulator.Field)
-	case "MIN":
-		return a.computeMin(facts, accumulator.Field)
-	case "MAX":
-		return a.computeMax(facts, accumulator.Field)
+	case AggregateFunctionMin:
+		return a.computeMinMax(facts, accumulator.Field, true)
+	case AggregateFunctionMax:
+		return a.computeMinMax(facts, accumulator.Field, false)
 	default:
 		return nil, fmt.Errorf("unsupported accumulator function: %s", accumulator.FunctionType)
 	}
@@ -467,21 +476,8 @@ func (a *AccumulateNodeImpl) ProcessLeftToken(token *domain.Token) error {
 	a.accumulatedValues[token.ID] = result
 	a.mu.Unlock()
 
-	// Créer un nouveau token avec le résultat d'agrégation
-	newToken := &domain.Token{
-		ID: fmt.Sprintf("%s_agg", token.ID),
-		Facts: append(token.Facts, &domain.Fact{
-			ID:   fmt.Sprintf("agg_%s", token.ID),
-			Type: "AggregateResult",
-			Fields: map[string]interface{}{
-				"function": a.accumulator.FunctionType,
-				"value":    result,
-			},
-		}),
-	}
-
-	// Propager le token enrichi
-	return a.propagateTokenToChildren(newToken)
+	// Propager le token enrichi avec le résultat d'agrégation
+	return a.propagateAggregateToken(token, result)
 }
 
 // ProcessRightFact traite un fait venant de la droite
@@ -500,54 +496,65 @@ func (a *AccumulateNodeImpl) ProcessRightFact(fact *domain.Fact) error {
 	// Recalculer l'agrégation pour tous les tokens de gauche
 	leftTokens := a.betaMemory.GetTokens()
 	for _, token := range leftTokens {
-		// Obtenir tous les faits de droite
-		rightFacts := a.betaMemory.GetFacts()
-
-		// Recalculer l'agrégation
-		result, err := a.ComputeAggregate(token, rightFacts)
-		if err != nil {
-			a.logger.Error("failed to recompute aggregate", err, map[string]interface{}{
+		if err := a.recomputeAndPropagateAggregate(token); err != nil {
+			a.logger.Error("failed to recompute aggregate for token", err, map[string]interface{}{
 				"node_id":  a.id,
 				"token_id": token.ID,
 				"fact_id":  fact.ID,
 			})
-			continue
-		}
-
-		// Mettre à jour le résultat
-		a.mu.Lock()
-		oldResult, existed := a.accumulatedValues[token.ID]
-		a.accumulatedValues[token.ID] = result
-		a.mu.Unlock()
-
-		// Si le résultat a changé, propager la mise à jour
-		if !existed || oldResult != result {
-			a.logger.Debug("aggregate result updated", map[string]interface{}{
-				"node_id":    a.id,
-				"token_id":   token.ID,
-				"old_result": oldResult,
-				"new_result": result,
-			})
-
-			// Créer un token mis à jour
-			newToken := &domain.Token{
-				ID: fmt.Sprintf("%s_agg", token.ID),
-				Facts: append(token.Facts, &domain.Fact{
-					ID:   fmt.Sprintf("agg_%s", token.ID),
-					Type: "AggregateResult",
-					Fields: map[string]interface{}{
-						"function": a.accumulator.FunctionType,
-						"value":    result,
-					},
-				}),
-			}
-
-			// Propager le token mis à jour
-			a.propagateTokenToChildren(newToken)
 		}
 	}
 
 	return nil
+}
+
+// recomputeAndPropagateAggregate recalculates the aggregate for a token and propagates if changed
+func (a *AccumulateNodeImpl) recomputeAndPropagateAggregate(token *domain.Token) error {
+	// Obtenir tous les faits de droite
+	rightFacts := a.betaMemory.GetFacts()
+
+	// Recalculer l'agrégation
+	result, err := a.ComputeAggregate(token, rightFacts)
+	if err != nil {
+		return fmt.Errorf("failed to compute aggregate: %w", err)
+	}
+
+	// Mettre à jour le résultat
+	a.mu.Lock()
+	oldResult, existed := a.accumulatedValues[token.ID]
+	a.accumulatedValues[token.ID] = result
+	a.mu.Unlock()
+
+	// Si le résultat a changé, propager la mise à jour
+	if !existed || oldResult != result {
+		a.logger.Debug("aggregate result updated", map[string]interface{}{
+			"node_id":    a.id,
+			"token_id":   token.ID,
+			"old_result": oldResult,
+			"new_result": result,
+		})
+
+		return a.propagateAggregateToken(token, result)
+	}
+
+	return nil
+}
+
+// propagateAggregateToken creates and propagates a token with aggregate result
+func (a *AccumulateNodeImpl) propagateAggregateToken(token *domain.Token, result interface{}) error {
+	newToken := &domain.Token{
+		ID: fmt.Sprintf("%s_agg", token.ID),
+		Facts: append(token.Facts, &domain.Fact{
+			ID:   fmt.Sprintf("agg_%s", token.ID),
+			Type: "AggregateResult",
+			Fields: map[string]interface{}{
+				"function": a.accumulator.FunctionType,
+				"value":    result,
+			},
+		}),
+	}
+
+	return a.propagateTokenToChildren(newToken)
 }
 
 // Fonctions d'aide pour les différentes agrégations
@@ -601,10 +608,12 @@ func (a *AccumulateNodeImpl) computeAverage(facts []*domain.Fact, field string) 
 	return sum / float64(count), nil
 }
 
-func (a *AccumulateNodeImpl) computeMin(facts []*domain.Fact, field string) (interface{}, error) {
-	var minFloat float64
-	var minString string
-	var minOther interface{}
+// computeMinMax calculates either minimum or maximum value for a field across facts
+// isMin parameter: true for minimum, false for maximum
+func (a *AccumulateNodeImpl) computeMinMax(facts []*domain.Fact, field string, isMin bool) (interface{}, error) {
+	var resultFloat float64
+	var resultString string
+	var resultOther interface{}
 	foundNumeric := false
 	foundString := false
 	foundOther := false
@@ -614,35 +623,35 @@ func (a *AccumulateNodeImpl) computeMin(facts []*domain.Fact, field string) (int
 			switch v := value.(type) {
 			case int:
 				floatVal := float64(v)
-				if !foundNumeric || floatVal < minFloat {
-					minFloat = floatVal
+				if !foundNumeric || a.shouldUpdateNumeric(floatVal, resultFloat, isMin) {
+					resultFloat = floatVal
 					foundNumeric = true
 				}
 			case int64:
 				floatVal := float64(v)
-				if !foundNumeric || floatVal < minFloat {
-					minFloat = floatVal
+				if !foundNumeric || a.shouldUpdateNumeric(floatVal, resultFloat, isMin) {
+					resultFloat = floatVal
 					foundNumeric = true
 				}
 			case float32:
 				floatVal := float64(v)
-				if !foundNumeric || floatVal < minFloat {
-					minFloat = floatVal
+				if !foundNumeric || a.shouldUpdateNumeric(floatVal, resultFloat, isMin) {
+					resultFloat = floatVal
 					foundNumeric = true
 				}
 			case float64:
-				if !foundNumeric || v < minFloat {
-					minFloat = v
+				if !foundNumeric || a.shouldUpdateNumeric(v, resultFloat, isMin) {
+					resultFloat = v
 					foundNumeric = true
 				}
 			case string:
-				if !foundString || v < minString {
-					minString = v
+				if !foundString || a.shouldUpdateString(v, resultString, isMin) {
+					resultString = v
 					foundString = true
 				}
 			default:
 				if !foundOther {
-					minOther = v
+					resultOther = v
 					foundOther = true
 				}
 			}
@@ -651,76 +660,30 @@ func (a *AccumulateNodeImpl) computeMin(facts []*domain.Fact, field string) (int
 
 	// Retourner le type le plus approprié
 	if foundNumeric {
-		return minFloat, nil
+		return resultFloat, nil
 	}
 	if foundString {
-		return minString, nil
+		return resultString, nil
 	}
 	if foundOther {
-		return minOther, nil
+		return resultOther, nil
 	}
 
 	return nil, fmt.Errorf("no values found for field %s", field)
 }
 
-func (a *AccumulateNodeImpl) computeMax(facts []*domain.Fact, field string) (interface{}, error) {
-	var maxFloat float64
-	var maxString string
-	var maxOther interface{}
-	foundNumeric := false
-	foundString := false
-	foundOther := false
+// shouldUpdateNumeric determines if a new numeric value should replace the current one
+func (a *AccumulateNodeImpl) shouldUpdateNumeric(newVal, currentVal float64, isMin bool) bool {
+	if isMin {
+		return newVal < currentVal
+	}
+	return newVal > currentVal
+}
 
-	for _, fact := range facts {
-		if value, exists := fact.Fields[field]; exists {
-			switch v := value.(type) {
-			case int:
-				floatVal := float64(v)
-				if !foundNumeric || floatVal > maxFloat {
-					maxFloat = floatVal
-					foundNumeric = true
-				}
-			case int64:
-				floatVal := float64(v)
-				if !foundNumeric || floatVal > maxFloat {
-					maxFloat = floatVal
-					foundNumeric = true
-				}
-			case float32:
-				floatVal := float64(v)
-				if !foundNumeric || floatVal > maxFloat {
-					maxFloat = floatVal
-					foundNumeric = true
-				}
-			case float64:
-				if !foundNumeric || v > maxFloat {
-					maxFloat = v
-					foundNumeric = true
-				}
-			case string:
-				if !foundString || v > maxString {
-					maxString = v
-					foundString = true
-				}
-			default:
-				if !foundOther {
-					maxOther = v
-					foundOther = true
-				}
-			}
-		}
+// shouldUpdateString determines if a new string value should replace the current one
+func (a *AccumulateNodeImpl) shouldUpdateString(newVal, currentVal string, isMin bool) bool {
+	if isMin {
+		return newVal < currentVal
 	}
-
-	// Retourner le type le plus approprié
-	if foundNumeric {
-		return maxFloat, nil
-	}
-	if foundString {
-		return maxString, nil
-	}
-	if foundOther {
-		return maxOther, nil
-	}
-
-	return nil, fmt.Errorf("no values found for field %s", field)
+	return newVal > currentVal
 }

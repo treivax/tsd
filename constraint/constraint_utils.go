@@ -5,6 +5,31 @@ import (
 	"fmt"
 )
 
+// Constraint type constants
+const (
+	ConstraintTypeFieldAccess = "fieldAccess"
+	ConstraintTypeComparison  = "comparison"
+	ConstraintTypeLogicalExpr = "logicalExpr"
+	ConstraintTypeBinaryOp    = "binaryOp"
+)
+
+// Value type constants
+const (
+	ValueTypeString     = "string"
+	ValueTypeNumber     = "number"
+	ValueTypeBoolean    = "boolean"
+	ValueTypeBool       = "bool"
+	ValueTypeIdentifier = "identifier"
+	ValueTypeVariable   = "variable"
+	ValueTypeUnknown    = "unknown"
+)
+
+// Special field name constants
+const (
+	FieldNameID       = "id"
+	FieldNameReteType = "reteType"
+)
+
 // Fonctions utilitaires pour traiter l'AST du parser de contraintes
 
 // ValidateTypes vérifie que tous les types référencés dans les expressions sont définis
@@ -169,28 +194,28 @@ func GetValueType(value interface{}) string {
 	case map[string]interface{}:
 		valueType, ok := v["type"].(string)
 		if !ok {
-			return "unknown"
+			return ValueTypeUnknown
 		}
 		switch valueType {
-		case "number":
-			return "number"
-		case "string":
-			return "string"
-		case "boolean":
-			return "bool"
-		case "variable":
+		case ValueTypeNumber:
+			return ValueTypeNumber
+		case ValueTypeString:
+			return ValueTypeString
+		case ValueTypeBoolean:
+			return ValueTypeBool
+		case ValueTypeVariable:
 			// Pour les variables comme "true", "false" qui sont parsées comme variables
 			name, ok := v["name"].(string)
 			if ok {
 				switch name {
 				case "true", "false":
-					return "bool"
+					return ValueTypeBool
 				}
 			}
-			return "variable" // Type non déterminable sans contexte
+			return ValueTypeVariable // Type non déterminable sans contexte
 		}
 	}
-	return "unknown"
+	return ValueTypeUnknown
 }
 
 // ValidateTypeCompatibility vérifie la compatibilité des types dans les comparaisons
@@ -207,18 +232,18 @@ func ValidateTypeCompatibility(program Program, constraint interface{}, expressi
 	}
 
 	switch constraintType {
-	case "comparison":
-		return validateComparisonConstraint(program, constraintMap, expressionIndex)
-	case "logicalExpr":
+	case ConstraintTypeComparison:
+		return validateConstraintWithOperands(program, constraintMap, expressionIndex, true)
+	case ConstraintTypeLogicalExpr:
 		return validateLogicalExpressionConstraint(program, constraintMap, expressionIndex)
-	case "binaryOp":
-		return validateBinaryOpConstraint(program, constraintMap, expressionIndex)
+	case ConstraintTypeBinaryOp:
+		return validateConstraintWithOperands(program, constraintMap, expressionIndex, false)
 	}
 	return nil
 }
 
-// validateComparisonConstraint handles comparison constraint validation
-func validateComparisonConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
+// validateConstraintWithOperands handles validation for constraints with left/right operands
+func validateConstraintWithOperands(program Program, c map[string]interface{}, expressionIndex int, checkCompatibility bool) error {
 	left := c["left"]
 	right := c["right"]
 
@@ -226,9 +251,11 @@ func validateComparisonConstraint(program Program, c map[string]interface{}, exp
 		return nil
 	}
 
-	// Validate type compatibility between operands
-	if err := validateOperandTypeCompatibility(program, left, right, expressionIndex); err != nil {
-		return err
+	// Validate type compatibility between operands (only for comparisons)
+	if checkCompatibility {
+		if err := validateOperandTypeCompatibility(program, left, right, expressionIndex); err != nil {
+			return err
+		}
 	}
 
 	// Recursive validation for operands
@@ -255,7 +282,7 @@ func validateOperandTypeCompatibility(program Program, left, right interface{}, 
 	}
 
 	// Check compatibility
-	if leftType != "unknown" && rightType != "unknown" && rightType != "variable" {
+	if leftType != ValueTypeUnknown && rightType != ValueTypeUnknown && rightType != ValueTypeVariable {
 		if leftType != rightType {
 			return fmt.Errorf("incompatibilité de types dans la comparaison: %s vs %s", leftType, rightType)
 		}
@@ -271,7 +298,7 @@ func getOperandType(program Program, operand interface{}, expressionIndex int) (
 		return GetValueType(operand), nil
 	}
 
-	if operandMap["type"] == "fieldAccess" {
+	if operandMap["type"] == ConstraintTypeFieldAccess {
 		object := operandMap["object"].(string)
 		field := operandMap["field"].(string)
 		return GetFieldType(program, object, field, expressionIndex)
@@ -309,21 +336,9 @@ func validateLogicalExpressionConstraint(program Program, c map[string]interface
 	return nil
 }
 
-// validateBinaryOpConstraint handles binary operation validation
+// validateBinaryOpConstraint handles binary operation validation (wrapper for backward compatibility)
 func validateBinaryOpConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
-	if left := c["left"]; left != nil {
-		if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
-			return err
-		}
-	}
-
-	if right := c["right"]; right != nil {
-		if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validateConstraintWithOperands(program, c, expressionIndex, false)
 }
 
 // ValidateConstraintFieldAccess parcourt récursivement les contraintes pour valider les accès aux champs
@@ -336,54 +351,55 @@ func ValidateConstraintFieldAccess(program Program, constraint interface{}, expr
 		}
 
 		switch constraintType {
-		case "fieldAccess":
+		case ConstraintTypeFieldAccess:
 			object, objOk := c["object"].(string)
 			field, fieldOk := c["field"].(string)
 			if objOk && fieldOk {
 				fieldAccess := FieldAccess{
-					Type:   "fieldAccess",
+					Type:   ConstraintTypeFieldAccess,
 					Object: object,
 					Field:  field,
 				}
 				return ValidateFieldAccess(program, fieldAccess, expressionIndex)
 			}
-		case "comparison":
-			if left := c["left"]; left != nil {
-				if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if right := c["right"]; right != nil {
-				if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
-					return err
-				}
-			}
-		case "logicalExpr":
-			if left := c["left"]; left != nil {
-				if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if operations, ok := c["operations"].([]interface{}); ok {
-				for _, op := range operations {
-					if opMap, ok := op.(map[string]interface{}); ok {
-						if right := opMap["right"]; right != nil {
-							if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
-								return err
-							}
-						}
+		case ConstraintTypeComparison, ConstraintTypeBinaryOp:
+			return validateFieldAccessInOperands(program, c, expressionIndex)
+		case ConstraintTypeLogicalExpr:
+			return validateFieldAccessInLogicalExpr(program, c, expressionIndex)
+		}
+	}
+	return nil
+}
+
+// validateFieldAccessInOperands validates field access in left/right operands
+func validateFieldAccessInOperands(program Program, c map[string]interface{}, expressionIndex int) error {
+	if left := c["left"]; left != nil {
+		if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
+			return err
+		}
+	}
+	if right := c["right"]; right != nil {
+		if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateFieldAccessInLogicalExpr validates field access in logical expressions
+func validateFieldAccessInLogicalExpr(program Program, c map[string]interface{}, expressionIndex int) error {
+	if left := c["left"]; left != nil {
+		if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
+			return err
+		}
+	}
+	if operations, ok := c["operations"].([]interface{}); ok {
+		for _, op := range operations {
+			if opMap, ok := op.(map[string]interface{}); ok {
+				if right := opMap["right"]; right != nil {
+					if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
+						return err
 					}
-				}
-			}
-		case "binaryOp":
-			if left := c["left"]; left != nil {
-				if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
-					return err
-				}
-			}
-			if right := c["right"]; right != nil {
-				if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
-					return err
 				}
 			}
 		}
@@ -394,54 +410,75 @@ func ValidateConstraintFieldAccess(program Program, constraint interface{}, expr
 // ValidateProgram effectue une validation complète du programme parsé
 func ValidateProgram(result interface{}) error {
 	// Convertir le résultat en structure Program
-	jsonData, err := json.Marshal(result)
+	program, err := convertResultToProgram(result)
 	if err != nil {
-		return fmt.Errorf("erreur conversion JSON: %v", err)
-	}
-
-	var program Program
-	err = json.Unmarshal(jsonData, &program)
-	if err != nil {
-		return fmt.Errorf("erreur parsing JSON: %v", err)
+		return err
 	}
 
 	// Validation des types
-	err = ValidateTypes(program)
-	if err != nil {
+	if err := ValidateTypes(program); err != nil {
 		return fmt.Errorf("erreur validation types: %v", err)
 	}
 
 	// Validation des faits
-	err = ValidateFacts(program)
-	if err != nil {
+	if err := ValidateFacts(program); err != nil {
 		return fmt.Errorf("erreur validation faits: %v", err)
 	}
 
-	// Validation des accès aux champs dans les contraintes
-	for i, expression := range program.Expressions {
-		if expression.Constraints != nil {
-			err = ValidateConstraintFieldAccess(program, expression.Constraints, i)
-			if err != nil {
-				return fmt.Errorf("erreur validation champs dans l'expression %d: %v", i+1, err)
-			}
-		}
+	// Validation des contraintes dans les expressions
+	if err := validateExpressionConstraints(program); err != nil {
+		return err
 	}
 
-	// Validation des types dans les comparaisons
+	// Validation des actions dans les expressions
+	if err := validateExpressionActions(program); err != nil {
+		return err
+	}
+
+	fmt.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
+	return nil
+}
+
+// convertResultToProgram converts the parser result to a Program structure
+func convertResultToProgram(result interface{}) (Program, error) {
+	var program Program
+
+	jsonData, err := json.Marshal(result)
+	if err != nil {
+		return program, fmt.Errorf("erreur conversion JSON: %v", err)
+	}
+
+	err = json.Unmarshal(jsonData, &program)
+	if err != nil {
+		return program, fmt.Errorf("erreur parsing JSON: %v", err)
+	}
+
+	return program, nil
+}
+
+// validateExpressionConstraints validates field access and type compatibility in all constraints
+func validateExpressionConstraints(program Program) error {
 	for i, expression := range program.Expressions {
 		if expression.Constraints != nil {
-			err = ValidateTypeCompatibility(program, expression.Constraints, i)
-			if err != nil {
+			// Validation des accès aux champs
+			if err := ValidateConstraintFieldAccess(program, expression.Constraints, i); err != nil {
+				return fmt.Errorf("erreur validation champs dans l'expression %d: %v", i+1, err)
+			}
+
+			// Validation des types dans les comparaisons
+			if err := ValidateTypeCompatibility(program, expression.Constraints, i); err != nil {
 				return fmt.Errorf("erreur validation types dans l'expression %d: %v", i+1, err)
 			}
 		}
 	}
+	return nil
+}
 
-	// Validation des actions (maintenant obligatoires)
+// validateExpressionActions validates that all expressions have valid actions
+func validateExpressionActions(program Program) error {
 	for i, expression := range program.Expressions {
 		if expression.Action != nil {
-			err = ValidateAction(program, *expression.Action, i)
-			if err != nil {
+			if err := ValidateAction(program, *expression.Action, i); err != nil {
 				return fmt.Errorf("erreur validation action dans l'expression %d: %v", i+1, err)
 			}
 		} else {
@@ -449,8 +486,6 @@ func ValidateProgram(result interface{}) error {
 			return fmt.Errorf("action manquante dans l'expression %d: chaque règle doit avoir une action définie", i+1)
 		}
 	}
-
-	fmt.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
 	return nil
 }
 
@@ -496,16 +531,16 @@ func ValidateFacts(program Program) error {
 // ValidateFactFieldType vérifie que la valeur d'un champ de fait correspond au type attendu
 func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName string) error {
 	switch expectedType {
-	case "string":
-		if value.Type != "string" && value.Type != "identifier" {
+	case ValueTypeString:
+		if value.Type != ValueTypeString && value.Type != ValueTypeIdentifier {
 			return fmt.Errorf("champ '%s' du type %s attend une valeur string, reçu %s", fieldName, typeName, value.Type)
 		}
-	case "number":
-		if value.Type != "number" {
+	case ValueTypeNumber:
+		if value.Type != ValueTypeNumber {
 			return fmt.Errorf("champ '%s' du type %s attend une valeur number, reçu %s", fieldName, typeName, value.Type)
 		}
-	case "bool", "boolean":
-		if value.Type != "boolean" {
+	case ValueTypeBool, ValueTypeBoolean:
+		if value.Type != ValueTypeBoolean {
 			return fmt.Errorf("champ '%s' du type %s attend une valeur boolean, reçu %s", fieldName, typeName, value.Type)
 		}
 	default:
@@ -521,66 +556,62 @@ func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
 
 	for i, fact := range program.Facts {
 		reteFact := map[string]interface{}{
-			"reteType": fact.TypeName, // Type RETE (ex: "Balance")
+			FieldNameReteType: fact.TypeName, // Type RETE (ex: "Balance")
 		}
 
-		// Variables pour gérer l'ID du fait
-		var factID string
-		hasExplicitID := false
-
-		// Convertir les champs
-		for _, field := range fact.Fields {
-			var convertedValue interface{}
-			switch field.Value.Type {
-			case "string":
-				if strVal, ok := field.Value.Value.(map[string]interface{}); ok {
-					convertedValue = strVal["value"]
-				} else {
-					convertedValue = field.Value.Value
-				}
-			case "number":
-				if numVal, ok := field.Value.Value.(map[string]interface{}); ok {
-					convertedValue = numVal["value"]
-				} else {
-					convertedValue = field.Value.Value
-				}
-			case "boolean":
-				if boolVal, ok := field.Value.Value.(map[string]interface{}); ok {
-					convertedValue = boolVal["value"]
-				} else {
-					convertedValue = field.Value.Value
-				}
-			case "identifier":
-				// Les identifiants non-quotés sont traités comme des strings
-				convertedValue = field.Value.Value
-			default:
-				convertedValue = field.Value.Value
-			}
-
-			// Ajouter le champ au fact, y compris l'ID s'il existe
-			reteFact[field.Name] = convertedValue
-
-			// Vérifier si c'est un champ ID
-			if field.Name == "id" {
-				factID = convertedValue.(string)
-				hasExplicitID = true
-			}
-		}
-
-		// Générer un ID si pas fourni explicitement
-		if !hasExplicitID {
-			factID = fmt.Sprintf("parsed_fact_%d", i+1)
-			reteFact["id"] = factID
-		}
+		// Convertir les champs et gérer l'ID
+		factID := convertFactFields(fact.Fields, reteFact, i)
 
 		// Définir l'ID du fait (nécessaire pour le réseau RETE)
-		reteFact["id"] = factID
+		reteFact[FieldNameID] = factID
 
 		// CORRECTION CRITIQUE: Assurer que le type RETE est toujours préservé
-		reteFact["reteType"] = fact.TypeName
+		reteFact[FieldNameReteType] = fact.TypeName
 
 		reteFacts = append(reteFacts, reteFact)
 	}
 
 	return reteFacts
+}
+
+// convertFactFields converts fact fields and returns the fact ID
+func convertFactFields(fields []FactField, reteFact map[string]interface{}, factIndex int) string {
+	var factID string
+	hasExplicitID := false
+
+	for _, field := range fields {
+		convertedValue := convertFactFieldValue(field.Value)
+
+		// Ajouter le champ au fact
+		reteFact[field.Name] = convertedValue
+
+		// Vérifier si c'est un champ ID
+		if field.Name == FieldNameID {
+			factID = convertedValue.(string)
+			hasExplicitID = true
+		}
+	}
+
+	// Générer un ID si pas fourni explicitement
+	if !hasExplicitID {
+		factID = fmt.Sprintf("parsed_fact_%d", factIndex+1)
+	}
+
+	return factID
+}
+
+// convertFactFieldValue converts a fact field value to its appropriate Go type
+func convertFactFieldValue(value FactValue) interface{} {
+	switch value.Type {
+	case ValueTypeString, ValueTypeNumber, ValueTypeBoolean:
+		if valMap, ok := value.Value.(map[string]interface{}); ok {
+			return valMap["value"]
+		}
+		return value.Value
+	case ValueTypeIdentifier:
+		// Les identifiants non-quotés sont traités comme des strings
+		return value.Value
+	default:
+		return value.Value
+	}
 }
