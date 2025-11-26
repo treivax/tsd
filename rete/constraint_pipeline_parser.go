@@ -10,6 +10,8 @@ import (
 )
 
 // extractComponents extrait les types et expressions d'un AST parsé
+// Note: La gestion des instructions reset est effectuée en amont dans buildNetworkWithResetSemantics
+// Cette fonction suppose que le programme reçu a déjà la sémantique reset appliquée si nécessaire
 // Retourne (types, expressions, error)
 func (cp *ConstraintPipeline) extractComponents(resultMap map[string]interface{}) ([]interface{}, []interface{}, error) {
 	// Extraire les types

@@ -44,6 +44,13 @@ func (ps *ProgramState) ParseAndMerge(filename string) error {
 		return fmt.Errorf("error converting result for %s: %w", filename, err)
 	}
 
+	// Check for reset instructions first
+	if len(program.Resets) > 0 {
+		// Apply reset: clear all existing state
+		ps.Reset()
+		// Note: After reset, we continue to merge the new content from this file
+	}
+
 	// Merge types (new types or validate existing ones)
 	err = ps.mergeTypes(program.Types, filename)
 	if err != nil {
@@ -91,6 +98,13 @@ func (ps *ProgramState) ParseAndMergeContent(content, filename string) error {
 	program, err := ConvertResultToProgram(result)
 	if err != nil {
 		return fmt.Errorf("error converting result for %s: %w", filename, err)
+	}
+
+	// Check for reset instructions first
+	if len(program.Resets) > 0 {
+		// Apply reset: clear all existing state
+		ps.Reset()
+		// Note: After reset, we continue to merge the new content from this content
 	}
 
 	// Merge types (new types or validate existing ones)

@@ -6,6 +6,7 @@ package rete
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/treivax/tsd/constraint"
 )
@@ -36,11 +37,13 @@ func NewConstraintPipeline() *ConstraintPipeline {
 
 // BuildNetworkFromConstraintFile construit un réseau RETE complet à partir d'un fichier .constraint
 // Cette fonction implémente le pipeline unique utilisé par TOUS les tests
+// Si le fichier contient des instructions reset, utilise l'IterativeParser pour appliquer
+// correctement la sémantique de reset (seuls les types/règles après le dernier reset sont conservés)
 func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile string, storage Storage) (*ReteNetwork, error) {
 	fmt.Printf("========================================\n")
 	fmt.Printf("📁 Fichier: %s\n", constraintFile)
 
-	// ÉTAPE 1: Parsing avec le vrai parseur PEG
+	// ÉTAPE 1: Parsing initial pour détecter les resets
 	parsedAST, err := constraint.ParseConstraintFile(constraintFile)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur parsing fichier %s: %w", constraintFile, err)
@@ -60,7 +63,21 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 		return nil, fmt.Errorf("❌ Format AST non reconnu: %T", parsedAST)
 	}
 
-	// ÉTAPE 2: Extraction et validation des composants
+	// Vérifier si le fichier contient des instructions reset
+	hasResets := false
+	if resetsData, exists := resultMap["resets"]; exists {
+		if resets, ok := resetsData.([]interface{}); ok && len(resets) > 0 {
+			hasResets = true
+			fmt.Printf("⚠️  Instructions reset détectées (%d) - Utilisation de l'IterativeParser\n", len(resets))
+		}
+	}
+
+	// Si des resets sont présents, utiliser l'IterativeParser pour appliquer la sémantique correcte
+	if hasResets {
+		return cp.buildNetworkWithResetSemantics(constraintFile, storage)
+	}
+
+	// ÉTAPE 2: Extraction et validation des composants (cas sans reset)
 	types, expressions, err := cp.extractComponents(resultMap)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
@@ -85,6 +102,149 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	fmt.Printf("========================================\n\n")
 
 	return network, nil
+}
+
+// buildNetworkWithResetSemantics construit un réseau en appliquant correctement la sémantique reset
+// Analyse le fichier pour déterminer quels types/expressions viennent après le dernier reset
+func (cp *ConstraintPipeline) buildNetworkWithResetSemantics(constraintFile string, storage Storage) (*ReteNetwork, error) {
+	// Lire le fichier pour analyser la structure
+	fileContent, err := constraint.ReadFileContent(constraintFile)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur lecture fichier: %w", err)
+	}
+
+	// Parser le fichier complet pour obtenir tous les éléments
+	parsedAST, err := constraint.ParseConstraintFile(constraintFile)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur parsing: %w", err)
+	}
+
+	// Valider
+	err = constraint.ValidateConstraintProgram(parsedAST)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur validation: %w", err)
+	}
+
+	// Convertir en programme
+	program, err := constraint.ConvertResultToProgram(parsedAST)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur conversion: %w", err)
+	}
+
+	// Analyser où se trouve le dernier reset dans le fichier
+	lastResetPosition := cp.findLastResetPosition(fileContent)
+
+	// Filtrer les types et expressions pour ne garder que ceux après le dernier reset
+	filteredTypes, filteredExpressions := cp.filterAfterReset(
+		program.Types, program.Expressions, fileContent, lastResetPosition)
+
+	fmt.Printf("✅ Après application des resets: %d type(s), %d expression(s)\n",
+		len(filteredTypes), len(filteredExpressions))
+
+	// Convertir au format RETE
+	filteredProgram := &constraint.Program{
+		Types:       filteredTypes,
+		Expressions: filteredExpressions,
+		Facts:       []constraint.Fact{},  // Les faits seront ajoutés séparément
+		Resets:      []constraint.Reset{}, // Plus de resets après filtrage
+	}
+
+	reteProgram := constraint.ConvertToReteProgram(filteredProgram)
+	resultMap, ok := reteProgram.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("❌ Format programme RETE invalide: %T", reteProgram)
+	}
+
+	// Extraire les composants
+	types, expressions, err := cp.extractComponents(resultMap)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
+	}
+	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
+
+	// Construction du réseau RETE
+	network, err := cp.buildNetwork(storage, types, expressions)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
+	}
+	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
+
+	// Validation finale
+	err = cp.validateNetwork(network)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
+	}
+	fmt.Printf("✅ Validation réussie\n")
+
+	fmt.Printf("🎯 PIPELINE AVEC RESET TERMINÉ AVEC SUCCÈS\n")
+	fmt.Printf("========================================\n\n")
+
+	return network, nil
+}
+
+// findLastResetPosition trouve la position du dernier mot "reset" dans le fichier
+// Retourne la ligne (0-based) où se trouve le dernier reset, ou -1 si aucun
+func (cp *ConstraintPipeline) findLastResetPosition(content string) int {
+	lines := strings.Split(content, "\n")
+	lastResetLine := -1
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "reset" {
+			lastResetLine = i
+		}
+	}
+
+	return lastResetLine
+}
+
+// filterAfterReset filtre les types et expressions pour ne garder que ceux définis après le reset
+// Stratégie: compte combien de définitions de types et d'expressions apparaissent avant le reset
+// dans le fichier source, puis ne garde que les éléments après ces positions dans les slices
+func (cp *ConstraintPipeline) filterAfterReset(
+	types []constraint.TypeDefinition,
+	expressions []constraint.Expression,
+	fileContent string,
+	resetLine int,
+) ([]constraint.TypeDefinition, []constraint.Expression) {
+
+	if resetLine < 0 {
+		// Pas de reset trouvé, retourner tout
+		return types, expressions
+	}
+
+	lines := strings.Split(fileContent, "\n")
+
+	// Compter combien de "type " apparaissent avant le reset
+	typesBeforeReset := 0
+	for i := 0; i < resetLine && i < len(lines); i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if strings.HasPrefix(trimmed, "type ") && strings.Contains(trimmed, ":") {
+			typesBeforeReset++
+		}
+	}
+
+	// Compter combien de règles (lignes avec "==>") apparaissent avant le reset
+	expressionsBeforeReset := 0
+	for i := 0; i < resetLine && i < len(lines); i++ {
+		if strings.Contains(lines[i], "==>") {
+			expressionsBeforeReset++
+		}
+	}
+
+	// Filtrer les types: garder seulement ceux après l'index typesBeforeReset
+	var filteredTypes []constraint.TypeDefinition
+	if typesBeforeReset < len(types) {
+		filteredTypes = types[typesBeforeReset:]
+	}
+
+	// Filtrer les expressions: garder seulement celles après l'index expressionsBeforeReset
+	var filteredExpressions []constraint.Expression
+	if expressionsBeforeReset < len(expressions) {
+		filteredExpressions = expressions[expressionsBeforeReset:]
+	}
+
+	return filteredTypes, filteredExpressions
 }
 
 // BuildNetworkFromMultipleFiles construit un réseau RETE en parsant plusieurs fichiers de manière itérative

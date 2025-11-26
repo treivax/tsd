@@ -5,6 +5,41 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.3.2] - 2025-11-26
+
+### ✨ Amélioration Majeure
+
+#### Support Complet du Reset dans ConstraintPipeline
+- ✅ Le `ConstraintPipeline` gère maintenant correctement la sémantique des instructions `reset`
+- ✅ Seuls les types et règles définis **après le dernier reset** sont présents dans le réseau RETE final
+- ✅ Détection automatique des fichiers contenant des instructions reset
+- ✅ Analyse intelligente du contenu des fichiers pour filtrer les définitions pré-reset
+- ✅ Nouvelle fonction `buildNetworkWithResetSemantics()` dans `rete/constraint_pipeline.go`
+- ✅ Nouvelle fonction helper `ReadFileContent()` dans `constraint/api.go`
+
+#### Tests d'Intégration
+- ✅ Suite complète de 6 tests d'intégration pour l'instruction reset : `test/integration/reset_instruction_test.go`
+- ✅ Fichiers de test dédiés :
+  - `constraint/test/integration/reset_integration_test.constraint` (test avec 1 reset)
+  - `constraint/test/integration/reset_integration_test.facts`
+  - `constraint/test/integration/multiple_resets_test.constraint` (test avec 2 resets successifs)
+  - `constraint/test/integration/multiple_resets_test.facts`
+- ✅ Tous les tests passent : 6/6 ✅
+
+#### Tests Validés
+- `TestResetInstruction_BasicReset` : Vérifie qu'un reset efface les types/règles précédents
+- `TestResetInstruction_MultipleResets` : Vérifie que plusieurs resets successifs fonctionnent
+- `TestResetInstruction_NetworkIntegrity` : Vérifie l'intégrité du réseau après reset
+- `TestResetInstruction_RulesAfterReset` : Vérifie que seules les règles post-reset sont actives
+- `TestResetInstruction_StoragePreservation` : Vérifie la préservation du storage
+- `TestResetInstruction_ParsingOnly` : Vérifie le parsing correct des fichiers avec reset
+
+#### Impact
+- **Comportement** : Le réseau RETE construit ne contient que les définitions après le dernier reset
+- **Cas d'usage** : Fichiers de configuration avec sections réinitialisables
+- **Performance** : Analyse de fichier légère, pas d'impact sur les fichiers sans reset
+- **Compatibilité** : Rétrocompatible - les fichiers sans reset fonctionnent comme avant
+
 ## [2.3.1] - 2025-11-26
 
 ### ✨ Nouvelle Fonctionnalité

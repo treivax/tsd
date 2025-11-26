@@ -302,16 +302,107 @@ make test
 - [Réseau RETE](../rete/network.go)
 - [Exemples](../beta_coverage_tests/reset_example.constraint)
 
+## Support du Reset dans ConstraintPipeline
+
+### Sémantique Automatique
+
+Depuis la version 2.3.2, le `ConstraintPipeline` détecte et applique automatiquement la sémantique des instructions `reset` :
+
+#### Comportement
+
+Lorsqu'un fichier `.constraint` contient des instructions `reset` :
+
+1. **Détection automatique** : Le pipeline détecte la présence d'instructions reset
+2. **Analyse du fichier** : Le contenu est analysé pour localiser les resets
+3. **Filtrage intelligent** : Seuls les types et règles après le **dernier** reset sont conservés
+4. **Construction du réseau** : Le réseau RETE ne contient que les définitions post-reset
+
+#### Exemple de Traitement
+
+**Fichier d'entrée** :
+```
+type User : <name: string>
+{u: User} / u.name != "" ==> log_user(u.name)
+
+reset
+
+type Customer : <id: string, vip: bool>
+{c: Customer} / c.vip == true ==> log_vip(c.id)
+```
+
+**Réseau RETE résultant** :
+- ✅ Type `Customer` présent
+- ✅ Règle `log_vip` active
+- ❌ Type `User` absent (supprimé par reset)
+- ❌ Règle `log_user` absente (supprimée par reset)
+
+### Tests d'Intégration
+
+Des tests d'intégration complets valident le comportement :
+
+```bash
+# Exécuter les tests d'intégration reset
+go test ./test/integration -run TestResetInstruction -v
+
+# Tests disponibles :
+# - TestResetInstruction_BasicReset : Reset simple
+# - TestResetInstruction_MultipleResets : Resets multiples
+# - TestResetInstruction_NetworkIntegrity : Intégrité du réseau
+# - TestResetInstruction_RulesAfterReset : Règles post-reset
+# - TestResetInstruction_StoragePreservation : Préservation du storage
+# - TestResetInstruction_ParsingOnly : Parsing correct
+```
+
+### Fichiers de Test
+
+Les fichiers de test démontrent l'utilisation :
+
+- **Reset simple** : `constraint/test/integration/reset_integration_test.constraint`
+- **Resets multiples** : `constraint/test/integration/multiple_resets_test.constraint`
+
+### Limitations Connues
+
+#### Parsing en Bloc
+
+Le parseur PEG parse les fichiers en une seule fois. Le pipeline utilise une analyse textuelle pour déterminer quelles définitions viennent après les resets. Cette approche est :
+
+- ✅ **Fiable** pour les fichiers bien formatés
+- ✅ **Performante** (analyse légère)
+- ⚠️ **Sensible au formatage** : les définitions doivent suivre les conventions standard
+
+#### Recommendations
+
+Pour un fonctionnement optimal avec reset :
+
+1. **Une définition par ligne** pour les types et règles
+2. **Reset sur sa propre ligne** (pas de commentaire sur la même ligne)
+3. **Commentaires avant/après** sont OK
+
+✅ **Bon** :
+```
+type User : <name: string>
+
+reset
+
+type Customer : <id: string>
+```
+
+⚠️ **À éviter** :
+```
+type User : <name: string> reset type Customer : <id: string>
+```
+
 ## Support
 
 Pour toute question ou problème concernant l'instruction `reset`, consultez :
 
 1. Les tests dans `constraint/reset_test.go` et `rete/reset_test.go`
-2. L'exemple dans `beta_coverage_tests/reset_example.constraint`
-3. Cette documentation
+2. Les tests d'intégration dans `test/integration/reset_instruction_test.go`
+3. L'exemple dans `beta_coverage_tests/reset_example.constraint`
+4. Cette documentation
 
 ---
 
 **Auteur** : TSD Contributors  
 **Licence** : MIT  
-**Dernière mise à jour** : 26 novembre 2025
+**Dernière mise à jour** : 26 novembre 2025 (v2.3.2)

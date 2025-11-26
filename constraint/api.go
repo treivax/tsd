@@ -7,7 +7,17 @@ package constraint
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 )
+
+// ReadFileContent reads the entire content of a file as a string
+func ReadFileContent(filename string) (string, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to read file %s: %w", filename, err)
+	}
+	return string(data), nil
+}
 
 // ParseConstraint parses constraint input and returns the AST.
 // It takes a filename (for error reporting) and the input bytes to parse.
