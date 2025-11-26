@@ -418,7 +418,17 @@ SingleStringChar <- EscapeSequence / (!'\'' UnicodeChar) {
 }
 
 EscapeSequence <- "\\" char:EscapeChar {
-    switch char {
+    var charStr string
+    switch v := char.(type) {
+    case string:
+        charStr = v
+    case []uint8:
+        charStr = string(v)
+    default:
+        charStr = fmt.Sprintf("%v", char)
+    }
+
+    switch charStr {
     case "n":
         return "\n", nil
     case "t":
@@ -432,11 +442,17 @@ EscapeSequence <- "\\" char:EscapeChar {
     case "'":
         return "'", nil
     default:
-        return "\\" + char.(string), nil
+        return "\\" + charStr, nil
     }
 }
 
-EscapeChar <- "n" / "t" / "r" / "\\" / "\"" / "'" / .
+EscapeChar <- "n" { return "n", nil } /
+              "t" { return "t", nil } /
+              "r" { return "r", nil } /
+              "\\" { return "\\", nil } /
+              "\"" { return "\"", nil } /
+              "'" { return "'", nil } /
+              . { return string(c.text), nil }
 
 UnicodeChar <- .
 

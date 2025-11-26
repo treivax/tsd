@@ -1,0 +1,25 @@
+// Integration test for quoted strings in TSD
+// Tests that quoted strings work correctly in types, facts, and rules
+
+type Person : <id: string, name: string, city: string, bio: string>
+type Message : <id: string, sender: string, text: string, status: string>
+
+// Facts with quoted strings (including spaces and special characters)
+Person(id:"p1", name:"Alice Smith", city:"New York", bio:"Software engineer at TechCorp")
+Person(id:"p2", name:"Bob Jones", city:"Los Angeles", bio:"Product manager")
+Person(id:"p3", name:"Charlie Brown", city:"San Francisco", bio:"Designer and Artist")
+Person(id:p4, name:Diana, city:Chicago, bio:"Data scientist")
+
+Message(id:"m1", sender:"Alice Smith", text:"Hello, World!", status:"sent")
+Message(id:"m2", sender:"Bob Jones", text:"How are you?", status:"delivered")
+Message(id:"m3", sender:"Charlie Brown", text:"Meeting at 3 PM", status:"read")
+Message(id:m4, sender:Diana, text:Working, status:pending)
+
+// Rules with quoted string conditions
+rule find_alice : {p: Person} / p.name == "Alice Smith" ==> found_person(p.id)
+
+rule new_york_resident : {p: Person} / p.city == "New York" ==> ny_resident(p.id)
+
+rule greeting_message : {m: Message} / m.text == "Hello, World!" ==> greeting_found(m.id)
+
+rule message_status : {m: Message} / m.status == "sent" ==> message_sent(m.id)
