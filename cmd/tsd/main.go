@@ -260,6 +260,9 @@ func PrintResults(config *Config, result *Result, stdout io.Writer) {
 
 // CountActivations counts the total number of activations in the network
 func CountActivations(network *rete.ReteNetwork) int {
+	if network == nil {
+		return 0
+	}
 	count := 0
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
@@ -271,6 +274,9 @@ func CountActivations(network *rete.ReteNetwork) int {
 
 // PrintActivationDetails prints detailed information about activations
 func PrintActivationDetails(network *rete.ReteNetwork, stdout io.Writer) {
+	if network == nil {
+		return
+	}
 	count := 0
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Memory != nil && terminal.Memory.Tokens != nil {

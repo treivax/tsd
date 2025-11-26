@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/treivax/tsd/rete"
 )
 
 func TestParseFlags(t *testing.T) {
@@ -1345,4 +1347,430 @@ func TestEdgeCases(t *testing.T) {
 			t.Error("Expected validation error for config with no input source")
 		}
 	})
+}
+
+// TestRunWithFacts tests the RunWithFacts function
+func TestRunWithFacts(t *testing.T) {
+	// Create temporary constraint and facts files
+	tmpDir := t.TempDir()
+
+	constraintFile := filepath.Join(tmpDir, "test.constraint")
+	constraintContent := `type Person : <id: string, name: string, age: number>
+
+{p: Person} / p.age > 18 ==> adult(p.id)`
+	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
+		t.Fatalf("Failed to create constraint file: %v", err)
+	}
+
+	factsFile := filepath.Join(tmpDir, "test.facts")
+	factsContent := `Person(id: "1", name: "Alice", age: 25)
+Person(id: "2", name: "Bob", age: 30)`
+	if err := os.WriteFile(factsFile, []byte(factsContent), 0644); err != nil {
+		t.Fatalf("Failed to create facts file: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		config       *Config
+		sourceName   string
+		wantExitCode int
+		checkOutput  func(*testing.T, string, string)
+	}{
+		{
+			name: "successful execution",
+			config: &Config{
+				FactsFile: factsFile,
+				Verbose:   false,
+			},
+			sourceName:   constraintFile,
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if stderr != "" {
+					t.Errorf("Expected no stderr, got: %s", stderr)
+				}
+			},
+		},
+		{
+			name: "verbose mode",
+			config: &Config{
+				FactsFile: factsFile,
+				Verbose:   true,
+			},
+			sourceName:   constraintFile,
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stdout, "PIPELINE RETE COMPLET") {
+					t.Error("Verbose output should contain pipeline header")
+				}
+				if !strings.Contains(stdout, "RÉSULTATS") {
+					t.Error("Verbose output should contain results header")
+				}
+			},
+		},
+		{
+			name: "facts file not found",
+			config: &Config{
+				FactsFile: filepath.Join(tmpDir, "nonexistent.facts"),
+				Verbose:   false,
+			},
+			sourceName:   constraintFile,
+			wantExitCode: 1,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stderr, "Fichier faits non trouvé") {
+					t.Error("Should report facts file not found")
+				}
+			},
+		},
+		{
+			name: "invalid constraint source",
+			config: &Config{
+				FactsFile: factsFile,
+				Verbose:   false,
+			},
+			sourceName:   "nonexistent.constraint",
+			wantExitCode: 1,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stderr, "Erreur pipeline RETE") {
+					t.Error("Should report pipeline error")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+
+			exitCode := RunWithFacts(tt.config, tt.sourceName, &stdout, &stderr)
+
+			if exitCode != tt.wantExitCode {
+				t.Errorf("exitCode = %d, want %d", exitCode, tt.wantExitCode)
+			}
+
+			if tt.checkOutput != nil {
+				tt.checkOutput(t, stdout.String(), stderr.String())
+			}
+		})
+	}
+}
+
+// TestExecutePipeline tests the ExecutePipeline function
+func TestExecutePipeline(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create valid test files
+	constraintFile := filepath.Join(tmpDir, "test.constraint")
+	constraintContent := `type Person : <id: string, name: string, age: number>
+
+{p: Person} / p.age > 18 ==> adult(p.id)`
+	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
+		t.Fatalf("Failed to create constraint file: %v", err)
+	}
+
+	factsFile := filepath.Join(tmpDir, "test.facts")
+	factsContent := `Person(id: "1", name: "Alice", age: 25)
+Person(id: "2", name: "Bob", age: 30)`
+	if err := os.WriteFile(factsFile, []byte(factsContent), 0644); err != nil {
+		t.Fatalf("Failed to create facts file: %v", err)
+	}
+
+	tests := []struct {
+		name             string
+		constraintSource string
+		factsFile        string
+		wantError        bool
+		checkResult      func(*testing.T, *Result)
+	}{
+		{
+			name:             "successful pipeline execution",
+			constraintSource: constraintFile,
+			factsFile:        factsFile,
+			wantError:        false,
+			checkResult: func(t *testing.T, result *Result) {
+				if result == nil {
+					t.Fatal("Result should not be nil")
+				}
+				if result.Network == nil {
+					t.Error("Network should not be nil")
+				}
+				if len(result.Facts) != 2 {
+					t.Errorf("Expected 2 facts, got %d", len(result.Facts))
+				}
+				if result.Activations < 0 {
+					t.Error("Activations should not be negative")
+				}
+			},
+		},
+		{
+			name:             "constraint file not found",
+			constraintSource: "nonexistent.constraint",
+			factsFile:        factsFile,
+			wantError:        true,
+			checkResult:      nil,
+		},
+		{
+			name:             "facts file not found",
+			constraintSource: constraintFile,
+			factsFile:        "nonexistent.facts",
+			wantError:        true,
+			checkResult:      nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ExecutePipeline(tt.constraintSource, tt.factsFile)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if tt.checkResult != nil {
+					tt.checkResult(t, result)
+				}
+			}
+		})
+	}
+}
+
+// TestPrintResultsFunction tests the PrintResults function
+func TestPrintResultsFunction(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      *Config
+		result      *Result
+		checkOutput func(*testing.T, string)
+	}{
+		{
+			name: "basic results - no activations",
+			config: &Config{
+				Verbose: false,
+			},
+			result: &Result{
+				Network:     nil,
+				Facts:       make([]*rete.Fact, 5),
+				Activations: 0,
+			},
+			checkOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "Aucune action déclenchée") {
+					t.Error("Should contain 'no actions' message")
+				}
+			},
+		},
+		{
+			name: "verbose results with activations",
+			config: &Config{
+				Verbose: true,
+			},
+			result: &Result{
+				Network:     &rete.ReteNetwork{},
+				Facts:       make([]*rete.Fact, 3),
+				Activations: 5,
+			},
+			checkOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "RÉSULTATS") {
+					t.Error("Should contain results header")
+				}
+				if !strings.Contains(output, "Faits injectés: 3") {
+					t.Error("Should show fact count")
+				}
+				if !strings.Contains(output, "ACTIONS DISPONIBLES: 5") {
+					t.Error("Should show activation count")
+				}
+				if !strings.Contains(output, "Pipeline RETE exécuté avec succès") {
+					t.Error("Should contain success message")
+				}
+			},
+		},
+		{
+			name: "non-verbose with activations",
+			config: &Config{
+				Verbose: false,
+			},
+			result: &Result{
+				Network:     &rete.ReteNetwork{},
+				Facts:       make([]*rete.Fact, 10),
+				Activations: 3,
+			},
+			checkOutput: func(t *testing.T, output string) {
+				if !strings.Contains(output, "ACTIONS DISPONIBLES: 3") {
+					t.Error("Should show activation count")
+				}
+				if strings.Contains(output, "RÉSULTATS") {
+					t.Error("Should not contain verbose headers")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout bytes.Buffer
+			PrintResults(tt.config, tt.result, &stdout)
+
+			if tt.checkOutput != nil {
+				tt.checkOutput(t, stdout.String())
+			}
+		})
+	}
+}
+
+// TestCountActivationsWithRealNetwork tests CountActivations with actual network
+func TestCountActivationsReal(t *testing.T) {
+	tests := []struct {
+		name     string
+		network  *rete.ReteNetwork
+		expected int
+	}{
+		{
+			name:     "nil network",
+			network:  nil,
+			expected: 0,
+		},
+		{
+			name:     "empty network",
+			network:  &rete.ReteNetwork{},
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			count := CountActivations(tt.network)
+			if count != tt.expected {
+				t.Errorf("CountActivations() = %d, want %d", count, tt.expected)
+			}
+		})
+	}
+}
+
+// TestPrintActivationDetailsReal tests PrintActivationDetails with actual network
+func TestPrintActivationDetailsReal(t *testing.T) {
+	tests := []struct {
+		name    string
+		network *rete.ReteNetwork
+	}{
+		{
+			name:    "nil network",
+			network: nil,
+		},
+		{
+			name:    "empty network",
+			network: &rete.ReteNetwork{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout bytes.Buffer
+			// Should not panic
+			PrintActivationDetails(tt.network, &stdout)
+		})
+	}
+}
+
+// TestRun tests the main Run function
+func TestRun(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create test constraint file
+	constraintFile := filepath.Join(tmpDir, "test.constraint")
+	constraintContent := "type Person : <id: string, name: string>"
+	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
+		t.Fatalf("Failed to create constraint file: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		args         []string
+		stdin        string
+		wantExitCode int
+		checkOutput  func(*testing.T, string, string)
+	}{
+		{
+			name:         "help flag",
+			args:         []string{"-h"},
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stdout, "USAGE") {
+					t.Error("Should display help")
+				}
+			},
+		},
+		{
+			name:         "version flag",
+			args:         []string{"-version"},
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stdout, "TSD") {
+					t.Error("Should display version")
+				}
+			},
+		},
+		{
+			name:         "valid constraint file",
+			args:         []string{"-constraint", constraintFile},
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stdout, "validées avec succès") {
+					t.Error("Should show success message")
+				}
+			},
+		},
+		{
+			name:         "valid text input",
+			args:         []string{"-text", "type Person : <id: string>"},
+			wantExitCode: 0,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stdout, "validées avec succès") {
+					t.Error("Should show success message")
+				}
+			},
+		},
+		{
+			name:         "no arguments",
+			args:         []string{},
+			wantExitCode: 1,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stderr, "Erreur") {
+					t.Error("Should show error")
+				}
+			},
+		},
+		{
+			name:         "invalid syntax",
+			args:         []string{"-text", "invalid @#$%"},
+			wantExitCode: 1,
+			checkOutput: func(t *testing.T, stdout, stderr string) {
+				if !strings.Contains(stderr, "Erreur") {
+					t.Error("Should show parsing error")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			var stdin io.Reader
+			if tt.stdin != "" {
+				stdin = strings.NewReader(tt.stdin)
+			}
+
+			exitCode := Run(tt.args, stdin, &stdout, &stderr)
+
+			if exitCode != tt.wantExitCode {
+				t.Errorf("exitCode = %d, want %d\nStdout: %s\nStderr: %s",
+					exitCode, tt.wantExitCode, stdout.String(), stderr.String())
+			}
+
+			if tt.checkOutput != nil {
+				tt.checkOutput(t, stdout.String(), stderr.String())
+			}
+		})
+	}
 }
