@@ -5,6 +5,34 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.3.1] - 2025-11-26
+
+### ✨ Nouvelle Fonctionnalité
+
+#### Instruction `reset`
+- ✅ Ajout de l'instruction `reset` dans la grammaire
+- ✅ Permet de réinitialiser complètement le système (types, règles, faits, réseau RETE)
+- ✅ Syntaxe simple : `reset`
+- ✅ Méthode `Reset()` ajoutée à `ProgramState` dans package `constraint`
+- ✅ Méthode `Reset()` ajoutée à `IterativeParser` dans package `constraint`
+- ✅ Méthode `Reset()` ajoutée à `ReteNetwork` dans package `rete`
+
+#### Documentation
+- ✅ Documentation complète dans `docs/RESET_INSTRUCTION.md`
+- ✅ Exemple d'utilisation dans `beta_coverage_tests/reset_example.constraint`
+- ✅ Guide détaillé avec cas d'usage et API
+
+#### Tests
+- ✅ Suite de tests complète : `constraint/reset_test.go` (3 groupes de tests, 8 cas)
+- ✅ Tests du réseau RETE : `rete/reset_test.go` (5 cas de test)
+- ✅ Tous les tests passent : 13/13 ✅
+
+#### Impact
+- **Fonctionnalité** : Permet de redémarrer le système sans redémarrage d'application
+- **Cas d'usage** : Tests, développement, changement de contexte métier
+- **Performance** : Opération très rapide (réallocation de structures vides)
+- **Compatibilité** : Aucun impact sur le code existant (nouvelle fonctionnalité)
+
 ## [2.3.0] - 2025-11-26
 
 ### 🧹 Grand Nettoyage (Deep Clean)

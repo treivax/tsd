@@ -92,3 +92,23 @@ func (rn *ReteNetwork) RetractFact(factID string) error {
 	// Propager la rétractation depuis le nœud racine
 	return rn.RootNode.ActivateRetract(factID)
 }
+
+// Reset clears the entire RETE network and resets it to an empty state.
+// This removes all facts, rules, types, and network nodes.
+// After calling Reset, the network is ready to accept new definitions from scratch.
+func (rn *ReteNetwork) Reset() {
+	fmt.Println("🧹 Réinitialisation complète du réseau RETE")
+
+	// Clear all node collections
+	rn.TypeNodes = make(map[string]*TypeNode)
+	rn.AlphaNodes = make(map[string]*AlphaNode)
+	rn.BetaNodes = make(map[string]interface{})
+	rn.TerminalNodes = make(map[string]*TerminalNode)
+	rn.Types = make([]TypeDefinition, 0)
+	rn.BetaBuilder = nil
+
+	// Recreate a fresh root node with the existing storage
+	rn.RootNode = NewRootNode(rn.Storage)
+
+	fmt.Println("✅ Réseau RETE réinitialisé avec succès")
+}

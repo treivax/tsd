@@ -41,3 +41,14 @@ func (ps *ProgramState) AddError(err ValidationError) {
 func (ps *ProgramState) ClearErrors() {
 	ps.Errors = []ValidationError{}
 }
+
+// Reset clears all state including types, rules, facts, and errors.
+// This completely resets the program state to an empty state.
+// Use this when you need to start fresh with a new program.
+func (ps *ProgramState) Reset() {
+	ps.Types = make(map[string]*TypeDefinition)
+	ps.Rules = make([]*Expression, 0)
+	ps.Facts = make([]*Fact, 0)
+	ps.FilesParsed = make([]string, 0)
+	ps.Errors = make([]ValidationError, 0)
+}

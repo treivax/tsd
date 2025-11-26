@@ -4,12 +4,13 @@
 
 package constraint
 
-// Program represents the complete AST of a constraint program including types, expressions and facts.
+// Program represents the complete AST of a constraint program including types, expressions, facts and resets.
 // It serves as the root structure for parsed constraint files.
 type Program struct {
 	Types       []TypeDefinition `json:"types"`       // Type definitions declared in the program
 	Expressions []Expression     `json:"expressions"` // Constraint expressions/rules
 	Facts       []Fact           `json:"facts"`       // Facts parsed from the program
+	Resets      []Reset          `json:"resets"`      // Reset instructions to clear the system
 }
 
 // TypeDefinition represents a user-defined type with its fields.
@@ -196,4 +197,11 @@ type FactField struct {
 type FactValue struct {
 	Type  string      `json:"type"`  // Value type ("string", "number", "bool")
 	Value interface{} `json:"value"` // Actual value
+}
+
+// Reset represents a reset instruction that clears the entire system.
+// When executed, it removes all facts, rules, types, and the RETE network.
+// Example: reset
+type Reset struct {
+	Type string `json:"type"` // Always "reset"
 }
