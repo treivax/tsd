@@ -144,7 +144,6 @@ if err != nil {
 tsd/
 ├── cmd/
 │   ├── tsd/                    # CLI principal
-│   ├── rete-validate/          # Validateur de tests individuels
 │   └── universal-rete-runner/  # Runner universel (53 tests)
 ├── constraint/                 # Parser PEG et validation
 │   ├── grammar/                # Grammaire PEG
@@ -175,9 +174,6 @@ make test
 
 # Tests avec couverture
 make test-coverage
-
-# Test spécifique
-make rete-validate TEST=join_simple
 ```
 
 ### Couverture Complète

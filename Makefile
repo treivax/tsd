@@ -1,16 +1,14 @@
 # Makefile pour le projet TSD - Validation RETE et conventions Go
 
-.PHONY: help build test clean lint format deps validate rete-validate
+.PHONY: help build test clean lint format deps validate
 
 # Variables
 PROJECT_NAME := tsd
 BINARY_NAME := tsd
-RETE_VALIDATE := rete-validate
 UNIVERSAL_RUNNER := universal-rete-runner
 GO_VERSION := 1.21
 BUILD_DIR := ./bin
 CMD_TSD_DIR := ./cmd/tsd
-CMD_RETE_VALIDATE_DIR := ./cmd/rete-validate
 CMD_UNIVERSAL_DIR := ./cmd/universal-rete-runner
 GO_FILES := $(shell find . -name "*.go" -not -path "./vendor/*")
 TEST_TIMEOUT := 300s
@@ -36,11 +34,8 @@ help: ## Afficher cette aide
 	@echo "$(GREEN)clean$(NC)                - Nettoyer les artefacts"
 	@echo ""
 	@echo "$(CYAN)🔥 VALIDATION RETE:$(NC)"
-	@echo "$(GREEN)rete-validate$(NC)        - Valider un test (make rete-validate TEST=join_simple)"
 	@echo "$(GREEN)rete-all$(NC)             - Valider tous les tests beta"
-	@echo "$(GREEN)rete-quick$(NC)           - Test rapide (join_simple)"
 	@echo "$(GREEN)rete-unified$(NC)         - Exécuter TOUS les tests (Alpha+Beta+Intégration)"
-	@echo "$(GREEN)rete-dev$(NC)             - Interface développeur"
 	@echo ""
 	@echo "$(CYAN)🧪 TESTS & QUALITÉ:$(NC)"
 	@echo "$(GREEN)test$(NC)                 - Tests unitaires"
@@ -101,28 +96,9 @@ clean: ## BUILD - Nettoyer les artefacts
 # VALIDATION RETE
 # ================================
 
-rete-validate: build-runners ## RETE - Valider un test spécifique (make rete-validate TEST=join_simple)
-	@if [ -z "$(TEST)" ]; then \
-		echo "$(RED)❌ Erreur: Spécifiez un test avec TEST=nom_du_test$(NC)"; \
-		echo "   $(YELLOW)Exemple: make rete-validate TEST=join_simple$(NC)"; \
-		exit 1; \
-	fi
-	@echo "$(CYAN)🎯 Validation RETE du test: $(TEST)$(NC)"
-	@$(BUILD_DIR)/$(UNIVERSAL_RUNNER) single $(TEST)
-
 rete-all: build ## RETE - Valider tous les tests beta
 	@echo "$(BLUE)🔥 Validation de tous les tests RETE...$(NC)"
 	@cd test/coverage/beta && ./run_all_rete_tests.sh
-
-rete-quick: ## RETE - Test rapide avec runner.go (join_simple)
-	@echo "$(CYAN)⚡ Test RETE rapide...$(NC)"
-	@cd test/coverage/beta && go run runner.go /home/resinsec/dev/tsd/beta_coverage_tests/join_simple.constraint /home/resinsec/dev/tsd/beta_coverage_tests/join_simple.facts
-
-rete-dev: ## RETE - Interface développeur (cd test/coverage/beta)
-	@echo "$(YELLOW)🛠️  Interface développeur activée$(NC)"
-	@echo "   Répertoire: test/coverage/beta/"
-	@echo "   Commande: go run runner.go [constraint] [facts]"
-	@cd test/coverage/beta && bash
 
 rete-unified: build-runners ## RETE - Exécuter TOUS les tests (Alpha+Beta+Intégration)
 	@echo "$(BLUE)🚀 RUNNER UNIVERSEL - TOUS LES TESTS RETE$(NC)"

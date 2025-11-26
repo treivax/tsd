@@ -7,7 +7,6 @@ integration
 runner
 */runner
 */alpha_detailed_runner
-rete-validate
 unified-rete-runner
 
 # Go test coverage

@@ -8,7 +8,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BETA_TESTS_DIR="$PROJECT_ROOT/beta_coverage_tests"
-BINARY_PATH="$PROJECT_ROOT/bin/rete-validate"
+BINARY_PATH="$PROJECT_ROOT/bin/universal-rete-runner"
 
 # Couleurs
 GREEN='\033[32m'
@@ -62,16 +62,16 @@ format_time() {
 for constraint_file in "${TEST_FILES[@]}"; do
     test_name=$(basename "$constraint_file" .constraint)
     facts_file="${constraint_file%.constraint}.facts"
-    
+
     if [ ! -f "$facts_file" ]; then
         echo -e "${RED}❌ $test_name - Fichier facts manquant${NC}"
         FAILED_TESTS+=("$test_name (fichier facts manquant)")
         ((FAILED++))
         continue
     fi
-    
+
     echo -n -e "${CYAN}🎯 Test: ${test_name}${NC} ... "
-    
+
     # Exécution du test
     start_time=$(date +%s%N)
     if output=$("$BINARY_PATH" "$constraint_file" "$facts_file" 2>&1); then
@@ -79,17 +79,17 @@ for constraint_file in "${TEST_FILES[@]}"; do
         duration_ns=$((end_time - start_time))
         duration_us=$((duration_ns / 1000))
         TOTAL_TIME=$((TOTAL_TIME + duration_us))
-        
+
         # Vérification du succès
         if echo "$output" | grep -q "✅ TEST VALIDÉ"; then
             # Extraction des métriques simplifiée
             tokens_observed=$(echo "$output" | grep "• Tokens observés.*:" | grep -o "[0-9]*" | head -1)
             tokens_expected=$(echo "$output" | grep "• Tokens attendus.*:" | grep -o "[0-9]*" | head -1)
-            
+
             # Valeurs par défaut si extraction échoue
             tokens_observed=${tokens_observed:-"?"}
             tokens_expected=${tokens_expected:-"?"}
-            
+
             echo -e "${GREEN}✅ RÉUSSI${NC} (${tokens_observed}/${tokens_expected} tokens, $(format_time $duration_us))"
             ((PASSED++))
         else
