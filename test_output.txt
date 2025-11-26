@@ -1,0 +1,16 @@
+	github.com/treivax/tsd/cmd/tsd		coverage: 0.0% of statements
+	github.com/treivax/tsd/cmd/universal-rete-runner		coverage: 0.0% of statements
+ok  	github.com/treivax/tsd/constraint	0.011s	coverage: 59.6% of statements
+	github.com/treivax/tsd/constraint/cmd		coverage: 0.0% of statements
+	github.com/treivax/tsd/constraint/internal/config		coverage: 0.0% of statements
+ok  	github.com/treivax/tsd/constraint/pkg/domain	0.003s	coverage: 90.0% of statements
+ok  	github.com/treivax/tsd/constraint/pkg/validator	0.004s	coverage: 96.5% of statements
+ok  	github.com/treivax/tsd/rete	0.014s	coverage: 39.7% of statements
+	github.com/treivax/tsd/rete/internal/config		coverage: 0.0% of statements
+ok  	github.com/treivax/tsd/rete/pkg/domain	0.003s	coverage: 100.0% of statements
+ok  	github.com/treivax/tsd/rete/pkg/network	0.003s	coverage: 100.0% of statements
+ok  	github.com/treivax/tsd/rete/pkg/nodes	0.013s	coverage: 71.6% of statements
+	github.com/treivax/tsd/scripts		coverage: 0.0% of statements
+ok  	github.com/treivax/tsd/test	0.004s	coverage: [no statements]
+ok  	github.com/treivax/tsd/test/integration	0.373s	coverage: 29.4% of statements
+	github.com/treivax/tsd/test/testutil		coverage: 0.0% of statements

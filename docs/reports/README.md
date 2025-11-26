@@ -1,155 +1,171 @@
-# 📊 Rapports TSD - Index
+# 📊 Rapports de Statistiques TSD
 
-Ce dossier contient les rapports d'analyse et de statistiques du projet TSD (Type System with Dependencies).
+Ce dossier contient les rapports et métriques du projet TSD (Type System DSL).
 
----
+## 📁 Fichiers Disponibles
 
-## 📁 Organisation
+### Rapports Principaux
 
-### Rapports de Statistiques Code
+- **[CODE_STATS_2025-11-26.md](CODE_STATS_2025-11-26.md)** - Rapport détaillé des statistiques du code
+  - Métriques globales (lignes, fichiers, ratios)
+  - Couverture de tests par package
+  - Analyse de complexité
+  - Recommandations et prochaines actions
 
-- **`code-stats-2025-11-26.md`** ⭐ *Rapport actuel*
-  - Statistiques complètes du code
-  - 11,551 lignes de code manuel
-  - 6,293 lignes de tests (54.5% coverage)
-  - Score qualité : 92/100
-  - Recommandations détaillées
+- **[code_metrics.json](code_metrics.json)** - Métriques au format JSON
+  - Utilisable pour automatisation et CI/CD
+  - Données structurées pour graphiques
 
-- **`code-stats-2025-11-26-old.md`** *Archive*
-  - Version précédente du rapport
-  - Conservé pour historique
+- **[coverage_report.html](coverage_report.html)** - Rapport de couverture HTML interactif
+  - Visualisation détaillée ligne par ligne
+  - Généré avec `go tool cover`
 
-### Rapports de Refactoring
+## 📈 Vue d'Ensemble Rapide
 
-- **`refactoring-evaluator-2025-11-26.md`**
-  - Refactoring du RETE evaluator
-  - Division en modules spécialisés
-  - Amélioration maintenabilité
+### Métriques Clés (26 Nov 2025)
 
-- **`refactoring-constraint-pipeline-2025-11-26.md`**
-  - Refactoring du pipeline de contraintes
-  - Optimisation architecture
-  - Documentation améliorée
+```
+📊 Volume de Code
+├─ Total lignes Go:      29,434
+├─ Code manuel:          11,614
+├─ Tests:                12,590
+└─ Généré:                5,230
 
-### Rapports d'Exécution Tests
+🎯 Couverture
+├─ Globale:               48.7%
+├─ Packages à 100%:          2
+├─ Packages à 90%+:          4
+└─ Packages à 0%:            7
 
-- **`test-execution-2025-11-26.md`**
-  - Résultats exécution tests
-  - 110 tests, 100% pass rate
-  - Coverage détaillé par module
-
----
-
-## 🎯 Rapport Principal
-
-**➜ Consultez `code-stats-2025-11-26.md` pour l'état actuel du projet**
-
-### Résumé Exécutif (Dernière Mise à Jour)
-
-| Métrique | Valeur | Status |
-|----------|--------|--------|
-| Code Manuel | 11,551 lignes | ✅ |
-| Tests | 6,293 lignes | ✅ |
-| Ratio Tests/Code | 54.5% | 🎯 Excellent |
-| Score Qualité | 92/100 | 🟢 |
-| Fichiers | 58 (code) + 23 (tests) | ✅ |
-
----
-
-## 📅 Fréquence de Mise à Jour
-
-- **Statistiques Code** : Mensuel (prochain: 2025-12-26)
-- **Refactoring** : À la demande (après grands changements)
-- **Tests** : Hebdomadaire ou après ajouts majeurs
-
----
-
-## 🔧 Génération des Rapports
-
-### Stats Code
-```bash
-# Utiliser le prompt stats-code
-# Voir: .github/prompts/stats-code.md
+📁 Fichiers
+├─ Total:                    90
+├─ Production:               59
+└─ Tests:                    31
 ```
 
-### Tests
-```bash
-go test ./... -v > docs/reports/test-execution-$(date +%Y-%m-%d).md
+### Top Packages par Couverture
+
+| Rang | Package | Couverture | Status |
+|------|---------|-----------|--------|
+| 🥇 | `rete/pkg/domain` | 100.0% | ✅ |
+| 🥇 | `rete/pkg/network` | 100.0% | ✅ |
+| 🥈 | `constraint/pkg/validator` | 96.5% | ✅ |
+| 🥉 | `constraint/pkg/domain` | 90.0% | ✅ |
+| 4️⃣ | `rete/pkg/nodes` | 71.6% | 🟢 |
+| 5️⃣ | `constraint` | 59.6% | 🟡 |
+| 6️⃣ | `rete` | 39.7% | 🟡 |
+
+### Graphique de Couverture
+
+```
+rete/pkg/domain        ████████████████████ 100.0%
+rete/pkg/network       ████████████████████ 100.0%
+constraint/pkg/validator ███████████████████  96.5%
+constraint/pkg/domain  ██████████████████   90.0%
+rete/pkg/nodes         ██████████████       71.6%
+constraint             ████████████         59.6%
+rete                   ████████             39.7%
+test/integration       ██████               29.4%
+cmd/tsd                                      0.0%
+cmd/universal-rete-runner                    0.0%
 ```
 
-### Refactoring
-Créés manuellement lors de refactorings majeurs.
+## 🎯 Priorités de Tests
 
----
+### 🔴 Haute Priorité (0% actuellement)
 
-## 📊 Historique
+1. **cmd/tsd** - CLI principale
+2. **cmd/universal-rete-runner** - Runner universel
 
-### 2025-11-26
-- ✅ Mise à jour stats code (v2.0)
-- ✅ Ajout tests cascade joins (+400 LOC)
-- ✅ Ajout tests partial evaluator (+620 LOC)
-- ✅ Documentation tests complète (+370 LOC)
-- ✅ Score qualité : 92/100
+### 🟡 Moyenne Priorité
 
-### 2025-11-26 (matin)
-- Rapports refactoring evaluator et pipeline
-- Rapport exécution tests initial
-- Première version stats code
+3. **rete** (39.7%) - Package racine RETE
+4. **constraint** (59.6%) - Package racine contraintes
+5. **rete/pkg/nodes** (71.6%) - Nœuds RETE
 
----
+### 🟢 Basse Priorité
 
-## 🎯 Prochaines Actions
+6. **constraint/internal/config** (0%)
+7. **rete/internal/config** (0%)
+8. **test/integration** (29.4%)
 
-Basées sur `code-stats-2025-11-26.md`:
+## 📊 Évolution de la Couverture
 
-### Cette Semaine 🔴
-- [ ] Refactoriser `advanced_beta.go` (726 lignes)
-- [ ] Simplifier `createJoinRule()` (165 lignes)
+### Progrès Récents (Session 26 Nov)
 
-### Ce Sprint ⚠️
-- [ ] Refactoriser main() dans cmd/
-- [ ] Augmenter coverage cmd/ (20% → 40%)
-- [ ] Setup CI quality gates
+| Package | Avant | Après | Gain |
+|---------|-------|-------|------|
+| constraint/pkg/validator | 0.0% | 96.5% | **+96.5%** 🚀 |
+| constraint/pkg/domain | 0.0% | 90.0% | **+90.0%** 🚀 |
+| rete/pkg/domain | 0.0% | 100.0% | **+100.0%** 🚀 |
+| rete/pkg/network | 0.0% | 100.0% | **+100.0%** 🚀 |
+| rete/pkg/nodes | 14.3% | 71.6% | **+57.3%** 📈 |
 
-### Prochain Sprint 🟡
-- [ ] Diviser `constraint_utils.go` (586 lignes)
-- [ ] Ajouter benchmarks performance
-- [ ] Tests concurrence et stress
+**Total tests ajoutés:** ~5,160 lignes
 
----
+## 🔧 Comment Utiliser Ces Rapports
 
-## 📚 Ressources Associées
+### Visualiser la Couverture HTML
 
-### Documentation
-- `../TESTING.md` - Guide tests complet
-- `../../rete/TEST_README.md` - Quick start tests
-- `../../TESTING_IMPROVEMENTS_SUMMARY.md` - Améliorations récentes
-
-### Prompts
-- `.github/prompts/stats-code.md` - Génération stats
-
-### Outils
 ```bash
-# Coverage
-go test -cover ./...
+# Générer le rapport de couverture
+go test -coverprofile=coverage.out ./...
 
-# Complexité
-gocyclo -over 10 .
-
-# Linting
-golangci-lint run
+# Ouvrir dans le navigateur
+go tool cover -html=coverage.out
 ```
 
+### Générer les Métriques JSON
+
+```bash
+# Exécuter le script de génération
+./generate_metrics.sh
+
+# Le fichier JSON sera créé dans docs/reports/code_metrics.json
+```
+
+### Consulter les Statistiques Détaillées
+
+```bash
+# Lire le rapport complet
+cat docs/reports/CODE_STATS_2025-11-26.md
+
+# Voir la couverture par fonction
+go tool cover -func=coverage.out
+```
+
+## 📚 Rapports Connexes
+
+- **[../testing/](../testing/)** - Rapports de tests détaillés
+- **[../SESSION_REPORT_2025-11-26.md](../SESSION_REPORT_2025-11-26.md)** - Résumé de la session de travail
+
+## 🎯 Objectifs
+
+### Court Terme (1-2 semaines)
+- [ ] Atteindre 60% de couverture globale
+- [ ] Tester cmd/tsd et cmd/universal-rete-runner
+- [ ] Documenter les patterns de tests
+
+### Moyen Terme (1 mois)
+- [ ] Atteindre 70% de couverture globale
+- [ ] Tous les packages core à 80%+
+- [ ] Intégration CI/CD avec seuils de couverture
+
+### Long Terme (3+ mois)
+- [ ] Atteindre 85% de couverture globale
+- [ ] Property-based testing
+- [ ] Fuzzing tests pour le parser
+
+## 📞 Contact & Contribution
+
+Pour contribuer à l'amélioration de la couverture :
+
+1. Consulter le rapport [CODE_STATS_2025-11-26.md](CODE_STATS_2025-11-26.md)
+2. Choisir un package prioritaire
+3. Suivre les guidelines dans `docs/development_guidelines.md`
+4. Soumettre une PR avec les nouveaux tests
+
 ---
 
-## 📝 Notes
-
-- **Format** : Tous les rapports en Markdown
-- **Versioning** : Date dans le nom du fichier (YYYY-MM-DD)
-- **Archivage** : Anciens rapports suffixés `-old`
-- **Taille** : Rapports longs (10-20k lignes) normaux pour stats complètes
-
----
-
-**Dernière mise à jour** : 2025-11-26  
-**Maintenu par** : Engineering Team
+*Dernière mise à jour: 2025-11-26*
+*Commit: 68fcd48*

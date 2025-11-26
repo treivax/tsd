@@ -1,0 +1,163 @@
+📊 FICHIERS GÉNÉRÉS - STATISTIQUES CODE TSD
+═══════════════════════════════════════════
+
+Date: 2025-11-26
+Commit: 68fcd48
+
+FICHIERS PRINCIPAUX À CONSULTER (ordre recommandé)
+═══════════════════════════════════════════════════
+
+1. POINT D'ENTRÉE
+   📄 STATS.md
+      → Vue d'ensemble rapide avec liens vers tous les rapports
+
+2. DASHBOARD VISUEL
+   📊 docs/reports/DASHBOARD.md
+      → Graphiques ASCII, métriques visuelles, priorités
+
+3. RAPPORT DÉTAILLÉ
+   📈 docs/reports/CODE_STATS_2025-11-26.md
+      → Analyse complète avec recommandations
+
+4. RAPPORT HTML INTERACTIF
+   🌐 docs/reports/coverage_report.html
+      → Navigation ligne par ligne de la couverture
+
+5. MÉTRIQUES JSON
+   📋 docs/reports/code_metrics.json
+      → Données structurées pour automatisation
+
+6. INDEX DES RAPPORTS
+   📚 docs/reports/README.md
+      → Index complet avec graphiques de couverture
+
+
+SCRIPTS D'AUTOMATISATION
+════════════════════════
+
+🔧 update_stats.sh
+   → Script principal - met à jour toutes les stats
+
+📊 generate_metrics.sh
+   → Génère uniquement le JSON des métriques
+
+📝 count_lines.sh
+   → Analyse du volume de code
+
+🔍 analyze_functions.sh
+   → Trouve les fonctions longues
+
+🔍 analyze_complexity.sh
+   → Analyse de complexité (nécessite gawk)
+
+📈 detailed_coverage.sh
+   → Affiche couverture détaillée par package
+
+
+DOCUMENTATION CONNEXE
+═══════════════════════
+
+📘 STATS_GENERATION_SUMMARY.md
+   → Résumé complet de la génération
+
+📗 docs/SESSION_REPORT_2025-11-26.md
+   → Rapport de la session de travail
+
+📙 docs/testing/TEST_REPORT_2025-11-26_BATCH2.md
+   → Rapport détaillé des tests ajoutés
+
+📕 docs/TESTING.md
+   → Guide complet des tests
+
+📔 docs/development_guidelines.md
+   → Guidelines de développement
+
+
+FICHIERS ARCHIVÉS
+═════════════════
+
+📦 docs/reports/RAPPORT_STATS_CODE_OLD_2025-11-26.md
+   → Ancien rapport (remplacé)
+
+
+STRUCTURE COMPLÈTE
+═════════════════
+
+tsd/
+├── STATS.md ⭐
+├── STATS_GENERATION_SUMMARY.md
+├── FILES_GENERATED.txt (ce fichier)
+├── update_stats.sh ⭐
+├── generate_metrics.sh
+├── count_lines.sh
+├── analyze_functions.sh
+├── analyze_complexity.sh
+├── detailed_coverage.sh
+├── coverage.out (généré à chaque run)
+├── test_output.txt (généré à chaque run)
+│
+└── docs/
+    ├── reports/
+    │   ├── README.md
+    │   ├── CODE_STATS_2025-11-26.md ⭐
+    │   ├── DASHBOARD.md ⭐
+    │   ├── code_metrics.json ⭐
+    │   ├── coverage_report.html ⭐
+    │   └── RAPPORT_STATS_CODE_OLD_2025-11-26.md
+    │
+    ├── testing/
+    │   └── TEST_REPORT_2025-11-26_BATCH2.md
+    │
+    ├── SESSION_REPORT_2025-11-26.md
+    ├── TESTING.md
+    └── development_guidelines.md
+
+
+COMMANDES POUR CONSULTER
+═════════════════════════
+
+# Vue rapide terminal
+cat STATS.md
+
+# Dashboard visuel
+cat docs/reports/DASHBOARD.md
+
+# Rapport détaillé
+cat docs/reports/CODE_STATS_2025-11-26.md
+less docs/reports/CODE_STATS_2025-11-26.md
+
+# Rapport HTML (navigateur)
+xdg-open docs/reports/coverage_report.html
+
+# Métriques JSON
+cat docs/reports/code_metrics.json
+jq . docs/reports/code_metrics.json
+
+# Mettre à jour toutes les stats
+./update_stats.sh
+
+
+STATISTIQUES CAPTURÉES
+══════════════════════
+
+Volume:
+  - 29,434 lignes totales
+  - 11,614 lignes de code manuel
+  - 12,590 lignes de tests
+  - 5,230 lignes générées
+  - 90 fichiers Go
+
+Couverture:
+  - 48.7% global
+  - 4 packages à 90%+
+  - 2 packages à 100%
+  - 7 packages à 0%
+
+Qualité:
+  - Ratio tests/code: 108.4%
+  - 5 fonctions >50 lignes
+  - Score: 85/100
+
+
+FIN DU FICHIER
+══════════════
