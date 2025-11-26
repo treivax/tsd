@@ -32,14 +32,14 @@ func TestMainIntegration(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create test constraint file
-	validConstraint := filepath.Join(tempDir, "valid.constraint")
+	validConstraint := filepath.Join(tempDir, "valid.tsd")
 	validContent := []byte("type Person : <id: string, name: string, age: number>")
 	if err := os.WriteFile(validConstraint, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
 	// Create invalid constraint file
-	invalidConstraint := filepath.Join(tempDir, "invalid.constraint")
+	invalidConstraint := filepath.Join(tempDir, "invalid.tsd")
 	invalidContent := []byte("invalid syntax !!!")
 	if err := os.WriteFile(invalidConstraint, invalidContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
@@ -72,7 +72,7 @@ func TestMainIntegration(t *testing.T) {
 		},
 		{
 			name:         "non-existent file",
-			args:         []string{filepath.Join(tempDir, "nonexistent.constraint")},
+			args:         []string{filepath.Join(tempDir, "nonexistent.tsd")},
 			wantExitCode: 1,
 			wantErrorContains: []string{
 				"Erreur:",
@@ -180,7 +180,7 @@ rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			constraintFile := filepath.Join(tempDir, "test.constraint")
+			constraintFile := filepath.Join(tempDir, "test.tsd")
 			if err := os.WriteFile(constraintFile, []byte(tt.constraintText), 0644); err != nil {
 				t.Fatalf("Failed to create constraint file: %v", err)
 			}
@@ -244,7 +244,7 @@ func TestInvalidConstraintFiles(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			constraintFile := filepath.Join(tempDir, "invalid.constraint")
+			constraintFile := filepath.Join(tempDir, "invalid.tsd")
 			if err := os.WriteFile(constraintFile, []byte(tt.constraintText), 0644); err != nil {
 				t.Fatalf("Failed to create constraint file: %v", err)
 			}
@@ -278,7 +278,7 @@ func TestFileReadError(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a file with no read permissions (Unix-like systems)
-	noReadFile := filepath.Join(tempDir, "noread.constraint")
+	noReadFile := filepath.Join(tempDir, "noread.tsd")
 	if err := os.WriteFile(noReadFile, []byte("type Person : <id: string>"), 0000); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -344,7 +344,7 @@ func TestUsageMessage(t *testing.T) {
 func TestJSONOutput(t *testing.T) {
 	tempDir := t.TempDir()
 
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte("type Person : <id: string, name: string>")
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
@@ -385,8 +385,8 @@ func TestJSONOutput(t *testing.T) {
 func TestMultipleArguments(t *testing.T) {
 	tempDir := t.TempDir()
 
-	file1 := filepath.Join(tempDir, "test1.constraint")
-	file2 := filepath.Join(tempDir, "test2.constraint")
+	file1 := filepath.Join(tempDir, "test1.tsd")
+	file2 := filepath.Join(tempDir, "test2.tsd")
 
 	content := []byte("type Person : <id: string>")
 	os.WriteFile(file1, content, 0644)
@@ -415,7 +415,7 @@ func TestMultipleArguments(t *testing.T) {
 func TestEmptyConstraintFile(t *testing.T) {
 	tempDir := t.TempDir()
 
-	emptyFile := filepath.Join(tempDir, "empty.constraint")
+	emptyFile := filepath.Join(tempDir, "empty.tsd")
 	if err := os.WriteFile(emptyFile, []byte(""), 0644); err != nil {
 		t.Fatalf("Failed to create empty file: %v", err)
 	}
@@ -441,7 +441,7 @@ func TestEmptyConstraintFile(t *testing.T) {
 func TestStdoutCapture(t *testing.T) {
 	tempDir := t.TempDir()
 
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	content := []byte("type Person : <id: string>")
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
@@ -483,7 +483,7 @@ func TestValidationError(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a valid constraint (validation should pass)
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	content := []byte("type Person : <id: string, name: string>")
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)

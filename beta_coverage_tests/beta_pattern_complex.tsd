@@ -1,0 +1,23 @@
+// Test Beta PatternNode - Motifs et patterns complexes 
+type Transaction : <id: string, account_id: string, amount: number, type: string, timestamp: string>
+type Account : <id: string, customer_id: string, balance: number, type: string, status: string>
+type Customer : <id: string, name: string, risk_level: string, country: string>
+
+rule r1 : {c: Customer, a: Account} / c.id == a.customer_id AND a.type == "savings" AND a.balance > 50000 AND c.risk_level == "low" ==> high_value_safe_customer(c.id)
+rule r2 : {a: Account, t: Transaction} / a.id == t.account_id AND t.type == "withdrawal" AND t.amount > a.balance * 0.5 AND a.status == "active" ==> large_withdrawal_alert(a.id, t.id)
+rule r3 : {c: Customer, a: Account, t: Transaction} / c.country == "US" AND a.customer_id == c.id AND t.account_id == a.id AND t.amount > 10000 AND t.type == "transfer" ==> suspicious_transfer(c.id, t.id)
+
+Customer(id:"CUST001", name:"Alice Smith", risk_level:"low", country:"US")
+Customer(id:"CUST002", name:"Bob Johnson", risk_level:"medium", country:"CA")
+Customer(id:"CUST003", name:"Charlie Brown", risk_level:"high", country:"US")
+
+Account(id:"ACC001", customer_id:"CUST001", balance:75000, type:"savings", status:"active")
+Account(id:"ACC002", customer_id:"CUST001", balance:25000, type:"checking", status:"active")  
+Account(id:"ACC003", customer_id:"CUST002", balance:45000, type:"savings", status:"active")
+Account(id:"ACC004", customer_id:"CUST003", balance:15000, type:"checking", status:"suspended")
+
+Transaction(id:"TXN001", account_id:"ACC001", amount:5000, type:"withdrawal", timestamp:"2025-01-15T10:00:00")
+Transaction(id:"TXN002", account_id:"ACC002", amount:15000, type:"withdrawal", timestamp:"2025-01-15T11:00:00")
+Transaction(id:"TXN003", account_id:"ACC001", amount:12000, type:"transfer", timestamp:"2025-01-15T12:00:00")
+Transaction(id:"TXN004", account_id:"ACC003", amount:8000, type:"deposit", timestamp:"2025-01-15T13:00:00")
+Transaction(id:"TXN005", account_id:"ACC004", amount:20000, type:"transfer", timestamp:"2025-01-15T14:00:00")

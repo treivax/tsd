@@ -17,8 +17,8 @@ func TestCompleteAlphaCoverage(t *testing.T) {
 	fmt.Printf("🔍 Tests exhaustifs de tous les opérateurs et types de données\n\n")
 
 	// Fichiers de test pour couverture complète Alpha
-	constraintFile := "../../constraint/test/integration/alpha_complete_coverage.constraint"
-	factsFile := "../../constraint/test/integration/alpha_complete_coverage.facts"
+	constraintFile := "../../constraint/test/integration/alpha_complete_coverage.tsd"
+	factsFile := "../../constraint/test/integration/alpha_complete_coverage.tsd"
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE AVEC SUPPORT FICHIERS .CONSTRAINT + .FACTS
 	helper := NewTestHelper()

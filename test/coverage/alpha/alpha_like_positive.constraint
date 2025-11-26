@@ -1,4 +1,0 @@
-// Test opérateur LIKE (motif)
-type Email : <id: string, address: string, verified: bool>
-
-rule r1 : {e: Email} / e.address LIKE "%@company.com" ==> company_email_found(e.id, e.address)

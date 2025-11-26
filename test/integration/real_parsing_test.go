@@ -20,7 +20,7 @@ func TestTupleSpaceTerminalNodes(t *testing.T) {
 	fmt.Printf("==============================================================\n")
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE - Respecte les règles établies
-	constraintFile := "../../constraint/test/integration/tuple_space_terminal.constraint"
+	constraintFile := "../../constraint/test/integration/tuple_space_terminal.tsd"
 
 	helper := NewTestHelper()
 	network, _ := helper.BuildNetworkFromConstraintFile(t, constraintFile)
@@ -87,13 +87,13 @@ func TestTupleSpaceTerminalNodes(t *testing.T) {
 func TestRealPEGParsingIntegration(t *testing.T) {
 
 	constraintFiles := []string{
-		"../../constraint/test/integration/alpha_conditions.constraint",
-		"../../constraint/test/integration/beta_joins.constraint",
-		"../../constraint/test/integration/negation.constraint",
-		"../../constraint/test/integration/exists.constraint",
-		"../../constraint/test/integration/aggregation.constraint",
-		"../../constraint/test/integration/actions.constraint",
-		"../../constraint/test/integration/complex_multi_node.constraint",
+		"../../constraint/test/integration/alpha_conditions.tsd",
+		"../../constraint/test/integration/beta_joins.tsd",
+		"../../constraint/test/integration/negation.tsd",
+		"../../constraint/test/integration/exists.tsd",
+		"../../constraint/test/integration/aggregation.tsd",
+		"../../constraint/test/integration/actions.tsd",
+		"../../constraint/test/integration/complex_multi_node.tsd",
 	}
 
 	t.Run("Valid_Files_PEG_Parsing", func(t *testing.T) {
@@ -139,8 +139,8 @@ func TestRealPEGParsingIntegration(t *testing.T) {
 
 	t.Run("Invalid_Files_PEG_Parsing", func(t *testing.T) {
 		invalidFiles := []string{
-			"../../constraint/test/integration/invalid_no_types.constraint",
-			"../../constraint/test/integration/invalid_unknown_type.constraint",
+			"../../constraint/test/integration/invalid_no_types.tsd",
+			"../../constraint/test/integration/invalid_unknown_type.tsd",
 		}
 
 		for _, file := range invalidFiles {
@@ -169,7 +169,7 @@ func TestRealPEGParsingIntegration(t *testing.T) {
 func TestSemanticValidationWithRealParser(t *testing.T) {
 
 	t.Run("Type_Reference_Validation", func(t *testing.T) {
-		validFile := "../../constraint/test/integration/alpha_conditions.constraint"
+		validFile := "../../constraint/test/integration/alpha_conditions.tsd"
 
 		// Lire et parser le fichier
 		content, err := os.ReadFile(validFile)

@@ -108,13 +108,13 @@ remove Person P2
 
 func TestParseRemoveFactFromFile(t *testing.T) {
 	// Test du parsing du fichier de test
-	content, err := os.ReadFile("test/remove_fact_test.constraint")
+	content, err := os.ReadFile("test/remove_fact_test.tsd")
 	if err != nil {
 		t.Skipf("Could not read test file: %v", err)
 		return
 	}
 
-	result, err := Parse("test/remove_fact_test.constraint", content)
+	result, err := Parse("test/remove_fact_test.tsd", content)
 	if err != nil {
 		t.Fatalf("Parse error: %v", err)
 	}

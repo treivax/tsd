@@ -1,0 +1,8 @@
+// Test opérateur MATCHES (regex)
+type Code : <id: string, value: string, active: bool>
+
+rule r1 : {c: Code} / c.value MATCHES "CODE[0-9]+" ==> valid_code_found(c.id, c.value)
+
+Code(id:"C001", value:"CODE123", active:true)
+Code(id:"C002", value:"INVALID", active:false)
+Code(id:"C003", value:"CODE999", active:true)

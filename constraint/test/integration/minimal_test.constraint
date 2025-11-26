@@ -1,3 +1,0 @@
-type User : <id: string, name: string>
-
-rule r1 : {u: User} / u.id == "123" ==> process_user(u.id)

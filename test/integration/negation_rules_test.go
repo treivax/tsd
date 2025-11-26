@@ -25,8 +25,8 @@ func TestNegationRules(t *testing.T) {
 	helper := NewTestHelper()
 
 	// Chemins vers les fichiers de négation
-	constraintFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "negation_rules.constraint")
-	factsFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "negation_rules.facts")
+	constraintFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "negation_rules.tsd")
+	factsFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "negation_rules.tsd")
 
 	// Vérification des fichiers
 	if _, err := os.Stat(constraintFile); os.IsNotExist(err) {

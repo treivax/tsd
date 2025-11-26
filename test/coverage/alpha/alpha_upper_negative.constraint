@@ -1,4 +1,0 @@
-// Test fonction UPPER() (majuscules) - négation
-type Department : <id: string, name: string, active: bool>
-
-rule r1 : {d: Department} / NOT(UPPER(d.name) == "FINANCE") ==> non_finance_dept_found(d.id, d.name)

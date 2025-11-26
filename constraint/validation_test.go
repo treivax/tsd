@@ -29,11 +29,11 @@ func TestValidateFactWithInvalidType(t *testing.T) {
 		},
 	}
 
-	err := ps.validateFact(fact, "test.constraint")
+	err := ps.validateFact(fact, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for undefined type, got nil")
 	}
-	if err != nil && err.Error() != "fact references undefined type UnknownType in test.constraint" {
+	if err != nil && err.Error() != "fact references undefined type UnknownType in test.tsd" {
 		t.Errorf("Unexpected error message: %v", err)
 	}
 }
@@ -60,7 +60,7 @@ func TestValidateFactWithInvalidField(t *testing.T) {
 		},
 	}
 
-	err := ps.validateFact(fact, "test.constraint")
+	err := ps.validateFact(fact, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for undefined field, got nil")
 	}
@@ -88,7 +88,7 @@ func TestValidateFactSuccess(t *testing.T) {
 		},
 	}
 
-	err := ps.validateFact(fact, "test.constraint")
+	err := ps.validateFact(fact, "test.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error for valid fact: %v", err)
 	}
@@ -102,7 +102,7 @@ func TestMergeTypesNilProgramState(t *testing.T) {
 		{Name: "Person", Fields: []Field{{Name: "id", Type: "identifier"}}},
 	}
 
-	err := ps.mergeTypes(types, "test.constraint")
+	err := ps.mergeTypes(types, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for nil ProgramState, got nil")
 	}
@@ -112,7 +112,7 @@ func TestMergeTypesNilProgramState(t *testing.T) {
 func TestParseAndMergeContentEmptyContent(t *testing.T) {
 	ps := NewProgramState()
 
-	err := ps.ParseAndMergeContent("", "test.constraint")
+	err := ps.ParseAndMergeContent("", "test.tsd")
 	if err == nil {
 		t.Error("Expected error for empty content, got nil")
 	}
@@ -191,7 +191,7 @@ func TestErrorMethods(t *testing.T) {
 	ps := NewProgramState()
 
 	err := ValidationError{
-		File:    "test.constraint",
+		File:    "test.tsd",
 		Type:    ErrorTypeFact,
 		Message: "test error",
 		Line:    10,

@@ -16,10 +16,11 @@ import (
 
 // Config holds the CLI configuration
 type Config struct {
-	ConstraintFile string
+	File           string // Unified .tsd file
+	ConstraintFile string // Deprecated: use File instead
 	ConstraintText string
 	UseStdin       bool
-	FactsFile      string
+	FactsFile      string // Deprecated: use File instead
 	Verbose        bool
 	ShowVersion    bool
 	ShowHelp       bool
@@ -95,10 +96,11 @@ func ParseFlags(args []string) (*Config, error) {
 	config := &Config{}
 	flagSet := flag.NewFlagSet("tsd", flag.ContinueOnError)
 
-	flagSet.StringVar(&config.ConstraintFile, "constraint", "", "Fichier de contraintes (.constraint)")
-	flagSet.StringVar(&config.ConstraintText, "text", "", "Texte de contrainte directement (alternative à -constraint)")
-	flagSet.BoolVar(&config.UseStdin, "stdin", false, "Lire les contraintes depuis stdin")
-	flagSet.StringVar(&config.FactsFile, "facts", "", "Fichier de faits (.facts)")
+	flagSet.StringVar(&config.File, "file", "", "Fichier TSD (.tsd)")
+	flagSet.StringVar(&config.ConstraintFile, "constraint", "", "Deprecated: use -file instead (fichier .constraint)")
+	flagSet.StringVar(&config.ConstraintText, "text", "", "Texte de contrainte directement (alternative à -file)")
+	flagSet.BoolVar(&config.UseStdin, "stdin", false, "Lire depuis stdin")
+	flagSet.StringVar(&config.FactsFile, "facts", "", "Deprecated: use -file instead (fichier .facts)")
 	flagSet.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
 	flagSet.BoolVar(&config.ShowVersion, "version", false, "Afficher la version")
 	flagSet.BoolVar(&config.ShowHelp, "h", false, "Afficher l'aide")
@@ -107,13 +109,24 @@ func ParseFlags(args []string) (*Config, error) {
 		return nil, err
 	}
 
+	// Handle backward compatibility: map old flags to new File field
+	if config.ConstraintFile != "" && config.File == "" {
+		fmt.Fprintln(os.Stderr, "⚠️  Warning: -constraint flag is deprecated, use -file instead")
+		config.File = config.ConstraintFile
+	}
+
+	// Handle positional argument as file
+	if config.File == "" && len(flagSet.Args()) > 0 {
+		config.File = flagSet.Args()[0]
+	}
+
 	return config, nil
 }
 
 // ValidateConfig validates that exactly one input source is specified
 func ValidateConfig(config *Config) error {
 	sourcesCount := 0
-	if config.ConstraintFile != "" {
+	if config.File != "" {
 		sourcesCount++
 	}
 	if config.ConstraintText != "" {
@@ -124,11 +137,11 @@ func ValidateConfig(config *Config) error {
 	}
 
 	if sourcesCount == 0 {
-		return fmt.Errorf("spécifiez une source (-constraint, -text, ou -stdin)")
+		return fmt.Errorf("aucune source spécifiée (-file, -text ou -stdin)")
 	}
 
 	if sourcesCount > 1 {
-		return fmt.Errorf("spécifiez une seule source d'entrée")
+		return fmt.Errorf("une seule source autorisée (-file, -text ou -stdin)")
 	}
 
 	return nil
@@ -170,13 +183,13 @@ func parseFromText(config *Config) (interface{}, string, error) {
 
 // parseFromFile parses constraints from a file
 func parseFromFile(config *Config) (interface{}, string, error) {
-	sourceName := config.ConstraintFile
+	sourceName := config.File
 
-	if _, err := os.Stat(config.ConstraintFile); os.IsNotExist(err) {
-		return nil, "", fmt.Errorf("fichier contrainte non trouvé: %s", config.ConstraintFile)
+	if _, err := os.Stat(config.File); os.IsNotExist(err) {
+		return nil, "", fmt.Errorf("fichier non trouvé: %s", config.File)
 	}
 
-	result, err := constraint.ParseConstraintFile(config.ConstraintFile)
+	result, err := constraint.ParseConstraintFile(config.File)
 	return result, sourceName, err
 }
 
@@ -308,28 +321,34 @@ func PrintHelp(w io.Writer) {
 	fmt.Fprintln(w, "Moteur de règles basé sur l'algorithme RETE")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "USAGE:")
-	fmt.Fprintln(w, "  tsd -constraint <file.constraint> [options]")
-	fmt.Fprintln(w, "  tsd -text \"<constraint text>\" [options]")
+	fmt.Fprintln(w, "  tsd <file.tsd> [options]")
+	fmt.Fprintln(w, "  tsd -file <file.tsd> [options]")
+	fmt.Fprintln(w, "  tsd -text \"<tsd code>\" [options]")
 	fmt.Fprintln(w, "  tsd -stdin [options]")
-	fmt.Fprintln(w, "  echo \"<constraint>\" | tsd -stdin")
+	fmt.Fprintln(w, "  echo \"<tsd code>\" | tsd -stdin")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "OPTIONS:")
-	fmt.Fprintln(w, "  -constraint <file>  Fichier de règles/contraintes")
-	fmt.Fprintln(w, "  -text <string>      Texte de contrainte directement")
-	fmt.Fprintln(w, "  -stdin              Lire les contraintes depuis stdin")
-	fmt.Fprintln(w, "  -facts <file>       Fichier de faits (optionnel, pour futur usage)")
-	fmt.Fprintln(w, "  -v                  Mode verbeux")
+	fmt.Fprintln(w, "  -file <file>        Fichier TSD (.tsd)")
+	fmt.Fprintln(w, "  -text <text>        Code TSD directement")
+	fmt.Fprintln(w, "  -stdin              Lire depuis l'entrée standard")
+	fmt.Fprintln(w, "  -facts <file>       [DEPRECATED] Use -file instead")
+	fmt.Fprintln(w, "  -constraint <file>  [DEPRECATED] Use -file instead")
+	fmt.Fprintln(w, "  -v                  Mode verbeux (affiche plus de détails)")
 	fmt.Fprintln(w, "  -version            Afficher la version")
 	fmt.Fprintln(w, "  -h                  Afficher cette aide")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "EXEMPLES:")
-	fmt.Fprintln(w, "  tsd -constraint rules.constraint")
-	fmt.Fprintln(w, "  tsd -constraint rules.constraint -v")
+	fmt.Fprintln(w, "  tsd program.tsd")
+	fmt.Fprintln(w, "  tsd -file program.tsd -v")
 	fmt.Fprintln(w, "  tsd -text 'type Person : <id: string, name: string>'")
 	fmt.Fprintln(w, "  echo 'type Person : <id: string>' | tsd -stdin")
-	fmt.Fprintln(w, "  cat rules.constraint | tsd -stdin -v")
+	fmt.Fprintln(w, "  cat program.tsd | tsd -stdin -v")
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "FORMATS DE FICHIERS:")
-	fmt.Fprintln(w, "  .constraint : Règles en syntaxe TSD")
-	fmt.Fprintln(w, "  .facts      : Faits en format structuré (support futur)")
+	fmt.Fprintln(w, "FORMAT DE FICHIER:")
+	fmt.Fprintln(w, "  .tsd : Fichiers TSD (types, facts, rules)")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "Un fichier .tsd peut contenir:")
+	fmt.Fprintln(w, "  - Définitions de types: type Person : <id: string, name: string>")
+	fmt.Fprintln(w, "  - Assertions de faits: Person(\"p1\", \"Alice\")")
+	fmt.Fprintln(w, "  - Règles: rule r1 : {p: Person} / p.name == \"Alice\" ==> match(p.id)")
 }

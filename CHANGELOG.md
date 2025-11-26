@@ -1,5 +1,84 @@
 # Changelog
 
+## [3.0.0] - 2025-01-XX
+
+### 🚨 Breaking Changes
+
+#### Extension de fichier unifiée `.tsd`
+
+**Tous les fichiers TSD utilisent maintenant l'extension `.tsd` unique.**
+
+**Anciens fichiers (obsolètes) :**
+- `.constraint` : Types et règles
+- `.facts` : Faits
+
+**Nouveau format (unifié) :**
+- `.tsd` : Types, règles ET faits dans un seul fichier
+
+**Exemple de fichier `.tsd` complet :**
+```tsd
+type Person : <id: string, name: string, age: number>
+
+Person(id:p1, name:Alice, age:30)
+Person(id:p2, name:Bob, age:25)
+
+rule check_adult : {p: Person} / p.age >= 18 ==> adult(p.id)
+```
+
+**Migration :**
+- Script automatique fourni : `scripts/migrate_to_tsd.sh`
+- 81 fichiers `.constraint` et 64 fichiers `.facts` migrés
+- Les fichiers avec même nom de base ont été fusionnés
+
+#### CLI - Nouveau flag `-file`
+
+**Ancien usage (deprecated) :**
+```bash
+./tsd -constraint rules.constraint -facts data.facts
+```
+
+**Nouveau usage :**
+```bash
+./tsd program.tsd
+# ou
+./tsd -file program.tsd
+```
+
+Les anciens flags `-constraint` et `-facts` affichent maintenant un avertissement de dépréciation.
+
+### ✨ Added
+
+- **Extension unifiée `.tsd`** : Un seul type de fichier pour types, règles et faits
+  - Simplifie la structure du projet
+  - Réduit la fragmentation des programmes
+  - Fichiers plus cohésifs et faciles à gérer
+  
+- **Support d'arguments positionnels** : `./tsd program.tsd` fonctionne maintenant
+  - Plus besoin de spécifier `-file`
+  - Compatible avec le style de ligne de commande moderne
+
+- **Script de migration** : `scripts/migrate_to_tsd.sh`
+  - Migre automatiquement tous les fichiers `.constraint` et `.facts`
+  - Fusionne les fichiers avec même nom de base
+  - Renomme les fichiers standalone
+  - 145 fichiers traités avec succès
+
+- **Documentation mise à jour** :
+  - `docs/FEATURE_UNIFIED_TSD_EXTENSION.md` : Guide complet
+  - README.md actualisé avec nouveaux exemples
+  - Tous les tests mis à jour
+
+### 🔄 Changed
+
+- **CLI help text** : Mise à jour pour refléter la nouvelle syntaxe
+- **Messages d'erreur** : Adaptés pour `.tsd` au lieu de `.constraint`
+- **Tests** : 30 fichiers de tests Go mis à jour automatiquement
+
+### 🗑️ Deprecated
+
+- Flag `-constraint` : Utilisez `-file` ou argument positionnel
+- Flag `-facts` : Les faits sont maintenant dans les fichiers `.tsd`
+
 ## [2.0.0] - 2025-01-XX
 
 ### 🚨 Breaking Changes

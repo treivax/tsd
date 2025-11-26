@@ -29,7 +29,7 @@ func TestValidateRuleWithUndefinedType(t *testing.T) {
 		Constraints: map[string]interface{}{},
 	}
 
-	err := ps.validateRule(rule, "test.constraint")
+	err := ps.validateRule(rule, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for undefined type in rule, got nil")
 	}
@@ -56,7 +56,7 @@ func TestValidateRuleWithValidType(t *testing.T) {
 		Constraints: map[string]interface{}{},
 	}
 
-	err := ps.validateRule(rule, "test.constraint")
+	err := ps.validateRule(rule, "test.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error for valid rule: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestPrintErrors(t *testing.T) {
 	ps := NewProgramState()
 
 	ps.AddError(ValidationError{
-		File:    "test.constraint",
+		File:    "test.tsd",
 		Type:    ErrorTypeFact,
 		Message: "test error",
 		Line:    10,
@@ -145,7 +145,7 @@ func TestMergeTypesCompatible(t *testing.T) {
 		},
 	}
 
-	err := ps.mergeTypes(types1, "file1.constraint")
+	err := ps.mergeTypes(types1, "file1.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error merging types: %v", err)
 	}
@@ -160,7 +160,7 @@ func TestMergeTypesCompatible(t *testing.T) {
 		},
 	}
 
-	err = ps.mergeTypes(types2, "file2.constraint")
+	err = ps.mergeTypes(types2, "file2.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error merging compatible types: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestMergeTypesIncompatible(t *testing.T) {
 		},
 	}
 
-	err := ps.mergeTypes(types1, "file1.constraint")
+	err := ps.mergeTypes(types1, "file1.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error merging types: %v", err)
 	}
@@ -197,7 +197,7 @@ func TestMergeTypesIncompatible(t *testing.T) {
 		},
 	}
 
-	err = ps.mergeTypes(types2, "file2.constraint")
+	err = ps.mergeTypes(types2, "file2.tsd")
 	if err == nil {
 		t.Error("Expected error for incompatible types, got nil")
 	}
@@ -217,7 +217,7 @@ func TestMergeRulesNilProgramState(t *testing.T) {
 		},
 	}
 
-	err := ps.mergeRules(rules, "test.constraint")
+	err := ps.mergeRules(rules, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for nil ProgramState, got nil")
 	}
@@ -236,7 +236,7 @@ func TestMergeFactsNilProgramState(t *testing.T) {
 		},
 	}
 
-	err := ps.mergeFacts(facts, "test.constraint")
+	err := ps.mergeFacts(facts, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for nil ProgramState, got nil")
 	}
@@ -413,7 +413,7 @@ func TestScanForFieldAccessUnknownVariable(t *testing.T) {
 func TestMergeTypesEmptySlice(t *testing.T) {
 	ps := NewProgramState()
 
-	err := ps.mergeTypes([]TypeDefinition{}, "test.constraint")
+	err := ps.mergeTypes([]TypeDefinition{}, "test.tsd")
 	if err != nil {
 		t.Errorf("Unexpected error for empty types: %v", err)
 	}
@@ -438,7 +438,7 @@ func TestMergeRulesWithInvalidRule(t *testing.T) {
 		},
 	}
 
-	err := ps.mergeRules(rules, "test.constraint")
+	err := ps.mergeRules(rules, "test.tsd")
 	// Should not return error (non-blocking), but should record it
 	if err != nil {
 		t.Errorf("Unexpected error (should be non-blocking): %v", err)
@@ -478,7 +478,7 @@ func TestValidateRuleWithFieldAccessError(t *testing.T) {
 		},
 	}
 
-	err := ps.validateRule(rule, "test.constraint")
+	err := ps.validateRule(rule, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for invalid field access in constraints, got nil")
 	}
@@ -505,7 +505,7 @@ func TestValidateFactWithWrongFieldType(t *testing.T) {
 		},
 	}
 
-	err := ps.validateFact(fact, "test.constraint")
+	err := ps.validateFact(fact, "test.tsd")
 	if err == nil {
 		t.Error("Expected error for wrong field type, got nil")
 	}
@@ -802,7 +802,7 @@ func TestParseAndMergeContentValidInput(t *testing.T) {
 	ps := NewProgramState()
 
 	content := "type Person : <id: string, name: string>"
-	err := ps.ParseAndMergeContent(content, "test.constraint")
+	err := ps.ParseAndMergeContent(content, "test.tsd")
 	if err != nil {
 		t.Errorf("Expected no error for valid content, got %v", err)
 	}

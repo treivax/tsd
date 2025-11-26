@@ -1,0 +1,46 @@
+# Tests des expressions arithmétiques complexes
+# Ce fichier teste les parenthèses, imbrication et priorité des opérateurs
+
+type Invoice : <id:string, amount:number, tax:number, discount:number, fee:number>
+type Transaction : <id:string, base:number, multiplier:number, offset:number>
+
+# Test 1: Parenthèses - forcer priorité
+# (amount + tax) * discount != amount + tax * discount
+rule r1 : {i: Invoice} / (i.amount + i.tax) * i.discount > 100 ==> high_total(i.id)
+
+# Test 2: Priorité des opérateurs - * avant +
+# amount + tax * discount (multiplication d'abord)
+rule r2 : {i: Invoice} / i.amount + i.tax * i.discount >= 150 ==> priority_test(i.id)
+
+# Test 3: Expressions imbriquées avec parenthèses multiples
+# ((amount - discount) * (1 + tax)) + fee
+rule r3 : {i: Invoice} / ((i.amount - i.discount) * (1 + i.tax)) + i.fee > 200 ==> complex_calc(i.id)
+
+# Test 4: Combinaison multiplication/division
+# amount * multiplier / offset
+rule r4 : {t: Transaction} / t.base * t.multiplier / t.offset < 50 ==> scaled_value(t.id)
+
+# Test 5: Chaîne d'opérations gauche-droite
+# base + offset - multiplier (évaluation gauche à droite pour même priorité)
+rule r5 : {t: Transaction} / t.base + t.offset - t.multiplier == 30 ==> exact_match(t.id)
+
+# Test 6: Expression complexe dans action avec parenthèses
+rule r6 : {i: Invoice} / i.amount > 0 ==> compute(i.id, (i.amount - i.discount) * (1 + i.tax))
+
+# Test 7: Division puis addition (priorité)
+# fee / discount + amount
+rule r7 : {i: Invoice} / i.fee / i.discount + i.amount > 100 ==> div_add_test(i.id)
+
+# Test 8: Parenthèses imbriquées multiples niveaux
+# ((base * multiplier) - offset) / (multiplier + offset)
+rule r8 : {t: Transaction} / ((t.base * t.multiplier) - t.offset) / (t.multiplier + t.offset) > 5 ==> nested_parens(t.id)
+
+# Faits de test pour arithmetic_complex_expressions
+Invoice(id:I1, amount:100, tax:0.2, discount:0.1, fee:10)
+Invoice(id:I2, amount:150, tax:0.25, discount:10, fee:20)
+Invoice(id:I3, amount:80, tax:1.5, discount:5, fee:50)
+
+Transaction(id:T1, base:100, multiplier:2, offset:5)
+Transaction(id:T2, base:50, multiplier:3, offset:10)
+Transaction(id:T3, base:20, multiplier:5, offset:10)
+Transaction(id:T4, base:25, multiplier:7, offset:2)

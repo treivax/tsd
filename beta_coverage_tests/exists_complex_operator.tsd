@@ -1,0 +1,20 @@
+// Test opérateur EXISTS complexe dans nœuds beta
+type Customer : <id: string, name: string, segment: string, country: string>
+type Order : <id: string, customer_id: string, amount: number, date: string>
+type Payment : <id: string, order_id: string, method: string, status: string>
+
+rule r1 : {c: Customer, o: Order} / c.id == o.customer_id AND o.amount > 0 AND EXISTS (p: Payment / p.order_id == o.id AND p.status == "completed") ==> paid_customer_order(c.id, o.id)
+rule r2 : {c: Customer, o: Order} / c.id == o.customer_id AND o.amount >= 100 AND EXISTS (p: Payment / p.order_id == o.id AND p.method == "credit_card") ==> credit_customer_order(c.id, o.id)
+rule r3 : {c: Customer} / c.segment == "premium" AND c.country != "" AND EXISTS (o: Order / o.customer_id == c.id AND o.amount > 1000) ==> premium_high_value_customer(c.id)
+
+Customer(id:C001, name:Alice, segment:premium, country:USA)
+Customer(id:C002, name:Bob, segment:standard, country:France)
+Customer(id:C003, name:Charlie, segment:premium, country:Germany)
+Order(id:O001, customer_id:C001, amount:1500, date:"2024-01-01")
+Order(id:O002, customer_id:C002, amount:150, date:"2024-01-02")
+Order(id:O003, customer_id:C003, amount:800, date:"2024-01-03")
+Order(id:O004, customer_id:C001, amount:2000, date:"2024-01-04")
+Payment(id:PY001, order_id:O001, method:"credit_card", status:completed)
+Payment(id:PY002, order_id:O002, method:paypal, status:pending)
+Payment(id:PY003, order_id:O003, method:"credit_card", status:completed)
+Payment(id:PY004, order_id:O004, method:"bank_transfer", status:completed)

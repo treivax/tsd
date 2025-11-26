@@ -41,19 +41,19 @@ func TestIterativeParsingWithReteNetwork(t *testing.T) {
 
 	// Parser les contenus de manière itérative
 	fmt.Printf("📋 Parsing des types...\n")
-	err := parser.ParseContent(typeContent, "types.constraint")
+	err := parser.ParseContent(typeContent, "types.tsd")
 	if err != nil {
 		t.Fatalf("Erreur parsing types: %v", err)
 	}
 
 	fmt.Printf("📋 Parsing des règles...\n")
-	err = parser.ParseContent(ruleContent, "rules.constraint")
+	err = parser.ParseContent(ruleContent, "rules.tsd")
 	if err != nil {
 		t.Fatalf("Erreur parsing règles: %v", err)
 	}
 
 	fmt.Printf("📋 Parsing des faits...\n")
-	err = parser.ParseContent(factContent, "facts.constraint")
+	err = parser.ParseContent(factContent, "facts.tsd")
 	if err != nil {
 		t.Fatalf("Erreur parsing faits: %v", err)
 	}
@@ -101,9 +101,9 @@ func TestMultiFileParsing(t *testing.T) {
 
 	// Créer des fichiers temporaires
 	files := []string{
-		"/tmp/types.constraint",
-		"/tmp/rules.constraint",
-		"/tmp/facts.constraint",
+		"/tmp/types.tsd",
+		"/tmp/rules.tsd",
+		"/tmp/facts.tsd",
 	}
 
 	// Contenu des fichiers

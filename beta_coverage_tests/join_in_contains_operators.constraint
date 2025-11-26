@@ -1,7 +1,0 @@
-// Test opérateurs IN et CONTAINS dans jointures beta
-type Product : <id: string, name: string, categories: string, keywords: string>
-type Review : <id: string, product_id: string, rating: number, status: string>
-
-rule r1 : {p: Product, r: Review} / p.id == r.product_id AND r.status IN ["approved", "verified"] ==> approved_review(p.id, r.id)
-rule r2 : {p: Product, r: Review} / p.id == r.product_id AND p.keywords CONTAINS "premium" ==> premium_product_review(p.id, r.id)
-rule r3 : {p: Product, r: Review} / p.id == r.product_id AND p.categories IN ["electronics", "tech"] AND r.rating >= 4 ==> tech_high_rating(p.id, r.id)

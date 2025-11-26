@@ -28,8 +28,8 @@ func TestExhaustiveAlphaCoverage(t *testing.T) {
 	t.Log("🔍 Tests de TOUS les opérateurs, succès/échecs, logique")
 
 	// Fichiers de test pour couverture exhaustive Alpha
-	constraintFile := "../../constraint/test/integration/alpha_exhaustive_coverage.constraint"
-	factsFile := "../../constraint/test/integration/alpha_exhaustive_coverage_fixed.facts"
+	constraintFile := "../../constraint/test/integration/alpha_exhaustive_coverage.tsd"
+	factsFile := "../../constraint/test/integration/alpha_exhaustive_coverage_fixed.tsd"
 
 	t.Log("")
 	t.Log("🔧 PIPELINE CONSTRAINT + FAITS EXHAUSTIFS → RETE")
@@ -180,7 +180,7 @@ func TestExhaustiveAlphaCoverage(t *testing.T) {
 	t.Log("")
 	t.Log("🎯 VALIDATIONS PIPELINE EXHAUSTIF")
 	t.Log("=================================")
-	t.Log("✅ RÈGLE RESPECTÉE: Pipeline unique utilisé pour .constraint + .facts")
+	t.Log("✅ RÈGLE RESPECTÉE: Pipeline unique utilisé pour .constraint + .tsd")
 	t.Log("✅ RÈGLE RESPECTÉE: Couverture exhaustive succès + échecs")
 	t.Log("✅ RÈGLE RESPECTÉE: Tests opérateurs comparaison ET logiques")
 	t.Log("✅ RÈGLE RESPECTÉE: Cas limites et valeurs spéciales inclus")

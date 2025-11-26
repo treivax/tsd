@@ -24,10 +24,18 @@ func TestParseFlags(t *testing.T) {
 		expected *Config
 	}{
 		{
-			name: "constraint file flag",
-			args: []string{"-constraint", "test.constraint"},
+			name: "file flag",
+			args: []string{"-file", "test.tsd"},
 			expected: &Config{
-				ConstraintFile: "test.constraint",
+				File: "test.tsd",
+			},
+		},
+		{
+			name: "constraint file flag (backward compatibility)",
+			args: []string{"-constraint", "test.tsd"},
+			expected: &Config{
+				File:           "test.tsd",
+				ConstraintFile: "test.tsd",
 			},
 		},
 		{
@@ -46,18 +54,10 @@ func TestParseFlags(t *testing.T) {
 		},
 		{
 			name: "verbose flag",
-			args: []string{"-constraint", "test.constraint", "-v"},
+			args: []string{"-file", "test.tsd", "-v"},
 			expected: &Config{
-				ConstraintFile: "test.constraint",
-				Verbose:        true,
-			},
-		},
-		{
-			name: "facts file flag",
-			args: []string{"-constraint", "test.constraint", "-facts", "test.facts"},
-			expected: &Config{
-				ConstraintFile: "test.constraint",
-				FactsFile:      "test.facts",
+				File:    "test.tsd",
+				Verbose: true,
 			},
 		},
 		{
@@ -76,11 +76,25 @@ func TestParseFlags(t *testing.T) {
 		},
 		{
 			name: "multiple flags",
-			args: []string{"-constraint", "rules.constraint", "-facts", "data.facts", "-v"},
+			args: []string{"-file", "rules.tsd", "-v"},
 			expected: &Config{
-				ConstraintFile: "rules.constraint",
-				FactsFile:      "data.facts",
-				Verbose:        true,
+				File:    "rules.tsd",
+				Verbose: true,
+			},
+		},
+		{
+			name: "positional argument",
+			args: []string{"program.tsd"},
+			expected: &Config{
+				File: "program.tsd",
+			},
+		},
+		{
+			name: "positional argument with verbose",
+			args: []string{"-v", "program.tsd"},
+			expected: &Config{
+				File:    "program.tsd",
+				Verbose: true,
 			},
 		},
 	}
@@ -92,6 +106,9 @@ func TestParseFlags(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
+			if config.File != tt.expected.File {
+				t.Errorf("File = %v, want %v", config.File, tt.expected.File)
+			}
 			if config.ConstraintFile != tt.expected.ConstraintFile {
 				t.Errorf("ConstraintFile = %v, want %v", config.ConstraintFile, tt.expected.ConstraintFile)
 			}
@@ -127,7 +144,7 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name: "valid constraint file",
 			config: &Config{
-				ConstraintFile: "test.constraint",
+				File: "test.tsd",
 			},
 			wantError: false,
 		},
@@ -149,25 +166,25 @@ func TestValidateConfig(t *testing.T) {
 			name:      "no input source",
 			config:    &Config{},
 			wantError: true,
-			errorMsg:  "spécifiez une source",
+			errorMsg:  "aucune source spécifiée",
 		},
 		{
 			name: "multiple input sources - file and text",
 			config: &Config{
-				ConstraintFile: "test.constraint",
+				File:           "test.tsd",
 				ConstraintText: "type Person : <id: string>",
 			},
 			wantError: true,
-			errorMsg:  "spécifiez une seule source",
+			errorMsg:  "une seule source",
 		},
 		{
 			name: "multiple input sources - file and stdin",
 			config: &Config{
-				ConstraintFile: "test.constraint",
-				UseStdin:       true,
+				File:     "test.tsd",
+				UseStdin: true,
 			},
 			wantError: true,
-			errorMsg:  "spécifiez une seule source",
+			errorMsg:  "une seule source",
 		},
 		{
 			name: "multiple input sources - text and stdin",
@@ -176,31 +193,30 @@ func TestValidateConfig(t *testing.T) {
 				UseStdin:       true,
 			},
 			wantError: true,
-			errorMsg:  "spécifiez une seule source",
+			errorMsg:  "une seule source",
 		},
 		{
 			name: "all three input sources",
 			config: &Config{
-				ConstraintFile: "test.constraint",
+				File:           "test.tsd",
 				ConstraintText: "type Person : <id: string>",
 				UseStdin:       true,
 			},
 			wantError: true,
-			errorMsg:  "spécifiez une seule source",
+			errorMsg:  "une seule source",
 		},
 		{
 			name: "valid with facts file",
 			config: &Config{
-				ConstraintFile: "test.constraint",
-				FactsFile:      "test.facts",
+				File: "test.tsd",
 			},
 			wantError: false,
 		},
 		{
 			name: "valid with verbose flag",
 			config: &Config{
-				ConstraintFile: "test.constraint",
-				Verbose:        true,
+				File:    "test.tsd",
+				Verbose: true,
 			},
 			wantError: false,
 		},
@@ -216,7 +232,7 @@ func TestValidateConfig(t *testing.T) {
 					return
 				}
 				if !strings.Contains(err.Error(), tt.errorMsg) {
-					t.Errorf("ValidateConfig() error = %v, want error containing %q", err, tt.errorMsg)
+					t.Errorf("ValidateConfig() error = %v, want error containing %q", err.Error(), tt.errorMsg)
 				}
 			} else {
 				if err != nil {
@@ -301,14 +317,14 @@ func TestParseFromFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a valid constraint file
-	validFile := filepath.Join(tempDir, "valid.constraint")
+	validFile := filepath.Join(tempDir, "valid.tsd")
 	validContent := []byte("type Person : <id: string, name: string>")
 	if err := os.WriteFile(validFile, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
 	// Create an invalid constraint file
-	invalidFile := filepath.Join(tempDir, "invalid.constraint")
+	invalidFile := filepath.Join(tempDir, "invalid.tsd")
 	invalidContent := []byte("invalid constraint syntax !!!")
 	if err := os.WriteFile(invalidFile, invalidContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
@@ -323,30 +339,30 @@ func TestParseFromFile(t *testing.T) {
 		{
 			name: "valid constraint file",
 			config: &Config{
-				ConstraintFile: validFile,
+				File: validFile,
 			},
 			wantError: false,
 		},
 		{
 			name: "non-existent file",
 			config: &Config{
-				ConstraintFile: filepath.Join(tempDir, "nonexistent.constraint"),
+				File: filepath.Join(tempDir, "nonexistent.tsd"),
 			},
 			wantError: true,
-			errorMsg:  "fichier contrainte non trouvé",
+			errorMsg:  "fichier non trouvé",
 		},
 		{
 			name: "invalid syntax in file",
 			config: &Config{
-				ConstraintFile: invalidFile,
+				File: invalidFile,
 			},
 			wantError: true,
 		},
 		{
 			name: "verbose mode with valid file",
 			config: &Config{
-				ConstraintFile: validFile,
-				Verbose:        true,
+				File:    validFile,
+				Verbose: true,
 			},
 			wantError: false,
 		},
@@ -380,8 +396,8 @@ func TestParseFromFile(t *testing.T) {
 				if result == nil {
 					t.Errorf("parseFromFile() result = nil, want non-nil")
 				}
-				if sourceName != tt.config.ConstraintFile {
-					t.Errorf("parseFromFile() sourceName = %v, want %v", sourceName, tt.config.ConstraintFile)
+				if sourceName != tt.config.File {
+					t.Errorf("parseFromFile() sourceName = %v, want %v", sourceName, tt.config.File)
 				}
 			}
 		})
@@ -416,15 +432,15 @@ func TestPrintHelp(t *testing.T) {
 		"TSD",
 		"USAGE:",
 		"OPTIONS:",
-		"-constraint",
+		"-file",
 		"-text",
 		"-stdin",
-		"-facts",
 		"-v",
 		"-version",
 		"-h",
 		"EXEMPLES:",
-		"FORMATS DE FICHIERS:",
+		"FORMAT DE FICHIER:",
+		".tsd",
 	}
 
 	for _, expected := range expectedStrings {
@@ -528,17 +544,21 @@ func TestRunValidationOnly(t *testing.T) {
 // TestConfig tests the Config struct
 func TestConfig(t *testing.T) {
 	config := &Config{
-		ConstraintFile: "test.constraint",
+		File:           "test.tsd",
+		ConstraintFile: "test.tsd",
 		ConstraintText: "type Person : <id: string>",
 		UseStdin:       true,
-		FactsFile:      "test.facts",
+		FactsFile:      "test.tsd",
 		Verbose:        true,
 		ShowVersion:    true,
 		ShowHelp:       true,
 	}
 
-	if config.ConstraintFile != "test.constraint" {
-		t.Errorf("Config.ConstraintFile = %v, want test.constraint", config.ConstraintFile)
+	if config.File != "test.tsd" {
+		t.Errorf("Config.File = %v, want test.tsd", config.File)
+	}
+	if config.ConstraintFile != "test.tsd" {
+		t.Errorf("Config.ConstraintFile = %v, want test.tsd", config.ConstraintFile)
 	}
 	if config.ConstraintText != "type Person : <id: string>" {
 		t.Errorf("Config.ConstraintText = %v, want 'type Person : <id: string>'", config.ConstraintText)
@@ -546,8 +566,8 @@ func TestConfig(t *testing.T) {
 	if !config.UseStdin {
 		t.Error("Config.UseStdin = false, want true")
 	}
-	if config.FactsFile != "test.facts" {
-		t.Errorf("Config.FactsFile = %v, want test.facts", config.FactsFile)
+	if config.FactsFile != "test.tsd" {
+		t.Errorf("Config.FactsFile = %v, want test.tsd", config.FactsFile)
 	}
 	if !config.Verbose {
 		t.Error("Config.Verbose = false, want true")
@@ -565,7 +585,7 @@ func TestParseConstraintSource(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a valid constraint file
-	validFile := filepath.Join(tempDir, "valid.constraint")
+	validFile := filepath.Join(tempDir, "valid.tsd")
 	validContent := []byte("type Person : <id: string>")
 	if err := os.WriteFile(validFile, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
@@ -581,7 +601,7 @@ func TestParseConstraintSource(t *testing.T) {
 		{
 			name: "route to file",
 			config: &Config{
-				ConstraintFile: validFile,
+				File: validFile,
 			},
 			wantError:      false,
 			wantSourceName: validFile,
@@ -740,14 +760,14 @@ func TestRunWithFactsLogic(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a valid facts file
-	factsFile := filepath.Join(tempDir, "test.facts")
+	factsFile := filepath.Join(tempDir, "test.tsd")
 	factsContent := []byte(`Person(id: "1", name: "Alice")`)
 	if err := os.WriteFile(factsFile, factsContent, 0644); err != nil {
 		t.Fatalf("Failed to create facts file: %v", err)
 	}
 
 	// Create a non-existent facts file path
-	nonExistentFacts := filepath.Join(tempDir, "nonexistent.facts")
+	nonExistentFacts := filepath.Join(tempDir, "nonexistent.tsd")
 
 	tests := []struct {
 		name      string
@@ -1028,15 +1048,15 @@ func TestMainIntegration(t *testing.T) {
 
 	tempDir := t.TempDir()
 
-	// Create test constraint file
-	constraintFile := filepath.Join(tempDir, "test.constraint")
-	constraintContent := []byte("type Person : <id: string, name: string>")
-	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
+	// Create test TSD file
+	tsdFile := filepath.Join(tempDir, "test.tsd")
+	tsdContent := []byte("type Person : <id: string, name: string>")
+	if err := os.WriteFile(tsdFile, tsdContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
 
-	// Create test facts file
-	factsFile := filepath.Join(tempDir, "test.facts")
+	// Create test TSD file with facts
+	factsFile := filepath.Join(tempDir, "facts.tsd")
 	factsContent := []byte(`Person(id: "1", name: "Alice")`)
 	if err := os.WriteFile(factsFile, factsContent, 0644); err != nil {
 		t.Fatalf("Failed to create facts file: %v", err)
@@ -1070,16 +1090,16 @@ func TestMainIntegration(t *testing.T) {
 			},
 		},
 		{
-			name:         "constraint file validation",
-			args:         []string{"-constraint", constraintFile},
+			name:         "file validation",
+			args:         []string{"-file", tsdFile},
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"Contraintes validées avec succès",
 			},
 		},
 		{
-			name:         "constraint file verbose",
-			args:         []string{"-constraint", constraintFile, "-v"},
+			name:         "file verbose",
+			args:         []string{"-file", tsdFile, "-v"},
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"Parsing réussi",
@@ -1110,25 +1130,25 @@ func TestMainIntegration(t *testing.T) {
 			wantExitCode: 1,
 			wantErrorContains: []string{
 				"Erreur",
-				"spécifiez une source",
+				"aucune source spécifiée",
 			},
 		},
 		{
 			name:         "multiple input sources error",
-			args:         []string{"-constraint", constraintFile, "-text", "type X : <a: string>"},
+			args:         []string{"-file", tsdFile, "-text", "type X : <a: string>"},
 			wantExitCode: 1,
 			wantErrorContains: []string{
 				"Erreur",
-				"spécifiez une seule source",
+				"une seule source",
 			},
 		},
 		{
-			name:         "non-existent constraint file",
-			args:         []string{"-constraint", filepath.Join(tempDir, "nonexistent.constraint")},
+			name:         "non-existent file",
+			args:         []string{"-file", filepath.Join(tempDir, "nonexistent.tsd")},
 			wantExitCode: 1,
 			wantErrorContains: []string{
 				"Erreur",
-				"fichier contrainte non trouvé",
+				"fichier non trouvé",
 			},
 		},
 		{
@@ -1201,19 +1221,19 @@ func TestMainWithFactsIntegration(t *testing.T) {
 
 	tempDir := t.TempDir()
 
-	// Create a simple constraint file
-	constraintFile := filepath.Join(tempDir, "rules.constraint")
-	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
+	// Create a simple TSD file
+	tsdFile := filepath.Join(tempDir, "rules.tsd")
+	tsdContent := []byte(`type Person : <id: string, name: string, age: number>
 type Order : <id: string, customer_id: string, amount: number>
 
 rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> customer_order(p.id, o.id)
 `)
-	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
-		t.Fatalf("Failed to create constraint file: %v", err)
+	if err := os.WriteFile(tsdFile, tsdContent, 0644); err != nil {
+		t.Fatalf("Failed to create TSD file: %v", err)
 	}
 
 	// Create facts file with correct syntax (no quotes)
-	factsFile := filepath.Join(tempDir, "data.facts")
+	factsFile := filepath.Join(tempDir, "data.tsd")
 	factsContent := []byte(`Person(id:P001, name:Alice, age:25)
 Person(id:P002, name:Bob, age:30)
 Order(id:O001, customer_id:P001, amount:100)
@@ -1230,16 +1250,16 @@ Order(id:O002, customer_id:P002, amount:200)
 		wantOutputContains []string
 	}{
 		{
-			name:         "constraint with facts - non-verbose",
-			args:         []string{"-constraint", constraintFile, "-facts", factsFile},
+			name:         "with facts file",
+			args:         []string{"-file", tsdFile, "-facts", factsFile},
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"ACTIONS DISPONIBLES",
 			},
 		},
 		{
-			name:         "constraint with facts - verbose",
-			args:         []string{"-constraint", constraintFile, "-facts", factsFile, "-v"},
+			name:         "with facts file - verbose",
+			args:         []string{"-file", tsdFile, "-facts", factsFile, "-v"},
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"Parsing réussi",
@@ -1248,8 +1268,8 @@ Order(id:O002, customer_id:P002, amount:200)
 			},
 		},
 		{
-			name:         "constraint with non-existent facts file",
-			args:         []string{"-constraint", constraintFile, "-facts", filepath.Join(tempDir, "missing.facts")},
+			name:         "with non-existent facts file",
+			args:         []string{"-file", tsdFile, "-facts", filepath.Join(tempDir, "missing.tsd")},
 			wantExitCode: 1,
 			wantOutputContains: []string{
 				"Fichier faits non trouvé",
@@ -1318,7 +1338,7 @@ func TestEdgeCases(t *testing.T) {
 
 	t.Run("parseFromFile with invalid file path characters", func(t *testing.T) {
 		config := &Config{
-			ConstraintFile: "/nonexistent/path/to/file.constraint",
+			File: "/nonexistent/path/to/file.tsd",
 		}
 
 		// Capture stdout
@@ -1355,23 +1375,21 @@ func TestEdgeCases(t *testing.T) {
 
 // TestRunWithFacts tests the RunWithFacts function
 func TestRunWithFacts(t *testing.T) {
-	// Create temporary constraint and facts files
+	// Create temporary TSD file with types, rules and facts
 	tmpDir := t.TempDir()
 
-	constraintFile := filepath.Join(tmpDir, "test.constraint")
-	constraintContent := `type Person : <id: string, name: string, age: number>
+	tsdFile := filepath.Join(tmpDir, "test.tsd")
+	tsdContent := `type Person : <id: string, name: string, age: number>
 
-rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
-	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
-		t.Fatalf("Failed to create constraint file: %v", err)
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
+
+Person(id:P1, name:Alice, age:25)
+Person(id:P2, name:Bob, age:30)`
+	if err := os.WriteFile(tsdFile, []byte(tsdContent), 0644); err != nil {
+		t.Fatalf("Failed to create TSD file: %v", err)
 	}
 
-	factsFile := filepath.Join(tmpDir, "test.facts")
-	factsContent := `Person(id: "1", name: "Alice", age: 25)
-Person(id: "2", name: "Bob", age: 30)`
-	if err := os.WriteFile(factsFile, []byte(factsContent), 0644); err != nil {
-		t.Fatalf("Failed to create facts file: %v", err)
-	}
+	factsFile := tsdFile
 
 	tests := []struct {
 		name         string
@@ -1386,7 +1404,7 @@ Person(id: "2", name: "Bob", age: 30)`
 				FactsFile: factsFile,
 				Verbose:   false,
 			},
-			sourceName:   constraintFile,
+			sourceName:   tsdFile,
 			wantExitCode: 0,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if stderr != "" {
@@ -1400,7 +1418,7 @@ Person(id: "2", name: "Bob", age: 30)`
 				FactsFile: factsFile,
 				Verbose:   true,
 			},
-			sourceName:   constraintFile,
+			sourceName:   tsdFile,
 			wantExitCode: 0,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stdout, "PIPELINE RETE COMPLET") {
@@ -1414,10 +1432,10 @@ Person(id: "2", name: "Bob", age: 30)`
 		{
 			name: "facts file not found",
 			config: &Config{
-				FactsFile: filepath.Join(tmpDir, "nonexistent.facts"),
+				FactsFile: filepath.Join(tmpDir, "nonexistent.tsd"),
 				Verbose:   false,
 			},
-			sourceName:   constraintFile,
+			sourceName:   tsdFile,
 			wantExitCode: 1,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stderr, "Fichier faits non trouvé") {
@@ -1431,7 +1449,7 @@ Person(id: "2", name: "Bob", age: 30)`
 				FactsFile: factsFile,
 				Verbose:   false,
 			},
-			sourceName:   "nonexistent.constraint",
+			sourceName:   "nonexistent.tsd",
 			wantExitCode: 1,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stderr, "Erreur pipeline RETE") {
@@ -1462,21 +1480,19 @@ Person(id: "2", name: "Bob", age: 30)`
 func TestExecutePipeline(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// Create valid test files
-	constraintFile := filepath.Join(tmpDir, "test.constraint")
-	constraintContent := `type Person : <id: string, name: string, age: number>
+	// Create valid test file with types, rules and facts
+	tsdFile := filepath.Join(tmpDir, "test.tsd")
+	tsdContent := `type Person : <id: string, name: string, age: number>
 
-rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
-	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
-		t.Fatalf("Failed to create constraint file: %v", err)
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
+
+Person(id:P1, name:Alice, age:25)
+Person(id:P2, name:Bob, age:30)`
+	if err := os.WriteFile(tsdFile, []byte(tsdContent), 0644); err != nil {
+		t.Fatalf("Failed to create TSD file: %v", err)
 	}
 
-	factsFile := filepath.Join(tmpDir, "test.facts")
-	factsContent := `Person(id: "1", name: "Alice", age: 25)
-Person(id: "2", name: "Bob", age: 30)`
-	if err := os.WriteFile(factsFile, []byte(factsContent), 0644); err != nil {
-		t.Fatalf("Failed to create facts file: %v", err)
-	}
+	factsFile := tsdFile
 
 	tests := []struct {
 		name             string
@@ -1487,7 +1503,7 @@ Person(id: "2", name: "Bob", age: 30)`
 	}{
 		{
 			name:             "successful pipeline execution",
-			constraintSource: constraintFile,
+			constraintSource: tsdFile,
 			factsFile:        factsFile,
 			wantError:        false,
 			checkResult: func(t *testing.T, result *Result) {
@@ -1507,15 +1523,15 @@ Person(id: "2", name: "Bob", age: 30)`
 		},
 		{
 			name:             "constraint file not found",
-			constraintSource: "nonexistent.constraint",
+			constraintSource: "nonexistent.tsd",
 			factsFile:        factsFile,
 			wantError:        true,
 			checkResult:      nil,
 		},
 		{
 			name:             "facts file not found",
-			constraintSource: constraintFile,
-			factsFile:        "nonexistent.facts",
+			constraintSource: tsdFile,
+			factsFile:        "nonexistent.tsd",
 			wantError:        true,
 			checkResult:      nil,
 		},
@@ -1682,7 +1698,7 @@ func TestRun(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create test constraint file
-	constraintFile := filepath.Join(tmpDir, "test.constraint")
+	constraintFile := filepath.Join(tmpDir, "test.tsd")
 	constraintContent := "type Person : <id: string, name: string>"
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)

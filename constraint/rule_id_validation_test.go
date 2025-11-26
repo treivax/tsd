@@ -22,7 +22,7 @@ func TestRuleIdUniqueness(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create first file with a rule
-	file1 := filepath.Join(tempDir, "rules1.constraint")
+	file1 := filepath.Join(tempDir, "rules1.tsd")
 	content1 := `type Person : <id: string, age: number>
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
@@ -34,7 +34,7 @@ rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 	}
 
 	// Create second file with duplicate rule ID
-	file2 := filepath.Join(tempDir, "rules2.constraint")
+	file2 := filepath.Join(tempDir, "rules2.tsd")
 	content2 := `// This file has a duplicate rule ID
 rule r1 : {p: Person} / p.age > 65 ==> senior(p.id)
 rule r3 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
@@ -114,7 +114,7 @@ func TestRuleIdUniquenessWithReset(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create first file with rules
-	file1 := filepath.Join(tempDir, "rules1.constraint")
+	file1 := filepath.Join(tempDir, "rules1.tsd")
 	content1 := `type Person : <id: string, age: number>
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
@@ -126,7 +126,7 @@ rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 	}
 
 	// Create second file with reset and reused rule IDs
-	file2 := filepath.Join(tempDir, "rules2.constraint")
+	file2 := filepath.Join(tempDir, "rules2.tsd")
 	content2 := `reset
 
 type Product : <id: string, price: number>
@@ -211,7 +211,7 @@ func TestRuleIdUniquenessInSameFile(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create file with duplicate rule IDs
-	file := filepath.Join(tempDir, "duplicate_rules.constraint")
+	file := filepath.Join(tempDir, "duplicate_rules.tsd")
 	content := `type Person : <id: string, age: number>
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
@@ -290,7 +290,7 @@ func TestRuleIdEmptyAllowed(t *testing.T) {
 	}
 
 	// Merge rules
-	err := ps.mergeRules([]Expression{rule1, rule2}, "test.constraint")
+	err := ps.mergeRules([]Expression{rule1, rule2}, "test.tsd")
 	if err != nil {
 		t.Fatalf("Failed to merge rules: %v", err)
 	}
@@ -321,14 +321,14 @@ func TestRuleIdMultipleFiles(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create three files
-	file1 := filepath.Join(tempDir, "file1.constraint")
+	file1 := filepath.Join(tempDir, "file1.tsd")
 	content1 := `type Person : <id: string, age: number>
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 
-	file2 := filepath.Join(tempDir, "file2.constraint")
+	file2 := filepath.Join(tempDir, "file2.tsd")
 	content2 := `rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 
-	file3 := filepath.Join(tempDir, "file3.constraint")
+	file3 := filepath.Join(tempDir, "file3.tsd")
 	content3 := `rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)
 rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 

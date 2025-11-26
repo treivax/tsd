@@ -1,9 +1,0 @@
-# Faits de test pour arithmetic_complex_expressions
-Invoice(id:I1, amount:100, tax:0.2, discount:0.1, fee:10)
-Invoice(id:I2, amount:150, tax:0.25, discount:10, fee:20)
-Invoice(id:I3, amount:80, tax:1.5, discount:5, fee:50)
-
-Transaction(id:T1, base:100, multiplier:2, offset:5)
-Transaction(id:T2, base:50, multiplier:3, offset:10)
-Transaction(id:T3, base:20, multiplier:5, offset:10)
-Transaction(id:T4, base:25, multiplier:7, offset:2)

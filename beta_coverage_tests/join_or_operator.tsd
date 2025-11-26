@@ -1,0 +1,16 @@
+// Test opérateur OR dans jointures beta
+type Person : <id: string, name: string, age: number, priority: string>
+type Order : <id: string, customer_id: string, amount: number, urgent: bool>
+
+rule r1 : {p: Person, o: Order} / p.id == o.customer_id AND (o.amount > 500 OR o.urgent == true) AND p.priority != "" ==> priority_order(p.id, o.id)
+rule r2 : {p: Person, o: Order} / p.id == o.customer_id AND (p.priority == "high" OR p.age >= 65) AND o.amount > 0 ==> special_customer_order(p.id, o.id)
+rule r3 : {p: Person, o: Order} / p.id == o.customer_id AND (o.urgent == false OR o.amount < 100) AND p.age >= 18 ==> standard_order(p.id, o.id)
+
+Person(id:P001, name:Alice, age:25, priority:high)
+Person(id:P002, name:Bob, age:67, priority:normal)
+Person(id:P003, name:Charlie, age:35, priority:low)
+Person(id:P004, name:Diana, age:19, priority:normal)
+Order(id:O001, customer_id:P001, amount:600, urgent:false)
+Order(id:O002, customer_id:P002, amount:300, urgent:false)
+Order(id:O003, customer_id:P003, amount:100, urgent:true)
+Order(id:O004, customer_id:P004, amount:50, urgent:false)

@@ -30,7 +30,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:           "nonexistent file",
-			args:           []string{"nonexistent.constraint"},
+			args:           []string{"nonexistent.tsd"},
 			expectExitCode: 1,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stderr, "Erreur") {
@@ -59,7 +59,7 @@ func TestRun(t *testing.T) {
 
 func TestRunWithValidFile(t *testing.T) {
 	// Create temporary constraint file
-	tmpfile, err := os.CreateTemp("", "test*.constraint")
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestRunWithValidFile(t *testing.T) {
 
 func TestRunWithInvalidSyntax(t *testing.T) {
 	// Create temporary constraint file with invalid syntax
-	tmpfile, err := os.CreateTemp("", "test*.constraint")
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestParseFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary file
-			tmpfile, err := os.CreateTemp("", "test*.constraint")
+			tmpfile, err := os.CreateTemp("", "test*.tsd")
 			if err != nil {
 				t.Fatalf("Failed to create temp file: %v", err)
 			}
@@ -172,7 +172,7 @@ func TestParseFile(t *testing.T) {
 }
 
 func TestParseFileNotFound(t *testing.T) {
-	_, err := ParseFile("nonexistent_file_xyz.constraint")
+	_, err := ParseFile("nonexistent_file_xyz.tsd")
 	if err == nil {
 		t.Error("Expected error for nonexistent file")
 	}
@@ -262,9 +262,9 @@ func TestPrintHelp(t *testing.T) {
 func TestRunIntegrationWithRealConstraintFile(t *testing.T) {
 	// Try to find an existing constraint file in the test directories
 	testFiles := []string{
-		"../../test/coverage/alpha/simple_alpha_test.constraint",
-		"../../constraint/test/integration/basic_types.constraint",
-		"../test/integration/basic_types.constraint",
+		"../../test/coverage/alpha/simple_alpha_test.tsd",
+		"../../constraint/test/integration/basic_types.tsd",
+		"../test/integration/basic_types.tsd",
 	}
 
 	var validTestFile string
@@ -295,7 +295,7 @@ func TestRunIntegrationWithRealConstraintFile(t *testing.T) {
 
 func TestRunWithComplexConstraintFile(t *testing.T) {
 	// Create a more complex constraint file
-	tmpfile, err := os.CreateTemp("", "test*.constraint")
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -333,7 +333,7 @@ func TestParseFileWithRelativePath(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	tmpfile := filepath.Join(tmpDir, "test.constraint")
+	tmpfile := filepath.Join(tmpDir, "test.tsd")
 	content := "type Person : <id: string>"
 	if err := os.WriteFile(tmpfile, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to write file: %v", err)
@@ -349,7 +349,7 @@ func TestParseFileWithRelativePath(t *testing.T) {
 }
 
 func TestRunWithEmptyFile(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "test*.constraint")
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -367,7 +367,7 @@ func TestRunWithEmptyFile(t *testing.T) {
 }
 
 func TestRunWithWhitespaceOnlyFile(t *testing.T) {
-	tmpfile, err := os.CreateTemp("", "test*.constraint")
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}

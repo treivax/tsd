@@ -1,4 +1,0 @@
-// Test comparaison numérique positive
-type Product : <id: string, price: number, category: string>
-
-rule r1 : {prod: Product} / prod.price > 100 ==> expensive_product(prod.id, prod.price)

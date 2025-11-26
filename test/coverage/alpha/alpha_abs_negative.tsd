@@ -1,0 +1,8 @@
+// Test fonction ABS() (valeur absolue) - négation
+type Balance : <id: string, amount: number, type: string>
+
+rule r1 : {b: Balance} / NOT(ABS(b.amount) > 100) ==> small_balance_found(b.id, b.amount)
+
+Balance(id:"B001", amount:150.0, type:"credit")
+Balance(id:"B002", amount:-25.0, type:"debit")
+Balance(id:"B003", amount:75.0, type:"credit")

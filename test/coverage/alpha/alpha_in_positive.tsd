@@ -1,0 +1,8 @@
+// Test opérateur IN (appartenance)
+type Status : <id: string, state: string, priority: number>
+
+rule r1 : {s: Status} / s.state IN ["active", "pending", "review"] ==> valid_state_found(s.id, s.state)
+
+Status(id:"S001", state:"active", priority:1)
+Status(id:"S002", state:"inactive", priority:3)
+Status(id:"S003", state:"pending", priority:2)

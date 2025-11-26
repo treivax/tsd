@@ -13,7 +13,7 @@ import (
 // TestPipeline_AVG teste le calcul de moyenne via le pipeline complet
 func TestPipeline_AVG(t *testing.T) {
 	// Créer fichier constraint temporaire
-	constraintFile := filepath.Join(t.TempDir(), "avg_test.constraint")
+	constraintFile := filepath.Join(t.TempDir(), "avg_test.tsd")
 	constraintContent := `type Employee : <id: string, name: string>
 type Performance : <id: string, employee_id: string, score: number>
 
@@ -49,7 +49,7 @@ rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) 
 
 // TestPipeline_SUM teste le calcul de somme via le pipeline complet
 func TestPipeline_SUM(t *testing.T) {
-	constraintFile := filepath.Join(t.TempDir(), "sum_test.constraint")
+	constraintFile := filepath.Join(t.TempDir(), "sum_test.tsd")
 	constraintContent := `type Employee : <id: string, name: string>
 type Order : <id: string, employee_id: string, amount: number>
 
@@ -81,7 +81,7 @@ rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 10
 
 // TestPipeline_COUNT teste le comptage via le pipeline complet
 func TestPipeline_COUNT(t *testing.T) {
-	constraintFile := filepath.Join(t.TempDir(), "count_test.constraint")
+	constraintFile := filepath.Join(t.TempDir(), "count_test.tsd")
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string>
 
@@ -115,7 +115,7 @@ rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 
 // TestPipeline_MIN teste le minimum via le pipeline complet
 func TestPipeline_MIN(t *testing.T) {
-	constraintFile := filepath.Join(t.TempDir(), "min_test.constraint")
+	constraintFile := filepath.Join(t.TempDir(), "min_test.tsd")
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string, salary: number>
 
@@ -147,7 +147,7 @@ rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary)
 
 // TestPipeline_MAX teste le maximum via le pipeline complet
 func TestPipeline_MAX(t *testing.T) {
-	constraintFile := filepath.Join(t.TempDir(), "max_test.constraint")
+	constraintFile := filepath.Join(t.TempDir(), "max_test.tsd")
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string, salary: number>
 

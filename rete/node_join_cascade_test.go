@@ -111,7 +111,7 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile("test/incremental_propagation.constraint", storage)
+	network, err := pipeline.BuildNetworkFromConstraintFile("test/incremental_propagation.tsd", storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -396,7 +396,7 @@ func countAllTerminalTokens(network *ReteNetwork) int {
 // Helper: create temporary constraint file
 func createTempConstraintFile(t *testing.T, name, content string) string {
 	tmpDir := t.TempDir()
-	tmpFile := tmpDir + "/" + name + ".constraint"
+	tmpFile := tmpDir + "/" + name + ".tsd"
 
 	err := os.WriteFile(tmpFile, []byte(content), 0644)
 	if err != nil {

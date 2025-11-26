@@ -14,8 +14,8 @@ import (
 func TestVariableArguments(t *testing.T) {
 	helper := NewTestHelper()
 
-	constraintFile := "../../constraint/test/integration/variable_action_test.constraint"
-	factsFile := "../../constraint/test/integration/variable_action_test.facts"
+	constraintFile := "../../constraint/test/integration/variable_action_test.tsd"
+	factsFile := "../../constraint/test/integration/variable_action_test.tsd"
 
 	// Build network from constraint and facts
 	network, facts, _ := helper.BuildNetworkFromConstraintFileWithMassiveFacts(t, constraintFile, factsFile)
@@ -55,8 +55,8 @@ func TestVariableArguments(t *testing.T) {
 func TestComprehensiveMixedArguments(t *testing.T) {
 	helper := NewTestHelper()
 
-	constraintFile := "../../constraint/test/integration/comprehensive_args_test.constraint"
-	factsFile := "../../constraint/test/integration/comprehensive_args_test.facts"
+	constraintFile := "../../constraint/test/integration/comprehensive_args_test.tsd"
+	factsFile := "../../constraint/test/integration/comprehensive_args_test.tsd"
 
 	network, facts, _ := helper.BuildNetworkFromConstraintFileWithMassiveFacts(t, constraintFile, factsFile)
 
@@ -97,8 +97,8 @@ func TestComprehensiveMixedArguments(t *testing.T) {
 func TestErrorDetectionInArguments(t *testing.T) {
 	helper := NewTestHelper()
 
-	constraintFile := "../../constraint/test/integration/error_args_test.constraint"
-	factsFile := "../../constraint/test/integration/error_args_test.facts"
+	constraintFile := "../../constraint/test/integration/error_args_test.tsd"
+	factsFile := "../../constraint/test/integration/error_args_test.tsd"
 
 	// This should fail due to validation errors in the constraint file
 	// Call the pipeline directly instead of using the helper to check for errors
@@ -141,8 +141,8 @@ func TestBasicNetworkIntegrity(t *testing.T) {
 	helper := NewTestHelper()
 
 	// Use an existing simple constraint file for testing
-	constraintFile := "../../constraint/test/integration/variable_action_test.constraint"
-	factsFile := "../../constraint/test/integration/variable_action_test.facts"
+	constraintFile := "../../constraint/test/integration/variable_action_test.tsd"
+	factsFile := "../../constraint/test/integration/variable_action_test.tsd"
 
 	network, facts, storage := helper.BuildNetworkFromConstraintFileWithMassiveFacts(t, constraintFile, factsFile)
 

@@ -1,3 +1,0 @@
-type TestUser : <id: string, name: string>
-
-rule r1 : {u: TestUser} / u.id == "123" ==> simple_action(u.id, u.name)

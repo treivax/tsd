@@ -19,7 +19,7 @@ func TestComprehensiveNonBlockingValidation(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Fichier 1: Définitions de types
-	typesFile := filepath.Join(tempDir, "types.constraint")
+	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `type Person : <id: string, name: string, age: number>
 type Company : <id: string, name: string, employees: number>`
 
@@ -29,7 +29,7 @@ type Company : <id: string, name: string, employees: number>`
 	}
 
 	// Fichier 2: Mix de faits valides et invalides
-	factsFile := filepath.Join(tempDir, "facts.constraint")
+	factsFile := filepath.Join(tempDir, "facts.tsd")
 	factsContent := `Person(id: "P001", name: "Alice", age: 30)
 UnknownType(id: "U001", field: "invalid")
 Person(id: "P002", name: "Bob", age: 25)

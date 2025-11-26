@@ -1,0 +1,9 @@
+// Test existence simple
+type Person : <id: string, name: string>
+type Order : <customer_id: string, amount: number>
+
+rule r1 : {p: Person} / EXISTS (o: Order / o.customer_id == p.id) ==> person_has_orders(p.id)
+
+Person(id:P001, name:Alice)
+Person(id:P002, name:Bob)
+Order(customer_id:P001, amount:100)

@@ -1,3 +1,0 @@
-Order(id:ORD001, total:100, status:pending)
-Order(id:ORD002, total:200, status:cancelled)
-Order(id:ORD003, total:300, status:completed)

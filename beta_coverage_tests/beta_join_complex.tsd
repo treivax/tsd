@@ -1,0 +1,20 @@
+// Test JoinNode complex - Jointures multiples avec conditions complexes
+type User : <id: string, name: string, age: number, city: string, status: string>
+type Order : <id: string, user_id: string, product_id: string, amount: number, date: string>  
+type Product : <id: string, name: string, category: string, price: number>
+
+rule r1 : {u: User, o: Order, p: Product} / u.id == o.user_id AND o.product_id == p.id AND u.age >= 25 AND p.price > 100 AND o.amount >= 2 ==> premium_customer_order(u.id, o.id, p.id)
+rule r2 : {u: User, o: Order, p: Product} / u.status == "vip" AND o.user_id == u.id AND p.id == o.product_id AND p.category == "luxury" ==> vip_luxury_purchase(u.id, p.name)
+
+User(id:"USER001", name:"Alice", age:30, city:"Paris", status:"vip")
+User(id:"USER002", name:"Bob", age:22, city:"Lyon", status:"regular")
+User(id:"USER003", name:"Charlie", age:35, city:"Marseille", status:"premium")
+
+Order(id:"ORD001", user_id:"USER001", product_id:"PROD001", amount:3, date:"2025-01-15")
+Order(id:"ORD002", user_id:"USER002", product_id:"PROD002", amount:1, date:"2025-01-16")  
+Order(id:"ORD003", user_id:"USER003", product_id:"PROD001", amount:2, date:"2025-01-17")
+Order(id:"ORD004", user_id:"USER001", product_id:"PROD003", amount:1, date:"2025-01-18")
+
+Product(id:"PROD001", name:"Premium Laptop", category:"electronics", price:1299.99)
+Product(id:"PROD002", name:"Basic Mouse", category:"accessories", price:25.99)
+Product(id:"PROD003", name:"Luxury Watch", category:"luxury", price:2500.00)

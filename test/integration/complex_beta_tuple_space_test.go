@@ -21,7 +21,7 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 	helper := NewTestHelper()
 
 	// Chemin vers le fichier de contraintes
-	constraintFile := "/home/resinsec/dev/tsd/constraint/test/integration/beta_complex_rules.constraint"
+	constraintFile := "/home/resinsec/dev/tsd/constraint/test/integration/beta_complex_rules.tsd"
 
 	// Créer un storage
 	storage := rete.NewMemoryStorage()

@@ -42,7 +42,7 @@ func TestBuildNetworkFromConstraintFile(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create a valid constraint file with a rule
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte(`type Person : <id: string, name: string>
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
@@ -81,24 +81,19 @@ func TestBuildNetworkFromConstraintFileWithFacts(t *testing.T) {
 	helper := NewTestHelper()
 	tempDir := t.TempDir()
 
-	// Create constraint file
-	constraintFile := filepath.Join(tempDir, "test.constraint")
-	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
+	// Create a single TSD file with both types/rules and facts
+	tsdFile := filepath.Join(tempDir, "test.tsd")
+	tsdContent := []byte(`type Person : <id: string, name: string, age: number>
 
-rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`)
-	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
-		t.Fatalf("Failed to create constraint file: %v", err)
-	}
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 
-	// Create facts file
-	factsFile := filepath.Join(tempDir, "test.facts")
-	factsContent := []byte(`Person(id:P001, name:Alice, age:25)
+Person(id:P001, name:Alice, age:25)
 Person(id:P002, name:Bob, age:30)`)
-	if err := os.WriteFile(factsFile, factsContent, 0644); err != nil {
-		t.Fatalf("Failed to create facts file: %v", err)
+	if err := os.WriteFile(tsdFile, tsdContent, 0644); err != nil {
+		t.Fatalf("Failed to create TSD file: %v", err)
 	}
 
-	network, facts, storage := helper.BuildNetworkFromConstraintFileWithFacts(t, constraintFile, factsFile)
+	network, facts, storage := helper.BuildNetworkFromConstraintFileWithFacts(t, tsdFile, tsdFile)
 
 	if network == nil {
 		t.Error("BuildNetworkFromConstraintFileWithFacts() returned nil network")
@@ -382,7 +377,7 @@ func TestSubmitFactsAndAnalyze(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create constraint file with a rule
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`)
@@ -432,7 +427,7 @@ func TestSubmitFactsAndAnalyzeEmptyFacts(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create simple constraint file with a rule
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte(`type Person : <id: string>
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)
@@ -457,7 +452,7 @@ func TestSubmitFactsAndAnalyzeInvalidFact(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create constraint file with a rule
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte(`type Person : <id: string, name: string>
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
@@ -493,7 +488,7 @@ func TestMultipleFactTypes(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Create constraint with multiple types
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	constraintContent := []byte(`type Person : <id: string, name: string>
 type Order : <id: string, customer_id: string>
 
@@ -577,7 +572,7 @@ func TestHelperPipelineIntegration(t *testing.T) {
 
 	// Verify pipeline is usable
 	tempDir := t.TempDir()
-	constraintFile := filepath.Join(tempDir, "test.constraint")
+	constraintFile := filepath.Join(tempDir, "test.tsd")
 	content := []byte(`type Test : <id: string>
 
 rule r1 : {t: Test} / t.id != "" ==> process_test(t.id)`)
@@ -613,7 +608,7 @@ func TestBuildNetworkErrorHandling(t *testing.T) {
 
 	// Instead, test with valid inputs to ensure no panic
 	tempDir2 := t.TempDir()
-	constraintFile := filepath.Join(tempDir2, "valid.constraint")
+	constraintFile := filepath.Join(tempDir2, "valid.tsd")
 	content := []byte(`type Person : <id: string>
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)

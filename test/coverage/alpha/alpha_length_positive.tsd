@@ -1,0 +1,8 @@
+// Test fonction LENGTH()
+type Password : <id: string, value: string, secure: bool>
+
+rule r1 : {p: Password} / LENGTH(p.value) >= 8 ==> secure_password_found(p.id, p.value)
+
+Password(id:"P001", value:"password123", secure:true)
+Password(id:"P002", value:"123", secure:false)
+Password(id:"P003", value:"verysecurepass", secure:true)

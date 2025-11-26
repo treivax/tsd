@@ -21,7 +21,7 @@ func TestProgramStateIterativeParsing(t *testing.T) {
 	// Create test files
 
 	// 1. Type definitions file
-	typesFile := filepath.Join(tempDir, "types.constraint")
+	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `// Type definitions
 type Person : <id: string, name: string, age: number>
 type Company : <id: string, name: string, employees: number>`
@@ -32,7 +32,7 @@ type Company : <id: string, name: string, employees: number>`
 	}
 
 	// 2. Rules file
-	rulesFile := filepath.Join(tempDir, "rules.constraint")
+	rulesFile := filepath.Join(tempDir, "rules.tsd")
 	rulesContent := `// Business rules
 rule r1 : {p: Person, c: Company} / p.age > 25 AND c.employees > 100 ==> AddToWorkforce(p.id, c.id)`
 
@@ -42,7 +42,7 @@ rule r1 : {p: Person, c: Company} / p.age > 25 AND c.employees > 100 ==> AddToWo
 	}
 
 	// 3. Facts file
-	factsFile := filepath.Join(tempDir, "facts.constraint")
+	factsFile := filepath.Join(tempDir, "facts.tsd")
 	factsContent := `// Initial facts
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 22)
@@ -129,7 +129,7 @@ func TestProgramStateTypeValidation(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create types file
-	typesFile := filepath.Join(tempDir, "types.constraint")
+	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `type Person : <id: string, name: string>`
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
@@ -137,7 +137,7 @@ func TestProgramStateTypeValidation(t *testing.T) {
 	}
 
 	// Create facts file with invalid type
-	invalidFactsFile := filepath.Join(tempDir, "invalid_facts.constraint")
+	invalidFactsFile := filepath.Join(tempDir, "invalid_facts.tsd")
 	invalidFactsContent := `UnknownType(id: "U001", name: "Test")`
 	err = os.WriteFile(invalidFactsFile, []byte(invalidFactsContent), 0644)
 	if err != nil {

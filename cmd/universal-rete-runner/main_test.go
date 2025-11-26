@@ -75,8 +75,8 @@ func TestExecuteTest(t *testing.T) {
 			testFile: TestFile{
 				Name:       "nonexistent_test",
 				Category:   "test",
-				Constraint: "nonexistent.constraint",
-				Facts:      "nonexistent.facts",
+				Constraint: "nonexistent.tsd",
+				Facts:      "nonexistent.tsd",
 			},
 			expectError: true,
 			checkResult: func(t *testing.T, result TestResult) {
@@ -115,8 +115,8 @@ func TestExecuteTestWithErrorExpected(t *testing.T) {
 	testFile := TestFile{
 		Name:       "error_test",
 		Category:   "error",
-		Constraint: "nonexistent.constraint",
-		Facts:      "nonexistent.facts",
+		Constraint: "nonexistent.tsd",
+		Facts:      "nonexistent.tsd",
 	}
 
 	result := ExecuteTest(testFile, true)
@@ -253,8 +253,8 @@ func TestTestFileStructure(t *testing.T) {
 	testFile := TestFile{
 		Name:       "test1",
 		Category:   "alpha",
-		Constraint: "test.constraint",
-		Facts:      "test.facts",
+		Constraint: "test.tsd",
+		Facts:      "test.tsd",
 	}
 
 	if testFile.Name != "test1" {
@@ -263,10 +263,10 @@ func TestTestFileStructure(t *testing.T) {
 	if testFile.Category != "alpha" {
 		t.Error("TestFile should store category")
 	}
-	if testFile.Constraint != "test.constraint" {
+	if testFile.Constraint != "test.tsd" {
 		t.Error("TestFile should store constraint file")
 	}
-	if testFile.Facts != "test.facts" {
+	if testFile.Facts != "test.tsd" {
 		t.Error("TestFile should store facts file")
 	}
 }

@@ -93,32 +93,40 @@ make validate
 
 ## 📋 Usage
 
+### Format de Fichier Unifié
+
+À partir de la v3.0.0, TSD utilise une extension unique `.tsd` pour tous les fichiers. Un fichier `.tsd` peut contenir:
+- **Définitions de types**: `type Person : <id: string, name: string>`
+- **Assertions de faits**: `Person(id:p1, name:Alice)`
+- **Règles**: `rule r1 : {p: Person} / p.name == "Alice" ==> match(p.id)`
+
 ### CLI Application - Pipeline Complet
 
-Le binaire `tsd` exécute automatiquement le **pipeline RETE complet** (parsing → construction réseau → injection faits → évaluation) lorsqu'un fichier de faits est fourni:
+Le binaire `tsd` exécute automatiquement le **pipeline RETE complet** (parsing → construction réseau → injection faits → évaluation):
 
 ```bash
 # Validation seule (parsing + validation syntaxique)
-./bin/tsd -constraint rules.constraint
+./bin/tsd program.tsd
 
-# Pipeline complet avec exécution RETE
-./bin/tsd -constraint rules.constraint -facts data.facts
+# Argument positionnel
+./bin/tsd program.tsd
+
+# Avec flag explicite
+./bin/tsd -file program.tsd
 
 # Mode verbeux (détails du réseau et actions)
-./bin/tsd -constraint rules.constraint -facts data.facts -v
+./bin/tsd program.tsd -v
 
 # Exemple avec un test
-./bin/tsd -constraint beta_coverage_tests/join_simple.constraint \
-          -facts beta_coverage_tests/join_simple.facts -v
+./bin/tsd beta_coverage_tests/join_simple.tsd -v
+
+# Rétrocompatibilité (deprecated)
+./bin/tsd -constraint rules.tsd  # affiche un warning
 ```
 
 **Sortie typique:**
 ```
 ✅ Contraintes validées avec succès
-
-🔧 PIPELINE RETE COMPLET
-========================
-Fichier faits: data.facts
 
 📊 RÉSULTATS
 ============
@@ -129,7 +137,7 @@ Faits injectés: 10
   2. process_order() - 3 bindings
   3. validate_user() - 1 bindings
 
-✅ Pipeline RETE exécuté avec succès
+✅ Validation réussie
 ```
 
 ### Runner Universel (Tests)

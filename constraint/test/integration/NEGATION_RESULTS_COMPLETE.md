@@ -2,7 +2,7 @@
 =====================================================
 
 **Date d'exécution**: 13 novembre 2025
-**Fichier contraintes**: /home/resinsec/dev/tsd/constraint/test/integration/negation_rules.constraint
+**Fichier contraintes**: /home/resinsec/dev/tsd/constraint/test/integration/negation_rules.tsd
 **Nombre de règles**: 19
 **Nombre de faits**: 27
 
@@ -14,16 +14,16 @@
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{age=35, salary=75000, name=Bob, active=true, score=9.2, tags=senior, status=active, department=engineering, level=5}
-3. [1] TestPerson{age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr}
-4. [1] TestPerson{tags=manager, level=7, salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active, department=qa, level=1}
-7. [1] TestPerson{department=management, salary=95000, name=Grace, score=10, active=true, tags=executive, status=active, level=9, age=65}
-8. [1] TestPerson{department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive}
-9. [1] TestPerson{status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true, score=8.7, tags=senior}
-10. [1] TestPerson{salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true, age=22, department=intern}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{active=true, age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior}
+3. [1] TestPerson{active=false, level=1, age=16, department=hr, tags=intern, name=Charlie, score=6, status=inactive, salary=0}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank}
+7. [1] TestPerson{tags=executive, status=active, department=management, level=9, age=65, active=true, name=Grace, score=10, salary=95000}
+8. [1] TestPerson{name=Henry, age=18, department=support, tags=junior, salary=25000, active=false, score=5.5, level=1, status=inactive}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{age=22, active=true, department=intern, tags=temp, salary=28000, score=6.5, status=active, level=1, name=X}
 
 **Total**: 10 faits soumis
 
@@ -46,16 +46,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{discount=50, region=north, amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001}
-2. [1] TestOrder{amount=1, total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low}
-3. [1] TestOrder{date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15, amount=3, total=225}
-4. [1] TestOrder{customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004, amount=1, discount=0}
-5. [1] TestOrder{date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south, priority=high, customer_id=P002, amount=1, total=999.99}
-6. [1] TestOrder{amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005, total=999.98, priority=low}
-7. [1] TestOrder{customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent, amount=4}
-8. [1] TestOrder{customer_id=P010, region=south, product_id=PROD002, amount=10, total=255, date=2024-03-05, priority=normal, discount=0, status=pending}
-9. [1] TestOrder{discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10, priority=low}
-10. [1] TestOrder{priority=urgent, product_id=PROD001, amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000}
+1. [1] TestOrder{product_id=PROD001, status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal, region=north}
+2. [1] TestOrder{status=confirmed, priority=low, region=south, amount=1, total=25.5, date=2024-01-20, customer_id=P002, product_id=PROD002, discount=0}
+3. [1] TestOrder{status=shipped, region=north, amount=3, total=225, date=2024-02-01, priority=high, discount=15, product_id=PROD003, customer_id=P001}
+4. [1] TestOrder{region=east, customer_id=P004, amount=1, status=delivered, discount=0, total=299.99, date=2024-02-05, priority=normal, product_id=PROD004}
+5. [1] TestOrder{status=confirmed, product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1}
+6. [1] TestOrder{region=west, product_id=PROD005, total=999.98, date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0}
+7. [1] TestOrder{amount=4, customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped}
+8. [1] TestOrder{customer_id=P010, amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south}
+9. [1] TestOrder{amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10, status=completed, customer_id=P001}
+10. [1] TestOrder{status=refunded, discount=0, amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006, product_id=PROD001, total=75000}
 
 **Total**: 10 faits soumis
 
@@ -78,16 +78,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true}
-3. [1] TestPerson{department=hr, age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6}
-4. [1] TestPerson{age=45, status=active, name=Diana, tags=manager, level=7, salary=85000, active=true, score=7.8, department=marketing}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active, department=qa, level=1}
-7. [1] TestPerson{department=management, salary=95000, name=Grace, score=10, active=true, tags=executive, status=active, level=9, age=65}
-8. [1] TestPerson{tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive, department=support, salary=25000}
-9. [1] TestPerson{score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true}
-10. [1] TestPerson{score=6.5, tags=temp, active=true, age=22, department=intern, salary=28000, status=active, level=1, name=X}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{active=true, age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior}
+3. [1] TestPerson{tags=intern, name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr}
+4. [1] TestPerson{score=7.8, level=7, name=Diana, tags=manager, active=true, status=active, department=marketing, age=45, salary=85000}
+5. [1] TestPerson{score=8, age=30, active=false, status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000}
+6. [1] TestPerson{name=Frank, active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa}
+7. [1] TestPerson{salary=95000, tags=executive, status=active, department=management, level=9, age=65, active=true, name=Grace, score=10}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{status=active, level=1, name=X, age=22, active=true, department=intern, tags=temp, salary=28000, score=6.5}
 
 **Total**: 10 faits soumis
 
@@ -110,16 +110,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001, discount=50, region=north, amount=2, total=1999.98}
-2. [1] TestOrder{discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low, amount=1, total=25.5, date=2024-01-20}
-3. [1] TestOrder{discount=15, amount=3, total=225, date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001}
-4. [1] TestOrder{discount=0, customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004, amount=1}
-5. [1] TestOrder{priority=high, customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south}
-6. [1] TestOrder{region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005, total=999.98, priority=low, amount=2}
-7. [1] TestOrder{priority=urgent, amount=4, customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600}
-8. [1] TestOrder{total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10}
-9. [1] TestOrder{status=completed, region=north, date=2024-03-10, priority=low, discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007}
-10. [1] TestOrder{priority=urgent, product_id=PROD001, amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000}
+1. [1] TestOrder{region=north, product_id=PROD001, status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal}
+2. [1] TestOrder{customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south, amount=1, total=25.5, date=2024-01-20}
+3. [1] TestOrder{discount=15, product_id=PROD003, customer_id=P001, status=shipped, region=north, amount=3, total=225, date=2024-02-01, priority=high}
+4. [1] TestOrder{date=2024-02-05, priority=normal, product_id=PROD004, region=east, customer_id=P004, amount=1, status=delivered, discount=0, total=299.99}
+5. [1] TestOrder{discount=100, region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1, status=confirmed, product_id=PROD001, priority=high}
+6. [1] TestOrder{customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98, date=2024-02-15}
+7. [1] TestOrder{total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped, amount=4, customer_id=P007}
+8. [1] TestOrder{discount=0, status=pending, product_id=PROD002, priority=normal, region=south, customer_id=P010, amount=10, total=255, date=2024-03-05}
+9. [1] TestOrder{status=completed, customer_id=P001, amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10}
+10. [1] TestOrder{status=refunded, discount=0, amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006, product_id=PROD001, total=75000}
 
 **Total**: 10 faits soumis
 
@@ -142,13 +142,13 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestProduct{available=true, category=electronics, brand=TechCorp, stock=50, name=Laptop, price=999.99, rating=4.5, keywords=computer, supplier=TechSupply}
-2. [1] TestProduct{category=accessories, rating=4, brand=TechCorp, supplier=TechSupply, name=Mouse, price=25.5, available=true, stock=200, keywords=peripheral}
-3. [1] TestProduct{name=Keyboard, price=75, rating=3.5, supplier=KeySupply, keywords=typing, brand=KeyTech, category=accessories, available=false, stock=0}
-4. [1] TestProduct{price=299.99, keywords=display, supplier=ScreenSupply, name=Monitor, available=true, rating=4.8, brand=ScreenPro, stock=30, category=electronics}
-5. [1] TestProduct{supplier=OldSupply, price=8.5, rating=2, available=false, name=OldKeyboard, keywords=obsolete, stock=0, category=accessories, brand=OldTech}
-6. [1] TestProduct{category=audio, price=150, rating=4.6, brand=AudioMax, supplier=AudioSupply, name=Headphones, available=true, keywords=sound, stock=75}
-7. [1] TestProduct{available=true, brand=CamTech, supplier=CamSupply, rating=3.8, category=electronics, stock=25, keywords=video, name=Webcam, price=89.99}
+1. [1] TestProduct{stock=50, rating=4.5, name=Laptop, category=electronics, price=999.99, available=true, keywords=computer, supplier=TechSupply, brand=TechCorp}
+2. [1] TestProduct{category=accessories, rating=4, supplier=TechSupply, name=Mouse, keywords=peripheral, stock=200, price=25.5, available=true, brand=TechCorp}
+3. [1] TestProduct{available=false, rating=3.5, keywords=typing, stock=0, supplier=KeySupply, category=accessories, brand=KeyTech, name=Keyboard, price=75}
+4. [1] TestProduct{name=Monitor, available=true, brand=ScreenPro, price=299.99, keywords=display, rating=4.8, stock=30, supplier=ScreenSupply, category=electronics}
+5. [1] TestProduct{price=8.5, keywords=obsolete, stock=0, name=OldKeyboard, rating=2, category=accessories, available=false, brand=OldTech, supplier=OldSupply}
+6. [1] TestProduct{stock=75, supplier=AudioSupply, name=Headphones, category=audio, price=150, rating=4.6, available=true, keywords=sound, brand=AudioMax}
+7. [1] TestProduct{rating=3.8, brand=CamTech, stock=25, supplier=CamSupply, name=Webcam, available=true, keywords=video, category=electronics, price=89.99}
 
 **Total**: 7 faits soumis
 
@@ -171,16 +171,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{salary=45000, active=true, score=8.5, tags=junior, status=active, department=sales, level=2, name=Alice, age=25}
-2. [1] TestPerson{score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true}
-3. [1] TestPerson{salary=0, level=1, score=6, department=hr, age=16, status=inactive, active=false, tags=intern, name=Charlie}
-4. [1] TestPerson{salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active, department=qa, level=1}
-7. [1] TestPerson{active=true, tags=executive, status=active, level=9, age=65, department=management, salary=95000, name=Grace, score=10}
-8. [1] TestPerson{salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive, department=support}
-9. [1] TestPerson{status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true, score=8.7, tags=senior}
-10. [1] TestPerson{salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true, age=22, department=intern}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{tags=senior, active=true, age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering}
+3. [1] TestPerson{name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr, tags=intern}
+4. [1] TestPerson{active=true, status=active, department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager}
+5. [1] TestPerson{name=Eve, salary=55000, score=8, age=30, active=false, status=inactive, department=sales, tags=employee, level=3}
+6. [1] TestPerson{department=qa, name=Frank, active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0}
+7. [1] TestPerson{salary=95000, tags=executive, status=active, department=management, level=9, age=65, active=true, name=Grace, score=10}
+8. [1] TestPerson{department=support, tags=junior, salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{active=true, department=intern, tags=temp, salary=28000, score=6.5, status=active, level=1, name=X, age=22}
 
 **Total**: 10 faits soumis
 
@@ -203,16 +203,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001, discount=50, region=north}
-2. [1] TestOrder{customer_id=P002, product_id=PROD002, priority=low, amount=1, total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south}
-3. [1] TestOrder{amount=3, total=225, date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15}
-4. [1] TestOrder{status=delivered, priority=normal, region=east, product_id=PROD004, amount=1, discount=0, customer_id=P004, total=299.99, date=2024-02-05}
-5. [1] TestOrder{priority=high, customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south}
-6. [1] TestOrder{discount=0, product_id=PROD005, total=999.98, priority=low, amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled}
-7. [1] TestOrder{customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent, amount=4}
-8. [1] TestOrder{amount=10, total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002}
-9. [1] TestOrder{discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10, priority=low}
-10. [1] TestOrder{region=east, discount=0, total=75000, priority=urgent, product_id=PROD001, amount=1, customer_id=P006, date=2024-03-15, status=refunded}
+1. [1] TestOrder{status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal, region=north, product_id=PROD001}
+2. [1] TestOrder{status=confirmed, priority=low, region=south, amount=1, total=25.5, date=2024-01-20, customer_id=P002, product_id=PROD002, discount=0}
+3. [1] TestOrder{product_id=PROD003, customer_id=P001, status=shipped, region=north, amount=3, total=225, date=2024-02-01, priority=high, discount=15}
+4. [1] TestOrder{region=east, customer_id=P004, amount=1, status=delivered, discount=0, total=299.99, date=2024-02-05, priority=normal, product_id=PROD004}
+5. [1] TestOrder{region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1, status=confirmed, product_id=PROD001, priority=high, discount=100}
+6. [1] TestOrder{date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98}
+7. [1] TestOrder{status=shipped, amount=4, customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006}
+8. [1] TestOrder{amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south, customer_id=P010}
+9. [1] TestOrder{customer_id=P001, amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10, status=completed}
+10. [1] TestOrder{product_id=PROD001, total=75000, status=refunded, discount=0, amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006}
 
 **Total**: 10 faits soumis
 
@@ -235,16 +235,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{active=true, score=8.5, tags=junior, status=active, department=sales, level=2, name=Alice, age=25, salary=45000}
-2. [1] TestPerson{active=true, score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob}
-3. [1] TestPerson{age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr}
-4. [1] TestPerson{salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{score=0, tags=test, status=active, department=qa, level=1, name=Frank, salary=-5000, age=0, active=true}
-7. [1] TestPerson{active=true, tags=executive, status=active, level=9, age=65, department=management, salary=95000, name=Grace, score=10}
-8. [1] TestPerson{department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive}
-9. [1] TestPerson{active=true, score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6}
-10. [1] TestPerson{age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{salary=75000, department=engineering, tags=senior, active=true, age=35, score=9.2, status=active, level=5, name=Bob}
+3. [1] TestPerson{tags=intern, name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{score=0, department=qa, name=Frank, active=true, level=1, age=0, salary=-5000, tags=test, status=active}
+7. [1] TestPerson{active=true, name=Grace, score=10, salary=95000, tags=executive, status=active, department=management, level=9, age=65}
+8. [1] TestPerson{name=Henry, age=18, department=support, tags=junior, salary=25000, active=false, score=5.5, level=1, status=inactive}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{score=6.5, status=active, level=1, name=X, age=22, active=true, department=intern, tags=temp, salary=28000}
 
 **Total**: 10 faits soumis
 
@@ -267,16 +267,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{status=pending, product_id=PROD001, discount=50, region=north, amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15}
-2. [1] TestOrder{amount=1, total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low}
-3. [1] TestOrder{amount=3, total=225, date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15}
-4. [1] TestOrder{amount=1, discount=0, customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004}
-5. [1] TestOrder{priority=high, customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south}
-6. [1] TestOrder{total=999.98, priority=low, amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005}
-7. [1] TestOrder{customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent, amount=4}
-8. [1] TestOrder{total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10}
-9. [1] TestOrder{customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10, priority=low, discount=10}
-10. [1] TestOrder{amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000, priority=urgent, product_id=PROD001}
+1. [1] TestOrder{product_id=PROD001, status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal, region=north}
+2. [1] TestOrder{date=2024-01-20, customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south, amount=1, total=25.5}
+3. [1] TestOrder{amount=3, total=225, date=2024-02-01, priority=high, discount=15, product_id=PROD003, customer_id=P001, status=shipped, region=north}
+4. [1] TestOrder{status=delivered, discount=0, total=299.99, date=2024-02-05, priority=normal, product_id=PROD004, region=east, customer_id=P004, amount=1}
+5. [1] TestOrder{status=confirmed, product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1}
+6. [1] TestOrder{discount=0, region=west, product_id=PROD005, total=999.98, date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2}
+7. [1] TestOrder{total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped, amount=4, customer_id=P007}
+8. [1] TestOrder{customer_id=P010, amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south}
+9. [1] TestOrder{amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10, status=completed, customer_id=P001}
+10. [1] TestOrder{status=refunded, discount=0, amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006, product_id=PROD001, total=75000}
 
 **Total**: 10 faits soumis
 
@@ -299,16 +299,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{status=active, department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior}
-2. [1] TestPerson{name=Bob, active=true, score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000}
-3. [1] TestPerson{status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr, age=16}
-4. [1] TestPerson{salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{tags=test, status=active, department=qa, level=1, name=Frank, salary=-5000, age=0, active=true, score=0}
-7. [1] TestPerson{active=true, tags=executive, status=active, level=9, age=65, department=management, salary=95000, name=Grace, score=10}
-8. [1] TestPerson{department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive}
-9. [1] TestPerson{score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true}
-10. [1] TestPerson{level=1, name=X, score=6.5, tags=temp, active=true, age=22, department=intern, salary=28000, status=active}
+1. [1] TestPerson{department=sales, tags=junior, salary=45000, status=active, name=Alice, score=8.5, level=2, age=25, active=true}
+2. [1] TestPerson{name=Bob, salary=75000, department=engineering, tags=senior, active=true, age=35, score=9.2, status=active, level=5}
+3. [1] TestPerson{name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr, tags=intern}
+4. [1] TestPerson{name=Diana, tags=manager, active=true, status=active, department=marketing, age=45, salary=85000, score=7.8, level=7}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank, active=true, level=1, age=0}
+7. [1] TestPerson{age=65, active=true, name=Grace, score=10, salary=95000, tags=executive, status=active, department=management, level=9}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{name=Ivy, score=8.7, active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40}
+10. [1] TestPerson{department=intern, tags=temp, salary=28000, score=6.5, status=active, level=1, name=X, age=22, active=true}
 
 **Total**: 10 faits soumis
 
@@ -331,13 +331,13 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestProduct{rating=4.5, keywords=computer, supplier=TechSupply, available=true, category=electronics, brand=TechCorp, stock=50, name=Laptop, price=999.99}
-2. [1] TestProduct{stock=200, keywords=peripheral, category=accessories, rating=4, brand=TechCorp, supplier=TechSupply, name=Mouse, price=25.5, available=true}
-3. [1] TestProduct{keywords=typing, brand=KeyTech, category=accessories, available=false, stock=0, name=Keyboard, price=75, rating=3.5, supplier=KeySupply}
-4. [1] TestProduct{rating=4.8, brand=ScreenPro, stock=30, category=electronics, price=299.99, keywords=display, supplier=ScreenSupply, name=Monitor, available=true}
-5. [1] TestProduct{supplier=OldSupply, price=8.5, rating=2, available=false, name=OldKeyboard, keywords=obsolete, stock=0, category=accessories, brand=OldTech}
-6. [1] TestProduct{keywords=sound, stock=75, category=audio, price=150, rating=4.6, brand=AudioMax, supplier=AudioSupply, name=Headphones, available=true}
-7. [1] TestProduct{name=Webcam, price=89.99, available=true, brand=CamTech, supplier=CamSupply, rating=3.8, category=electronics, stock=25, keywords=video}
+1. [1] TestProduct{supplier=TechSupply, brand=TechCorp, stock=50, rating=4.5, name=Laptop, category=electronics, price=999.99, available=true, keywords=computer}
+2. [1] TestProduct{keywords=peripheral, stock=200, price=25.5, available=true, brand=TechCorp, category=accessories, rating=4, supplier=TechSupply, name=Mouse}
+3. [1] TestProduct{available=false, rating=3.5, keywords=typing, stock=0, supplier=KeySupply, category=accessories, brand=KeyTech, name=Keyboard, price=75}
+4. [1] TestProduct{name=Monitor, available=true, brand=ScreenPro, price=299.99, keywords=display, rating=4.8, stock=30, supplier=ScreenSupply, category=electronics}
+5. [1] TestProduct{category=accessories, available=false, brand=OldTech, supplier=OldSupply, price=8.5, keywords=obsolete, stock=0, name=OldKeyboard, rating=2}
+6. [1] TestProduct{price=150, rating=4.6, available=true, keywords=sound, brand=AudioMax, stock=75, supplier=AudioSupply, name=Headphones, category=audio}
+7. [1] TestProduct{price=89.99, rating=3.8, brand=CamTech, stock=25, supplier=CamSupply, name=Webcam, available=true, keywords=video, category=electronics}
 
 **Total**: 7 faits soumis
 
@@ -360,16 +360,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true, score=9.2}
-3. [1] TestPerson{age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr}
-4. [1] TestPerson{age=45, status=active, name=Diana, tags=manager, level=7, salary=85000, active=true, score=7.8, department=marketing}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active, department=qa, level=1}
-7. [1] TestPerson{salary=95000, name=Grace, score=10, active=true, tags=executive, status=active, level=9, age=65, department=management}
-8. [1] TestPerson{salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive, department=support}
-9. [1] TestPerson{status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true, score=8.7, tags=senior}
-10. [1] TestPerson{age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior, active=true}
+3. [1] TestPerson{salary=0, active=false, level=1, age=16, department=hr, tags=intern, name=Charlie, score=6, status=inactive}
+4. [1] TestPerson{tags=manager, active=true, status=active, department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana}
+5. [1] TestPerson{tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false, status=inactive, department=sales}
+6. [1] TestPerson{age=0, salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank, active=true, level=1}
+7. [1] TestPerson{status=active, department=management, level=9, age=65, active=true, name=Grace, score=10, salary=95000, tags=executive}
+8. [1] TestPerson{score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior, salary=25000, active=false}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{level=1, name=X, age=22, active=true, department=intern, tags=temp, salary=28000, score=6.5, status=active}
 
 **Total**: 10 faits soumis
 
@@ -392,16 +392,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{discount=50, region=north, amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001}
-2. [1] TestOrder{discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low, amount=1, total=25.5, date=2024-01-20}
-3. [1] TestOrder{date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15, amount=3, total=225}
-4. [1] TestOrder{total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004, amount=1, discount=0, customer_id=P004}
-5. [1] TestOrder{priority=high, customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south}
-6. [1] TestOrder{region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005, total=999.98, priority=low, amount=2}
-7. [1] TestOrder{customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent, amount=4}
-8. [1] TestOrder{total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10}
-9. [1] TestOrder{date=2024-03-10, priority=low, discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north}
-10. [1] TestOrder{amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000, priority=urgent, product_id=PROD001}
+1. [1] TestOrder{priority=normal, region=north, product_id=PROD001, status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15}
+2. [1] TestOrder{customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south, amount=1, total=25.5, date=2024-01-20}
+3. [1] TestOrder{priority=high, discount=15, product_id=PROD003, customer_id=P001, status=shipped, region=north, amount=3, total=225, date=2024-02-01}
+4. [1] TestOrder{total=299.99, date=2024-02-05, priority=normal, product_id=PROD004, region=east, customer_id=P004, amount=1, status=delivered, discount=0}
+5. [1] TestOrder{date=2024-02-10, amount=1, status=confirmed, product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99}
+6. [1] TestOrder{date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98}
+7. [1] TestOrder{amount=4, customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped}
+8. [1] TestOrder{customer_id=P010, amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south}
+9. [1] TestOrder{amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10, status=completed, customer_id=P001}
+10. [1] TestOrder{priority=urgent, customer_id=P006, product_id=PROD001, total=75000, status=refunded, discount=0, amount=1, date=2024-03-15, region=east}
 
 **Total**: 10 faits soumis
 
@@ -424,26 +424,26 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{active=true, score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob}
-3. [1] TestPerson{name=Charlie, salary=0, level=1, score=6, department=hr, age=16, status=inactive, active=false, tags=intern}
-4. [1] TestPerson{salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{department=qa, level=1, name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active}
-7. [1] TestPerson{department=management, salary=95000, name=Grace, score=10, active=true, tags=executive, status=active, level=9, age=65}
-8. [1] TestPerson{salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5, status=inactive, department=support}
-9. [1] TestPerson{level=6, active=true, score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000}
-10. [1] TestPerson{age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true}
-11. [1] TestOrder{discount=50, region=north, amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001}
-12. [1] TestOrder{total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low, amount=1}
-13. [1] TestOrder{priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15, amount=3, total=225, date=2024-02-01, status=shipped}
-14. [1] TestOrder{customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004, amount=1, discount=0}
-15. [1] TestOrder{date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south, priority=high, customer_id=P002, amount=1, total=999.99}
-16. [1] TestOrder{discount=0, product_id=PROD005, total=999.98, priority=low, amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled}
-17. [1] TestOrder{amount=4, customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent}
-18. [1] TestOrder{total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10}
-19. [1] TestOrder{discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10, priority=low}
-20. [1] TestOrder{amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000, priority=urgent, product_id=PROD001}
+1. [1] TestPerson{level=2, age=25, active=true, department=sales, tags=junior, salary=45000, status=active, name=Alice, score=8.5}
+2. [1] TestPerson{active=true, age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior}
+3. [1] TestPerson{status=inactive, salary=0, active=false, level=1, age=16, department=hr, tags=intern, name=Charlie, score=6}
+4. [1] TestPerson{level=7, name=Diana, tags=manager, active=true, status=active, department=marketing, age=45, salary=85000, score=7.8}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank}
+7. [1] TestPerson{salary=95000, tags=executive, status=active, department=management, level=9, age=65, active=true, name=Grace, score=10}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{level=1, name=X, age=22, active=true, department=intern, tags=temp, salary=28000, score=6.5, status=active}
+11. [1] TestOrder{region=north, product_id=PROD001, status=pending, discount=50, customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal}
+12. [1] TestOrder{customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south, amount=1, total=25.5, date=2024-01-20}
+13. [1] TestOrder{priority=high, discount=15, product_id=PROD003, customer_id=P001, status=shipped, region=north, amount=3, total=225, date=2024-02-01}
+14. [1] TestOrder{total=299.99, date=2024-02-05, priority=normal, product_id=PROD004, region=east, customer_id=P004, amount=1, status=delivered, discount=0}
+15. [1] TestOrder{date=2024-02-10, amount=1, status=confirmed, product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99}
+16. [1] TestOrder{date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98}
+17. [1] TestOrder{amount=4, customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped}
+18. [1] TestOrder{status=pending, product_id=PROD002, priority=normal, region=south, customer_id=P010, amount=10, total=255, date=2024-03-05, discount=0}
+19. [1] TestOrder{discount=10, total=89.99, date=2024-03-10, status=completed, customer_id=P001, amount=1, region=north, product_id=PROD007, priority=low}
+20. [1] TestOrder{amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006, product_id=PROD001, total=75000, status=refunded, discount=0}
 
 **Total**: 20 faits soumis
 
@@ -466,16 +466,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{tags=junior, status=active, department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5}
-2. [1] TestPerson{tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true, score=9.2}
-3. [1] TestPerson{status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr, age=16}
-4. [1] TestPerson{score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7, salary=85000, active=true}
-5. [1] TestPerson{tags=employee, active=false, score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000}
-6. [1] TestPerson{tags=test, status=active, department=qa, level=1, name=Frank, salary=-5000, age=0, active=true, score=0}
-7. [1] TestPerson{active=true, tags=executive, status=active, level=9, age=65, department=management, salary=95000, name=Grace, score=10}
-8. [1] TestPerson{score=5.5, status=inactive, department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false}
-9. [1] TestPerson{active=true, score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6}
-10. [1] TestPerson{salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true, age=22, department=intern}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{level=5, name=Bob, salary=75000, department=engineering, tags=senior, active=true, age=35, score=9.2, status=active}
+3. [1] TestPerson{tags=intern, name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false, status=inactive, department=sales}
+6. [1] TestPerson{active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank}
+7. [1] TestPerson{name=Grace, score=10, salary=95000, tags=executive, status=active, department=management, level=9, age=65, active=true}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7, active=true, tags=senior, department=engineering}
+10. [1] TestPerson{level=1, name=X, age=22, active=true, department=intern, tags=temp, salary=28000, score=6.5, status=active}
 
 **Total**: 10 faits soumis
 
@@ -498,26 +498,26 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{age=25, salary=45000, active=true, score=8.5, tags=junior, status=active, department=sales, level=2, name=Alice}
-2. [1] TestPerson{tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true, score=9.2}
-3. [1] TestPerson{department=hr, age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6}
-4. [1] TestPerson{status=active, name=Diana, tags=manager, level=7, salary=85000, active=true, score=7.8, department=marketing, age=45}
-5. [1] TestPerson{tags=employee, active=false, score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000}
-6. [1] TestPerson{age=0, active=true, score=0, tags=test, status=active, department=qa, level=1, name=Frank, salary=-5000}
-7. [1] TestPerson{level=9, age=65, department=management, salary=95000, name=Grace, score=10, active=true, tags=executive, status=active}
-8. [1] TestPerson{name=Henry, age=18, active=false, score=5.5, status=inactive, department=support, salary=25000, tags=junior, level=1}
-9. [1] TestPerson{salary=68000, level=6, active=true, score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering}
-10. [1] TestPerson{age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true}
-11. [1] TestOrder{amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001, discount=50, region=north}
-12. [1] TestOrder{amount=1, total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low}
-13. [1] TestOrder{discount=15, amount=3, total=225, date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001}
-14. [1] TestOrder{customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east, product_id=PROD004, amount=1, discount=0}
-15. [1] TestOrder{priority=high, customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south}
-16. [1] TestOrder{total=999.98, priority=low, amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005}
-17. [1] TestOrder{product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50, total=600, priority=urgent, amount=4, customer_id=P007}
-18. [1] TestOrder{discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10, total=255, date=2024-03-05, priority=normal}
-19. [1] TestOrder{amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10, priority=low, discount=10, customer_id=P001}
-20. [1] TestOrder{priority=urgent, product_id=PROD001, amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior, active=true}
+3. [1] TestPerson{salary=0, active=false, level=1, age=16, department=hr, tags=intern, name=Charlie, score=6, status=inactive}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{name=Frank, active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa}
+7. [1] TestPerson{department=management, level=9, age=65, active=true, name=Grace, score=10, salary=95000, tags=executive, status=active}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7, active=true, tags=senior}
+10. [1] TestPerson{tags=temp, salary=28000, score=6.5, status=active, level=1, name=X, age=22, active=true, department=intern}
+11. [1] TestOrder{amount=2, total=1999.98, date=2024-01-15, priority=normal, region=north, product_id=PROD001, status=pending, discount=50, customer_id=P001}
+12. [1] TestOrder{date=2024-01-20, customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south, amount=1, total=25.5}
+13. [1] TestOrder{date=2024-02-01, priority=high, discount=15, product_id=PROD003, customer_id=P001, status=shipped, region=north, amount=3, total=225}
+14. [1] TestOrder{total=299.99, date=2024-02-05, priority=normal, product_id=PROD004, region=east, customer_id=P004, amount=1, status=delivered, discount=0}
+15. [1] TestOrder{status=confirmed, product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1}
+16. [1] TestOrder{date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98}
+17. [1] TestOrder{customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01, product_id=PROD006, status=shipped, amount=4}
+18. [1] TestOrder{customer_id=P010, amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south}
+19. [1] TestOrder{status=completed, customer_id=P001, amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10}
+20. [1] TestOrder{discount=0, amount=1, date=2024-03-15, region=east, priority=urgent, customer_id=P006, product_id=PROD001, total=75000, status=refunded}
 
 **Total**: 20 faits soumis
 
@@ -540,16 +540,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000, name=Bob, active=true}
-3. [1] TestPerson{level=1, score=6, department=hr, age=16, status=inactive, active=false, tags=intern, name=Charlie, salary=0}
-4. [1] TestPerson{salary=85000, active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active, department=qa, level=1}
-7. [1] TestPerson{department=management, salary=95000, name=Grace, score=10, active=true, tags=executive, status=active, level=9, age=65}
-8. [1] TestPerson{score=5.5, status=inactive, department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false}
-9. [1] TestPerson{score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true}
-10. [1] TestPerson{age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp, active=true}
+1. [1] TestPerson{name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000, status=active}
+2. [1] TestPerson{active=true, age=35, score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior}
+3. [1] TestPerson{score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr, tags=intern, name=Charlie}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000, score=8, age=30, active=false}
+6. [1] TestPerson{active=true, level=1, age=0, salary=-5000, tags=test, status=active, score=0, department=qa, name=Frank}
+7. [1] TestPerson{age=65, active=true, name=Grace, score=10, salary=95000, tags=executive, status=active, department=management, level=9}
+8. [1] TestPerson{salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry, age=18, department=support, tags=junior}
+9. [1] TestPerson{salary=68000, status=active, age=40, name=Ivy, score=8.7, active=true, tags=senior, department=engineering, level=6}
+10. [1] TestPerson{tags=temp, salary=28000, score=6.5, status=active, level=1, name=X, age=22, active=true, department=intern}
 
 **Total**: 10 faits soumis
 
@@ -572,16 +572,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestOrder{discount=50, region=north, amount=2, total=1999.98, priority=normal, customer_id=P001, date=2024-01-15, status=pending, product_id=PROD001}
-2. [1] TestOrder{amount=1, total=25.5, date=2024-01-20, discount=0, status=confirmed, region=south, customer_id=P002, product_id=PROD002, priority=low}
-3. [1] TestOrder{amount=3, total=225, date=2024-02-01, status=shipped, priority=high, product_id=PROD003, region=north, customer_id=P001, discount=15}
-4. [1] TestOrder{product_id=PROD004, amount=1, discount=0, customer_id=P004, total=299.99, date=2024-02-05, status=delivered, priority=normal, region=east}
-5. [1] TestOrder{customer_id=P002, amount=1, total=999.99, date=2024-02-10, product_id=PROD001, status=confirmed, discount=100, region=south, priority=high}
-6. [1] TestOrder{amount=2, region=west, customer_id=P005, date=2024-02-15, status=cancelled, discount=0, product_id=PROD005, total=999.98, priority=low}
-7. [1] TestOrder{total=600, priority=urgent, amount=4, customer_id=P007, product_id=PROD006, date=2024-03-01, status=shipped, region=north, discount=50}
-8. [1] TestOrder{total=255, date=2024-03-05, priority=normal, discount=0, status=pending, customer_id=P010, region=south, product_id=PROD002, amount=10}
-9. [1] TestOrder{priority=low, discount=10, customer_id=P001, amount=1, total=89.99, product_id=PROD007, status=completed, region=north, date=2024-03-10}
-10. [1] TestOrder{priority=urgent, product_id=PROD001, amount=1, customer_id=P006, date=2024-03-15, status=refunded, region=east, discount=0, total=75000}
+1. [1] TestOrder{customer_id=P001, amount=2, total=1999.98, date=2024-01-15, priority=normal, region=north, product_id=PROD001, status=pending, discount=50}
+2. [1] TestOrder{amount=1, total=25.5, date=2024-01-20, customer_id=P002, product_id=PROD002, discount=0, status=confirmed, priority=low, region=south}
+3. [1] TestOrder{status=shipped, region=north, amount=3, total=225, date=2024-02-01, priority=high, discount=15, product_id=PROD003, customer_id=P001}
+4. [1] TestOrder{product_id=PROD004, region=east, customer_id=P004, amount=1, status=delivered, discount=0, total=299.99, date=2024-02-05, priority=normal}
+5. [1] TestOrder{product_id=PROD001, priority=high, discount=100, region=south, customer_id=P002, total=999.99, date=2024-02-10, amount=1, status=confirmed}
+6. [1] TestOrder{date=2024-02-15, customer_id=P005, status=cancelled, priority=low, amount=2, discount=0, region=west, product_id=PROD005, total=999.98}
+7. [1] TestOrder{product_id=PROD006, status=shipped, amount=4, customer_id=P007, total=600, priority=urgent, discount=50, region=north, date=2024-03-01}
+8. [1] TestOrder{amount=10, total=255, date=2024-03-05, discount=0, status=pending, product_id=PROD002, priority=normal, region=south, customer_id=P010}
+9. [1] TestOrder{amount=1, region=north, product_id=PROD007, priority=low, discount=10, total=89.99, date=2024-03-10, status=completed, customer_id=P001}
+10. [1] TestOrder{priority=urgent, customer_id=P006, product_id=PROD001, total=75000, status=refunded, discount=0, amount=1, date=2024-03-15, region=east}
 
 **Total**: 10 faits soumis
 
@@ -604,16 +604,16 @@ Aucun résultat (règle non déclenchée)
 
 ### 📥 FAITS SOUMIS
 
-1. [1] TestPerson{department=sales, level=2, name=Alice, age=25, salary=45000, active=true, score=8.5, tags=junior, status=active}
-2. [1] TestPerson{name=Bob, active=true, score=9.2, tags=senior, status=active, department=engineering, level=5, age=35, salary=75000}
-3. [1] TestPerson{status=inactive, active=false, tags=intern, name=Charlie, salary=0, level=1, score=6, department=hr, age=16}
-4. [1] TestPerson{active=true, score=7.8, department=marketing, age=45, status=active, name=Diana, tags=manager, level=7, salary=85000}
-5. [1] TestPerson{score=8, status=inactive, department=sales, level=3, name=Eve, age=30, salary=55000, tags=employee, active=false}
-6. [1] TestPerson{department=qa, level=1, name=Frank, salary=-5000, age=0, active=true, score=0, tags=test, status=active}
-7. [1] TestPerson{tags=executive, status=active, level=9, age=65, department=management, salary=95000, name=Grace, score=10, active=true}
-8. [1] TestPerson{status=inactive, department=support, salary=25000, tags=junior, level=1, name=Henry, age=18, active=false, score=5.5}
-9. [1] TestPerson{score=8.7, tags=senior, status=active, name=Ivy, age=40, department=engineering, salary=68000, level=6, active=true}
-10. [1] TestPerson{active=true, age=22, department=intern, salary=28000, status=active, level=1, name=X, score=6.5, tags=temp}
+1. [1] TestPerson{status=active, name=Alice, score=8.5, level=2, age=25, active=true, department=sales, tags=junior, salary=45000}
+2. [1] TestPerson{score=9.2, status=active, level=5, name=Bob, salary=75000, department=engineering, tags=senior, active=true, age=35}
+3. [1] TestPerson{tags=intern, name=Charlie, score=6, status=inactive, salary=0, active=false, level=1, age=16, department=hr}
+4. [1] TestPerson{department=marketing, age=45, salary=85000, score=7.8, level=7, name=Diana, tags=manager, active=true, status=active}
+5. [1] TestPerson{score=8, age=30, active=false, status=inactive, department=sales, tags=employee, level=3, name=Eve, salary=55000}
+6. [1] TestPerson{score=0, department=qa, name=Frank, active=true, level=1, age=0, salary=-5000, tags=test, status=active}
+7. [1] TestPerson{level=9, age=65, active=true, name=Grace, score=10, salary=95000, tags=executive, status=active, department=management}
+8. [1] TestPerson{age=18, department=support, tags=junior, salary=25000, active=false, score=5.5, level=1, status=inactive, name=Henry}
+9. [1] TestPerson{active=true, tags=senior, department=engineering, level=6, salary=68000, status=active, age=40, name=Ivy, score=8.7}
+10. [1] TestPerson{department=intern, tags=temp, salary=28000, score=6.5, status=active, level=1, name=X, age=22, active=true}
 
 **Total**: 10 faits soumis
 

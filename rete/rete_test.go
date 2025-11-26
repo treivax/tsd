@@ -426,12 +426,12 @@ func TestIncrementalPropagation(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile("test/incremental_propagation.constraint", storage)
+	network, err := pipeline.BuildNetworkFromConstraintFile("test/incremental_propagation.tsd", storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
 
-	t.Logf("✅ Réseau RETE construit depuis incremental_propagation.constraint")
+	t.Logf("✅ Réseau RETE construit depuis incremental_propagation.tsd")
 	t.Logf("   TypeNodes: %d", len(network.TypeNodes))
 	t.Logf("   AlphaNodes: %d", len(network.AlphaNodes))
 	t.Logf("   BetaNodes: %d", len(network.BetaNodes))

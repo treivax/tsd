@@ -1,0 +1,8 @@
+// Test condition string négative
+type User : <id: string, name: string, role: string>
+
+rule r1 : {u: User} / NOT(u.role == "admin") ==> non_admin_user_found(u.id, u.name)
+
+User(id:U001, name:Alice, role:admin)
+User(id:U002, name:Bob, role:user)
+User(id:U003, name:Charlie, role:admin)

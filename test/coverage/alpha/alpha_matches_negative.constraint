@@ -1,4 +1,0 @@
-// Test opérateur MATCHES (regex) - négation
-type Code : <id: string, value: string, active: bool>
-
-rule r1 : {c: Code} / NOT(c.value MATCHES "CODE[0-9]+") ==> invalid_code_found(c.id, c.value)

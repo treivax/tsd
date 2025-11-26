@@ -1,4 +1,0 @@
-// Test condition string positive
-type User : <id: string, name: string, role: string>
-
-rule r1 : {u: User} / u.role == "admin" ==> admin_user_found(u.id, u.name)

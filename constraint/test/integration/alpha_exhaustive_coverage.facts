@@ -1,8 +1,0 @@
-// Simplified test data for alpha exhaustive coverage
-
-TestPerson(id:"P001", name:"Alice", age:25, salary:45000, active:true, score:87.5, tags:"admin", status:"ACTIVE")
-TestPerson(id:"P002", name:"Bob", age:30, salary:55000, active:true, score:92.0, tags:"user", status:"ACTIVE")
-TestPerson(id:"P003", name:"Charlie", age:0, salary:-1000, active:false, score:0.0, tags:"", status:"DISABLED")
-
-TestProduct(id:"PROD001", name:"Laptop", price:899.99, category:"Electronics", available:true, rating:4.5, keywords:"computer", brand:"TechCorp")
-TestProduct(id:"PROD002", name:"Book", price:15.99, category:"Books", available:true, rating:4.8, keywords:"reading", brand:"Publisher")

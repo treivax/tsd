@@ -1,0 +1,8 @@
+// Test opérateur LIKE (motif) - négation
+type Email : <id: string, address: string, verified: bool>
+
+rule r1 : {e: Email} / NOT(e.address LIKE "%@company.com") ==> external_email_found(e.id, e.address)
+
+Email(id:"E001", address:"john@company.com", verified:true)
+Email(id:"E002", address:"jane@external.org", verified:false)
+Email(id:"E003", address:"user@other.net", verified:true)

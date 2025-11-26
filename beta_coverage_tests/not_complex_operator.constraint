@@ -1,7 +1,0 @@
-// Test opérateur NOT complexe dans nœuds beta
-type Employee : <id: string, name: string, department: string, active: bool>
-type Project : <id: string, lead_id: string, status: string, budget: number>
-
-rule r1 : {e: Employee, p: Project} / e.id == p.lead_id AND e.active == true AND NOT (p.status == "cancelled") ==> active_project_lead(e.id, p.id)
-rule r2 : {e: Employee, p: Project} / e.id == p.lead_id AND NOT (e.active == false OR p.budget < 1000) AND p.status == "active" ==> qualified_project_lead(e.id, p.id)
-rule r3 : {e: Employee, p: Project} / e.id == p.lead_id AND e.active == true AND NOT (e.department IN ["temp", "intern"]) ==> permanent_project_lead(e.id, p.id)

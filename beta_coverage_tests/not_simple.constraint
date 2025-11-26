@@ -1,4 +1,0 @@
-// Test négation simple
-type Person : <id: string, name: string, active: bool>
-
-rule r1 : {p: Person} / NOT (p.active == false) ==> active_person(p.id)

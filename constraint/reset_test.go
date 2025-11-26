@@ -15,7 +15,7 @@ func TestResetInstruction(t *testing.T) {
 	// Test 1: Parse a reset instruction
 	t.Run("ParseResetInstruction", func(t *testing.T) {
 		input := []byte("reset")
-		result, err := Parse("test_reset.constraint", input)
+		result, err := Parse("test_reset.tsd", input)
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing: %v", err)
 		}
@@ -45,7 +45,7 @@ type User : <name: string, age: number>
 
 reset
 `)
-		result, err := Parse("test_reset_complete.constraint", input)
+		result, err := Parse("test_reset_complete.tsd", input)
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing: %v", err)
 		}
@@ -77,7 +77,7 @@ type Order : <id: number>
 
 reset
 `)
-		result, err := Parse("test_multiple_resets.constraint", input)
+		result, err := Parse("test_multiple_resets.tsd", input)
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing: %v", err)
 		}
@@ -121,7 +121,7 @@ func TestProgramStateReset(t *testing.T) {
 			TypeName: "User",
 		})
 
-		ps.FilesParsed = append(ps.FilesParsed, "test.constraint")
+		ps.FilesParsed = append(ps.FilesParsed, "test.tsd")
 
 		ps.Errors = append(ps.Errors, ValidationError{
 			Type:    "test",
@@ -199,7 +199,7 @@ func TestProgramStateReset(t *testing.T) {
 		ps.Types["Test"] = &TypeDefinition{Name: "Test"}
 		ps.Rules = append(ps.Rules, &Expression{Type: "expression"})
 		ps.Facts = append(ps.Facts, &Fact{Type: "fact"})
-		ps.FilesParsed = append(ps.FilesParsed, "test.constraint")
+		ps.FilesParsed = append(ps.FilesParsed, "test.tsd")
 		ps.Errors = append(ps.Errors, ValidationError{Type: "test"})
 
 		if ps.Types == nil {
@@ -233,7 +233,7 @@ func TestIterativeParserReset(t *testing.T) {
 		content := `
 type User : <name: string, age: number>
 `
-		err := parser.ParseContent(content, "test.constraint")
+		err := parser.ParseContent(content, "test.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing: %v", err)
 		}
@@ -268,7 +268,7 @@ type User : <name: string, age: number>
 
 		// Parse, reset, parse again
 		content1 := `type User : <name: string>`
-		err := parser.ParseContent(content1, "test1.constraint")
+		err := parser.ParseContent(content1, "test1.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing initial: %v", err)
 		}
@@ -276,7 +276,7 @@ type User : <name: string, age: number>
 		parser.Reset()
 
 		content2 := `type Order : <id: number>`
-		err = parser.ParseContent(content2, "test2.constraint")
+		err = parser.ParseContent(content2, "test2.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing après reset: %v", err)
 		}

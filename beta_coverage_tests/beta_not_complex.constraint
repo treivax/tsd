@@ -1,8 +1,0 @@
-// Test Beta with NOT - Simplified (Complex NOT+EXISTS not yet supported)
-type Student : <id: string, name: string, major: string, gpa: number>
-type Enrollment : <id: string, student_id: string, course_id: string, grade: string>
-type Course : <id: string, name: string, credits: number, difficulty: string>
-
-rule r1 : {s: Student} / s.gpa >= 3.5 ==> dean_list_candidate(s.id)
-rule r2 : {s: Student, c: Course} / s.major == "computer_science" AND c.difficulty != "advanced" ==> needs_advanced_courses(s.id)  
-rule r3 : {s: Student} / s.gpa >= 2.0 ==> good_standing(s.id)

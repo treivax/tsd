@@ -18,7 +18,7 @@ func TestRuleIdUniquenessIntegration(t *testing.T) {
 	// Test 1: Duplicate IDs in same file
 	t.Run("DuplicateInSameFile", func(t *testing.T) {
 		tempDir := t.TempDir()
-		file := filepath.Join(tempDir, "duplicate.constraint")
+		file := filepath.Join(tempDir, "duplicate.tsd")
 
 		content := `type Person : <id: string, age: number>
 
@@ -54,14 +54,14 @@ rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 	t.Run("DuplicateAcrossFiles", func(t *testing.T) {
 		tempDir := t.TempDir()
 
-		file1 := filepath.Join(tempDir, "file1.constraint")
+		file1 := filepath.Join(tempDir, "file1.tsd")
 		content1 := `type Person : <id: string, age: number>
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 
-		file2 := filepath.Join(tempDir, "file2.constraint")
+		file2 := filepath.Join(tempDir, "file2.tsd")
 		content2 := `rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 
-		file3 := filepath.Join(tempDir, "file3.constraint")
+		file3 := filepath.Join(tempDir, "file3.tsd")
 		content3 := `rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)
 rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 
@@ -120,12 +120,12 @@ rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 	t.Run("ResetAllowsReuse", func(t *testing.T) {
 		tempDir := t.TempDir()
 
-		file1 := filepath.Join(tempDir, "before_reset.constraint")
+		file1 := filepath.Join(tempDir, "before_reset.tsd")
 		content1 := `type Person : <id: string, age: number>
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 
-		file2 := filepath.Join(tempDir, "after_reset.constraint")
+		file2 := filepath.Join(tempDir, "after_reset.tsd")
 		content2 := `reset
 
 type Product : <id: string, price: number>
@@ -188,7 +188,7 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 	// Test 4: Multiple duplicates
 	t.Run("MultipleDuplicates", func(t *testing.T) {
 		tempDir := t.TempDir()
-		file := filepath.Join(tempDir, "multi_dup.constraint")
+		file := filepath.Join(tempDir, "multi_dup.tsd")
 
 		content := `type Person : <id: string, age: number>
 
@@ -289,7 +289,7 @@ func TestRuleIdValidationWithRealFiles(t *testing.T) {
 	t.Log("============================================")
 
 	// Test with the duplicate_rule_ids.constraint file if it exists
-	duplicateFile := "test/integration/duplicate_rule_ids.constraint"
+	duplicateFile := "test/integration/duplicate_rule_ids.tsd"
 	if _, err := os.Stat(duplicateFile); err == nil {
 		ps := NewProgramState()
 		err = ps.ParseAndMerge(duplicateFile)

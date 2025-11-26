@@ -1,6 +1,0 @@
-type Transaction : <id: string, amount: number, status: string>
-type Account : <id: string, balance: number, active: bool>
-
-rule r1 : {t: Transaction} / t.amount > 1000 ==> flag_large_transaction(t.id, t.amount)
-rule r2 : {t: Transaction} / t.status == "approved" ==> process_transaction(t.id)
-rule r3 : {a: Account} / a.active == true ==> monitor_account(a.id)

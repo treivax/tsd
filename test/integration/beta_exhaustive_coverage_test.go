@@ -19,8 +19,8 @@ func TestExhaustiveBetaCoverage(t *testing.T) {
 	helper := NewTestHelper()
 
 	// Chemins vers les fichiers de test exhaustif Beta
-	constraintFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "beta_exhaustive_coverage.constraint")
-	factsFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "beta_exhaustive_coverage.facts")
+	constraintFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "beta_exhaustive_coverage.tsd")
+	factsFile := filepath.Join(workspaceDir, "constraint", "test", "integration", "beta_exhaustive_coverage.tsd")
 
 	t.Logf("🔥 TEST COUVERTURE EXHAUSTIVE NOEUDS BETA")
 	t.Logf("============================================")
@@ -259,7 +259,7 @@ func TestExhaustiveBetaCoverage(t *testing.T) {
 	t.Logf("")
 	t.Logf("🎯 VALIDATIONS PIPELINE EXHAUSTIF BETA")
 	t.Logf("======================================")
-	t.Logf("✅ RÈGLE RESPECTÉE: Pipeline unique utilisé pour .constraint + .facts")
+	t.Logf("✅ RÈGLE RESPECTÉE: Pipeline unique utilisé pour .constraint + .tsd")
 	t.Logf("✅ RÈGLE RESPECTÉE: Tous types de nœuds Beta testés")
 	t.Logf("✅ RÈGLE RESPECTÉE: JoinNode avec tous opérateurs de jointure")
 	t.Logf("✅ RÈGLE RESPECTÉE: NotNode avec négations complètes")

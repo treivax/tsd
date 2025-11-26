@@ -1,4 +1,0 @@
-type Department : <id: string, name: string, budget: number>
-type Employee : <id: string, name: string, department: string, salary: number>
-
-rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3 ==> PRINT("Department ", d.name, " has >= 3 employees")
