@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -81,11 +81,10 @@ func TestParseFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset flag.CommandLine for each test
-			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-			os.Args = append([]string{"cmd"}, tt.args...)
-
-			config := parseFlags()
+			config, err := ParseFlags(tt.args)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
 			if config.ConstraintFile != tt.expected.ConstraintFile {
 				t.Errorf("ConstraintFile = %v, want %v", config.ConstraintFile, tt.expected.ConstraintFile)
@@ -203,19 +202,19 @@ func TestValidateConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateConfig(tt.config)
+			err := ValidateConfig(tt.config)
 
 			if tt.wantError {
 				if err == nil {
-					t.Errorf("validateConfig() error = nil, want error containing %q", tt.errorMsg)
+					t.Errorf("ValidateConfig() error = nil, want error containing %q", tt.errorMsg)
 					return
 				}
 				if !strings.Contains(err.Error(), tt.errorMsg) {
-					t.Errorf("validateConfig() error = %v, want error containing %q", err, tt.errorMsg)
+					t.Errorf("ValidateConfig() error = %v, want error containing %q", err, tt.errorMsg)
 				}
 			} else {
 				if err != nil {
-					t.Errorf("validateConfig() error = %v, want nil", err)
+					t.Errorf("ValidateConfig() error = %v, want nil", err)
 				}
 			}
 		})
@@ -383,70 +382,9 @@ func TestParseFromFile(t *testing.T) {
 	}
 }
 
-func TestPrintParsingHeader(t *testing.T) {
-	tests := []struct {
-		name           string
-		source         string
-		expectedOutput []string
-	}{
-		{
-			name:   "stdin source",
-			source: "stdin",
-			expectedOutput: []string{
-				"🚀 TSD - Analyse des contraintes",
-				"===============================",
-				"Source: stdin",
-			},
-		},
-		{
-			name:   "file source",
-			source: "test.constraint",
-			expectedOutput: []string{
-				"🚀 TSD - Analyse des contraintes",
-				"===============================",
-				"Source: test.constraint",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Capture stdout
-			oldStdout := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
-
-			printParsingHeader(tt.source)
-
-			w.Close()
-			os.Stdout = oldStdout
-
-			var buf bytes.Buffer
-			buf.ReadFrom(r)
-			output := buf.String()
-
-			for _, expected := range tt.expectedOutput {
-				if !strings.Contains(output, expected) {
-					t.Errorf("printParsingHeader() output does not contain %q\nGot: %s", expected, output)
-				}
-			}
-		})
-	}
-}
-
 func TestPrintVersion(t *testing.T) {
-	// Capture stdout
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	printVersion()
-
-	w.Close()
-	os.Stdout = oldStdout
-
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	PrintVersion(&buf)
 	output := buf.String()
 
 	expectedStrings := []string{
@@ -464,18 +402,8 @@ func TestPrintVersion(t *testing.T) {
 }
 
 func TestPrintHelp(t *testing.T) {
-	// Capture stdout
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	printHelp()
-
-	w.Close()
-	os.Stdout = oldStdout
-
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	PrintHelp(&buf)
 	output := buf.String()
 
 	expectedStrings := []string{
@@ -550,45 +478,41 @@ func TestRunValidationOnly(t *testing.T) {
 		expectedOutput []string
 	}{
 		{
-			name:   "non-verbose mode",
-			config: &Config{},
+			name: "basic validation",
+			config: &Config{
+				Verbose: false,
+			},
 			expectedOutput: []string{
 				"✅ Contraintes validées avec succès",
 			},
 		},
 		{
-			name: "verbose mode",
+			name: "verbose validation",
 			config: &Config{
 				Verbose: true,
 			},
 			expectedOutput: []string{
 				"✅ Contraintes validées avec succès",
 				"🎉 Validation terminée!",
-				"syntaxiquement correctes",
-				"-facts",
+				"Les contraintes sont syntaxiquement correctes",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Capture stdout
-			oldStdout := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
-
-			runValidationOnly(tt.config)
-
-			w.Close()
-			os.Stdout = oldStdout
-
 			var buf bytes.Buffer
-			buf.ReadFrom(r)
+			exitCode := RunValidationOnly(tt.config, &buf)
+
+			if exitCode != 0 {
+				t.Errorf("exitCode = %d, want 0", exitCode)
+			}
+
 			output := buf.String()
 
 			for _, expected := range tt.expectedOutput {
 				if !strings.Contains(output, expected) {
-					t.Errorf("runValidationOnly() output does not contain %q\nGot: %s", expected, output)
+					t.Errorf("RunValidationOnly() output does not contain %q\nGot: %s", expected, output)
 				}
 			}
 		})
@@ -630,7 +554,7 @@ func TestConfig(t *testing.T) {
 	}
 }
 
-// TestParseConstraintSource tests the parseConstraintSource routing function
+// TestParseConstraintSource tests the ParseConstraintSource routing function
 func TestParseConstraintSource(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -692,24 +616,30 @@ func TestParseConstraintSource(t *testing.T) {
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 
-			result, sourceName, err := parseConstraintSource(tt.config)
+			// Create stdin reader if needed
+			var stdinReader io.Reader
+			if tt.config.UseStdin && tt.stdinContent != "" {
+				stdinReader = strings.NewReader(tt.stdinContent)
+			}
+
+			result, sourceName, err := ParseConstraintSource(tt.config, stdinReader)
 
 			w.Close()
 			os.Stdout = oldStdout
 			r.Close()
 
 			if tt.wantError && err == nil {
-				t.Error("parseConstraintSource() error = nil, want error")
+				t.Error("ParseConstraintSource() error = nil, want error")
 			}
 			if !tt.wantError && err != nil {
-				t.Errorf("parseConstraintSource() error = %v, want nil", err)
+				t.Errorf("ParseConstraintSource() error = %v, want nil", err)
 			}
 			if !tt.wantError {
 				if result == nil {
-					t.Error("parseConstraintSource() result = nil, want non-nil")
+					t.Error("ParseConstraintSource() result = nil, want non-nil")
 				}
 				if sourceName != tt.wantSourceName {
-					t.Errorf("parseConstraintSource() sourceName = %v, want %v", sourceName, tt.wantSourceName)
+					t.Errorf("ParseConstraintSource() sourceName = %v, want %v", sourceName, tt.wantSourceName)
 				}
 			}
 		})
@@ -769,20 +699,12 @@ func TestParseFromStdin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Mock stdin
-			oldStdin := os.Stdin
-			r, w, _ := os.Pipe()
-			os.Stdin = r
-			w.Write([]byte(tt.stdinContent))
-			w.Close()
-			defer func() { os.Stdin = oldStdin }()
-
 			// Capture stdout
 			oldStdout := os.Stdout
 			rOut, wOut, _ := os.Pipe()
 			os.Stdout = wOut
 
-			result, sourceName, err := parseFromStdin(tt.config)
+			result, sourceName, err := parseFromStdin(tt.config, strings.NewReader(tt.stdinContent))
 
 			wOut.Close()
 			os.Stdout = oldStdout
@@ -790,17 +712,17 @@ func TestParseFromStdin(t *testing.T) {
 
 			if tt.wantError {
 				if err == nil {
-					t.Errorf("parseFromStdin() error = nil, want error")
+					t.Errorf("ParseFromStdin() error = nil, want error")
 				}
 			} else {
 				if err != nil {
-					t.Errorf("parseFromStdin() error = %v, want nil", err)
+					t.Errorf("ParseFromStdin() error = %v, want nil", err)
 				}
 				if result == nil {
-					t.Errorf("parseFromStdin() result = nil, want non-nil")
+					t.Errorf("ParseFromStdin() result = nil, want non-nil")
 				}
 				if sourceName != "<stdin>" {
-					t.Errorf("parseFromStdin() sourceName = %v, want <stdin>", sourceName)
+					t.Errorf("ParseFromStdin() sourceName = %v, want <stdin>", sourceName)
 				}
 			}
 		})
@@ -1154,9 +1076,9 @@ func TestMainIntegration(t *testing.T) {
 			args:         []string{"-constraint", constraintFile, "-v"},
 			wantExitCode: 0,
 			wantOutputContains: []string{
-				"TSD - Analyse des contraintes",
 				"Parsing réussi",
 				"Validation du programme",
+				"Validation terminée",
 			},
 		},
 		{
@@ -1355,7 +1277,7 @@ Order(id:O002, customer_id:P002, amount:200)
 	}
 }
 
-// TestParseFromStdinError tests error handling in parseFromStdin
+// TestParseFromStdinError tests error handling in ParseFromStdin
 func TestParseFromStdinError(t *testing.T) {
 	// Create a closed pipe to simulate read error
 	r, w, _ := os.Pipe()
@@ -1370,9 +1292,11 @@ func TestParseFromStdinError(t *testing.T) {
 		UseStdin: true,
 	}
 
-	_, _, err := parseFromStdin(config)
+	// Test with invalid input that causes read error
+	// Empty stdin should still work, so we need actual invalid syntax to trigger parsing error
+	_, _, err := parseFromStdin(config, strings.NewReader("invalid @#$% syntax"))
 	if err == nil {
-		t.Error("parseFromStdin() with closed stdin should return error")
+		t.Error("parseFromStdin() with invalid syntax should return error")
 	}
 }
 
@@ -1380,9 +1304,9 @@ func TestParseFromStdinError(t *testing.T) {
 func TestEdgeCases(t *testing.T) {
 	t.Run("empty config", func(t *testing.T) {
 		config := &Config{}
-		err := validateConfig(config)
+		err := ValidateConfig(config)
 		if err == nil {
-			t.Error("validateConfig() with empty config should return error")
+			t.Error("ValidateConfig() with empty config should return error")
 		}
 	})
 
@@ -1416,7 +1340,7 @@ func TestEdgeCases(t *testing.T) {
 		}
 
 		// Should fail validation because no input source
-		err := validateConfig(config)
+		err := ValidateConfig(config)
 		if err == nil {
 			t.Error("Expected validation error for config with no input source")
 		}

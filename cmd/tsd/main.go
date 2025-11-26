@@ -21,71 +21,93 @@ type Config struct {
 	ShowHelp       bool
 }
 
+// Result holds the execution result
+type Result struct {
+	Network     *rete.ReteNetwork
+	Facts       []*rete.Fact
+	Activations int
+	Error       error
+}
+
 func main() {
-	config := parseFlags()
+	exitCode := Run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
+	os.Exit(exitCode)
+}
+
+// Run executes the TSD CLI with the given arguments and returns an exit code
+// This function is testable and doesn't call os.Exit
+func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	config, err := ParseFlags(args)
+	if err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n", err)
+		return 1
+	}
 
 	if config.ShowHelp {
-		printHelp()
-		return
+		PrintHelp(stdout)
+		return 0
 	}
 
 	if config.ShowVersion {
-		printVersion()
-		return
+		PrintVersion(stdout)
+		return 0
 	}
 
-	if err := validateConfig(config); err != nil {
-		fmt.Fprintf(os.Stderr, "Erreur: %v\n\n", err)
-		printHelp()
-		os.Exit(1)
+	if err := ValidateConfig(config); err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n\n", err)
+		PrintHelp(stderr)
+		return 1
 	}
 
-	result, sourceName, err := parseConstraintSource(config)
+	result, sourceName, err := ParseConstraintSource(config, stdin)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Erreur de parsing: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Erreur de parsing: %v\n", err)
+		return 1
 	}
 
 	if config.Verbose {
-		fmt.Printf("✅ Parsing réussi\n")
-		fmt.Printf("📋 Validation du programme...\n")
+		fmt.Fprintf(stdout, "✅ Parsing réussi\n")
+		fmt.Fprintf(stdout, "📋 Validation du programme...\n")
 	}
 
 	if err := constraint.ValidateConstraintProgram(result); err != nil {
-		fmt.Fprintf(os.Stderr, "Erreur de validation: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Erreur de validation: %v\n", err)
+		return 1
 	}
 
 	if config.Verbose {
-		fmt.Printf("✅ Contraintes validées avec succès\n")
+		fmt.Fprintf(stdout, "✅ Contraintes validées avec succès\n")
 	}
 
 	if config.FactsFile != "" {
-		runWithFacts(config, sourceName)
-	} else {
-		runValidationOnly(config)
+		return RunWithFacts(config, sourceName, stdout, stderr)
 	}
+
+	return RunValidationOnly(config, stdout)
 }
 
-// parseFlags parses command-line flags and returns a Config
-func parseFlags() *Config {
+// ParseFlags parses command-line flags and returns a Config
+func ParseFlags(args []string) (*Config, error) {
 	config := &Config{}
+	flagSet := flag.NewFlagSet("tsd", flag.ContinueOnError)
 
-	flag.StringVar(&config.ConstraintFile, "constraint", "", "Fichier de contraintes (.constraint)")
-	flag.StringVar(&config.ConstraintText, "text", "", "Texte de contrainte directement (alternative à -constraint)")
-	flag.BoolVar(&config.UseStdin, "stdin", false, "Lire les contraintes depuis stdin")
-	flag.StringVar(&config.FactsFile, "facts", "", "Fichier de faits (.facts)")
-	flag.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
-	flag.BoolVar(&config.ShowVersion, "version", false, "Afficher la version")
-	flag.BoolVar(&config.ShowHelp, "h", false, "Afficher l'aide")
+	flagSet.StringVar(&config.ConstraintFile, "constraint", "", "Fichier de contraintes (.constraint)")
+	flagSet.StringVar(&config.ConstraintText, "text", "", "Texte de contrainte directement (alternative à -constraint)")
+	flagSet.BoolVar(&config.UseStdin, "stdin", false, "Lire les contraintes depuis stdin")
+	flagSet.StringVar(&config.FactsFile, "facts", "", "Fichier de faits (.facts)")
+	flagSet.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
+	flagSet.BoolVar(&config.ShowVersion, "version", false, "Afficher la version")
+	flagSet.BoolVar(&config.ShowHelp, "h", false, "Afficher l'aide")
 
-	flag.Parse()
+	if err := flagSet.Parse(args); err != nil {
+		return nil, err
+	}
 
-	return config
+	return config, nil
 }
 
-// validateConfig validates that exactly one input source is specified
-func validateConfig(config *Config) error {
+// ValidateConfig validates that exactly one input source is specified
+func ValidateConfig(config *Config) error {
 	sourcesCount := 0
 	if config.ConstraintFile != "" {
 		sourcesCount++
@@ -108,10 +130,10 @@ func validateConfig(config *Config) error {
 	return nil
 }
 
-// parseConstraintSource parses constraints from the configured source
-func parseConstraintSource(config *Config) (interface{}, string, error) {
+// ParseConstraintSource parses constraints from the configured source
+func ParseConstraintSource(config *Config, stdin io.Reader) (interface{}, string, error) {
 	if config.UseStdin {
-		return parseFromStdin(config)
+		return parseFromStdin(config, stdin)
 	}
 
 	if config.ConstraintText != "" {
@@ -122,14 +144,10 @@ func parseConstraintSource(config *Config) (interface{}, string, error) {
 }
 
 // parseFromStdin reads and parses constraints from stdin
-func parseFromStdin(config *Config) (interface{}, string, error) {
+func parseFromStdin(config *Config, stdin io.Reader) (interface{}, string, error) {
 	sourceName := "<stdin>"
 
-	if config.Verbose {
-		printParsingHeader("stdin")
-	}
-
-	stdinContent, err := io.ReadAll(os.Stdin)
+	stdinContent, err := io.ReadAll(stdin)
 	if err != nil {
 		return nil, "", fmt.Errorf("lecture stdin: %w", err)
 	}
@@ -141,10 +159,6 @@ func parseFromStdin(config *Config) (interface{}, string, error) {
 // parseFromText parses constraints from a text string
 func parseFromText(config *Config) (interface{}, string, error) {
 	sourceName := "<text>"
-
-	if config.Verbose {
-		printParsingHeader("texte direct")
-	}
 
 	result, err := constraint.ParseConstraint(sourceName, []byte(config.ConstraintText))
 	return result, sourceName, err
@@ -158,90 +172,94 @@ func parseFromFile(config *Config) (interface{}, string, error) {
 		return nil, "", fmt.Errorf("fichier contrainte non trouvé: %s", config.ConstraintFile)
 	}
 
-	if config.Verbose {
-		fmt.Printf("🚀 TSD - Analyse des contraintes\n")
-		fmt.Printf("===============================\n")
-		fmt.Printf("Fichier: %s\n\n", config.ConstraintFile)
-	}
-
 	result, err := constraint.ParseConstraintFile(config.ConstraintFile)
 	return result, sourceName, err
 }
 
-// printParsingHeader prints the header for parsing operations
-func printParsingHeader(source string) {
-	fmt.Printf("🚀 TSD - Analyse des contraintes\n")
-	fmt.Printf("===============================\n")
-	fmt.Printf("Source: %s\n\n", source)
-}
-
-// runValidationOnly runs in validation-only mode (no facts file)
-func runValidationOnly(config *Config) {
-	fmt.Printf("✅ Contraintes validées avec succès\n")
+// RunValidationOnly runs in validation-only mode (no facts file)
+func RunValidationOnly(config *Config, stdout io.Writer) int {
+	fmt.Fprintf(stdout, "✅ Contraintes validées avec succès\n")
 
 	if config.Verbose {
-		fmt.Printf("\n🎉 Validation terminée!\n")
-		fmt.Printf("Les contraintes sont syntaxiquement correctes.\n")
-		fmt.Printf("ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
+		fmt.Fprintf(stdout, "\n🎉 Validation terminée!\n")
+		fmt.Fprintf(stdout, "Les contraintes sont syntaxiquement correctes.\n")
+		fmt.Fprintf(stdout, "ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
 	}
+
+	return 0
 }
 
-// runWithFacts runs the full RETE pipeline with facts
-func runWithFacts(config *Config, sourceName string) {
+// RunWithFacts runs the full RETE pipeline with facts and returns exit code
+func RunWithFacts(config *Config, sourceName string, stdout, stderr io.Writer) int {
 	if config.Verbose {
-		fmt.Printf("\n🔧 PIPELINE RETE COMPLET\n")
-		fmt.Printf("========================\n")
-		fmt.Printf("Fichier faits: %s\n\n", config.FactsFile)
+		fmt.Fprintf(stdout, "\n🔧 PIPELINE RETE COMPLET\n")
+		fmt.Fprintf(stdout, "========================\n")
+		fmt.Fprintf(stdout, "Fichier faits: %s\n\n", config.FactsFile)
 	}
 
 	if _, err := os.Stat(config.FactsFile); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "Fichier faits non trouvé: %s\n", config.FactsFile)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Fichier faits non trouvé: %s\n", config.FactsFile)
+		return 1
 	}
 
+	result, err := ExecutePipeline(sourceName, config.FactsFile)
+	if err != nil {
+		fmt.Fprintf(stderr, "Erreur pipeline RETE: %v\n", err)
+		return 1
+	}
+
+	PrintResults(config, result, stdout)
+	return 0
+}
+
+// ExecutePipeline executes the RETE pipeline and returns the result
+func ExecutePipeline(constraintSource, factsFile string) (*Result, error) {
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
 	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-		sourceName,
-		config.FactsFile,
+		constraintSource,
+		factsFile,
 		storage,
 	)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Erreur pipeline RETE: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	printResults(config, network, facts)
+	activations := CountActivations(network)
+
+	return &Result{
+		Network:     network,
+		Facts:       facts,
+		Activations: activations,
+	}, nil
 }
 
-// printResults prints the RETE pipeline execution results
-func printResults(config *Config, network *rete.ReteNetwork, facts []*rete.Fact) {
+// PrintResults prints the RETE pipeline execution results
+func PrintResults(config *Config, result *Result, stdout io.Writer) {
 	if config.Verbose {
-		fmt.Printf("\n📊 RÉSULTATS\n")
-		fmt.Printf("============\n")
-		fmt.Printf("Faits injectés: %d\n", len(facts))
+		fmt.Fprintf(stdout, "\n📊 RÉSULTATS\n")
+		fmt.Fprintf(stdout, "============\n")
+		fmt.Fprintf(stdout, "Faits injectés: %d\n", len(result.Facts))
 	}
 
-	activations := countActivations(network)
-
-	if activations > 0 {
-		fmt.Printf("\n🎯 ACTIONS DISPONIBLES: %d\n", activations)
+	if result.Activations > 0 {
+		fmt.Fprintf(stdout, "\n🎯 ACTIONS DISPONIBLES: %d\n", result.Activations)
 		if config.Verbose {
-			printActivationDetails(network)
+			PrintActivationDetails(result.Network, stdout)
 		}
 	} else {
-		fmt.Printf("\nℹ️  Aucune action déclenchée\n")
+		fmt.Fprintf(stdout, "\nℹ️  Aucune action déclenchée\n")
 	}
 
 	if config.Verbose {
-		fmt.Printf("\n✅ Pipeline RETE exécuté avec succès\n")
+		fmt.Fprintf(stdout, "\n✅ Pipeline RETE exécuté avec succès\n")
 	}
 }
 
-// countActivations counts the total number of activations in the network
-func countActivations(network *rete.ReteNetwork) int {
+// CountActivations counts the total number of activations in the network
+func CountActivations(network *rete.ReteNetwork) int {
 	count := 0
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
@@ -251,8 +269,8 @@ func countActivations(network *rete.ReteNetwork) int {
 	return count
 }
 
-// printActivationDetails prints detailed information about activations
-func printActivationDetails(network *rete.ReteNetwork) {
+// PrintActivationDetails prints detailed information about activations
+func PrintActivationDetails(network *rete.ReteNetwork, stdout io.Writer) {
 	count := 0
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
@@ -262,45 +280,46 @@ func printActivationDetails(network *rete.ReteNetwork) {
 			}
 			for _, token := range terminal.Memory.Tokens {
 				count++
-				fmt.Printf("  %d. %s() - %d bindings\n", count, actionName, len(token.Facts))
+				fmt.Fprintf(stdout, "  %d. %s() - %d bindings\n", count, actionName, len(token.Facts))
 			}
 		}
 	}
 }
 
-// printVersion prints the version information
-func printVersion() {
-	fmt.Println("TSD (Type System Development) v1.0")
-	fmt.Println("Moteur de règles basé sur l'algorithme RETE")
+// PrintVersion prints the version information
+func PrintVersion(w io.Writer) {
+	fmt.Fprintln(w, "TSD (Type System Development) v1.0")
+	fmt.Fprintln(w, "Moteur de règles basé sur l'algorithme RETE")
 }
 
-func printHelp() {
-	fmt.Println("TSD - Type System Development")
-	fmt.Println("Moteur de règles basé sur l'algorithme RETE")
-	fmt.Println("")
-	fmt.Println("USAGE:")
-	fmt.Println("  tsd -constraint <file.constraint> [options]")
-	fmt.Println("  tsd -text \"<constraint text>\" [options]")
-	fmt.Println("  tsd -stdin [options]")
-	fmt.Println("  echo \"<constraint>\" | tsd -stdin")
-	fmt.Println("")
-	fmt.Println("OPTIONS:")
-	fmt.Println("  -constraint <file>  Fichier de règles/contraintes")
-	fmt.Println("  -text <string>      Texte de contrainte directement")
-	fmt.Println("  -stdin              Lire les contraintes depuis stdin")
-	fmt.Println("  -facts <file>       Fichier de faits (optionnel, pour futur usage)")
-	fmt.Println("  -v                  Mode verbeux")
-	fmt.Println("  -version            Afficher la version")
-	fmt.Println("  -h                  Afficher cette aide")
-	fmt.Println("")
-	fmt.Println("EXEMPLES:")
-	fmt.Println("  tsd -constraint rules.constraint")
-	fmt.Println("  tsd -constraint rules.constraint -v")
-	fmt.Println("  tsd -text 'type Person : <id: string, name: string>'")
-	fmt.Println("  echo 'type Person : <id: string>' | tsd -stdin")
-	fmt.Println("  cat rules.constraint | tsd -stdin -v")
-	fmt.Println("")
-	fmt.Println("FORMATS DE FICHIERS:")
-	fmt.Println("  .constraint : Règles en syntaxe TSD")
-	fmt.Println("  .facts      : Faits en format structuré (support futur)")
+// PrintHelp prints the help message
+func PrintHelp(w io.Writer) {
+	fmt.Fprintln(w, "TSD - Type System Development")
+	fmt.Fprintln(w, "Moteur de règles basé sur l'algorithme RETE")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "USAGE:")
+	fmt.Fprintln(w, "  tsd -constraint <file.constraint> [options]")
+	fmt.Fprintln(w, "  tsd -text \"<constraint text>\" [options]")
+	fmt.Fprintln(w, "  tsd -stdin [options]")
+	fmt.Fprintln(w, "  echo \"<constraint>\" | tsd -stdin")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "OPTIONS:")
+	fmt.Fprintln(w, "  -constraint <file>  Fichier de règles/contraintes")
+	fmt.Fprintln(w, "  -text <string>      Texte de contrainte directement")
+	fmt.Fprintln(w, "  -stdin              Lire les contraintes depuis stdin")
+	fmt.Fprintln(w, "  -facts <file>       Fichier de faits (optionnel, pour futur usage)")
+	fmt.Fprintln(w, "  -v                  Mode verbeux")
+	fmt.Fprintln(w, "  -version            Afficher la version")
+	fmt.Fprintln(w, "  -h                  Afficher cette aide")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "EXEMPLES:")
+	fmt.Fprintln(w, "  tsd -constraint rules.constraint")
+	fmt.Fprintln(w, "  tsd -constraint rules.constraint -v")
+	fmt.Fprintln(w, "  tsd -text 'type Person : <id: string, name: string>'")
+	fmt.Fprintln(w, "  echo 'type Person : <id: string>' | tsd -stdin")
+	fmt.Fprintln(w, "  cat rules.constraint | tsd -stdin -v")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "FORMATS DE FICHIERS:")
+	fmt.Fprintln(w, "  .constraint : Règles en syntaxe TSD")
+	fmt.Fprintln(w, "  .facts      : Faits en format structuré (support futur)")
 }

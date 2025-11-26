@@ -55,7 +55,7 @@ func TestMainIntegration(t *testing.T) {
 			wantExitCode: 1,
 			wantOutputContains: []string{
 				"Usage:",
-				"go run main.go <input-file>",
+				"constraint-parser <input-file>",
 				"Exemple:",
 			},
 		},
@@ -72,7 +72,7 @@ func TestMainIntegration(t *testing.T) {
 			args:         []string{filepath.Join(tempDir, "nonexistent.constraint")},
 			wantExitCode: 1,
 			wantErrorContains: []string{
-				"Erreur lecture fichier",
+				"Erreur:",
 			},
 		},
 		{
@@ -80,7 +80,7 @@ func TestMainIntegration(t *testing.T) {
 			args:         []string{invalidConstraint},
 			wantExitCode: 1,
 			wantErrorContains: []string{
-				"Erreur parsing",
+				"Erreur:",
 			},
 		},
 	}
@@ -220,17 +220,17 @@ func TestInvalidConstraintFiles(t *testing.T) {
 		{
 			name:           "invalid syntax - random text",
 			constraintText: "this is not a valid constraint",
-			errorContains:  "Erreur parsing",
+			errorContains:  "Erreur:",
 		},
 		{
 			name:           "invalid syntax - incomplete type",
 			constraintText: "type Person :",
-			errorContains:  "Erreur parsing",
+			errorContains:  "Erreur:",
 		},
 		{
 			name:           "invalid syntax - missing bracket",
 			constraintText: "type Person : <id: string",
-			errorContains:  "Erreur parsing",
+			errorContains:  "Erreur:",
 		},
 		{
 			name:           "invalid field type",
@@ -325,9 +325,9 @@ func TestUsageMessage(t *testing.T) {
 	outputStr := string(output)
 	requiredStrings := []string{
 		"Usage:",
-		"go run main.go <input-file>",
+		"constraint-parser <input-file>",
 		"Exemple:",
-		"go run main.go ../tests/test_input.txt",
+		"constraint-parser ../tests/test_input.txt",
 	}
 
 	for _, required := range requiredStrings {

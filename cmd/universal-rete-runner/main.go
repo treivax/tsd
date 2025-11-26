@@ -13,14 +13,105 @@ import (
 )
 
 func main() {
-	fmt.Println("═══════════════════════════════════════════════════════════")
-	fmt.Println("🧪 RUNNER UNIVERSEL - TESTS COMPLETS RÉSEAU RETE")
-	fmt.Println("═══════════════════════════════════════════════════════════")
-	fmt.Println("Pipeline unique avec propagation RETE complète")
-	fmt.Printf("Date: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	fmt.Println()
+	exitCode := Run(os.Stdout, os.Stderr)
+	os.Exit(exitCode)
+}
 
-	// Trouver tous les fichiers de test
+// TestResult holds the result of a single test
+type TestResult struct {
+	Name          string
+	Category      string
+	Passed        bool
+	TypeNodes     int
+	TerminalNodes int
+	Facts         int
+	Activations   int
+	Error         error
+	Output        string
+}
+
+// RunResult holds the overall test run results
+type RunResult struct {
+	Total   int
+	Passed  int
+	Failed  int
+	Results []TestResult
+}
+
+// Run executes the universal RETE runner and returns an exit code
+// This function is testable and doesn't call os.Exit
+func Run(stdout, stderr io.Writer) int {
+	result := RunTests(stdout)
+
+	// Print summary
+	fmt.Fprintln(stdout)
+	fmt.Fprintf(stdout, "Résumé: %d tests, %d réussis ✅, %d échoués ❌\n", result.Total, result.Passed, result.Failed)
+	if result.Failed == 0 {
+		fmt.Fprintln(stdout, "🎉 TOUS LES TESTS SONT PASSÉS!")
+		return 0
+	}
+
+	return 1
+}
+
+// RunTests discovers and executes all tests, returning the results
+func RunTests(stdout io.Writer) *RunResult {
+	PrintHeader(stdout)
+
+	testFiles := DiscoverTests()
+	fmt.Fprintf(stdout, "🔍 Trouvé %d tests au total\n\n", len(testFiles))
+
+	result := &RunResult{
+		Total:   len(testFiles),
+		Results: make([]TestResult, 0, len(testFiles)),
+	}
+
+	errorTests := GetErrorTests()
+
+	for i, testFile := range testFiles {
+		fmt.Fprintf(stdout, "Test %d/%d: %s... ", i+1, len(testFiles), testFile.Name)
+
+		testResult := ExecuteTest(testFile, errorTests[testFile.Name])
+		result.Results = append(result.Results, testResult)
+
+		// Print output captured during test
+		if testResult.Output != "" {
+			fmt.Fprint(stdout, testResult.Output)
+		}
+
+		if testResult.Passed {
+			if testResult.Error != nil {
+				fmt.Fprintf(stdout, "✅ PASSED (error detected as expected)\n")
+			} else if errorTests[testFile.Name] {
+				fmt.Fprintf(stdout, "✅ PASSED (injection errors detected as expected)\n")
+			} else {
+				fmt.Fprintf(stdout, "✅ PASSED - T:%d R:%d F:%d A:%d\n",
+					testResult.TypeNodes, testResult.TerminalNodes, testResult.Facts, testResult.Activations)
+			}
+			result.Passed++
+		} else {
+			if errorTests[testFile.Name] {
+				fmt.Fprintf(stdout, "❌ FAILED (error should have been detected)\n")
+			} else {
+				fmt.Fprintf(stdout, "❌ FAILED\n")
+			}
+			result.Failed++
+		}
+	}
+
+	return result
+}
+
+// TestFile represents a test with constraint and facts files
+type TestFile struct {
+	Name       string
+	Category   string
+	Constraint string
+	Facts      string
+}
+
+// DiscoverTests finds all test files in the test directories
+func DiscoverTests() []TestFile {
 	testDirs := []struct {
 		path     string
 		category string
@@ -28,13 +119,6 @@ func main() {
 		{"test/coverage/alpha", "alpha"},
 		{"beta_coverage_tests", "beta"},
 		{"constraint/test/integration", "integration"},
-	}
-
-	type TestFile struct {
-		name       string
-		category   string
-		constraint string
-		facts      string
 	}
 
 	var allTestFiles []TestFile
@@ -52,104 +136,99 @@ func main() {
 
 			baseName := filepath.Base(base)
 			allTestFiles = append(allTestFiles, TestFile{
-				name:       baseName,
-				category:   dir.category,
-				constraint: constraintFile,
-				facts:      factsFile,
+				Name:       baseName,
+				Category:   dir.category,
+				Constraint: constraintFile,
+				Facts:      factsFile,
 			})
 		}
 	}
 
-	fmt.Printf("�� Trouvé %d tests au total\n\n", len(allTestFiles))
+	return allTestFiles
+}
 
-	// Tests qui doivent échouer (tests de détection d'erreurs)
-	errorTests := map[string]bool{
+// GetErrorTests returns the set of tests that should produce errors
+func GetErrorTests() map[string]bool {
+	return map[string]bool{
 		"error_args_test": true,
 	}
+}
 
-	// Exécuter tous les tests
-	passed := 0
-	failed := 0
-	for i, testFile := range allTestFiles {
-		fmt.Printf("Test %d/%d: %s... ", i+1, len(allTestFiles), testFile.name)
-
-		pipeline := rete.NewConstraintPipeline()
-		storage := rete.NewMemoryStorage()
-
-		// Capturer stdout pour détecter les erreurs d'injection
-		oldStdout := os.Stdout
-		r, w, _ := os.Pipe()
-		os.Stdout = w
-
-		// Canal pour lire la sortie en temps réel
-		outputChan := make(chan string)
-		go func() {
-			var buf bytes.Buffer
-			io.Copy(&buf, r)
-			outputChan <- buf.String()
-		}()
-
-		network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-			testFile.constraint,
-			testFile.facts,
-			storage,
-		)
-
-		// Restaurer stdout
-		w.Close()
-		os.Stdout = oldStdout
-
-		// Lire la sortie capturée
-		output := <-outputChan
-
-		// Afficher la sortie capturée
-		fmt.Print(output)
-
-		// Détecter si des erreurs d'injection ont eu lieu
-		hasInjectionErrors := strings.Contains(output, "⚠️ Erreur injection fait")
-
-		// Si c'est un test d'erreur, l'échec est un succès
-		isErrorTest := errorTests[testFile.name]
-
-		if err != nil {
-			if isErrorTest {
-				fmt.Printf("✅ PASSED (error detected as expected)\n")
-				passed++
-			} else {
-				fmt.Printf("❌ FAILED\n")
-				failed++
-			}
-			continue
-		}
-
-		// Pour les tests d'erreur, vérifier si des erreurs d'injection ont été détectées
-		if isErrorTest {
-			if hasInjectionErrors {
-				fmt.Printf("✅ PASSED (injection errors detected as expected)\n")
-				passed++
-			} else {
-				fmt.Printf("❌ FAILED (error should have been detected)\n")
-				failed++
-			}
-			continue
-		}
-
-		// Compter les activations
-		activations := 0
-		for _, terminal := range network.TerminalNodes {
-			if terminal.Memory != nil && terminal.Memory.Tokens != nil {
-				activations += len(terminal.Memory.Tokens)
-			}
-		}
-
-		fmt.Printf("✅ PASSED - T:%d R:%d F:%d A:%d\n",
-			len(network.TypeNodes), len(network.TerminalNodes), len(facts), activations)
-		passed++
+// ExecuteTest runs a single test and returns the result
+func ExecuteTest(testFile TestFile, expectError bool) TestResult {
+	result := TestResult{
+		Name:     testFile.Name,
+		Category: testFile.Category,
 	}
 
-	fmt.Println()
-	fmt.Printf("Résumé: %d tests, %d réussis ✅, %d échoués ❌\n", len(allTestFiles), passed, failed)
-	if failed == 0 {
-		fmt.Println("🎉 TOUS LES TESTS SONT PASSÉS!")
+	pipeline := rete.NewConstraintPipeline()
+	storage := rete.NewMemoryStorage()
+
+	// Capture stdout to detect injection errors
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Channel to read the output in real-time
+	outputChan := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		outputChan <- buf.String()
+	}()
+
+	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
+		testFile.Constraint,
+		testFile.Facts,
+		storage,
+	)
+
+	// Restore stdout
+	w.Close()
+	os.Stdout = oldStdout
+
+	// Read captured output
+	output := <-outputChan
+	result.Output = output
+
+	// Detect injection errors in output
+	hasInjectionErrors := strings.Contains(output, "⚠️ Erreur injection fait")
+
+	if err != nil {
+		result.Error = err
+		result.Passed = expectError
+		return result
 	}
+
+	// For error tests, check if injection errors were detected
+	if expectError {
+		result.Passed = hasInjectionErrors
+		return result
+	}
+
+	// Count activations
+	activations := 0
+	for _, terminal := range network.TerminalNodes {
+		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+			activations += len(terminal.Memory.Tokens)
+		}
+	}
+
+	result.TypeNodes = len(network.TypeNodes)
+	result.TerminalNodes = len(network.TerminalNodes)
+	result.Facts = len(facts)
+	result.Activations = activations
+	result.Passed = true
+
+	return result
+}
+
+// PrintHeader prints the test runner header
+func PrintHeader(w io.Writer) {
+	fmt.Fprintln(w, "═══════════════════════════════════════════════════════════")
+	fmt.Fprintln(w, "🧪 RUNNER UNIVERSEL - TESTS COMPLETS RÉSEAU RETE")
+	fmt.Fprintln(w, "═══════════════════════════════════════════════════════════")
+	fmt.Fprintln(w, "Pipeline unique avec propagation RETE complète")
+	fmt.Fprintf(w, "Date: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Fprintln(w)
 }
