@@ -1,3 +1,7 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
 // Package constraint provides parsing, validation and management of constraint programs.
 //
 // This package implements a complete constraint language parser using PEG (Parsing Expression Grammar)

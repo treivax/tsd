@@ -15,6 +15,47 @@ Optimiser les performances de manière méthodique en :
 - Validant les gains de performance
 - Préservant la sémantique et la qualité du code
 
+## 📄 RÈGLES DE LICENCE ET COPYRIGHT - OBLIGATOIRE
+
+### 🔒 Vérification de Compatibilité de Licence
+
+**SI l'optimisation nécessite du code externe ou une nouvelle bibliothèque** :
+
+1. **Vérifier la licence** :
+   - ✅ Licences permissives acceptées : MIT, BSD, Apache-2.0, ISC
+   - ⚠️ Licences à éviter : GPL, AGPL, LGPL (copyleft)
+   - ❌ Code sans licence = NE PAS UTILISER
+   - ❌ Code propriétaire = NE PAS UTILISER
+
+2. **Documenter l'origine** :
+   - Si code inspiré/adapté : ajouter commentaire avec source
+   - Si bibliothèque tierce : mettre à jour `go.mod` et `THIRD_PARTY_LICENSES.md`
+   - Si algorithme connu : citer la référence académique
+
+### 📝 En-tête de Copyright OBLIGATOIRE
+
+**SI création de nouveaux fichiers durant l'optimisation** :
+
+```go
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+package [nom_du_package]
+```
+
+**VÉRIFICATION** :
+- ✅ Tous les nouveaux fichiers .go ont l'en-tête de copyright
+- ✅ Les fichiers existants conservent leur en-tête
+- ✅ Aucun code externe non vérifié n'est introduit
+
+### ⚠️ INTERDICTIONS STRICTES
+
+- ❌ **Ne JAMAIS copier du code** sans vérifier la licence
+- ❌ **Ne JAMAIS utiliser de code GPL/AGPL** (incompatible avec MIT)
+- ❌ **Ne JAMAIS omettre les en-têtes de copyright** dans les nouveaux fichiers
+- ✅ **TOUJOURS écrire du code original** lors d'optimisations
+
 ## ⚠️ RÈGLES STRICTES - OPTIMISATION
 
 ### 🚫 INTERDICTIONS ABSOLUES

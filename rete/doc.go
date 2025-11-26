@@ -1,6 +1,14 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
 // Package rete implements a high-performance RETE algorithm for rule-based systems.
 //
 // The RETE algorithm is a pattern matching algorithm for implementing rule-based systems.
+// It was originally developed by Charles Forgy at Carnegie Mellon University (1974-1979)
+// and is now in the public domain. This is an original implementation specifically
+// designed for the TSD constraint language.
+//
 // This package provides a complete implementation with support for:
 //   - Alpha nodes (single-fact pattern matching)
 //   - Beta nodes (multi-fact joins)

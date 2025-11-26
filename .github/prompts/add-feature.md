@@ -10,6 +10,67 @@ Tu veux ajouter une nouvelle fonctionnalité au projet TSD, qu'il s'agisse d'un 
 
 Implémenter proprement une nouvelle fonctionnalité en respectant l'architecture existante et les conventions du projet.
 
+## 📄 RÈGLES DE LICENCE ET COPYRIGHT - OBLIGATOIRE
+
+### 🔒 Vérification de Compatibilité de Licence
+
+**AVANT d'utiliser du code externe, une bibliothèque ou un algorithme** :
+
+1. **Vérifier la licence** :
+   - ✅ Licences permissives acceptées : MIT, BSD, Apache-2.0, ISC
+   - ⚠️ Licences à éviter : GPL, AGPL, LGPL (copyleft)
+   - ❌ Code sans licence = NE PAS UTILISER
+   - ❌ Code propriétaire = NE PAS UTILISER
+
+2. **Documenter l'origine** :
+   - Si code inspiré/adapté : ajouter commentaire avec source
+   - Si bibliothèque tierce : mettre à jour `go.mod` et `THIRD_PARTY_LICENSES.md`
+   - Si algorithme connu : citer la référence académique
+
+3. **Exemple de citation** :
+   ```go
+   // Algorithm based on: Dijkstra, E. W. (1959). "A note on two problems 
+   // in connexion with graphs". Numerische Mathematik, 1(1), 269-271.
+   // Implementation is original.
+   ```
+
+### 📝 En-tête de Copyright OBLIGATOIRE
+
+**TOUS les nouveaux fichiers `.go` doivent commencer par** :
+
+```go
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+package [nom_du_package]
+```
+
+**VÉRIFICATION AVANT COMMIT** :
+```bash
+# Vérifier que tous les fichiers .go ont un en-tête
+for file in $(find . -name "*.go" -type f ! -path "./.git/*"); do
+    if ! head -1 "$file" | grep -q "Copyright\|Code generated"; then
+        echo "⚠️  EN-TÊTE MANQUANT: $file"
+    fi
+done
+```
+
+### ⚠️ INTERDICTIONS STRICTES
+
+- ❌ **Ne JAMAIS copier du code** depuis StackOverflow, GitHub, etc. sans vérifier la licence
+- ❌ **Ne JAMAIS utiliser de code GPL/AGPL** (incompatible avec MIT)
+- ❌ **Ne JAMAIS omettre les en-têtes de copyright** dans les nouveaux fichiers
+- ❌ **Ne JAMAIS utiliser de code propriétaire** sans autorisation explicite
+
+### ✅ BONNES PRATIQUES
+
+- ✅ Écrire du code original autant que possible
+- ✅ Utiliser des algorithmes du domaine public avec citation
+- ✅ Préférer les bibliothèques Go standard
+- ✅ Documenter toutes les sources d'inspiration
+- ✅ Ajouter l'en-tête de copyright dès la création du fichier
+
 ## ⚠️ RÈGLES STRICTES - CODE GOLANG
 
 ### 🚫 INTERDICTIONS ABSOLUES
@@ -121,18 +182,31 @@ func ProcessOrder(id string, timeout time.Duration, rule DiscountRule) error {
    - Quels tests d'intégration créer ?
    - Quels fichiers `.constraint` et `.facts` créer ?
 
-### 4. Implémenter la Fonctionnalité
+4. **Implémenter la Fonctionnalité
 
 **Suivre l'ordre** :
 
-1. **Commencer par les tests** (TDD) :
+1. **Créer le nouveau fichier avec en-tête de copyright** :
+   ```go
+   // Copyright (c) 2025 TSD Contributors
+   // Licensed under the MIT License
+   // See LICENSE file in the project root for full license text
+
+   package rete
+
+   // Documentation du fichier...
+   ```
+
+2. **Commencer par les tests** (TDD) :
    ```go
    func TestNouvelleFeature(t *testing.T) {
        // Test de la nouvelle fonctionnalité
    }
    ```
 
-2. **Implémenter le code minimal** :
+3. **Implémenter le code minimal** :
+   - ⚠️ **VÉRIFIER** : En-tête de copyright présent
+   - ⚠️ **VÉRIFIER** : Aucun code copié sans vérification de licence
    - ⚠️ **VÉRIFIER** : Aucun hardcoding introduit
    - ⚠️ **VÉRIFIER** : Code générique et réutilisable
    - Créer les structures nécessaires avec constantes nommées
@@ -140,12 +214,13 @@ func ProcessOrder(id string, timeout time.Duration, rule DiscountRule) error {
    - Faire passer les tests
    - Valider avec go vet et golangci-lint
 
-3. **Ajouter la documentation** :
+4. **Ajouter la documentation** :
    - Commentaires GoDoc
    - Exemples dans les tests
    - Mise à jour du README si nécessaire
+   - Si code externe utilisé : documenter dans THIRD_PARTY_LICENSES.md
 
-4. **Intégrer avec l'existant** :
+5. **Intégrer avec l'existant** :
    - Connecter aux autres modules
    - Gérer les cas limites
    - Ajouter la validation d'erreurs

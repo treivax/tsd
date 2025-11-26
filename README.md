@@ -297,7 +297,19 @@ Un seul pipeline pour parsing, construction réseau, et exécution.
 
 ## 📄 License
 
-Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour le texte complet de la licence.
+
+### Third-Party Components
+
+TSD utilise des composants open-source sous licences permissives. Voir [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) pour la liste complète des dépendances et leurs licences.
+
+### Acknowledgments
+
+- **Pigeon PEG Parser Generator** - Utilisé pour générer le parser de contraintes depuis la grammaire PEG (BSD-3-Clause)
+- **Testify** - Framework de tests unitaires (MIT)
+- **Algorithme RETE** - Développé par Charles Forgy (Carnegie Mellon University, 1974-1979)
+
+Toutes les dépendances utilisent des licences permissives compatibles avec un usage commercial.
 
 ## 🏆 Réalisations
 

@@ -6,6 +6,9 @@
 
 ## 🎯 Par Besoin
 
+### Je veux vérifier la conformité
+- **Vérifier la conformité de licence** → [`verify-license-compliance.md`](verify-license-compliance.md)
+
 ### Je veux tester
 - **Lancer tous les tests** → [`run-tests.md`](run-tests.md)
 - **Ajouter des tests** → [`add-test.md`](add-test.md)
@@ -40,6 +43,9 @@
 
 ### Je veux analyser
 - **Statistiques du code** → [`stats-code.md`](stats-code.md)
+
+### Je veux vérifier
+- **Conformité de licence** → [`verify-license-compliance.md`](verify-license-compliance.md)
 
 ---
 
@@ -98,6 +104,11 @@
 | Prompt | Description | Taille |
 |--------|-------------|--------|
 | [stats-code.md](stats-code.md) | Générer statistiques du code (lignes, complexité, fichiers volumineux) | 10K |
+
+### 📄 Conformité & Licence
+| Prompt | Description | Taille |
+|--------|-------------|--------|
+| [verify-license-compliance.md](verify-license-compliance.md) | Vérifier conformité complète de licence (en-têtes, dépendances, documentation) | 18K |
 
 ---
 

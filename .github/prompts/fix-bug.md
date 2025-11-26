@@ -14,6 +14,49 @@ Corriger un bug de manière méthodique en :
 - Corrigeant sans introduire de régressions
 - Ajoutant des tests de non-régression
 - Documentant la correction
+- Respectant les règles de licence et copyright
+
+## 📄 RÈGLES DE LICENCE ET COPYRIGHT - OBLIGATOIRE
+
+### 🔒 Vérification de Compatibilité de Licence
+
+**SI la correction nécessite du code externe ou une bibliothèque** :
+
+1. **Vérifier la licence** :
+   - ✅ Licences permissives acceptées : MIT, BSD, Apache-2.0, ISC
+   - ⚠️ Licences à éviter : GPL, AGPL, LGPL (copyleft)
+   - ❌ Code sans licence = NE PAS UTILISER
+   - ❌ Code propriétaire = NE PAS UTILISER
+
+2. **Documenter l'origine** :
+   - Si code inspiré/adapté : ajouter commentaire avec source
+   - Si bibliothèque tierce : mettre à jour `go.mod` et `THIRD_PARTY_LICENSES.md`
+   - Si solution trouvée en ligne : vérifier la licence avant d'utiliser
+
+3. **Exemple** :
+   ```go
+   // Fix based on: https://github.com/example/project (MIT License)
+   // Adapted to fit TSD architecture
+   ```
+
+### 📝 En-tête de Copyright OBLIGATOIRE
+
+**SI création d'un nouveau fichier pour la correction** :
+
+```go
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+package [nom_du_package]
+```
+
+### ⚠️ INTERDICTIONS STRICTES
+
+- ❌ **Ne JAMAIS copier une solution** depuis StackOverflow sans vérifier la licence
+- ❌ **Ne JAMAIS utiliser de code GPL/AGPL** (incompatible avec MIT)
+- ❌ **Ne JAMAIS omettre les en-têtes de copyright** dans les nouveaux fichiers
+- ✅ **TOUJOURS écrire une solution originale** quand possible
 
 ## ⚠️ RÈGLES STRICTES - CORRECTION DE BUG
 
@@ -43,6 +86,20 @@ Corriger un bug de manière méthodique en :
    - ✅ Validation complète
 
 ## Instructions
+
+### PHASE 0 : VÉRIFICATION DE LICENCE (Si Applicable)
+
+**Si la correction envisagée nécessite du code externe** :
+
+1. **Vérifier la compatibilité de licence** :
+   ```bash
+   # Avant d'ajouter une dépendance
+   go list -m -json [package] | jq '.Version, .License'
+   ```
+
+2. **Documenter dans THIRD_PARTY_LICENSES.md** si nouvelle dépendance
+
+3. **Ajouter en-tête de copyright** si création de nouveau fichier
 
 ### PHASE 1 : REPRODUCTION (Isoler le Bug)
 

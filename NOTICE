@@ -1,0 +1,80 @@
+TSD - Type System Development
+Copyright (c) 2025 TSD Contributors
+
+This software is licensed under the MIT License.
+See the LICENSE file for the full license text.
+
+================================================================================
+
+This software includes or depends upon the following third-party components:
+
+--------------------------------------------------------------------------------
+Pigeon PEG Parser Generator
+Copyright (c) 2014 Martin Angers
+License: BSD-3-Clause
+Used to generate: constraint/parser.go
+
+This software uses Pigeon to generate the constraint language parser from
+a PEG grammar definition. The generated parser code (constraint/parser.go)
+contains approximately 5,230 lines of code.
+
+Source: https://github.com/mna/pigeon
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Testify - Testing Framework
+Copyright (c) 2012-2020 Mat Ryer, Tyler Bunnell and contributors
+License: MIT
+Used in: All *_test.go files
+
+This software uses Testify for unit testing, assertions, and test utilities.
+
+Source: https://github.com/stretchr/testify
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+go-spew - Deep Pretty Printer
+Copyright (c) 2012-2016 Dave Collins
+License: ISC
+Used by: testify (indirect dependency)
+
+Source: https://github.com/davecgh/go-spew
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+go-difflib - Diff Algorithms
+Copyright (c) 2013 Patrick Mezard
+License: BSD-3-Clause
+Used by: testify (indirect dependency)
+
+Source: https://github.com/pmezard/go-difflib
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+yaml.v3 - YAML Parser
+Copyright (c) 2011-2019 Canonical Ltd
+License: MIT/Apache-2.0 (dual licensed)
+Used by: testify (indirect dependency)
+
+Source: https://github.com/go-yaml/yaml
+--------------------------------------------------------------------------------
+
+================================================================================
+
+RETE ALGORITHM ACKNOWLEDGMENT
+
+This software implements the RETE pattern matching algorithm, which was
+originally developed by Charles Forgy at Carnegie Mellon University between
+1974 and 1979. The RETE algorithm is an academic concept in the public domain.
+
+The implementation in this software is original and does not derive from
+other RETE implementations such as CLIPS, Drools, or OPS5.
+
+Reference:
+  Forgy, C. L. (1982). "Rete: A Fast Algorithm for the Many Pattern/Many
+  Object Pattern Match Problem". Artificial Intelligence, 19(1), 17-37.
+
+================================================================================
+
+For complete license texts of all third-party components, see the
+THIRD_PARTY_LICENSES.md file in the project root.

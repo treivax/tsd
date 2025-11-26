@@ -1,3 +1,7 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
 package constraint
 
 // Program represents the complete AST of a constraint program including types, expressions and facts.
