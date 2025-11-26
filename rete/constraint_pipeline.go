@@ -43,6 +43,13 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	}
 	fmt.Printf("✅ Parsing réussi\n")
 
+	// ÉTAPE 1.5: Validation sémantique du programme
+	err = constraint.ValidateConstraintProgram(parsedAST)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur validation sémantique: %w", err)
+	}
+	fmt.Printf("✅ Validation sémantique réussie\n")
+
 	// Valider que c'est un map[string]interface{}
 	resultMap, ok := parsedAST.(map[string]interface{})
 	if !ok {
@@ -199,46 +206,35 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	// ÉTAPE 2: Parser et soumettre les faits
 	fmt.Printf("📊 Parsing des faits depuis %s\n", factsFile)
 
-	parsedFacts, err := constraint.ParseConstraintFile(factsFile)
+	parsedFacts, err := constraint.ParseFactsFile(factsFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("❌ Erreur parsing faits: %w", err)
 	}
 
-	factsMap, ok := parsedFacts.(map[string]interface{})
-	if !ok {
-		return nil, nil, fmt.Errorf("❌ Format faits invalide: %T", parsedFacts)
-	}
-
-	factsData, hasFacts := factsMap["facts"]
-	if !hasFacts {
-		return network, []*Fact{}, nil
-	}
-
-	factsList, ok := factsData.([]interface{})
-	if !ok {
-		return nil, nil, fmt.Errorf("❌ Format liste faits invalide: %T", factsData)
+	// Extraire les faits du programme parsé
+	factsList, err := constraint.ExtractFactsFromProgram(parsedFacts)
+	if err != nil {
+		return nil, nil, fmt.Errorf("❌ Erreur extraction faits: %w", err)
 	}
 
 	// Convertir et soumettre chaque fait
 	submittedFacts := []*Fact{}
-	for _, factInterface := range factsList {
-		factMap, ok := factInterface.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
+	for _, factMap := range factsList {
+		// ExtractFactsFromProgram retourne des maps avec 'reteType' et tous les champs directement
 		factID := getStringField(factMap, "id", "")
-		factType := getStringField(factMap, "type", "")
+		factType := getStringField(factMap, "reteType", "") // Utiliser 'reteType' au lieu de 'type'
 
 		if factID == "" || factType == "" {
+			fmt.Printf("⚠️ Fait ignoré: id='%s', type='%s'\n", factID, factType)
 			continue
 		}
 
-		fieldsData, hasFields := factMap["fields"]
+		// Les champs sont directement dans factMap (pas de sous-clé 'fields')
 		fields := make(map[string]interface{})
-		if hasFields {
-			if fieldsMap, ok := fieldsData.(map[string]interface{}); ok {
-				fields = fieldsMap
+		for key, value := range factMap {
+			// Exclure les métadonnées RETE (id, reteType)
+			if key != "id" && key != "reteType" {
+				fields[key] = value
 			}
 		}
 
@@ -248,7 +244,10 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 			Fields: fields,
 		}
 
-		network.SubmitFact(fact)
+		err := network.SubmitFact(fact)
+		if err != nil {
+			fmt.Printf("⚠️ Erreur soumission fait %s: %v\n", factID, err)
+		}
 		submittedFacts = append(submittedFacts, fact)
 	}
 

@@ -10,12 +10,14 @@ package rete
 //   - evaluator_functions.go: Fonctions intégrées (LENGTH, UPPER, ABS, etc.)
 type AlphaConditionEvaluator struct {
 	variableBindings map[string]*Fact
+	partialEvalMode  bool // Mode d'évaluation partielle pour les jointures en cascade
 }
 
 // NewAlphaConditionEvaluator crée un nouvel évaluateur de conditions
 func NewAlphaConditionEvaluator() *AlphaConditionEvaluator {
 	return &AlphaConditionEvaluator{
 		variableBindings: make(map[string]*Fact),
+		partialEvalMode:  false,
 	}
 }
 
@@ -50,6 +52,13 @@ func (e *AlphaConditionEvaluator) EvaluateCondition(condition interface{}, fact 
 // Utilisé pour réinitialiser l'évaluateur entre différentes évaluations.
 func (e *AlphaConditionEvaluator) ClearBindings() {
 	e.variableBindings = make(map[string]*Fact)
+}
+
+// SetPartialEvalMode active ou désactive le mode d'évaluation partielle.
+// En mode partiel, les variables non liées renvoient true au lieu d'une erreur.
+// Utilisé pour les jointures en cascade où toutes les variables ne sont pas encore disponibles.
+func (e *AlphaConditionEvaluator) SetPartialEvalMode(enabled bool) {
+	e.partialEvalMode = enabled
 }
 
 // GetBindings retourne les liaisons actuelles de variables.

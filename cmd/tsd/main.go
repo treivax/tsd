@@ -10,194 +10,268 @@ import (
 	"github.com/treivax/tsd/rete"
 )
 
+// Config holds the CLI configuration
+type Config struct {
+	ConstraintFile string
+	ConstraintText string
+	UseStdin       bool
+	FactsFile      string
+	Verbose        bool
+	ShowVersion    bool
+	ShowHelp       bool
+}
+
 func main() {
-	var (
-		constraintFile = flag.String("constraint", "", "Fichier de contraintes (.constraint)")
-		constraintText = flag.String("text", "", "Texte de contrainte directement (alternative à -constraint)")
-		stdin          = flag.Bool("stdin", false, "Lire les contraintes depuis stdin")
-		factsFile      = flag.String("facts", "", "Fichier de faits (.facts)")
-		verbose        = flag.Bool("v", false, "Mode verbeux")
-		version        = flag.Bool("version", false, "Afficher la version")
-		help           = flag.Bool("h", false, "Afficher l'aide")
-	)
+	config := parseFlags()
 
-	flag.Parse()
-
-	if *help {
+	if config.ShowHelp {
 		printHelp()
 		return
 	}
 
-	if *version {
-		fmt.Println("TSD (Type System Development) v1.0")
-		fmt.Println("Moteur de règles basé sur l'algorithme RETE")
+	if config.ShowVersion {
+		printVersion()
 		return
 	}
 
-	// Compter les sources d'entrée
-	sourcesCount := 0
-	if *constraintFile != "" {
-		sourcesCount++
-	}
-	if *constraintText != "" {
-		sourcesCount++
-	}
-	if *stdin {
-		sourcesCount++
-	}
-
-	if sourcesCount == 0 {
-		fmt.Fprintf(os.Stderr, "Erreur: spécifiez une source (-constraint, -text, ou -stdin)\n\n")
+	if err := validateConfig(config); err != nil {
+		fmt.Fprintf(os.Stderr, "Erreur: %v\n\n", err)
 		printHelp()
 		os.Exit(1)
 	}
 
-	if sourcesCount > 1 {
-		fmt.Fprintf(os.Stderr, "Erreur: spécifiez une seule source d'entrée\n\n")
-		printHelp()
-		os.Exit(1)
-	}
-
-	var result interface{}
-	var err error
-	var sourceName string
-
-	if *stdin {
-		// Lire depuis stdin
-		sourceName = "<stdin>"
-		if *verbose {
-			fmt.Printf("🚀 TSD - Analyse des contraintes\n")
-			fmt.Printf("===============================\n")
-			fmt.Printf("Source: stdin\n\n")
-		}
-		stdinContent, readErr := io.ReadAll(os.Stdin)
-		if readErr != nil {
-			fmt.Fprintf(os.Stderr, "Erreur lecture stdin: %v\n", readErr)
-			os.Exit(1)
-		}
-		result, err = constraint.ParseConstraint(sourceName, stdinContent)
-	} else if *constraintText != "" {
-		// Parser du texte directement
-		sourceName = "<text>"
-		if *verbose {
-			fmt.Printf("🚀 TSD - Analyse des contraintes\n")
-			fmt.Printf("===============================\n")
-			fmt.Printf("Source: texte direct\n\n")
-		}
-		result, err = constraint.ParseConstraint(sourceName, []byte(*constraintText))
-	} else {
-		// Parser depuis un fichier
-		sourceName = *constraintFile
-		// Vérifier que le fichier constraint existe
-		if _, statErr := os.Stat(*constraintFile); os.IsNotExist(statErr) {
-			fmt.Fprintf(os.Stderr, "Fichier contrainte non trouvé: %s\n", *constraintFile)
-			os.Exit(1)
-		}
-
-		if *verbose {
-			fmt.Printf("🚀 TSD - Analyse des contraintes\n")
-			fmt.Printf("===============================\n")
-			fmt.Printf("Fichier: %s\n\n", *constraintFile)
-		}
-
-		result, err = constraint.ParseConstraintFile(*constraintFile)
-	}
-
+	result, sourceName, err := parseConstraintSource(config)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Erreur de parsing: %v\n", err)
 		os.Exit(1)
 	}
 
-	if *verbose {
+	if config.Verbose {
 		fmt.Printf("✅ Parsing réussi\n")
 		fmt.Printf("📋 Validation du programme...\n")
 	}
 
-	// Valider le programme
 	if err := constraint.ValidateConstraintProgram(result); err != nil {
 		fmt.Fprintf(os.Stderr, "Erreur de validation: %v\n", err)
 		os.Exit(1)
 	}
 
-	if *verbose {
+	if config.Verbose {
 		fmt.Printf("✅ Contraintes validées avec succès\n")
 	}
 
-	// Si un fichier de faits est fourni, exécuter le pipeline RETE complet
-	if *factsFile != "" {
-		if *verbose {
-			fmt.Printf("\n🔧 PIPELINE RETE COMPLET\n")
-			fmt.Printf("========================\n")
-			fmt.Printf("Fichier faits: %s\n\n", *factsFile)
-		}
+	if config.FactsFile != "" {
+		runWithFacts(config, sourceName)
+	} else {
+		runValidationOnly(config)
+	}
+}
 
-		// Vérifier que le fichier facts existe
-		if _, statErr := os.Stat(*factsFile); os.IsNotExist(statErr) {
-			fmt.Fprintf(os.Stderr, "Fichier faits non trouvé: %s\n", *factsFile)
-			os.Exit(1)
-		}
+// parseFlags parses command-line flags and returns a Config
+func parseFlags() *Config {
+	config := &Config{}
 
-		pipeline := rete.NewConstraintPipeline()
-		storage := rete.NewMemoryStorage()
+	flag.StringVar(&config.ConstraintFile, "constraint", "", "Fichier de contraintes (.constraint)")
+	flag.StringVar(&config.ConstraintText, "text", "", "Texte de contrainte directement (alternative à -constraint)")
+	flag.BoolVar(&config.UseStdin, "stdin", false, "Lire les contraintes depuis stdin")
+	flag.StringVar(&config.FactsFile, "facts", "", "Fichier de faits (.facts)")
+	flag.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
+	flag.BoolVar(&config.ShowVersion, "version", false, "Afficher la version")
+	flag.BoolVar(&config.ShowHelp, "h", false, "Afficher l'aide")
 
-		network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-			sourceName,
-			*factsFile,
-			storage,
-		)
+	flag.Parse()
 
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Erreur pipeline RETE: %v\n", err)
-			os.Exit(1)
-		}
+	return config
+}
 
-		if *verbose {
-			fmt.Printf("\n📊 RÉSULTATS\n")
-			fmt.Printf("============\n")
-			fmt.Printf("Faits injectés: %d\n", len(facts))
-		}
+// validateConfig validates that exactly one input source is specified
+func validateConfig(config *Config) error {
+	sourcesCount := 0
+	if config.ConstraintFile != "" {
+		sourcesCount++
+	}
+	if config.ConstraintText != "" {
+		sourcesCount++
+	}
+	if config.UseStdin {
+		sourcesCount++
+	}
 
-		// Compter les actions disponibles (activations dans les TerminalNodes)
-		activations := 0
-		for _, terminal := range network.TerminalNodes {
-			if terminal.Memory != nil && terminal.Memory.Tokens != nil {
-				activations += len(terminal.Memory.Tokens)
-			}
-		}
+	if sourcesCount == 0 {
+		return fmt.Errorf("spécifiez une source (-constraint, -text, ou -stdin)")
+	}
 
-		if activations > 0 {
-			fmt.Printf("\n🎯 ACTIONS DISPONIBLES: %d\n", activations)
-			if *verbose {
-				count := 0
-				for _, terminal := range network.TerminalNodes {
-					if terminal.Memory != nil && terminal.Memory.Tokens != nil {
-						actionName := "unknown"
-						if terminal.Action != nil {
-							actionName = terminal.Action.Job.Name
-						}
-						for _, token := range terminal.Memory.Tokens {
-							count++
-							fmt.Printf("  %d. %s() - %d bindings\n", count, actionName, len(token.Facts))
-						}
-					}
-				}
-			}
-		} else {
-			fmt.Printf("\nℹ️  Aucune action déclenchée\n")
-		}
+	if sourcesCount > 1 {
+		return fmt.Errorf("spécifiez une seule source d'entrée")
+	}
 
-		if *verbose {
-			fmt.Printf("\n✅ Pipeline RETE exécuté avec succès\n")
+	return nil
+}
+
+// parseConstraintSource parses constraints from the configured source
+func parseConstraintSource(config *Config) (interface{}, string, error) {
+	if config.UseStdin {
+		return parseFromStdin(config)
+	}
+
+	if config.ConstraintText != "" {
+		return parseFromText(config)
+	}
+
+	return parseFromFile(config)
+}
+
+// parseFromStdin reads and parses constraints from stdin
+func parseFromStdin(config *Config) (interface{}, string, error) {
+	sourceName := "<stdin>"
+
+	if config.Verbose {
+		printParsingHeader("stdin")
+	}
+
+	stdinContent, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, "", fmt.Errorf("lecture stdin: %w", err)
+	}
+
+	result, err := constraint.ParseConstraint(sourceName, stdinContent)
+	return result, sourceName, err
+}
+
+// parseFromText parses constraints from a text string
+func parseFromText(config *Config) (interface{}, string, error) {
+	sourceName := "<text>"
+
+	if config.Verbose {
+		printParsingHeader("texte direct")
+	}
+
+	result, err := constraint.ParseConstraint(sourceName, []byte(config.ConstraintText))
+	return result, sourceName, err
+}
+
+// parseFromFile parses constraints from a file
+func parseFromFile(config *Config) (interface{}, string, error) {
+	sourceName := config.ConstraintFile
+
+	if _, err := os.Stat(config.ConstraintFile); os.IsNotExist(err) {
+		return nil, "", fmt.Errorf("fichier contrainte non trouvé: %s", config.ConstraintFile)
+	}
+
+	if config.Verbose {
+		fmt.Printf("🚀 TSD - Analyse des contraintes\n")
+		fmt.Printf("===============================\n")
+		fmt.Printf("Fichier: %s\n\n", config.ConstraintFile)
+	}
+
+	result, err := constraint.ParseConstraintFile(config.ConstraintFile)
+	return result, sourceName, err
+}
+
+// printParsingHeader prints the header for parsing operations
+func printParsingHeader(source string) {
+	fmt.Printf("🚀 TSD - Analyse des contraintes\n")
+	fmt.Printf("===============================\n")
+	fmt.Printf("Source: %s\n\n", source)
+}
+
+// runValidationOnly runs in validation-only mode (no facts file)
+func runValidationOnly(config *Config) {
+	fmt.Printf("✅ Contraintes validées avec succès\n")
+
+	if config.Verbose {
+		fmt.Printf("\n🎉 Validation terminée!\n")
+		fmt.Printf("Les contraintes sont syntaxiquement correctes.\n")
+		fmt.Printf("ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
+	}
+}
+
+// runWithFacts runs the full RETE pipeline with facts
+func runWithFacts(config *Config, sourceName string) {
+	if config.Verbose {
+		fmt.Printf("\n🔧 PIPELINE RETE COMPLET\n")
+		fmt.Printf("========================\n")
+		fmt.Printf("Fichier faits: %s\n\n", config.FactsFile)
+	}
+
+	if _, err := os.Stat(config.FactsFile); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Fichier faits non trouvé: %s\n", config.FactsFile)
+		os.Exit(1)
+	}
+
+	pipeline := rete.NewConstraintPipeline()
+	storage := rete.NewMemoryStorage()
+
+	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
+		sourceName,
+		config.FactsFile,
+		storage,
+	)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Erreur pipeline RETE: %v\n", err)
+		os.Exit(1)
+	}
+
+	printResults(config, network, facts)
+}
+
+// printResults prints the RETE pipeline execution results
+func printResults(config *Config, network *rete.ReteNetwork, facts []*rete.Fact) {
+	if config.Verbose {
+		fmt.Printf("\n📊 RÉSULTATS\n")
+		fmt.Printf("============\n")
+		fmt.Printf("Faits injectés: %d\n", len(facts))
+	}
+
+	activations := countActivations(network)
+
+	if activations > 0 {
+		fmt.Printf("\n🎯 ACTIONS DISPONIBLES: %d\n", activations)
+		if config.Verbose {
+			printActivationDetails(network)
 		}
 	} else {
-		// Pas de fichier facts, juste validation
-		fmt.Printf("✅ Contraintes validées avec succès\n")
-		if *verbose {
-			fmt.Printf("\n🎉 Validation terminée!\n")
-			fmt.Printf("Les contraintes sont syntaxiquement correctes.\n")
-			fmt.Printf("ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
+		fmt.Printf("\nℹ️  Aucune action déclenchée\n")
+	}
+
+	if config.Verbose {
+		fmt.Printf("\n✅ Pipeline RETE exécuté avec succès\n")
+	}
+}
+
+// countActivations counts the total number of activations in the network
+func countActivations(network *rete.ReteNetwork) int {
+	count := 0
+	for _, terminal := range network.TerminalNodes {
+		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+			count += len(terminal.Memory.Tokens)
 		}
 	}
+	return count
+}
+
+// printActivationDetails prints detailed information about activations
+func printActivationDetails(network *rete.ReteNetwork) {
+	count := 0
+	for _, terminal := range network.TerminalNodes {
+		if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+			actionName := "unknown"
+			if terminal.Action != nil {
+				actionName = terminal.Action.Job.Name
+			}
+			for _, token := range terminal.Memory.Tokens {
+				count++
+				fmt.Printf("  %d. %s() - %d bindings\n", count, actionName, len(token.Facts))
+			}
+		}
+	}
+}
+
+// printVersion prints the version information
+func printVersion() {
+	fmt.Println("TSD (Type System Development) v1.0")
+	fmt.Println("Moteur de règles basé sur l'algorithme RETE")
 }
 
 func printHelp() {

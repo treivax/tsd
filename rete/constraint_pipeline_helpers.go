@@ -8,16 +8,43 @@ import (
 func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Action {
 	actionType := getStringField(actionMap, "type", "print")
 
+	// Extraire le job depuis l'action
+	jobData, hasJob := actionMap["job"]
+	if !hasJob {
+		// Fallback: action simple sans job (ne devrait pas arriver avec le nouveau parser)
+		return &Action{
+			Type: actionType,
+			Job: JobCall{
+				Name: actionType,
+				Args: []interface{}{},
+			},
+		}
+	}
+
+	jobMap, ok := jobData.(map[string]interface{})
+	if !ok {
+		return &Action{
+			Type: actionType,
+			Job: JobCall{
+				Name: actionType,
+				Args: []interface{}{},
+			},
+		}
+	}
+
+	// Extraire le nom du job
+	jobName := getStringField(jobMap, "name", actionType)
+
 	action := &Action{
 		Type: actionType,
 		Job: JobCall{
-			Name: getStringField(actionMap, "name", actionType),
+			Name: jobName,
 			Args: []interface{}{},
 		},
 	}
 
-	// Extraire les arguments si présents
-	if argsData, hasArgs := actionMap["args"]; hasArgs {
+	// Extraire les arguments du job (pas de l'action)
+	if argsData, hasArgs := jobMap["args"]; hasArgs {
 		if argsList, ok := argsData.([]interface{}); ok {
 			action.Job.Args = argsList
 		}

@@ -72,10 +72,8 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 				// Déterminer le côté et propager selon l'architecture RETE
 				side, sideExists := condMap["side"].(string)
 				if sideExists && side == "left" {
-					fmt.Printf("🔗 ALPHA PASSTHROUGH[%s]: Propagation LEFT pour JoinNode\n", an.ID)
 					return an.PropagateToChildren(nil, token) // ActivateLeft
 				} else {
-					fmt.Printf("🔗 ALPHA PASSTHROUGH[%s]: Propagation RIGHT pour JoinNode\n", an.ID)
 					return an.PropagateToChildren(fact, nil) // ActivateRight
 				}
 			}

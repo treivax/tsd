@@ -8,6 +8,12 @@ import (
 
 // compareValues compare deux valeurs avec un opérateur
 func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator string, right interface{}) (bool, error) {
+	// En mode d'évaluation partielle, si l'une des valeurs est nil (variable non liée),
+	// retourner true pour permettre l'évaluation de continuer
+	if e.partialEvalMode && (left == nil || right == nil) {
+		return true, nil
+	}
+
 	// Gérer les opérations arithmétiques qui retournent une valeur
 	switch operator {
 	case "+", "-", "*", "/", "%":

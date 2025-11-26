@@ -174,6 +174,11 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccess(fa constraint.FieldAccess)
 func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string) (interface{}, error) {
 	fact, exists := e.variableBindings[object]
 	if !exists {
+		// En mode d'évaluation partielle (jointures en cascade), retourner nil sans erreur
+		// pour permettre l'évaluation de continuer avec les variables disponibles
+		if e.partialEvalMode {
+			return nil, nil // Sentinel value indiquant que la variable n'est pas encore liée
+		}
 		// Debug info pour aider à diagnostiquer les problèmes de binding
 		availableVars := make([]string, 0, len(e.variableBindings))
 		for k := range e.variableBindings {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/treivax/tsd/rete"
 )
 
 // TestVariableArguments tests the ability to pass complete variables as action arguments
@@ -94,13 +96,40 @@ func TestErrorDetectionInArguments(t *testing.T) {
 	constraintFile := "../../constraint/test/integration/error_args_test.constraint"
 	factsFile := "../../constraint/test/integration/error_args_test.facts"
 
-	// This should fail due to syntax errors in the constraint file
-	network, facts, _ := helper.BuildNetworkFromConstraintFileWithMassiveFacts(t, constraintFile, factsFile)
+	// This should fail due to validation errors in the constraint file
+	// Call the pipeline directly instead of using the helper to check for errors
+	storage := rete.NewMemoryStorage()
+	network, facts, err := helper.pipeline.BuildNetworkFromConstraintFileWithFacts(constraintFile, factsFile, storage)
 
-	// Since the helper uses t.Fatalf on error, if we reach here,
-	// it means the constraint was valid (which could be intended)
-	t.Logf("✅ Error detection test: network built with %d facts, %d terminal nodes",
-		len(facts), len(network.TerminalNodes))
+	// We EXPECT an error to be returned (the file contains intentional errors)
+	if err == nil {
+		t.Errorf("❌ Expected error to be detected in constraint file, but network was built successfully with %d facts, %d terminal nodes",
+			len(facts), len(network.TerminalNodes))
+		return
+	}
+
+	// Verify the error message indicates a validation problem
+	errMsg := err.Error()
+	if !containsAny(errMsg, []string{"validation", "incompatibilité", "unknown", "invalid"}) {
+		t.Errorf("❌ Error was detected but message doesn't indicate a validation error: %v", err)
+		return
+	}
+
+	t.Logf("✅ Error detection test passed: validation error correctly detected: %v", err)
+}
+
+// containsAny checks if a string contains any of the provided substrings
+func containsAny(s string, substrs []string) bool {
+	for _, substr := range substrs {
+		if len(s) >= len(substr) {
+			for i := 0; i <= len(s)-len(substr); i++ {
+				if s[i:i+len(substr)] == substr {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // TestBasicNetworkIntegrity validates the basic integrity of a simple RETE network

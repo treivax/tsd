@@ -256,6 +256,10 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 	// NOUVEAU: Évaluer la condition complète qui peut contenir des expressions arithmétiques
 	if jn.Condition != nil {
 		evaluator := NewAlphaConditionEvaluator()
+		// Activer le mode d'évaluation partielle pour les jointures en cascade
+		// où toutes les variables ne sont pas encore disponibles
+		evaluator.SetPartialEvalMode(true)
+
 		// Lier toutes les variables aux faits
 		for varName, fact := range bindings {
 			evaluator.variableBindings[varName] = fact
@@ -263,7 +267,6 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 
 		result, err := evaluator.evaluateExpression(jn.Condition)
 		if err != nil {
-			fmt.Printf("  ❌ Erreur évaluation condition complète: %v\n", err)
 			return false
 		}
 
