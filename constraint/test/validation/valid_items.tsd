@@ -1,0 +1,30 @@
+# Valid Items Example
+# This file contains only valid types, facts, and rules for testing
+
+# Type definitions
+type Person : <id: string, name: string, age: number>
+type Product : <id: string, name: string, price: number, category: string>
+type Order : <id: string, customer_id: string, product_id: string, quantity: number, total: number>
+
+# Valid facts
+Person(id: "P001", name: "Alice", age: 30)
+Person(id: "P002", name: "Bob", age: 25)
+Person(id: "P003", name: "Charlie", age: 45)
+
+Product(id: "PR001", name: "Laptop", price: 999.99, category: "electronics")
+Product(id: "PR002", name: "Mouse", price: 29.99, category: "electronics")
+Product(id: "PR003", name: "Desk", price: 299.99, category: "furniture")
+
+Order(id: "O001", customer_id: "P001", product_id: "PR001", quantity: 1, total: 999.99)
+Order(id: "O002", customer_id: "P002", product_id: "PR002", quantity: 2, total: 59.98)
+
+# Valid rules
+rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id, p.name)
+
+rule expensive_product : {pr: Product} / pr.price > 500 ==> high_value_item(pr.id, pr.name, pr.price)
+
+rule electronics_order : {o: Order, pr: Product} / o.product_id == pr.id AND pr.category == "electronics" ==> electronics_purchase(o.id, o.customer_id)
+
+rule senior_discount : {p: Person} / p.age >= 60 ==> eligible_for_discount(p.id, p.name)
+
+rule bulk_order : {o: Order} / o.quantity >= 5 ==> bulk_purchase(o.id, o.quantity)

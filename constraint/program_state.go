@@ -5,6 +5,7 @@
 package constraint
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -287,7 +288,18 @@ func (ps *ProgramState) validateRule(rule *Expression, filename string) error {
 	}
 
 	if rule.Action != nil {
-		err = ps.validateFieldAccesses(rule.Action, variables)
+		// Convert Action struct to map[string]interface{} for validation
+		actionBytes, err := json.Marshal(rule.Action)
+		if err != nil {
+			return fmt.Errorf("failed to serialize action: %w", err)
+		}
+		var actionMap map[string]interface{}
+		err = json.Unmarshal(actionBytes, &actionMap)
+		if err != nil {
+			return fmt.Errorf("failed to deserialize action: %w", err)
+		}
+
+		err = ps.validateFieldAccesses(actionMap, variables)
 		if err != nil {
 			return fmt.Errorf("action validation failed: %w", err)
 		}

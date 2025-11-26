@@ -48,6 +48,43 @@ Les anciens flags `-constraint` et `-facts` affichent maintenant un avertissemen
 
 ### ✨ Added
 
+#### Type Validation Stricte
+
+**Validation automatique des types et champs pour les règles et faits.**
+
+Le système valide maintenant strictement que :
+- Les types référencés existent
+- Les champs référencés existent dans les types
+- Les types de valeurs correspondent aux définitions
+
+**Comportement non-bloquant :**
+```bash
+⚠️  Skipping invalid rule in example.tsd: variable u references undefined type UnknownType
+⚠️  Skipping invalid fact in example.tsd: fact contains undefined field salary for type Person
+```
+
+**Caractéristiques :**
+- Erreurs enregistrées dans `ProgramState.Errors`
+- Items invalides rejetés automatiquement
+- Items valides traités normalement
+- Validation des contraintes ET des actions
+- Messages d'erreur descriptifs avec fichier source
+
+**Exemple :**
+```tsd
+type Person : <id: string, name: string, age: number>
+
+# ✓ VALID - sera accepté
+Person(id: "P001", name: "Alice", age: 25)
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
+
+# ✗ INVALID - sera rejeté avec warning
+Person(id: "P002", salary: 50000)  # champ 'salary' n'existe pas
+rule r2 : {p: Person} / p.salary > 0 ==> high_earner(p.id)  # champ invalide
+```
+
+**Documentation :** Voir `constraint/docs/TYPE_VALIDATION.md`
+
 - **Extension unifiée `.tsd`** : Un seul type de fichier pour types, règles et faits
   - Simplifie la structure du projet
   - Réduit la fragmentation des programmes

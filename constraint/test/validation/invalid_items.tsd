@@ -1,0 +1,43 @@
+# Invalid Items Example
+# This file contains intentionally invalid types, facts, and rules for testing validation
+
+# Valid type definitions
+type Person : <id: string, name: string, age: number>
+type Product : <id: string, name: string, price: number, category: string>
+
+# Valid facts
+Person(id: "P001", name: "Alice", age: 30)
+Product(id: "PR001", name: "Laptop", price: 999.99, category: "electronics")
+
+# INVALID FACT: References undefined type
+UnknownType(id: "U001", value: "test")
+
+# INVALID FACT: Contains undefined field 'salary' (Person only has id, name, age)
+Person(id: "P002", name: "Bob", age: 25, salary: 50000)
+
+# INVALID FACT: Wrong field type (age should be number, not string)
+Person(id: "P003", name: "Charlie", age: "thirty-five")
+
+# INVALID FACT: Undefined field 'stock' in Product
+Product(id: "PR002", name: "Mouse", price: 29.99, category: "electronics", stock: 100)
+
+# Valid rule
+rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id, p.name)
+
+# INVALID RULE: References undefined type 'Customer'
+rule customer_check : {c: Customer} / c.status == "active" ==> active_customer(c.id)
+
+# INVALID RULE: Invalid field access in constraint (Person has no 'salary' field)
+rule high_earner : {p: Person} / p.salary > 50000 ==> wealthy_person(p.id)
+
+# INVALID RULE: Invalid field access in action (Person has no 'email' field)
+rule send_email : {p: Person} / p.age >= 18 ==> notify(p.id, p.email)
+
+# INVALID RULE: Multiple invalid field accesses
+rule complex_invalid : {p: Person, pr: Product} / p.membership_level == "gold" AND pr.stock > 0 ==> special_offer(p.id, pr.id)
+
+# INVALID RULE: References undefined type in multi-variable rule
+rule order_check : {o: Order, p: Person} / o.customer_id == p.id ==> customer_order(o.id, p.id)
+
+# Valid rule (for comparison)
+rule expensive_product : {pr: Product} / pr.price > 500 ==> high_value_item(pr.id, pr.name)
