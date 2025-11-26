@@ -5,6 +5,48 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.3.0] - 2025-11-26
+
+### 🧹 Grand Nettoyage (Deep Clean)
+
+#### Fichiers Supprimés
+- **24 fichiers obsolètes** supprimés (rapports de session temporaires)
+- **1 fichier backup** supprimé (`constraint/grammar/constraint.peg.bak`)
+- **3 fichiers HTML temporaires** supprimés (rapports de couverture)
+- **2 prompts obsolètes** supprimés (`.github/prompts/CREATION_RECAP.md`, `QUICK_REFERENCE.md`)
+
+#### Réorganisation
+- **6 scripts déplacés** de la racine vers `scripts/` pour meilleure organisation
+- Scripts désormais tous dans `scripts/` (12 fichiers au total)
+- Structure du projet plus claire et cohérente
+
+#### Conformité de Licence
+- ✅ Ajout de **LICENSE** (MIT License)
+- ✅ Ajout de **LICENSE_AUDIT_REPORT.md** (audit complet des dépendances)
+- ✅ Ajout de **NOTICE** (avis de droits d'auteur)
+- ✅ Ajout de **THIRD_PARTY_LICENSES.md** (licences des dépendances tierces)
+- ✅ Nouveau prompt: `.github/prompts/verify-license-compliance.md`
+- ✅ Script d'ajout d'en-têtes de copyright: `scripts/add_copyright_headers.sh`
+
+#### Qualité du Code
+- ✅ Formatage complet: `go fmt ./...`
+- ✅ Nettoyage dépendances: `go mod tidy`
+- ✅ Validation: `go vet ./...` (0 erreur)
+- ✅ Tous les tests passent: 58/58 tests RETE unified ✅
+- ✅ Couverture maintenue: 61.3%
+
+#### Documentation
+- ✅ Ajout de **DEEP_CLEAN_REPORT.md** (rapport complet du nettoyage)
+- ✅ Mise à jour de 6 prompts dans `.github/prompts/`
+- ✅ README et CHANGELOG à jour
+
+### 📊 Résumé des Changements
+- **Fichiers supprimés**: 24 fichiers temporaires/obsolètes
+- **Fichiers ajoutés**: 5 fichiers (licence + rapport)
+- **Scripts réorganisés**: 6 scripts déplacés
+- **Commits**: 3 commits de nettoyage
+- **Impact**: Projet plus propre, mieux organisé, conforme aux licences
+
 ## [2.2.0] - 2024-11-25
 
 ### 🧹 Nettoyage & Optimisation
