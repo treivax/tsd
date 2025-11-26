@@ -34,7 +34,7 @@ type Company : <id: string, name: string, employees: number>`
 	// 2. Rules file
 	rulesFile := filepath.Join(tempDir, "rules.constraint")
 	rulesContent := `// Business rules
-{p: Person, c: Company} / p.age > 25 AND c.employees > 100 ==> AddToWorkforce(p.id, c.id)`
+rule r1 : {p: Person, c: Company} / p.age > 25 AND c.employees > 100 ==> AddToWorkforce(p.id, c.id)`
 
 	err = os.WriteFile(rulesFile, []byte(rulesContent), 0644)
 	if err != nil {

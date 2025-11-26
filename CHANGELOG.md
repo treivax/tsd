@@ -1,5 +1,138 @@
 # Changelog
 
+## [2.0.0] - 2025-01-XX
+
+### 🚨 Breaking Changes
+
+#### Identifiants de règles obligatoires
+
+**Toutes les règles doivent maintenant posséder un identifiant unique.**
+
+**Ancienne syntaxe (obsolète) :**
+```
+{p: Person} / p.age > 18 ==> adult(p.id)
+```
+
+**Nouvelle syntaxe (obligatoire) :**
+```
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
+```
+
+**Format complet :**
+```
+rule <IDENTIFIANT> : <VARIABLES> / <CONDITIONS> ==> <ACTION>
+```
+
+**Exemple complet :**
+```
+type Person : <id: string, name: string, age: number>
+
+rule check_adult : {p: Person} / p.age >= 18 ==> adult(p.id, p.name)
+rule check_senior : {p: Person} / p.age >= 65 ==> senior(p.id, p.name)
+```
+
+### ✨ Added
+
+- **Identifiants de règles** : Chaque règle possède maintenant un identifiant unique
+  - Format : `rule <id> : {variables} / conditions ==> action`
+  - Permet la gestion et la suppression de règles individuelles
+  - Améliore la traçabilité et le débogage
+  - Le champ `ruleId` est maintenant présent dans toutes les structures JSON des règles
+
+- **Validation de l'unicité des identifiants** : Le parseur détecte automatiquement les IDs dupliqués
+  - Erreur non-bloquante : les règles avec ID dupliqué sont ignorées avec un avertissement
+  - Les IDs utilisés sont tracés dans `ProgramState.RuleIDs`
+  - Après un `reset`, tous les IDs peuvent être réutilisés
+  - Les erreurs sont enregistrées dans `ProgramState.Errors` pour suivi
+  - Format du message : `⚠️ Skipping duplicate rule ID in <file>: rule ID '<id>' already used`
+
+- **Script de migration automatique** : `scripts/add_rule_ids.sh`
+  - Migre automatiquement tous les fichiers `.constraint`
+  - Ajoute des identifiants séquentiels (r1, r2, r3, ...)
+  - Préserve les règles déjà migrées
+  - 344 règles migrées avec succès dans la suite de tests
+
+- **Documentation complète** : `docs/rule_identifiers.md`
+  - Guide complet sur la syntaxe des identifiants
+  - Exemples pour tous les types de règles
+  - Bonnes pratiques de nommage
+  - Guide de migration
+
+- **Documentation de validation** : `docs/rule_id_uniqueness.md`
+  - Comportement de la validation d'unicité
+  - Gestion des erreurs non-bloquantes
+  - Exemples de cas valides et invalides
+  - Comportement du reset avec les IDs
+
+### 🔧 Changed
+
+- **Grammaire PEG** : Mise à jour pour rendre le préfixe `rule <id> :` obligatoire
+- **Types de données** : Ajout du champ `RuleId` dans les structures `Expression`
+  - `constraint/constraint_types.go`
+  - `constraint/pkg/domain/types.go`
+
+- **ProgramState** : Ajout du suivi des identifiants de règles
+  - Nouveau champ `RuleIDs map[string]bool` pour tracer les IDs utilisés
+  - Validation dans `mergeRules()` : détection des duplicates
+  - Méthode `Reset()` mise à jour pour effacer les IDs tracés
+  - Erreurs non-bloquantes enregistrées dans `Errors []ValidationError`
+
+### 📝 Migration
+
+Pour migrer vos fichiers existants :
+
+```bash
+cd tsd
+bash scripts/add_rule_ids.sh
+```
+
+Le script traite automatiquement tous les fichiers `.constraint` et ajoute les identifiants manquants.
+
+**Migration manuelle :**
+
+Pour chaque règle, ajouter `rule <id> :` avant l'ensemble des variables :
+
+```diff
+- {p: Person} / p.age > 18 ==> adult(p.id)
++ rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
+```
+
+### 📊 Statistiques de migration
+
+- **79 fichiers** `.constraint` traités
+- **61 fichiers** mis à jour
+- **344 règles** migrées avec succès
+- **Tous les tests** passent (100%)
+- **10 tests de validation** ajoutés pour l'unicité des IDs :
+  - Tests unitaires : détection de duplicates dans même fichier et entre fichiers
+  - Tests d'intégration : comportement avec reset
+  - Tests de cas limites : IDs vides, multiples duplicates
+
+### 🎯 Impact
+
+Cette modification affecte **tous** les fichiers de contraintes existants. La syntaxe sans identifiant de règle n'est plus supportée et génère une erreur de parsing.
+
+**Avantages :**
+- 🎯 Gestion fine des règles (suppression, modification)
+- 📊 Traçabilité améliorée dans les logs
+- 🐛 Débogage facilité
+- 📈 Préparation pour les statistiques par règle
+- 🔍 Support futur de la suppression dynamique de règles
+
+### 📚 Documentation
+
+- Nouvelle documentation : [`docs/rule_identifiers.md`](docs/rule_identifiers.md)
+- Nouvelle documentation : [`docs/rule_id_uniqueness.md`](docs/rule_id_uniqueness.md)
+- Exemples mis à jour dans tous les fichiers de test
+- Scripts de migration fournis
+- Fichiers de démonstration :
+  - `constraint/test/integration/duplicate_rule_ids.constraint` - Exemple de duplicates
+  - `constraint/test/integration/reset_rule_ids.constraint` - Exemple avec reset
+
+---
+
+# Changelog
+
 Toutes les modifications notables de ce projet seront documentées dans ce fichier.
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),

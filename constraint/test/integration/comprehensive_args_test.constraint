@@ -25,19 +25,19 @@ type Product : <
 >
 
 // Test 1: Pure variable arguments (complete objects)
-{u: User} / u.age >= 18 ==> process_adult(u)
+rule r1 : {u: User} / u.age >= 18 ==> process_adult(u)
 
 // Test 2: Pure field arguments (simple values)
-{u: User} / u.active == true ==> log_user_info(u.id, u.name, u.age)
+rule r2 : {u: User} / u.active == true ==> log_user_info(u.id, u.name, u.age)
 
 // Test 3: Mixed arguments (objects + fields in same action)
-{u: User, a: Address} / u.active == true AND a.user_id == u.id ==> process_user_address(u, a.street, a.city, a)
+rule r3 : {u: User, a: Address} / u.active == true AND a.user_id == u.id ==> process_user_address(u, a.street, a.city, a)
 
 // Test 4: Complex mixed arguments with multiple objects
-{u: User, a: Address, p: Product} / u.age >= 18 AND a.user_id == u.id AND p.price > 100 ==> process_order(u, u.id, a, a.city, p, p.name, p.price)
+rule r4 : {u: User, a: Address, p: Product} / u.age >= 18 AND a.user_id == u.id AND p.price > 100 ==> process_order(u, u.id, a, a.city, p, p.name, p.price)
 
 // Test 5: Multiple same-type objects
-{a1: Address, a2: Address} / a1.city == "Paris" AND a2.city == "Lyon" AND a2.user_id != a1.user_id ==> compare_addresses(a1, a2, a1.street, a2.street)
+rule r5 : {a1: Address, a2: Address} / a1.city == "Paris" AND a2.city == "Lyon" AND a2.user_id != a1.user_id ==> compare_addresses(a1, a2, a1.street, a2.street)
 
 // Test 6: Simple field access
-{p: Product} / p.category == "electronics" ==> analyze_product(p, p.category)
+rule r6 : {p: Product} / p.category == "electronics" ==> analyze_product(p, p.category)

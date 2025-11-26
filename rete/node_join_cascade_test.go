@@ -20,7 +20,7 @@ func TestJoinNodeCascade_TwoVariablesIntegration(t *testing.T) {
 type User : <id: string, name: string>
 type Order : <id: string, user_id: string, amount: number>
 
-{u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_order(u.id, o.id)
+rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_order(u.id, o.id)
 `
 
 	tmpFile := createTempConstraintFile(t, "two_var_cascade", constraintContent)
@@ -184,7 +184,7 @@ func TestJoinNodeCascade_OrderIndependence(t *testing.T) {
 type User : <id: string>
 type Order : <id: string, user_id: string>
 
-{u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
+rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `
 
 	testOrders := []struct {
@@ -257,7 +257,7 @@ func TestJoinNodeCascade_MultipleMatchingFacts(t *testing.T) {
 type User : <id: string>
 type Order : <id: string, user_id: string>
 
-{u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
+rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `
 
 	tmpFile := createTempConstraintFile(t, "multi_match", constraintContent)
@@ -332,7 +332,7 @@ func TestJoinNodeCascade_Retraction(t *testing.T) {
 type User : <id: string>
 type Order : <id: string, user_id: string>
 
-{u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
+rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `
 
 	tmpFile := createTempConstraintFile(t, "retract_test", constraintContent)

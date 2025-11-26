@@ -1,4 +1,4 @@
 // Test fonction UPPER() (majuscules)
 type Department : <id: string, name: string, active: bool>
 
-{d: Department} / UPPER(d.name) == "FINANCE" ==> finance_dept_found(d.id, d.name)
+rule r1 : {d: Department} / UPPER(d.name) == "FINANCE" ==> finance_dept_found(d.id, d.name)

@@ -45,7 +45,7 @@ func TestBuildNetworkFromConstraintFile(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	constraintContent := []byte(`type Person : <id: string, name: string>
 
-{p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
+rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestBuildNetworkFromConstraintFileWithFacts(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
 
-{p: Person} / p.age > 18 ==> adult(p.id)`)
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -385,7 +385,7 @@ func TestSubmitFactsAndAnalyze(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
 
-{p: Person} / p.age > 18 ==> adult(p.id)`)
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -435,7 +435,7 @@ func TestSubmitFactsAndAnalyzeEmptyFacts(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	constraintContent := []byte(`type Person : <id: string>
 
-{p: Person} / p.id != "" ==> process_person(p.id)`)
+rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -460,7 +460,7 @@ func TestSubmitFactsAndAnalyzeInvalidFact(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	constraintContent := []byte(`type Person : <id: string, name: string>
 
-{p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
+rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -497,7 +497,7 @@ func TestMultipleFactTypes(t *testing.T) {
 	constraintContent := []byte(`type Person : <id: string, name: string>
 type Order : <id: string, customer_id: string>
 
-{p: Person, o: Order} / p.id == o.customer_id ==> match(p.id)`)
+rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> match(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -580,7 +580,7 @@ func TestHelperPipelineIntegration(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 	content := []byte(`type Test : <id: string>
 
-{t: Test} / t.id != "" ==> process_test(t.id)`)
+rule r1 : {t: Test} / t.id != "" ==> process_test(t.id)`)
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
@@ -616,7 +616,7 @@ func TestBuildNetworkErrorHandling(t *testing.T) {
 	constraintFile := filepath.Join(tempDir2, "valid.constraint")
 	content := []byte(`type Person : <id: string>
 
-{p: Person} / p.id != "" ==> process_person(p.id)`)
+rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}

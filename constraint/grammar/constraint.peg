@@ -95,9 +95,10 @@ AtomicType <- "string" { return "string", nil } /
               "number" { return "number", nil } /
               "bool"   { return "bool", nil }
 
-Expression <- set:Set _ "/" _ constraints:Constraints _ action:Action {
+Expression <- "rule" _ ruleId:IdentName _ ":" _ set:Set _ "/" _ constraints:Constraints _ "==>" _ action:Action {
     return map[string]interface{}{
         "type": "expression",
+        "ruleId": ruleId,
         "set": set,
         "constraints": constraints,
         "action": action,
@@ -317,7 +318,7 @@ FunctionArgList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     return args, nil
 }
 
-Action <- "==>" _ job:JobCall {
+Action <- job:JobCall {
     return map[string]interface{}{
         "type": "action",
         "job": job,

@@ -5,31 +5,31 @@ type Transaction : <id: string, account_id: string, amount: number, type: string
 type Alert : <account_id: string, type: string, severity: string, message: string>
 
 // Existence simple - il existe au moins une transaction suspecte
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 10000) ==> flag_suspicious_account(a.id)
+rule r1 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 10000) ==> flag_suspicious_account(a.id)
 
 // Existence avec conditions multiples
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 5000 AND t.type == "withdrawal") ==> monitor_large_withdrawal(a.id)
+rule r2 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 5000 AND t.type == "withdrawal") ==> monitor_large_withdrawal(a.id)
 
 // Existence avec fonctions
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND LENGTH(t.type) > 5 AND UPPER(t.type) CONTAINS "SUSPICIOUS") ==> trigger_security_review(a.id)
+rule r3 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND LENGTH(t.type) > 5 AND UPPER(t.type) CONTAINS "SUSPICIOUS") ==> trigger_security_review(a.id)
 
 // Existence avec expressions arithmétiques
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > a.balance * 0.5) ==> check_overdraft_risk(a.id)
+rule r4 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > a.balance * 0.5) ==> check_overdraft_risk(a.id)
 
 // Existence combinée avec conditions normales
-{a: Account} / a.balance > 1000 AND EXISTS (t: Transaction / t.account_id == a.id AND t.amount < 0) ==> investigate_negative_transaction(a.id)
+rule r5 : {a: Account} / a.balance > 1000 AND EXISTS (t: Transaction / t.account_id == a.id AND t.amount < 0) ==> investigate_negative_transaction(a.id)
 
 // Existence avec négation interne
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND NOT (t.type == "normal")) ==> review_unusual_activity(a.id)
+rule r6 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND NOT (t.type == "normal")) ==> review_unusual_activity(a.id)
 
 // Existence multiple - deux variables existentielles
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 1000) AND EXISTS (alert: Alert / alert.account_id == a.id AND alert.severity == "high") ==> escalate_account_review(a.id)
+rule r7 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 1000) AND EXISTS (alert: Alert / alert.account_id == a.id AND alert.severity == "high") ==> escalate_account_review(a.id)
 
 // Existence avec opérateurs avancés
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.type IN ["withdrawal", "transfer"] AND t.timestamp > 1700000000) ==> verify_recent_activity(a.id)
+rule r8 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.type IN ["withdrawal", "transfer"] AND t.timestamp > 1700000000) ==> verify_recent_activity(a.id)
 
 // Existence imbriquée (EXISTS dans EXISTS - complexe)
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND EXISTS (alert: Alert / alert.account_id == t.account_id AND alert.severity != "low")) ==> process_complex_alert(a.id)
+rule r9 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND EXISTS (alert: Alert / alert.account_id == t.account_id AND alert.severity != "low")) ==> process_complex_alert(a.id)
 
 // Existence avec conditions d'agrégation (hybride ExistsNode + AccumulateNode)
-{a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 50000) ==> flag_high_volume_account(a.id)
+rule r10 : {a: Account} / EXISTS (t: Transaction / t.account_id == a.id AND t.amount > 50000) ==> flag_high_volume_account(a.id)

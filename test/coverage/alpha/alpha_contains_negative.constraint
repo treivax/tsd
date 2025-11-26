@@ -1,4 +1,4 @@
 // Test opérateur CONTAINS (contenance) - négation
 type Message : <id: string, content: string, urgent: bool>
 
-{m: Message} / NOT(m.content CONTAINS "urgent") ==> normal_message_found(m.id, m.content)
+rule r1 : {m: Message} / NOT(m.content CONTAINS "urgent") ==> normal_message_found(m.id, m.content)

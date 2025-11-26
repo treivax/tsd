@@ -1,4 +1,4 @@
 // Test inégalité négative
 type Order : <id: string, total: number, status: string>
 
-{o: Order} / NOT(o.status != "cancelled") ==> cancelled_order_found(o.id, o.total)
+rule r1 : {o: Order} / NOT(o.status != "cancelled") ==> cancelled_order_found(o.id, o.total)

@@ -1,4 +1,4 @@
 // Test condition booléenne négative
 type Account : <id: string, balance: number, active: bool>
 
-{a: Account} / NOT(a.active == true) ==> inactive_account_found(a.id, a.balance)
+rule r1 : {a: Account} / NOT(a.active == true) ==> inactive_account_found(a.id, a.balance)

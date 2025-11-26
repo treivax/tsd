@@ -8,7 +8,7 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
 
 // Scénario 1 : Détection de Fraude Ultra-Complexe
 // Combine Alpha + Beta + NOT + EXISTS + ACCUMULATE + Actions
-{c: Customer, ba: BankAccount, t: Transaction, se: SecurityEvent, cr: ComplianceRule} /
+rule r1 : {c: Customer, ba: BankAccount, t: Transaction, se: SecurityEvent, cr: ComplianceRule} /
     // Jointures de base (Beta)
     c.id == ba.customer_id AND
     ba.id == t.account_id AND
@@ -36,7 +36,7 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
     ==> freezeAccount(ba.id, c.id, "fraud")
 
 // Scénario 2 : Analyse de Risque Multi-Niveaux
-{c: Customer, ba: BankAccount} /
+rule r2 : {c: Customer, ba: BankAccount} /
     // Profil client à risque
     (c.risk_profile == "high" OR c.vip == false) AND
 
@@ -52,7 +52,7 @@ type ComplianceRule : <id: string, rule_type: string, threshold: number, active:
     ==> riskAssessment(c.id, ba.id, "multi_level")
 
 // Scénario 3 : Optimisation de Portefeuille (Finance)
-{c: Customer, ba: BankAccount} /
+rule r3 : {c: Customer, ba: BankAccount} /
     // Client VIP avec gros solde
     c.vip == true AND ba.balance > 500000 AND
 

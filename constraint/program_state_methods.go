@@ -51,4 +51,5 @@ func (ps *ProgramState) Reset() {
 	ps.Facts = make([]*Fact, 0)
 	ps.FilesParsed = make([]string, 0)
 	ps.Errors = make([]ValidationError, 0)
+	ps.RuleIDs = make(map[string]bool) // Clear rule IDs on reset
 }

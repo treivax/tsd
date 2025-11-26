@@ -19,176 +19,176 @@ type TestAlert : <id: string, user_id: string, level: string, message: string, t
 // =====================================================================
 
 // 1.1 Jointures égalité simples
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id ==> join_person_order_equal(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / o.product_id == prod.id ==> join_order_product_equal(o.id, prod.id)
+rule r1 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id ==> join_person_order_equal(p.id, o.id)
+rule r2 : {o: TestOrder, prod: TestProduct} / o.product_id == prod.id ==> join_order_product_equal(o.id, prod.id)
 
 // 1.2 Jointures inégalité
-{p: TestPerson, o: TestOrder} / p.id != o.customer_id ==> join_person_order_different(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / o.amount != prod.price ==> join_order_product_price_diff(o.id, prod.id)
+rule r3 : {p: TestPerson, o: TestOrder} / p.id != o.customer_id ==> join_person_order_different(p.id, o.id)
+rule r4 : {o: TestOrder, prod: TestProduct} / o.amount != prod.price ==> join_order_product_price_diff(o.id, prod.id)
 
 // 1.3 Jointures comparaisons numériques
-{p: TestPerson, o: TestOrder} / p.age > o.amount ==> join_age_greater_amount(p.id, o.id)
-{p: TestPerson, o: TestOrder} / p.salary >= o.total ==> join_salary_geq_total(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / o.amount < prod.price ==> join_amount_less_price(o.id, prod.id)
-{o: TestOrder, prod: TestProduct} / o.total <= prod.price ==> join_total_leq_price(o.id, prod.id)
+rule r5 : {p: TestPerson, o: TestOrder} / p.age > o.amount ==> join_age_greater_amount(p.id, o.id)
+rule r6 : {p: TestPerson, o: TestOrder} / p.salary >= o.total ==> join_salary_geq_total(p.id, o.id)
+rule r7 : {o: TestOrder, prod: TestProduct} / o.amount < prod.price ==> join_amount_less_price(o.id, prod.id)
+rule r8 : {o: TestOrder, prod: TestProduct} / o.total <= prod.price ==> join_total_leq_price(o.id, prod.id)
 
 // 1.4 Jointures avec expressions arithmétiques
-{p: TestPerson, o: TestOrder} / p.age * 1000 >= o.total ==> join_age_times_thousand_geq_total(p.id, o.id)
-{p: TestPerson, o: TestOrder} / p.salary / 12 > o.amount ==> join_monthly_salary_gt_amount(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / o.amount + o.discount == prod.price ==> join_discounted_amount_eq_price(o.id, prod.id)
-{o: TestOrder, prod: TestProduct} / (o.total - o.discount) * 1.2 <= prod.price * prod.rating ==> join_complex_arithmetic(o.id, prod.id)
+rule r9 : {p: TestPerson, o: TestOrder} / p.age * 1000 >= o.total ==> join_age_times_thousand_geq_total(p.id, o.id)
+rule r10 : {p: TestPerson, o: TestOrder} / p.salary / 12 > o.amount ==> join_monthly_salary_gt_amount(p.id, o.id)
+rule r11 : {o: TestOrder, prod: TestProduct} / o.amount + o.discount == prod.price ==> join_discounted_amount_eq_price(o.id, prod.id)
+rule r12 : {o: TestOrder, prod: TestProduct} / (o.total - o.discount) * 1.2 <= prod.price * prod.rating ==> join_complex_arithmetic(o.id, prod.id)
 
 // 1.5 Jointures avec opérateurs logiques AND/OR
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND p.active == true AND o.status == "pending" ==> join_active_customer_pending_order(p.id, o.id)
-{p: TestPerson, o: TestOrder} / p.salary > 50000 AND o.total > 1000 AND p.department == o.region ==> join_high_earner_large_order(p.id, o.id)
-{p: TestPerson, o: TestOrder} / (p.age > 30 OR p.level > 5) AND (o.amount > 500 OR o.priority == "high") ==> join_senior_or_experienced_valuable_order(p.id, o.id)
+rule r13 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND p.active == true AND o.status == "pending" ==> join_active_customer_pending_order(p.id, o.id)
+rule r14 : {p: TestPerson, o: TestOrder} / p.salary > 50000 AND o.total > 1000 AND p.department == o.region ==> join_high_earner_large_order(p.id, o.id)
+rule r15 : {p: TestPerson, o: TestOrder} / (p.age > 30 OR p.level > 5) AND (o.amount > 500 OR o.priority == "high") ==> join_senior_or_experienced_valuable_order(p.id, o.id)
 
 // 1.6 Jointures avec fonctions string
-{p: TestPerson, o: TestOrder} / UPPER(p.tags) == UPPER(o.status) ==> join_tags_status_case_insensitive(p.id, o.id)
-{p: TestPerson, o: TestOrder} / LENGTH(p.id) >= LENGTH(o.region) ==> join_name_length_geq_region_length(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / prod.keywords CONTAINS o.status ==> join_keywords_contains_status(o.id, prod.id)
+rule r16 : {p: TestPerson, o: TestOrder} / UPPER(p.tags) == UPPER(o.status) ==> join_tags_status_case_insensitive(p.id, o.id)
+rule r17 : {p: TestPerson, o: TestOrder} / LENGTH(p.id) >= LENGTH(o.region) ==> join_name_length_geq_region_length(p.id, o.id)
+rule r18 : {o: TestOrder, prod: TestProduct} / prod.keywords CONTAINS o.status ==> join_keywords_contains_status(o.id, prod.id)
 
 // 1.7 Jointures avec opérateur IN
-{p: TestPerson, o: TestOrder} / p.department IN ["sales", "marketing"] AND o.region IN ["north", "south"] ==> join_sales_marketing_north_south(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / o.status IN ["confirmed", "shipped"] AND prod.category IN ["electronics", "books"] ==> join_confirmed_shipped_electronics_books(o.id, prod.id)
+rule r19 : {p: TestPerson, o: TestOrder} / p.department IN ["sales", "marketing"] AND o.region IN ["north", "south"] ==> join_sales_marketing_north_south(p.id, o.id)
+rule r20 : {o: TestOrder, prod: TestProduct} / o.status IN ["confirmed", "shipped"] AND prod.category IN ["electronics", "books"] ==> join_confirmed_shipped_electronics_books(o.id, prod.id)
 
 // 1.8 Jointures avec conditions boolean
-{p: TestPerson, o: TestOrder} / p.active == true AND (o.status == "active" OR o.priority == "high") ==> join_active_person_priority_order(p.id, o.id)
-{o: TestOrder, prod: TestProduct} / prod.available == true AND o.amount > 0 ==> join_available_product_positive_amount(o.id, prod.id)
+rule r21 : {p: TestPerson, o: TestOrder} / p.active == true AND (o.status == "active" OR o.priority == "high") ==> join_active_person_priority_order(p.id, o.id)
+rule r22 : {o: TestOrder, prod: TestProduct} / prod.available == true AND o.amount > 0 ==> join_available_product_positive_amount(o.id, prod.id)
 
 // 1.9 Jointures triple (3 faits)
-{p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> join_triple_person_order_product(p.id, o.id, prod.id)
-{p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id AND p.department == prod.category ==> join_triple_department_matches_category(p.id, o.id, prod.id)
+rule r23 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> join_triple_person_order_product(p.id, o.id, prod.id)
+rule r24 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id AND p.department == prod.category ==> join_triple_department_matches_category(p.id, o.id, prod.id)
 
 // 1.10 Jointures avec conditions de plage
-{p: TestPerson, o: TestOrder} / p.age >= 25 AND p.age <= 65 AND o.total >= 100 AND o.total <= 10000 ==> join_working_age_reasonable_order(p.id, o.id)
+rule r25 : {p: TestPerson, o: TestOrder} / p.age >= 25 AND p.age <= 65 AND o.total >= 100 AND o.total <= 10000 ==> join_working_age_reasonable_order(p.id, o.id)
 
 // =====================================================================
 // SECTION 2: NotNode - Négations exhaustives
 // =====================================================================
 
 // 2.1 Négations simples d'égalité
-{p: TestPerson} / NOT (p.age == 0) ==> not_zero_age(p.id)
-{o: TestOrder} / NOT (o.status == "cancelled") ==> not_cancelled_order(o.id)
+rule r26 : {p: TestPerson} / NOT (p.age == 0) ==> not_zero_age(p.id)
+rule r27 : {o: TestOrder} / NOT (o.status == "cancelled") ==> not_cancelled_order(o.id)
 
 // 2.2 Négations de comparaisons
-{p: TestPerson} / NOT (p.salary < 30000) ==> not_low_salary(p.id)
-{o: TestOrder} / NOT (o.total > 50000) ==> not_high_total(o.id)
-{prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)
+rule r28 : {p: TestPerson} / NOT (p.salary < 30000) ==> not_low_salary(p.id)
+rule r29 : {o: TestOrder} / NOT (o.total > 50000) ==> not_high_total(o.id)
+rule r30 : {prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)
 
 // 2.3 Négations d'expressions arithmétiques
-{p: TestPerson} / NOT (p.age * 1000 < p.salary) ==> not_age_times_thousand_less_salary(p.id)
-{o: TestOrder} / NOT (o.amount + o.discount >= o.total) ==> not_amount_plus_discount_geq_total(o.id)
+rule r31 : {p: TestPerson} / NOT (p.age * 1000 < p.salary) ==> not_age_times_thousand_less_salary(p.id)
+rule r32 : {o: TestOrder} / NOT (o.amount + o.discount >= o.total) ==> not_amount_plus_discount_geq_total(o.id)
 
 // 2.4 Négations avec conditions logiques
-{p: TestPerson} / NOT (p.active == true AND p.salary > 70000) ==> not_active_high_earner(p.id)
-{o: TestOrder} / NOT (o.status == "pending" OR o.priority == "low") ==> not_pending_or_low_priority(o.id)
+rule r33 : {p: TestPerson} / NOT (p.active == true AND p.salary > 70000) ==> not_active_high_earner(p.id)
+rule r34 : {o: TestOrder} / NOT (o.status == "pending" OR o.priority == "low") ==> not_pending_or_low_priority(o.id)
 
 // 2.5 Négations de fonctions string
-{p: TestPerson} / NOT (LENGTH(p.id) < 3) ==> not_short_name(p.id)
-{prod: TestProduct} / NOT (prod.keywords CONTAINS "obsolete") ==> not_obsolete_product(prod.id)
+rule r35 : {p: TestPerson} / NOT (LENGTH(p.id) < 3) ==> not_short_name(p.id)
+rule r36 : {prod: TestProduct} / NOT (prod.keywords CONTAINS "obsolete") ==> not_obsolete_product(prod.id)
 
 // 2.6 Négations d'opérateur IN
-{p: TestPerson} / NOT (p.department IN ["temp", "intern"]) ==> not_temporary_employee(p.id)
-{o: TestOrder} / NOT (o.status IN ["cancelled", "refunded"]) ==> not_cancelled_refunded_order(o.id)
+rule r37 : {p: TestPerson} / NOT (p.department IN ["temp", "intern"]) ==> not_temporary_employee(p.id)
+rule r38 : {o: TestOrder} / NOT (o.status IN ["cancelled", "refunded"]) ==> not_cancelled_refunded_order(o.id)
 
 // 2.7 Négations de jointures (NOT avec plusieurs faits)
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total > p.salary / 12) ==> not_order_exceeds_monthly_salary(p.id, o.id)
+rule r39 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total > p.salary / 12) ==> not_order_exceeds_monthly_salary(p.id, o.id)
 
 // 2.8 Double négation
-{p: TestPerson} / NOT (NOT (p.active == true)) ==> double_not_active(p.id)
+rule r40 : {p: TestPerson} / NOT (NOT (p.active == true)) ==> double_not_active(p.id)
 
 // 2.9 Négations complexes imbriquées
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT ((p.age < 18 OR p.salary < 25000) AND (o.total > 1000 OR o.priority == "urgent")) ==> not_minor_poor_large_urgent_order(p.id, o.id)
+rule r41 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT ((p.age < 18 OR p.salary < 25000) AND (o.total > 1000 OR o.priority == "urgent")) ==> not_minor_poor_large_urgent_order(p.id, o.id)
 
 // =====================================================================
 // SECTION 3: ExistsNode - Quantification existentielle exhaustive
 // =====================================================================
 
 // 3.1 EXISTS simples avec égalité
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id) ==> exists_order_for_person(p.id)
-{prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id) ==> exists_order_for_product(prod.id)
+rule r42 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id) ==> exists_order_for_person(p.id)
+rule r43 : {prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id) ==> exists_order_for_product(prod.id)
 
 // 3.2 EXISTS avec comparaisons numériques
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 1000) ==> exists_large_order_for_person(p.id)
-{prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id AND o.amount >= prod.price) ==> exists_full_price_order(prod.id)
+rule r44 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 1000) ==> exists_large_order_for_person(p.id)
+rule r45 : {prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id AND o.amount >= prod.price) ==> exists_full_price_order(prod.id)
 
 // 3.3 EXISTS avec expressions arithmétiques
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > p.salary / 10) ==> exists_order_over_ten_percent_salary(p.id)
-{p: TestPerson} / EXISTS (t: TestTransaction / t.account_id == p.id AND t.amount * 2 >= p.salary) ==> exists_large_transaction(p.id)
+rule r46 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > p.salary / 10) ==> exists_order_over_ten_percent_salary(p.id)
+rule r47 : {p: TestPerson} / EXISTS (t: TestTransaction / t.account_id == p.id AND t.amount * 2 >= p.salary) ==> exists_large_transaction(p.id)
 
 // 3.4 EXISTS avec conditions logiques
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND (o.status == "shipped" OR o.priority == "high") AND o.total > 500) ==> exists_shipped_high_priority_valuable_order(p.id)
+rule r48 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND (o.status == "shipped" OR o.priority == "high") AND o.total > 500) ==> exists_shipped_high_priority_valuable_order(p.id)
 
 // 3.5 EXISTS avec fonctions string
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND LENGTH(o.region) > 5) ==> exists_order_long_region_name(p.id)
-{p: TestPerson} / EXISTS (prod: TestProduct / prod.keywords CONTAINS p.tags) ==> exists_product_matching_tags(p.id)
+rule r49 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND LENGTH(o.region) > 5) ==> exists_order_long_region_name(p.id)
+rule r50 : {p: TestPerson} / EXISTS (prod: TestProduct / prod.keywords CONTAINS p.tags) ==> exists_product_matching_tags(p.id)
 
 // 3.6 EXISTS avec opérateur IN
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.status IN ["confirmed", "shipped", "delivered"]) ==> exists_processed_order(p.id)
+rule r51 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.status IN ["confirmed", "shipped", "delivered"]) ==> exists_processed_order(p.id)
 
 // 3.7 EXISTS imbriqués (EXISTS dans EXISTS)
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND EXISTS (prod: TestProduct / prod.id == o.product_id AND prod.available == true)) ==> exists_order_with_available_product(p.id)
+rule r52 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND EXISTS (prod: TestProduct / prod.id == o.product_id AND prod.available == true)) ==> exists_order_with_available_product(p.id)
 
 // 3.8 EXISTS avec négation interne
-{p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND NOT (o.status == "cancelled")) ==> exists_non_cancelled_order(p.id)
+rule r53 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND NOT (o.status == "cancelled")) ==> exists_non_cancelled_order(p.id)
 
 // 3.9 Combinaison EXISTS et conditions externes
-{p: TestPerson} / p.active == true AND EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 2000) ==> active_person_with_large_order(p.id)
+rule r54 : {p: TestPerson} / p.active == true AND EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 2000) ==> active_person_with_large_order(p.id)
 
 // =====================================================================
 // SECTION 4: AccumulateNode - Agrégations exhaustives
 // =====================================================================
 
 // 4.1 SUM - Sommes simples par relation
-{p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.total) > 5000 ==> high_total_orders_sum(p.id)
-{p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.amount) >= 10 ==> high_amount_sum(p.id)
+rule r55 : {p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.total) > 5000 ==> high_total_orders_sum(p.id)
+rule r56 : {p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.amount) >= 10 ==> high_amount_sum(p.id)
 // 4.2 COUNT - Comptages avec conditions
-{p: TestPerson} / COUNT(o: TestOrder / p.id == o.customer_id) >= 3 ==> frequent_customer(p.id)
-{prod: TestProduct} / COUNT(o: TestOrder / prod.id == o.product_id) >= 2 ==> popular_product(prod.id)
+rule r57 : {p: TestPerson} / COUNT(o: TestOrder / p.id == o.customer_id) >= 3 ==> frequent_customer(p.id)
+rule r58 : {prod: TestProduct} / COUNT(o: TestOrder / prod.id == o.product_id) >= 2 ==> popular_product(prod.id)
 // 4.3 AVG - Moyennes
-{p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id ; o.total) > 500 ==> high_average_order_value(p.id)
+rule r59 : {p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id ; o.total) > 500 ==> high_average_order_value(p.id)
 // 4.4 MIN - Valeurs minimales
-{p: TestPerson} / MIN(o: TestOrder / p.id == o.customer_id ; o.total) > 100 ==> all_orders_over_hundred(p.id)
+rule r60 : {p: TestPerson} / MIN(o: TestOrder / p.id == o.customer_id ; o.total) > 100 ==> all_orders_over_hundred(p.id)
 //4.5 MAX - Valeurs maximales
-{p: TestPerson} / MAX(o: TestOrder / p.id == o.customer_id ; o.total) <= 10000 ==> max_order_under_ten_thousand(p.id)
+rule r61 : {p: TestPerson} / MAX(o: TestOrder / p.id == o.customer_id ; o.total) <= 10000 ==> max_order_under_ten_thousand(p.id)
 // 4.6 SUM avec condition complexe
-{p: TestPerson} / SUM(t: TestTransaction / p.id == t.account_id AND t.type == "purchase" ; t.amount) > 1000 ==> high_purchase_sum(p.id)
+rule r62 : {p: TestPerson} / SUM(t: TestTransaction / p.id == t.account_id AND t.type == "purchase" ; t.amount) > 1000 ==> high_purchase_sum(p.id)
 // 4.7 COUNT avec conditions multiples
-{p: TestPerson} / COUNT(t: TestTransaction / p.id == t.account_id AND t.approved == true) >= 5 ==> frequent_approved_transactions(p.id)
+rule r63 : {p: TestPerson} / COUNT(t: TestTransaction / p.id == t.account_id AND t.approved == true) >= 5 ==> frequent_approved_transactions(p.id)
 // 4.8 AVG avec filtrage par type
-{p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id AND o.status == "completed" ; o.amount) > 200 ==> high_avg_completed_orders(p.id)
+rule r64 : {p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id AND o.status == "completed" ; o.amount) > 200 ==> high_avg_completed_orders(p.id)
 // 4.9 MIN avec agrégation conditionnelle
-{p: TestPerson} / MIN(t: TestTransaction / p.id == t.account_id AND t.approved == true ; t.amount) > 50 ==> min_approved_transaction_threshold(p.id)
+rule r65 : {p: TestPerson} / MIN(t: TestTransaction / p.id == t.account_id AND t.approved == true ; t.amount) > 50 ==> min_approved_transaction_threshold(p.id)
 // =====================================================================
 // SECTION 5: Combinaisons complexes multi-noeuds Beta
 // =====================================================================
 
 // 5.1 JOIN + NOT
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total < 100) ==> join_not_cheap_order(p.id, o.id)
+rule r66 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total < 100) ==> join_not_cheap_order(p.id, o.id)
 
 // 5.2 JOIN + EXISTS
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> join_order_with_existing_product(p.id, o.id)
+rule r67 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> join_order_with_existing_product(p.id, o.id)
 
 // 5.3 NOT + EXISTS
-{p: TestPerson} / NOT (EXISTS (o: TestOrder / o.customer_id == p.id AND o.status == "cancelled")) ==> not_exists_cancelled_order(p.id)
+rule r68 : {p: TestPerson} / NOT (EXISTS (o: TestOrder / o.customer_id == p.id AND o.status == "cancelled")) ==> not_exists_cancelled_order(p.id)
 
 // 5.4 Combinaison triple
-{p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.status == "pending") AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> complex_join_not_exists(p.id, o.id)
+rule r69 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.status == "pending") AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> complex_join_not_exists(p.id, o.id)
 
 // =====================================================================
 // SECTION 6: Cas limites et edge cases pour tests de robustesse
 // =====================================================================
 
 // 6.1 Conditions avec valeurs nulles/zero
-{p: TestPerson} / p.age != 0 AND p.salary > 0 ==> valid_non_zero_person(p.id)
-{o: TestOrder} / o.amount > 0 AND o.total > 0 ==> valid_positive_order(o.id)
+rule r70 : {p: TestPerson} / p.age != 0 AND p.salary > 0 ==> valid_non_zero_person(p.id)
+rule r71 : {o: TestOrder} / o.amount > 0 AND o.total > 0 ==> valid_positive_order(o.id)
 
 // 6.2 Chaînes vides et longueurs
-{p: TestPerson} / LENGTH(p.id) > 0 ==> valid_person_name(p.id)
+rule r72 : {p: TestPerson} / LENGTH(p.id) > 0 ==> valid_person_name(p.id)
 
 // 6.3 Conditions avec précision décimale
-{p: TestPerson} / p.score >= 7.5 AND p.score <= 9.99 ==> high_score_person(p.id)
+rule r73 : {p: TestPerson} / p.score >= 7.5 AND p.score <= 9.99 ==> high_score_person(p.id)
 
 // 6.4 Tests jointures multiples
-{p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> three_way_join_test(p.id, o.id, prod.id)
+rule r74 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> three_way_join_test(p.id, o.id, prod.id)

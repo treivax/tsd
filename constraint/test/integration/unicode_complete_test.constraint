@@ -21,7 +21,7 @@ Adresse(utilisateur_id:U003, rue:"Place Stanislas", ville:"Nancy")
 Adresse(utilisateur_id:U004, rue:"Quai Saint-Antoine", ville:"Lyon")
 
 // === CONTRAINTES AVEC UNICODE ===
-{u:Utilisateur, a:Adresse} / (u.id == a.utilisateur_id AND u.age >= 25 AND a.ville == "Paris") ==> notify_parisien(u.nom, a.rue)
+rule r1 : {u:Utilisateur, a:Adresse} / (u.id == a.utilisateur_id AND u.age >= 25 AND a.ville == "Paris") ==> notify_parisien(u.nom, a.rue)
 
 /* Fin du fichier avec commentaire multi-lignes
    et caractères spéciaux : ñ ü ß α β γ */

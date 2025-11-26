@@ -17,7 +17,7 @@ func TestPipeline_AVG(t *testing.T) {
 	constraintContent := `type Employee : <id: string, name: string>
 type Performance : <id: string, employee_id: string, score: number>
 
-{e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5
+rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5
 ==> PRINT("Employee ", e.name, " has avg >= 8.5")
 `
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
@@ -53,7 +53,7 @@ func TestPipeline_SUM(t *testing.T) {
 	constraintContent := `type Employee : <id: string, name: string>
 type Order : <id: string, employee_id: string, amount: number>
 
-{e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 1000
+rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 1000
 ==> PRINT("Employee ", e.name, " has sum >= 1000")
 `
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
@@ -85,7 +85,7 @@ func TestPipeline_COUNT(t *testing.T) {
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string>
 
-{d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
+rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 ==> PRINT("Department ", d.name, " has >= 3 employees")
 `
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
@@ -119,7 +119,7 @@ func TestPipeline_MIN(t *testing.T) {
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string, salary: number>
 
-{d: Department} / MIN(e: Employee / e.department == d.name ; e.salary) >= 50000
+rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary) >= 50000
 ==> PRINT("Department ", d.name, " has min salary >= 50000")
 `
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
@@ -151,7 +151,7 @@ func TestPipeline_MAX(t *testing.T) {
 	constraintContent := `type Department : <id: string, name: string>
 type Employee : <id: string, department: string, salary: number>
 
-{d: Department} / MAX(e: Employee / e.department == d.name ; e.salary) >= 80000
+rule r1 : {d: Department} / MAX(e: Employee / e.department == d.name ; e.salary) >= 80000
 ==> PRINT("Department ", d.name, " has max salary >= 80000")
 `
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {

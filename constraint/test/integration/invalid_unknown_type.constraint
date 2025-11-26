@@ -2,7 +2,7 @@
 type Account : <id: string, balance: number, active: bool>
 
 // Cette expression fait référence à un type "Transaction" qui n'est PAS déclaré
-{t: Transaction} / t.amount > 1000
+rule r1 : {t: Transaction} / t.amount > 1000
 
 // Cette expression est valide car "Account" est déclaré
-{a: Account} / a.active == true
+rule r2 : {a: Account} / a.active == true

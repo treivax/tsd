@@ -16,6 +16,7 @@ type ProgramState struct {
 	Facts       []*Fact                    `json:"facts"`
 	FilesParsed []string                   `json:"files_parsed"`
 	Errors      []ValidationError          `json:"errors"`
+	RuleIDs     map[string]bool            `json:"-"` // Track used rule IDs (reset clears this)
 }
 
 // NewProgramState creates a new empty program state
@@ -26,6 +27,7 @@ func NewProgramState() *ProgramState {
 		Facts:       make([]*Fact, 0),
 		FilesParsed: make([]string, 0),
 		Errors:      make([]ValidationError, 0),
+		RuleIDs:     make(map[string]bool),
 	}
 }
 
@@ -46,7 +48,7 @@ func (ps *ProgramState) ParseAndMerge(filename string) error {
 
 	// Check for reset instructions first
 	if len(program.Resets) > 0 {
-		// Apply reset: clear all existing state
+		// Apply reset: clear all existing state including rule IDs
 		ps.Reset()
 		// Note: After reset, we continue to merge the new content from this file
 	}
@@ -102,7 +104,7 @@ func (ps *ProgramState) ParseAndMergeContent(content, filename string) error {
 
 	// Check for reset instructions first
 	if len(program.Resets) > 0 {
-		// Apply reset: clear all existing state
+		// Apply reset: clear all existing state including rule IDs
 		ps.Reset()
 		// Note: After reset, we continue to merge the new content from this content
 	}
@@ -173,10 +175,32 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 		return fmt.Errorf("ProgramState is nil")
 	}
 
+	// Initialize RuleIDs map if nil
+	if ps.RuleIDs == nil {
+		ps.RuleIDs = make(map[string]bool)
+	}
+
 	for _, rule := range newRules {
+		// Check for duplicate rule ID
+		if rule.RuleId != "" {
+			if ps.RuleIDs[rule.RuleId] {
+				// Non-blocking error: record and skip this rule
+				errMsg := fmt.Sprintf("rule ID '%s' already used, ignoring duplicate rule", rule.RuleId)
+				ps.Errors = append(ps.Errors, ValidationError{
+					File:    filename,
+					Type:    "rule",
+					Message: errMsg,
+					Line:    0,
+				})
+				fmt.Printf("⚠️  Skipping duplicate rule ID in %s: %s\n", filename, errMsg)
+				continue
+			}
+		}
+
 		// Create a copy of the rule
 		newRule := &Expression{
 			Type:        rule.Type,
+			RuleId:      rule.RuleId,
 			Set:         rule.Set,
 			Constraints: rule.Constraints,
 			Action:      rule.Action,
@@ -194,6 +218,11 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 			})
 			fmt.Printf("⚠️  Skipping invalid rule in %s: %v\n", filename, err)
 			continue
+		}
+
+		// Mark this rule ID as used
+		if newRule.RuleId != "" {
+			ps.RuleIDs[newRule.RuleId] = true
 		}
 
 		ps.Rules = append(ps.Rules, newRule)

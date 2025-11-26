@@ -1,4 +1,4 @@
 // Test égalité positive simple
 type Person : <id: string, age: number, status: string>
 
-{p: Person} / p.age == 25 ==> age_is_twenty_five(p.id, p.age)
+rule r1 : {p: Person} / p.age == 25 ==> age_is_twenty_five(p.id, p.age)

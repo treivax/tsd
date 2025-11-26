@@ -4,4 +4,4 @@
 type Customer : <id: string, age: number, vip: bool>
 
 /* Rule: Authorize adult customers */
-{c: Customer} / c.age >= 18 ==> authorize_customer(c.id)
+rule r1 : {c: Customer} / c.age >= 18 ==> authorize_customer(c.id)

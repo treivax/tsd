@@ -6,28 +6,28 @@ type Order : <id:string, subtotal:number, tax_rate:number, shipping:number>
 
 # Test 1: Addition dans contrainte
 # Un produit avec price + discount >= 150 déclenche high_value
-{p: Product} / p.price + p.discount >= 150 ==> high_value(p.id)
+rule r1 : {p: Product} / p.price + p.discount >= 150 ==> high_value(p.id)
 
 # Test 2: Soustraction dans contrainte
 # Un produit avec price - discount < 50 déclenche low_price
-{p: Product} / p.price - p.discount < 50 ==> low_price(p.id)
+rule r2 : {p: Product} / p.price - p.discount < 50 ==> low_price(p.id)
 
 # Test 3: Multiplication dans contrainte
 # Un produit avec quantity * price > 500 déclenche bulk_order
-{p: Product} / p.quantity * p.price > 500 ==> bulk_order(p.id)
+rule r3 : {p: Product} / p.quantity * p.price > 500 ==> bulk_order(p.id)
 
 # Test 4: Division dans contrainte
 # Un produit avec price / quantity < 20 déclenche unit_discount
-{p: Product} / p.price / p.quantity < 20 ==> unit_discount(p.id)
+rule r4 : {p: Product} / p.price / p.quantity < 20 ==> unit_discount(p.id)
 
 # Test 5: Addition dans action (calcul total)
-{o: Order} / o.subtotal > 0 ==> calculate_total(o.id, o.subtotal + o.shipping)
+rule r5 : {o: Order} / o.subtotal > 0 ==> calculate_total(o.id, o.subtotal + o.shipping)
 
 # Test 6: Multiplication dans action (appliquer taxe)
-{o: Order} / o.tax_rate > 0 ==> apply_tax(o.id, o.subtotal * o.tax_rate)
+rule r6 : {o: Order} / o.tax_rate > 0 ==> apply_tax(o.id, o.subtotal * o.tax_rate)
 
 # Test 7: Soustraction dans action (appliquer remise)
-{p: Product} / p.discount > 0 ==> final_price(p.id, p.price - p.discount)
+rule r7 : {p: Product} / p.discount > 0 ==> final_price(p.id, p.price - p.discount)
 
 # Test 8: Division dans action (prix unitaire)
-{p: Product} / p.quantity > 1 ==> unit_price(p.id, p.price / p.quantity)
+rule r8 : {p: Product} / p.quantity > 1 ==> unit_price(p.id, p.price / p.quantity)

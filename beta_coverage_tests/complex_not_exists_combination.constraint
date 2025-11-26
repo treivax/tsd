@@ -3,6 +3,6 @@ type Student : <id: string, name: string, grade: number, active: bool>
 type Course : <id: string, title: string, level: string, credits: number>
 type Enrollment : <id: string, student_id: string, course_id: string, status: string>
 
-{s: Student, c: Course} / s.active == true AND s.grade >= 60 AND NOT (s.grade < 60) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status == "enrolled") ==> qualified_enrolled_student(s.id, c.id)
-{s: Student, c: Course} / c.level == "advanced" AND c.credits >= 3 AND NOT (c.credits < 3) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status != "dropped") ==> advanced_course_student(s.id, c.id)
-{s: Student} / s.active == true AND s.grade > 0 AND NOT (EXISTS (e: Enrollment / e.student_id == s.id AND e.status == "failed")) ==> successful_student(s.id)
+rule r1 : {s: Student, c: Course} / s.active == true AND s.grade >= 60 AND NOT (s.grade < 60) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status == "enrolled") ==> qualified_enrolled_student(s.id, c.id)
+rule r2 : {s: Student, c: Course} / c.level == "advanced" AND c.credits >= 3 AND NOT (c.credits < 3) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status != "dropped") ==> advanced_course_student(s.id, c.id)
+rule r3 : {s: Student} / s.active == true AND s.grade > 0 AND NOT (EXISTS (e: Enrollment / e.student_id == s.id AND e.status == "failed")) ==> successful_student(s.id)

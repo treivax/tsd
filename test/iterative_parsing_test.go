@@ -29,7 +29,7 @@ func TestIterativeParsingWithReteNetwork(t *testing.T) {
 
 	ruleContent := `
 		// Règle de validation
-		{p: Person} / p.age >= 18 ==> adult_status(p.name)
+		rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)
 	`
 
 	factContent := `
@@ -109,7 +109,7 @@ func TestMultiFileParsing(t *testing.T) {
 	// Contenu des fichiers
 	contents := []string{
 		`type Person : <name: string, age: number>`,
-		`{p: Person} / p.age >= 18 ==> adult_status(p.name)`,
+		`rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)`,
 		`Person(name:John, age:30)
 Person(name:Jane, age:16)`,
 	}

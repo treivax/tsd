@@ -16,6 +16,41 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 📊 **Types fortement typés** - Système de types robuste avec validation
 - 🎯 **100% testé** - Couverture complète avec 26 tests de validation Alpha
 - ⚡ **Performance** - <1ms par règle, optimisé pour le traitement en temps réel
+- 🏷️ **Identifiants de règles** - Gestion fine des règles avec identifiants obligatoires
+
+## 📝 Syntaxe des Règles
+
+### Format Obligatoire (v2.0+)
+
+Toutes les règles doivent maintenant avoir un identifiant unique :
+
+```
+rule <identifiant> : {variables} / conditions ==> action
+```
+
+### Exemples
+
+```go
+// Règle simple
+rule r1 : {p: Person} / p.age >= 18 ==> adult(p.id)
+
+// Règle avec jointure
+rule check_order : {p: Person, o: Order} / 
+    p.id == o.customer_id AND o.amount > 100 
+    ==> premium_order(p.id, o.id)
+
+// Règle avec agrégation
+rule vip_check : {p: Person} / 
+    SUM(o: Order / o.customer_id == p.id ; o.amount) >= 1000 
+    ==> vip_customer(p.id)
+```
+
+**📖 Documentation complète :** [docs/rule_identifiers.md](docs/rule_identifiers.md)
+
+**🔄 Migration :** Pour migrer vos règles existantes, utilisez :
+```bash
+bash scripts/add_rule_ids.sh
+```
 
 ## 🚀 Installation Rapide
 
@@ -197,6 +232,7 @@ Toutes les fonctions d'agrégation sont **sémantiquement validées** avec des c
 ## 📖 Documentation
 
 - [📋 Guide Complet](docs/README.md) - Documentation complète
+- [🏷️ Identifiants de Règles](docs/rule_identifiers.md) - **NOUVEAU** Guide complet sur les identifiants
 - [🧪 Tests Alpha](docs/alpha_tests_detailed.md) - Tests détaillés par opérateur
 - [✅ Rapport de Validation](docs/validation_report.md) - Validation des expressions complexes
 - [🔧 Guide Développeur](docs/development_guidelines.md) - Standards et bonnes pratiques
@@ -207,7 +243,7 @@ Toutes les fonctions d'agrégation sont **sémantiquement validées** avec des c
 
 ```go
 // Exemple validé : Détecter les anomalies utilisateur
-{u: User} / NOT(u.age >= 18 AND u.status != "blocked")
+rule detect_anomaly : {u: User} / NOT(u.age >= 18 AND u.status != "blocked")
     ==> user_anomaly_detected(u.id, u.age, u.status)
 ```
 
@@ -217,11 +253,11 @@ Toutes les fonctions d'agrégation sont **sémantiquement validées** avec des c
 
 ```go
 // Validation d'emails d'entreprise
-{e: Email} / e.address LIKE "%@company.com"
+rule check_company_email : {e: Email} / e.address LIKE "%@company.com"
     ==> company_email_found(e.address)
 
 // Codes conformes au format
-{c: Code} / c.value MATCHES "CODE[0-9]+"
+rule validate_code : {c: Code} / c.value MATCHES "CODE[0-9]+"
     ==> valid_code_detected(c.value)
 ```
 

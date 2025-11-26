@@ -39,8 +39,10 @@ type Field struct {
 }
 
 // Expression représente une règle métier complète
+// Chaque expression doit avoir un identifiant unique pour la gestion (ex: suppression)
 type Expression struct {
 	Type        string      `json:"type"`
+	RuleId      string      `json:"ruleId"` // Identifiant unique de la règle
 	Set         Set         `json:"set"`
 	Constraints interface{} `json:"constraints"`
 	Action      *Action     `json:"action,omitempty"`

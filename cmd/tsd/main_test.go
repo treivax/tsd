@@ -1206,7 +1206,7 @@ func TestMainWithFactsIntegration(t *testing.T) {
 	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
 type Order : <id: string, customer_id: string, amount: number>
 
-{p: Person, o: Order} / p.id == o.customer_id ==> customer_order(p.id, o.id)
+rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> customer_order(p.id, o.id)
 `)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
@@ -1361,7 +1361,7 @@ func TestRunWithFacts(t *testing.T) {
 	constraintFile := filepath.Join(tmpDir, "test.constraint")
 	constraintContent := `type Person : <id: string, name: string, age: number>
 
-{p: Person} / p.age > 18 ==> adult(p.id)`
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -1466,7 +1466,7 @@ func TestExecutePipeline(t *testing.T) {
 	constraintFile := filepath.Join(tmpDir, "test.constraint")
 	constraintContent := `type Person : <id: string, name: string, age: number>
 
-{p: Person} / p.age > 18 ==> adult(p.id)`
+rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}

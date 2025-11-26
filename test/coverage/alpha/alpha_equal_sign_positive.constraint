@@ -1,4 +1,4 @@
 // Test opérateur == (égalité)
 type Customer : <id: string, tier: string, points: number>
 
-{c: Customer} / c.tier == "gold" ==> gold_customer_found(c.id, c.points)
+rule r1 : {c: Customer} / c.tier == "gold" ==> gold_customer_found(c.id, c.points)
