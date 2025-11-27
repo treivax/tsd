@@ -20,11 +20,23 @@ type ReteNetwork struct {
 	BetaBuilder         interface{}              `json:"-"` // Constructeur de réseau Beta
 	LifecycleManager    *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
 	AlphaSharingManager *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
+	ChainMetrics        *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
+	Config              *ChainPerformanceConfig  `json:"-"` // Configuration de performance
 }
 
-// NewReteNetwork crée un nouveau réseau RETE
+// NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
 func NewReteNetwork(storage Storage) *ReteNetwork {
+	return NewReteNetworkWithConfig(storage, DefaultChainPerformanceConfig())
+}
+
+// NewReteNetworkWithConfig crée un nouveau réseau RETE avec une configuration personnalisée
+func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *ReteNetwork {
+	if config == nil {
+		config = DefaultChainPerformanceConfig()
+	}
+
 	rootNode := NewRootNode(storage)
+	metrics := NewChainBuildMetrics()
 
 	return &ReteNetwork{
 		RootNode:            rootNode,
@@ -36,7 +48,32 @@ func NewReteNetwork(storage Storage) *ReteNetwork {
 		Types:               make([]TypeDefinition, 0),
 		BetaBuilder:         nil, // Sera initialisé si nécessaire
 		LifecycleManager:    NewLifecycleManager(),
-		AlphaSharingManager: NewAlphaSharingRegistry(),
+		AlphaSharingManager: NewAlphaSharingRegistryWithConfig(config, metrics),
+		ChainMetrics:        metrics,
+		Config:              config,
+	}
+}
+
+// GetChainMetrics retourne les métriques de performance pour la construction des chaînes alpha
+func (rn *ReteNetwork) GetChainMetrics() *ChainBuildMetrics {
+	if rn.ChainMetrics == nil {
+		rn.ChainMetrics = NewChainBuildMetrics()
+	}
+	return rn.ChainMetrics
+}
+
+// GetConfig retourne la configuration de performance
+func (rn *ReteNetwork) GetConfig() *ChainPerformanceConfig {
+	if rn.Config == nil {
+		rn.Config = DefaultChainPerformanceConfig()
+	}
+	return rn.Config
+}
+
+// ResetChainMetrics réinitialise toutes les métriques de performance
+func (rn *ReteNetwork) ResetChainMetrics() {
+	if rn.ChainMetrics != nil {
+		rn.ChainMetrics.Reset()
 	}
 }
 

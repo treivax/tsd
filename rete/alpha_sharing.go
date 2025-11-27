@@ -17,14 +17,58 @@ import (
 type AlphaSharingRegistry struct {
 	// Map[ConditionHash] -> AlphaNode
 	sharedAlphaNodes map[string]*AlphaNode
-	mutex            sync.RWMutex
+	// Cache pour les hash de conditions (Map[conditionJSON] -> hash)
+	hashCache map[string]string
+	// Cache LRU pour les hash (si configuré)
+	lruHashCache *LRUCache
+	// Configuration de performance
+	config *ChainPerformanceConfig
+	// Métriques de performance
+	metrics *ChainBuildMetrics
+	mutex   sync.RWMutex
 }
 
 // NewAlphaSharingRegistry crée un nouveau registre de partage d'AlphaNodes
+// Utilise la configuration par défaut
 func NewAlphaSharingRegistry() *AlphaSharingRegistry {
-	return &AlphaSharingRegistry{
-		sharedAlphaNodes: make(map[string]*AlphaNode),
+	config := DefaultChainPerformanceConfig()
+	return NewAlphaSharingRegistryWithConfig(config, NewChainBuildMetrics())
+}
+
+// NewAlphaSharingRegistryWithMetrics crée un registre avec des métriques partagées
+// Utilise la configuration par défaut
+func NewAlphaSharingRegistryWithMetrics(metrics *ChainBuildMetrics) *AlphaSharingRegistry {
+	config := DefaultChainPerformanceConfig()
+	return NewAlphaSharingRegistryWithConfig(config, metrics)
+}
+
+// NewAlphaSharingRegistryWithConfig crée un registre avec une configuration personnalisée
+func NewAlphaSharingRegistryWithConfig(config *ChainPerformanceConfig, metrics *ChainBuildMetrics) *AlphaSharingRegistry {
+	if config == nil {
+		config = DefaultChainPerformanceConfig()
 	}
+	if metrics == nil {
+		metrics = NewChainBuildMetrics()
+	}
+
+	asr := &AlphaSharingRegistry{
+		sharedAlphaNodes: make(map[string]*AlphaNode),
+		config:           config,
+		metrics:          metrics,
+	}
+
+	// Initialiser le cache approprié selon la configuration
+	if config.HashCacheEnabled {
+		if config.HashCacheEviction == EvictionPolicyLRU {
+			// Utiliser le cache LRU
+			asr.lruHashCache = NewLRUCache(config.HashCacheMaxSize, config.HashCacheTTL)
+		} else {
+			// Utiliser le simple map pour EvictionPolicyNone
+			asr.hashCache = make(map[string]string)
+		}
+	}
+
+	return asr
 }
 
 // ConditionHash calcule un hash unique pour une condition alpha
@@ -55,6 +99,94 @@ func ConditionHash(condition interface{}, variableName string) (string, error) {
 	// Calculer le hash SHA-256
 	hash := sha256.Sum256(jsonBytes)
 	return fmt.Sprintf("alpha_%x", hash[:8]), nil // Utiliser les 8 premiers octets pour l'ID
+}
+
+// ConditionHashCached calcule un hash avec cache pour améliorer les performances
+func (asr *AlphaSharingRegistry) ConditionHashCached(condition interface{}, variableName string) (string, error) {
+	// Si le cache n'est pas activé, calculer directement
+	if !asr.isCacheEnabled() {
+		return ConditionHash(condition, variableName)
+	}
+
+	// Déballer et normaliser pour créer la clé de cache
+	unwrapped := normalizeConditionForSharing(condition)
+	normalized, err := normalizeCondition(unwrapped)
+	if err != nil {
+		return "", fmt.Errorf("erreur normalisation condition: %w", err)
+	}
+
+	canonical := map[string]interface{}{
+		"condition": normalized,
+		"variable":  variableName,
+	}
+
+	// Créer la clé de cache
+	jsonBytes, err := json.Marshal(canonical)
+	if err != nil {
+		return "", fmt.Errorf("erreur sérialisation condition: %w", err)
+	}
+	cacheKey := string(jsonBytes)
+
+	// Utiliser le cache LRU si configuré
+	if asr.lruHashCache != nil {
+		if cachedValue, found := asr.lruHashCache.Get(cacheKey); found {
+			if asr.metrics != nil {
+				asr.metrics.RecordHashCacheHit()
+			}
+			return cachedValue.(string), nil
+		}
+
+		// Cache miss
+		if asr.metrics != nil {
+			asr.metrics.RecordHashCacheMiss()
+		}
+
+		// Calculer le hash
+		hash := sha256.Sum256(jsonBytes)
+		hashStr := fmt.Sprintf("alpha_%x", hash[:8])
+
+		// Stocker dans le cache LRU
+		asr.lruHashCache.Set(cacheKey, hashStr)
+		if asr.metrics != nil {
+			asr.metrics.UpdateHashCacheSize(asr.lruHashCache.Len())
+		}
+
+		return hashStr, nil
+	}
+
+	// Utiliser le simple map cache (fallback)
+	asr.mutex.RLock()
+	if cachedHash, exists := asr.hashCache[cacheKey]; exists {
+		asr.mutex.RUnlock()
+		if asr.metrics != nil {
+			asr.metrics.RecordHashCacheHit()
+		}
+		return cachedHash, nil
+	}
+	asr.mutex.RUnlock()
+
+	// Cache miss - calculer le hash
+	if asr.metrics != nil {
+		asr.metrics.RecordHashCacheMiss()
+	}
+
+	hash := sha256.Sum256(jsonBytes)
+	hashStr := fmt.Sprintf("alpha_%x", hash[:8])
+
+	// Stocker dans le cache
+	asr.mutex.Lock()
+	asr.hashCache[cacheKey] = hashStr
+	if asr.metrics != nil {
+		asr.metrics.UpdateHashCacheSize(len(asr.hashCache))
+	}
+	asr.mutex.Unlock()
+
+	return hashStr, nil
+}
+
+// isCacheEnabled vérifie si le cache est activé
+func (asr *AlphaSharingRegistry) isCacheEnabled() bool {
+	return asr.config != nil && asr.config.HashCacheEnabled
 }
 
 // normalizeConditionForSharing déballe les conditions wrappées pour permettre le partage
@@ -154,8 +286,8 @@ func (asr *AlphaSharingRegistry) GetOrCreateAlphaNode(
 	variableName string,
 	storage Storage,
 ) (*AlphaNode, string, bool, error) {
-	// Calculer le hash de la condition
-	hash, err := ConditionHash(condition, variableName)
+	// Calculer le hash de la condition avec cache
+	hash, err := asr.ConditionHashCached(condition, variableName)
 	if err != nil {
 		return nil, "", false, fmt.Errorf("erreur calcul hash condition: %w", err)
 	}
@@ -260,6 +392,102 @@ func (asr *AlphaSharingRegistry) Reset() {
 	defer asr.mutex.Unlock()
 
 	asr.sharedAlphaNodes = make(map[string]*AlphaNode)
+
+	if asr.lruHashCache != nil {
+		asr.lruHashCache.Clear()
+	} else if asr.hashCache != nil {
+		asr.hashCache = make(map[string]string)
+	}
+
+	if asr.metrics != nil {
+		asr.metrics.UpdateHashCacheSize(0)
+	}
+}
+
+// ClearHashCache vide uniquement le cache de hash
+func (asr *AlphaSharingRegistry) ClearHashCache() {
+	if asr.lruHashCache != nil {
+		asr.lruHashCache.Clear()
+		if asr.metrics != nil {
+			asr.metrics.UpdateHashCacheSize(0)
+		}
+		return
+	}
+
+	asr.mutex.Lock()
+	defer asr.mutex.Unlock()
+
+	if asr.hashCache != nil {
+		asr.hashCache = make(map[string]string)
+	}
+	if asr.metrics != nil {
+		asr.metrics.UpdateHashCacheSize(0)
+	}
+}
+
+// GetHashCacheSize retourne la taille actuelle du cache de hash
+func (asr *AlphaSharingRegistry) GetHashCacheSize() int {
+	if asr.lruHashCache != nil {
+		return asr.lruHashCache.Len()
+	}
+
+	asr.mutex.RLock()
+	defer asr.mutex.RUnlock()
+	return len(asr.hashCache)
+}
+
+// GetMetrics retourne les métriques de performance
+func (asr *AlphaSharingRegistry) GetMetrics() *ChainBuildMetrics {
+	return asr.metrics
+}
+
+// GetHashCacheStats retourne les statistiques détaillées du cache de hash
+func (asr *AlphaSharingRegistry) GetHashCacheStats() map[string]interface{} {
+	if asr.lruHashCache != nil {
+		stats := asr.lruHashCache.GetStats()
+		return map[string]interface{}{
+			"type":          "lru",
+			"size":          stats.Size,
+			"capacity":      stats.Capacity,
+			"hits":          stats.Hits,
+			"misses":        stats.Misses,
+			"evictions":     stats.Evictions,
+			"sets":          stats.Sets,
+			"hit_rate":      stats.HitRate(),
+			"eviction_rate": stats.EvictionRate(),
+			"fill_rate":     stats.FillRate(),
+		}
+	}
+
+	asr.mutex.RLock()
+	defer asr.mutex.RUnlock()
+
+	size := 0
+	if asr.hashCache != nil {
+		size = len(asr.hashCache)
+	}
+
+	return map[string]interface{}{
+		"type": "simple_map",
+		"size": size,
+	}
+}
+
+// GetConfig retourne la configuration actuelle
+func (asr *AlphaSharingRegistry) GetConfig() *ChainPerformanceConfig {
+	return asr.config
+}
+
+// CleanExpiredHashCache nettoie les entrées expirées du cache (si LRU avec TTL)
+func (asr *AlphaSharingRegistry) CleanExpiredHashCache() int {
+	if asr.lruHashCache != nil {
+		cleaned := asr.lruHashCache.CleanExpired()
+		if cleaned > 0 && asr.metrics != nil {
+			asr.metrics.UpdateHashCacheSize(asr.lruHashCache.Len())
+		}
+		return cleaned
+	}
+	return 0
 }
 
 // GetSharedAlphaNodeDetails retourne les détails d'un AlphaNode partagé
