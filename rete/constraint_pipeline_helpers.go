@@ -181,18 +181,243 @@ func (cp *ConstraintPipeline) connectAlphaNodeToTypeNode(
 }
 
 // createAlphaNodeWithTerminal crée un AlphaNode (partagé si possible) et son nœud terminal associé
+// Cette fonction analyse l'expression et construit une chaîne si possible, sinon utilise le comportement simple
 func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	network *ReteNetwork,
 	ruleID string,
-	condition map[string]interface{},
+	condition interface{},
 	variableName string,
 	variableType string,
 	action *Action,
 	storage Storage,
 ) error {
+	// Déballer la condition si elle est wrappée dans une map
+	actualCondition := condition
+	if condMap, ok := condition.(map[string]interface{}); ok {
+		if condType, hasType := condMap["type"]; hasType {
+			if condType == "constraint" {
+				if constraint, hasConstraint := condMap["constraint"]; hasConstraint {
+					actualCondition = constraint
+				}
+			} else if condType == "negation" {
+				// Pour les négations, utiliser le comportement simple
+				return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+			} else if condType == "simple" || condType == "passthrough" {
+				// Pas de vraie condition, utiliser le comportement simple
+				return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+			}
+		}
+	}
+
+	// Analyser l'expression pour déterminer son type
+	exprType, err := AnalyzeExpression(actualCondition)
+	if err != nil {
+		fmt.Printf("   ⚠️  Erreur analyse expression: %v, fallback vers comportement simple\n", err)
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Cas spécial: expressions OR et mixtes - normalisation avancée avec support des OR imbriqués
+	// DOIT être traité AVANT le check CanDecompose car OR n'est pas décomposable
+	if exprType == ExprTypeOR || exprType == ExprTypeMixed {
+		if exprType == ExprTypeOR {
+			fmt.Printf("   ℹ️  Expression OR détectée, normalisation avancée et création d'un nœud alpha unique\n")
+		} else {
+			fmt.Printf("   ℹ️  Expression mixte (AND+OR) détectée, normalisation avancée et création d'un nœud alpha unique\n")
+		}
+
+		// Analyser la complexité de l'expression pour déterminer la stratégie de normalisation
+		analysis, err := AnalyzeNestedOR(actualCondition)
+		if err != nil {
+			fmt.Printf("   ⚠️  Erreur analyse OR imbriqué: %v, fallback vers normalisation simple\n", err)
+			// Fallback vers normalisation simple
+			normalizedExpr, err := NormalizeORExpression(actualCondition)
+			if err != nil {
+				fmt.Printf("   ⚠️  Erreur normalisation simple: %v, fallback vers comportement simple\n", err)
+				return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+			}
+			normalizedCondition := map[string]interface{}{
+				"type":       "constraint",
+				"constraint": normalizedExpr,
+			}
+			return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, normalizedCondition, variableName, variableType, action, storage)
+		}
+
+		// Afficher les informations d'analyse
+		fmt.Printf("   📊 Analyse OR: Complexité=%v, Profondeur=%d, OR=%d, AND=%d\n",
+			analysis.Complexity, analysis.NestingDepth, analysis.ORTermCount, analysis.ANDTermCount)
+
+		if analysis.OptimizationHint != "" {
+			fmt.Printf("   💡 Suggestion: %s\n", analysis.OptimizationHint)
+		}
+
+		// Utiliser la normalisation avancée pour les expressions complexes
+		var normalizedExpr interface{}
+		if analysis.RequiresFlattening || analysis.RequiresDNF {
+			fmt.Printf("   🔧 Application de la normalisation avancée (aplatissement=%v, DNF=%v)\n",
+				analysis.RequiresFlattening, analysis.RequiresDNF)
+
+			normalizedExpr, err = NormalizeNestedOR(actualCondition)
+			if err != nil {
+				fmt.Printf("   ⚠️  Erreur normalisation avancée: %v, fallback vers normalisation simple\n", err)
+				// Fallback vers normalisation simple
+				normalizedExpr, err = NormalizeORExpression(actualCondition)
+				if err != nil {
+					fmt.Printf("   ⚠️  Erreur normalisation simple: %v, utilisation expression originale\n", err)
+					normalizedExpr = actualCondition
+				}
+			} else {
+				fmt.Printf("   ✅ Normalisation avancée réussie\n")
+			}
+		} else {
+			// Pour les expressions simples, utiliser la normalisation standard
+			fmt.Printf("   🔧 Application de la normalisation standard\n")
+			normalizedExpr, err = NormalizeORExpression(actualCondition)
+			if err != nil {
+				fmt.Printf("   ⚠️  Erreur normalisation: %v, utilisation expression originale\n", err)
+				normalizedExpr = actualCondition
+			}
+		}
+
+		// Créer un seul AlphaNode avec l'expression normalisée
+		normalizedCondition := map[string]interface{}{
+			"type":       "constraint",
+			"constraint": normalizedExpr,
+		}
+
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, normalizedCondition, variableName, variableType, action, storage)
+	}
+
+	// Vérifier si l'expression peut être décomposée
+	if !CanDecompose(exprType) {
+		fmt.Printf("   ℹ️  Expression de type %s non décomposable, utilisation du nœud simple\n", exprType)
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Cas spécial: expressions simples - utiliser le comportement actuel
+	if exprType == ExprTypeSimple || exprType == ExprTypeArithmetic {
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Expressions AND ou NOT - tenter la décomposition en chaîne
+	fmt.Printf("   🔍 Expression de type %s détectée, tentative de décomposition...\n", exprType)
+
+	// Extraire les conditions de l'expression (utiliser la condition déballée)
+	conditions, opType, err := ExtractConditions(actualCondition)
+	if err != nil {
+		fmt.Printf("   ⚠️  Erreur extraction conditions: %v, fallback vers comportement simple\n", err)
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Si une seule condition, pas besoin de chaîne
+	if len(conditions) <= 1 {
+		fmt.Printf("   ℹ️  Une seule condition extraite, utilisation du nœud simple\n")
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	fmt.Printf("   🔗 Décomposition en chaîne: %d conditions détectées (opérateur: %s)\n", len(conditions), opType)
+
+	// Normaliser les conditions
+	normalizedConditions := NormalizeConditions(conditions, opType)
+	fmt.Printf("   📋 Conditions normalisées: %d condition(s)\n", len(normalizedConditions))
+
+	// Trouver le TypeNode parent pour connecter la chaîne
+	var parentNode Node
+	if variableType != "" {
+		if typeNode, exists := network.TypeNodes[variableType]; exists {
+			parentNode = typeNode
+		}
+	}
+
+	// Si pas de TypeNode trouvé, utiliser le premier disponible
+	if parentNode == nil {
+		for _, typeNode := range network.TypeNodes {
+			parentNode = typeNode
+			break
+		}
+	}
+
+	if parentNode == nil {
+		fmt.Printf("   ⚠️  Aucun TypeNode trouvé, fallback vers comportement simple\n")
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Créer le constructeur de chaîne
+	chainBuilder := NewAlphaChainBuilder(network, storage)
+
+	// Construire la chaîne d'AlphaNodes
+	chain, err := chainBuilder.BuildChain(normalizedConditions, variableName, parentNode, ruleID)
+	if err != nil {
+		fmt.Printf("   ⚠️  Erreur construction chaîne: %v, fallback vers comportement simple\n", err)
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Valider la chaîne
+	if err := chain.ValidateChain(); err != nil {
+		fmt.Printf("   ⚠️  Chaîne invalide: %v, fallback vers comportement simple\n", err)
+		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
+	}
+
+	// Obtenir les statistiques de la chaîne
+	stats := chainBuilder.GetChainStats(chain)
+	sharedCount := 0
+	if sc, ok := stats["shared_nodes"].(int); ok {
+		sharedCount = sc
+	}
+
+	// Afficher les statistiques de construction
+	fmt.Printf("   ✅ Chaîne construite: %d nœud(s), %d partagé(s)\n", len(chain.Nodes), sharedCount)
+
+	// Logger les détails de chaque nœud
+	for i, node := range chain.Nodes {
+		if i < sharedCount {
+			fmt.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", node.ID, chain.Hashes[i])
+		} else {
+			fmt.Printf("   ✨ Nouveau AlphaNode créé: %s (hash: %s)\n", node.ID, chain.Hashes[i])
+		}
+	}
+
+	// Créer et attacher le terminal au dernier nœud de la chaîne
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	chain.FinalNode.AddChild(terminalNode)
+	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Enregistrer le TerminalNode dans le LifecycleManager
+	if network.LifecycleManager != nil {
+		lifecycle := network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		lifecycle.AddRuleReference(ruleID, ruleID)
+	}
+
+	fmt.Printf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne\n", terminalNode.ID, chain.FinalNode.ID)
+
+	return nil
+}
+
+// createSimpleAlphaNodeWithTerminal crée un AlphaNode simple (partagé si possible) et son nœud terminal associé
+// Cette fonction implémente le comportement original pour les conditions simples ou non-décomposables
+func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
+	network *ReteNetwork,
+	ruleID string,
+	condition interface{},
+	variableName string,
+	variableType string,
+	action *Action,
+	storage Storage,
+) error {
+	// Convertir la condition en map si nécessaire
+	var conditionMap map[string]interface{}
+	switch c := condition.(type) {
+	case map[string]interface{}:
+		conditionMap = c
+	default:
+		// Pour les types structurés (constraint.*), les passer directement
+		conditionMap = map[string]interface{}{
+			"type":       "constraint",
+			"constraint": condition,
+		}
+	}
 	// Utiliser le gestionnaire de partage pour obtenir ou créer un AlphaNode
 	alphaNode, alphaHash, wasShared, err := network.AlphaSharingManager.GetOrCreateAlphaNode(
-		condition,
+		conditionMap,
 		variableName,
 		storage,
 	)
@@ -229,7 +454,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 		lifecycle.AddRuleReference(ruleID, ruleID)
 	}
 
-	if condition["type"] == "negation" {
+	if conditionMap["type"] == "negation" {
 		fmt.Printf("   ✓ AlphaNode de négation créé: %s -> %s\n", alphaNode.ID, terminalNode.ID)
 	} else if wasShared {
 		fmt.Printf("   ✓ Règle %s attachée à l'AlphaNode partagé %s via terminal %s\n",
