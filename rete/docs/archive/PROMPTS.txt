@@ -45,6 +45,8 @@ Critères de succès:
 - Gère correctement les expressions imbriquées
 - CanonicalString est déterministe (même condition → même string)
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 2 - Normalisation Canonique (Jour 2)
 ================================================================================
@@ -82,6 +84,8 @@ Critères de succès:
 - `A AND B` et `B AND A` normalisent au même ordre
 - Les opérateurs non-commutatifs préservent l'ordre
 - Tous les tests passent
+
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
 
 ================================================================================
 PROMPT 3 - Constructeur de Chaînes (Jours 3-4)
@@ -138,6 +142,8 @@ Critères de succès:
 - Logging clair (nouveau vs réutilisé)
 - Tous les tests passent
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 4 - Analyse d'Expressions (Jour 5)
 ================================================================================
@@ -183,6 +189,8 @@ Critères de succès:
 - Gestion appropriée des cas edge
 - Tous les tests passent
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 5 - Intégration Pipeline (Jours 6-7)
 ================================================================================
@@ -225,6 +233,8 @@ Critères de succès:
 - Chaînes créées pour expressions AND
 - Logging informatif
 - Tous les tests passent
+
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
 
 ================================================================================
 PROMPT 6 - Lifecycle Management (Jours 8-9)
@@ -269,6 +279,8 @@ Critères de succès:
 - Nœuds partagés préservés
 - Logging détaillé des suppressions
 - Tous les tests passent
+
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
 
 ================================================================================
 PROMPT 7 - Tests End-to-End (Jours 10-11)
@@ -338,6 +350,8 @@ Critères de succès:
 - Partage vérifié dans chaque cas
 - Propagation de faits correcte
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 8 - Gestion Opérateurs OR (Jour 12)
 ================================================================================
@@ -372,6 +386,8 @@ Critères de succès:
 - OR est quand même normalisé pour le partage
 - Comportement correct avec faits
 - Tous les tests passent
+
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
 
 ================================================================================
 PROMPT 9 - Optimisation Performances (Jour 13)
@@ -419,6 +435,8 @@ Critères de succès:
 - Métriques précises
 - Benchmarks passent
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 10 - Documentation Complète (Jour 14)
 ================================================================================
@@ -465,6 +483,8 @@ Critères de succès:
 - Diagrammes visuels
 - Guide de migration détaillé
 
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+
 ================================================================================
 PROMPT 11 - Tests de Régression (BONUS)
 ================================================================================
@@ -495,6 +515,8 @@ Critères de succès:
 - 100% des tests existants passent
 - Aucune régression détectée
 - Backward compatible confirmé
+
+Utilise le prompt add-feature pour implémenter cette fonctionnalité.
 
 ================================================================================
 FIN - VALIDATION FINALE

@@ -91,6 +91,12 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile stri
 	}
 	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
 
+	// ÉTAPE 3.5: Traiter les suppressions de règles (si présentes)
+	err = cp.processRuleRemovals(network, resultMap)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur traitement suppressions de règles: %w", err)
+	}
+
 	// ÉTAPE 4: Validation finale
 	err = cp.validateNetwork(network)
 	if err != nil {
@@ -420,4 +426,48 @@ func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraint
 	fmt.Printf("========================================\n\n")
 
 	return network, submittedFacts, nil
+}
+
+// processRuleRemovals traite les commandes de suppression de règles
+func (cp *ConstraintPipeline) processRuleRemovals(network *ReteNetwork, resultMap map[string]interface{}) error {
+	// Vérifier si des suppressions de règles sont présentes
+	ruleRemovalsData, exists := resultMap["ruleRemovals"]
+	if !exists {
+		return nil // Pas de suppressions de règles
+	}
+
+	ruleRemovals, ok := ruleRemovalsData.([]interface{})
+	if !ok || len(ruleRemovals) == 0 {
+		return nil // Pas de suppressions de règles
+	}
+
+	fmt.Printf("🗑️  Traitement de %d suppression(s) de règles\n", len(ruleRemovals))
+
+	// Traiter chaque suppression de règle
+	for _, removalData := range ruleRemovals {
+		removalMap, ok := removalData.(map[string]interface{})
+		if !ok {
+			fmt.Printf("⚠️  Format de suppression invalide: %v\n", removalData)
+			continue
+		}
+
+		ruleID, ok := removalMap["ruleID"].(string)
+		if !ok || ruleID == "" {
+			fmt.Printf("⚠️  Identifiant de règle manquant ou invalide: %v\n", removalMap)
+			continue
+		}
+
+		// Supprimer la règle du réseau
+		fmt.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
+		err := network.RemoveRule(ruleID)
+		if err != nil {
+			// Logger l'erreur mais continuer avec les autres suppressions
+			fmt.Printf("⚠️  Erreur lors de la suppression de la règle %s: %v\n", ruleID, err)
+			continue
+		}
+
+		fmt.Printf("✅ Règle %s supprimée avec succès\n", ruleID)
+	}
+
+	return nil
 }

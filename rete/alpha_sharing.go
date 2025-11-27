@@ -30,8 +30,11 @@ func NewAlphaSharingRegistry() *AlphaSharingRegistry {
 // ConditionHash calcule un hash unique pour une condition alpha
 // Deux conditions identiques produiront le même hash
 func ConditionHash(condition interface{}, variableName string) (string, error) {
+	// Déballer la condition si elle est wrappée (pour le partage entre règles simples et chaînes)
+	unwrapped := normalizeConditionForSharing(condition)
+
 	// Normaliser la condition pour assurer un hash cohérent
-	normalized, err := normalizeCondition(condition)
+	normalized, err := normalizeCondition(unwrapped)
 	if err != nil {
 		return "", fmt.Errorf("erreur normalisation condition: %w", err)
 	}
@@ -52,6 +55,59 @@ func ConditionHash(condition interface{}, variableName string) (string, error) {
 	// Calculer le hash SHA-256
 	hash := sha256.Sum256(jsonBytes)
 	return fmt.Sprintf("alpha_%x", hash[:8]), nil // Utiliser les 8 premiers octets pour l'ID
+}
+
+// normalizeConditionForSharing déballe les conditions wrappées pour permettre le partage
+// entre règles simples (qui wrappent dans {"type": "constraint", "constraint": X})
+// et chaînes (qui utilisent directement la condition décomposée)
+func normalizeConditionForSharing(condition interface{}) interface{} {
+	// Si la condition est une map
+	if condMap, ok := condition.(map[string]interface{}); ok {
+		// Vérifier si c'est une condition wrappée dans un type "constraint"
+		if condType, hasType := condMap["type"]; hasType {
+			if condTypeStr, ok := condType.(string); ok && condTypeStr == "constraint" {
+				// Déballer la condition interne
+				if innerCond, hasConstraint := condMap["constraint"]; hasConstraint {
+					// Récursion pour déballer plusieurs niveaux si nécessaire
+					return normalizeConditionForSharing(innerCond)
+				}
+			}
+		}
+
+		// Normaliser les types équivalents pour le partage
+		// "comparison" et "binaryOperation" sont des synonymes
+		normalized := make(map[string]interface{})
+		for key, value := range condMap {
+			if key == "type" {
+				if typeStr, ok := value.(string); ok {
+					// Normaliser "comparison" vers "binaryOperation"
+					if typeStr == "comparison" {
+						normalized[key] = "binaryOperation"
+					} else {
+						normalized[key] = value
+					}
+				} else {
+					normalized[key] = value
+				}
+			} else {
+				// Normaliser récursivement les valeurs imbriquées
+				normalized[key] = normalizeConditionForSharing(value)
+			}
+		}
+		return normalized
+	}
+
+	// Si c'est un slice, normaliser chaque élément
+	if slice, ok := condition.([]interface{}); ok {
+		normalized := make([]interface{}, len(slice))
+		for i, item := range slice {
+			normalized[i] = normalizeConditionForSharing(item)
+		}
+		return normalized
+	}
+
+	// Sinon, retourner la condition telle quelle
+	return condition
 }
 
 // normalizeCondition normalise une condition pour assurer un hash cohérent

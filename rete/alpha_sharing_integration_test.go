@@ -247,7 +247,7 @@ rule senior_check : {p: Person} / p.age > 65 ==> print("Senior")
 	}
 
 	// Supprimer adult_check (partage l'AlphaNode avec voting_check)
-	err = network.RemoveRule("rule_0")
+	err = network.RemoveRule("adult_check")
 	if err != nil {
 		t.Fatalf("Erreur suppression règle adult_check: %v", err)
 	}
@@ -266,7 +266,7 @@ rule senior_check : {p: Person} / p.age > 65 ==> print("Senior")
 	}
 
 	// Supprimer voting_check (dernière règle utilisant l'AlphaNode >18)
-	err = network.RemoveRule("rule_1")
+	err = network.RemoveRule("voting_check")
 	if err != nil {
 		t.Fatalf("Erreur suppression règle voting_check: %v", err)
 	}

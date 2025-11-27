@@ -10,8 +10,8 @@ Order(id:O1, customer_id:P1, total:100)
 Order(id:O2, customer_id:P2, total:200)
 
 // Rétracter des faits
-remove Person P1
-remove Order O2
+remove fact Person P1
+remove fact Order O2
 
 // Ajouter d'autres faits après les rétractions
 Person(id:P3, name:Charlie, age:45)

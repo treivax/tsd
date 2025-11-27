@@ -15,7 +15,7 @@ func TestParseRemoveFact(t *testing.T) {
 type Person : <id:string, name:string>
 
 Person(id:P1, name:Alice)
-remove Person P1
+remove fact Person P1
 `
 
 	result, err := Parse("test", []byte(input))
@@ -69,9 +69,9 @@ Person(id:P2, name:Bob)
 Order(id:O1, customer_id:P1)
 Order(id:O2, customer_id:P2)
 
-remove Person P1
-remove Order O2
-remove Person P2
+remove fact Person P1
+remove fact Order O2
+remove fact Person P2
 `
 
 	result, err := Parse("test", []byte(input))
@@ -159,7 +159,7 @@ func TestRemoveFactWithComplexID(t *testing.T) {
 type Product : <id:string, name:string>
 
 Product(id:PROD-123-ABC, name:Widget)
-remove Product PROD-123-ABC
+remove fact Product PROD-123-ABC
 `
 
 	result, err := Parse("test", []byte(input))

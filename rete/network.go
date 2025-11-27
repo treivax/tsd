@@ -131,6 +131,46 @@ func (rn *ReteNetwork) Reset() {
 	fmt.Println("✅ Réseau RETE réinitialisé avec succès")
 }
 
+// ClearMemory efface uniquement les mémoires (faits et tokens) de tous les nœuds
+// sans détruire la structure du réseau
+func (rn *ReteNetwork) ClearMemory() {
+	fmt.Println("🧹 Nettoyage de la mémoire du réseau RETE")
+
+	// Clear TypeNode memories
+	for _, typeNode := range rn.TypeNodes {
+		typeNode.mutex.Lock()
+		typeNode.Memory.Facts = make(map[string]*Fact)
+		typeNode.Memory.Tokens = make(map[string]*Token)
+		typeNode.mutex.Unlock()
+	}
+
+	// Clear AlphaNode memories
+	for _, alphaNode := range rn.AlphaNodes {
+		alphaNode.mutex.Lock()
+		alphaNode.Memory.Facts = make(map[string]*Fact)
+		alphaNode.Memory.Tokens = make(map[string]*Token)
+		alphaNode.mutex.Unlock()
+	}
+
+	// Clear BetaNode memories (JoinNodes, etc.)
+	for _, betaNode := range rn.BetaNodes {
+		if node, ok := betaNode.(Node); ok {
+			node.GetMemory().Facts = make(map[string]*Fact)
+			node.GetMemory().Tokens = make(map[string]*Token)
+		}
+	}
+
+	// Clear TerminalNode memories
+	for _, terminalNode := range rn.TerminalNodes {
+		terminalNode.mutex.Lock()
+		terminalNode.Memory.Facts = make(map[string]*Fact)
+		terminalNode.Memory.Tokens = make(map[string]*Token)
+		terminalNode.mutex.Unlock()
+	}
+
+	fmt.Println("✅ Mémoire du réseau RETE nettoyée avec succès")
+}
+
 // RemoveRule supprime une règle et tous ses nœuds qui ne sont plus utilisés
 func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 	fmt.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
@@ -147,6 +187,27 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 
 	fmt.Printf("   📊 Nœuds associés à la règle: %d\n", len(nodeIDs))
 
+	// Détecter si la règle utilise une chaîne d'AlphaNodes
+	hasChain := false
+	for _, nodeID := range nodeIDs {
+		if rn.isPartOfChain(nodeID) {
+			hasChain = true
+			break
+		}
+	}
+
+	// Utiliser la suppression optimisée pour les chaînes
+	if hasChain {
+		fmt.Printf("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée\n")
+		return rn.removeAlphaChain(ruleID)
+	}
+
+	// Comportement classique pour les règles simples
+	return rn.removeSimpleRule(ruleID, nodeIDs)
+}
+
+// removeSimpleRule supprime une règle simple (sans chaîne)
+func (rn *ReteNetwork) removeSimpleRule(ruleID string, nodeIDs []string) error {
 	// Parcourir chaque nœud et retirer la référence à la règle
 	nodesToDelete := make([]string, 0)
 	for _, nodeID := range nodeIDs {
@@ -178,74 +239,327 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 	return nil
 }
 
-// removeNodeFromNetwork supprime un nœud du réseau RETE
-func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
-	// Déterminer le type de nœud et le supprimer de la map appropriée
-	if lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID); exists {
+// removeAlphaChain supprime une règle avec une chaîne d'AlphaNodes
+// Remonte la chaîne en ordre inverse depuis le terminal pour supprimer les nœuds
+func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
+	// Récupérer tous les nœuds de la règle
+	nodeIDs := rn.LifecycleManager.GetNodesForRule(ruleID)
+
+	// Séparer les nœuds par type
+	var terminalID string
+	alphaNodes := make([]string, 0)
+	otherNodes := make([]string, 0)
+
+	for _, nodeID := range nodeIDs {
+		lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+		if !exists {
+			continue
+		}
+
 		switch lifecycle.NodeType {
-		case "type":
-			// Trouver et supprimer le TypeNode
-			for typeName, typeNode := range rn.TypeNodes {
-				if typeNode.GetID() == nodeID {
-					// Déconnecter du RootNode
-					rn.removeChildFromNode(rn.RootNode, typeNode)
-					delete(rn.TypeNodes, typeName)
-					return rn.LifecycleManager.RemoveNode(nodeID)
-				}
-			}
-
-		case "alpha":
-			// Supprimer l'AlphaNode
-			if alphaNode, exists := rn.AlphaNodes[nodeID]; exists {
-				// Déconnecter des parents (TypeNodes ou autres)
-				for _, typeNode := range rn.TypeNodes {
-					rn.removeChildFromNode(typeNode, alphaNode)
-				}
-				delete(rn.AlphaNodes, nodeID)
-
-				// Supprimer du registre de partage
-				// Le nodeID est le hash de la condition pour les nœuds partagés
-				if rn.AlphaSharingManager != nil {
-					// Vérifier si c'est un nœud partagé (les nœuds partagés ont un ID qui commence par "alpha_")
-					if len(nodeID) > 6 && nodeID[:6] == "alpha_" {
-						if err := rn.AlphaSharingManager.RemoveAlphaNode(nodeID); err != nil {
-							fmt.Printf("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v\n", err)
-						}
-					}
-				}
-
-				return rn.LifecycleManager.RemoveNode(nodeID)
-			}
-
 		case "terminal":
-			// Supprimer le TerminalNode
-			if terminalNode, exists := rn.TerminalNodes[nodeID]; exists {
-				// Déconnecter des parents (AlphaNodes ou JoinNodes)
-				for _, alphaNode := range rn.AlphaNodes {
-					rn.removeChildFromNode(alphaNode, terminalNode)
+			terminalID = nodeID
+		case "alpha":
+			alphaNodes = append(alphaNodes, nodeID)
+		default:
+			otherNodes = append(otherNodes, nodeID)
+		}
+	}
+
+	// Supprimer le terminal en premier
+	deletedCount := 0
+	if terminalID != "" {
+		if err := rn.removeNodeWithCheck(terminalID, ruleID); err == nil {
+			deletedCount++
+			fmt.Printf("   🗑️  TerminalNode %s supprimé\n", terminalID)
+		}
+	}
+
+	// Ordonner les AlphaNodes dans l'ordre inverse de la chaîne (du terminal vers le TypeNode)
+	orderedAlphaNodes := rn.orderAlphaNodesReverse(alphaNodes)
+
+	// Parcourir les AlphaNodes en ordre inverse
+	stopDeletion := false
+	for i, nodeID := range orderedAlphaNodes {
+		lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+		if !exists {
+			continue
+		}
+
+		// Décrémenter RefCount pour tous les nœuds
+		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
+		if err != nil {
+			fmt.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
+			continue
+		}
+
+		if !stopDeletion && shouldDelete {
+			// RefCount == 0, on peut supprimer
+			if err := rn.removeNodeFromNetwork(nodeID); err != nil {
+				fmt.Printf("   ⚠️  Erreur suppression nœud %s: %v\n", nodeID, err)
+			} else {
+				deletedCount++
+				fmt.Printf("   🗑️  AlphaNode %s supprimé (position %d dans la chaîne)\n", nodeID, len(orderedAlphaNodes)-i)
+			}
+		} else if !shouldDelete && !stopDeletion {
+			// Premier nœud partagé rencontré - on arrête la suppression mais on continue à décrémenter
+			refCount := lifecycle.GetRefCount()
+			fmt.Printf("   ♻️  AlphaNode %s conservé (%d référence(s) restante(s)) - arrêt des suppressions\n", nodeID, refCount)
+			fmt.Printf("   ℹ️  Décrémentation du RefCount des nœuds parents partagés\n")
+			stopDeletion = true
+		} else if stopDeletion {
+			// Nœuds parents - juste décrémenter le RefCount
+			refCount := lifecycle.GetRefCount()
+			fmt.Printf("   ♻️  AlphaNode %s: RefCount décrémenté (%d référence(s) restante(s))\n", nodeID, refCount)
+		}
+	}
+
+	// Supprimer les autres nœuds (TypeNodes, JoinNodes, etc.)
+	for _, nodeID := range otherNodes {
+		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
+			deletedCount++
+			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+			fmt.Printf("   🗑️  %s %s supprimé\n", lifecycle.NodeType, nodeID)
+		}
+	}
+
+	fmt.Printf("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, deletedCount)
+	return nil
+}
+
+// removeNodeWithCheck supprime un nœud seulement si RefCount == 0
+func (rn *ReteNetwork) removeNodeWithCheck(nodeID, ruleID string) error {
+	shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
+	if err != nil {
+		return err
+	}
+
+	if shouldDelete {
+		return rn.removeNodeFromNetwork(nodeID)
+	}
+
+	return fmt.Errorf("nœud %s encore référencé", nodeID)
+}
+
+// orderAlphaNodesReverse ordonne les AlphaNodes en ordre inverse de la chaîne
+// (du nœud le plus éloigné du TypeNode vers le TypeNode)
+func (rn *ReteNetwork) orderAlphaNodesReverse(alphaNodeIDs []string) []string {
+	if len(alphaNodeIDs) <= 1 {
+		return alphaNodeIDs
+	}
+
+	// Construire un graphe parent->enfants pour trouver l'ordre
+	childToParent := make(map[string]string)
+	hasParent := make(map[string]bool)
+
+	for _, nodeID := range alphaNodeIDs {
+		alphaNode, exists := rn.AlphaNodes[nodeID]
+		if !exists {
+			continue
+		}
+
+		parent := rn.getChainParent(alphaNode)
+		if parent != nil {
+			parentID := parent.GetID()
+			// Vérifier si le parent est aussi un AlphaNode de notre liste
+			for _, candidateID := range alphaNodeIDs {
+				if candidateID == parentID {
+					childToParent[nodeID] = parentID
+					hasParent[nodeID] = true
+					break
 				}
-				// Aussi déconnecter des BetaNodes si nécessaire
-				for _, betaNode := range rn.BetaNodes {
-					if node, ok := betaNode.(Node); ok {
-						rn.removeChildFromNode(node, terminalNode)
-					}
-				}
-				delete(rn.TerminalNodes, nodeID)
+			}
+		}
+	}
+
+	// Trouver le nœud terminal de la chaîne (celui qui n'est parent de personne)
+	var terminalNode string
+	for _, nodeID := range alphaNodeIDs {
+		isParent := false
+		for _, parentID := range childToParent {
+			if parentID == nodeID {
+				isParent = true
+				break
+			}
+		}
+		if !isParent {
+			terminalNode = nodeID
+			break
+		}
+	}
+
+	// Si pas de structure de chaîne détectée, retourner l'ordre original
+	if terminalNode == "" {
+		return alphaNodeIDs
+	}
+
+	// Remonter la chaîne depuis le terminal
+	ordered := make([]string, 0, len(alphaNodeIDs))
+	current := terminalNode
+	visited := make(map[string]bool)
+
+	for current != "" && !visited[current] {
+		ordered = append(ordered, current)
+		visited[current] = true
+		current = childToParent[current]
+	}
+
+	// Ajouter les nœuds non visités (au cas où)
+	for _, nodeID := range alphaNodeIDs {
+		if !visited[nodeID] {
+			ordered = append(ordered, nodeID)
+		}
+	}
+
+	return ordered
+}
+
+// isPartOfChain détecte si un nœud fait partie d'une chaîne d'AlphaNodes
+func (rn *ReteNetwork) isPartOfChain(nodeID string) bool {
+	lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+	if !exists || lifecycle.NodeType != "alpha" {
+		return false
+	}
+
+	alphaNode, exists := rn.AlphaNodes[nodeID]
+	if !exists {
+		return false
+	}
+
+	// Un AlphaNode fait partie d'une chaîne si:
+	// 1. Son parent est un autre AlphaNode, OU
+	// 2. Un de ses enfants est un autre AlphaNode
+
+	parent := rn.getChainParent(alphaNode)
+	if parent != nil && parent.GetType() == "alpha" {
+		return true
+	}
+
+	children := alphaNode.GetChildren()
+	for _, child := range children {
+		if child.GetType() == "alpha" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// getChainParent récupère le nœud parent d'un AlphaNode dans une chaîne
+func (rn *ReteNetwork) getChainParent(alphaNode *AlphaNode) Node {
+	if alphaNode == nil {
+		return nil
+	}
+
+	alphaID := alphaNode.GetID()
+
+	// Chercher dans les TypeNodes
+	for _, typeNode := range rn.TypeNodes {
+		for _, child := range typeNode.GetChildren() {
+			if child.GetID() == alphaID {
+				return typeNode
+			}
+		}
+	}
+
+	// Chercher dans les autres AlphaNodes
+	for _, parentAlpha := range rn.AlphaNodes {
+		if parentAlpha.GetID() == alphaID {
+			continue
+		}
+		for _, child := range parentAlpha.GetChildren() {
+			if child.GetID() == alphaID {
+				return parentAlpha
+			}
+		}
+	}
+
+	return nil
+}
+
+// removeNodeFromNetwork supprime un nœud du réseau RETE
+// Ne supprime que si RefCount == 0
+func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
+	// Vérifier que le nœud existe et peut être supprimé
+	lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+	if !exists {
+		return fmt.Errorf("nœud %s non trouvé dans le LifecycleManager", nodeID)
+	}
+
+	// Ne pas supprimer si le nœud a encore des références
+	if lifecycle.HasReferences() {
+		return fmt.Errorf("impossible de supprimer le nœud %s: encore %d référence(s)",
+			nodeID, lifecycle.GetRefCount())
+	}
+
+	// Déterminer le type de nœud et le supprimer de la map appropriée
+	switch lifecycle.NodeType {
+	case "type":
+		// Trouver et supprimer le TypeNode
+		for typeName, typeNode := range rn.TypeNodes {
+			if typeNode.GetID() == nodeID {
+				// Déconnecter du RootNode
+				rn.removeChildFromNode(rn.RootNode, typeNode)
+				delete(rn.TypeNodes, typeName)
 				return rn.LifecycleManager.RemoveNode(nodeID)
+			}
+		}
+
+	case "alpha":
+		// Supprimer l'AlphaNode
+		if alphaNode, exists := rn.AlphaNodes[nodeID]; exists {
+			// Déconnecter des parents (TypeNodes ou autres AlphaNodes)
+			parent := rn.getChainParent(alphaNode)
+			if parent != nil {
+				rn.removeChildFromNode(parent, alphaNode)
+				fmt.Printf("   🔗 AlphaNode %s déconnecté de son parent %s\n", nodeID, parent.GetID())
 			}
 
-		case "join", "exists", "accumulate":
-			// Supprimer le BetaNode
-			if betaNode, exists := rn.BetaNodes[nodeID]; exists {
-				// Déconnecter des parents
-				for _, typeNode := range rn.TypeNodes {
-					if node, ok := betaNode.(Node); ok {
-						rn.removeChildFromNode(typeNode, node)
+			delete(rn.AlphaNodes, nodeID)
+
+			// Supprimer du registre de partage AlphaSharingManager
+			if rn.AlphaSharingManager != nil {
+				// Vérifier si c'est un nœud partagé (les nœuds partagés ont un ID qui commence par "alpha_")
+				if len(nodeID) > 6 && nodeID[:6] == "alpha_" {
+					if err := rn.AlphaSharingManager.RemoveAlphaNode(nodeID); err != nil {
+						fmt.Printf("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v\n", err)
+					} else {
+						fmt.Printf("   ✓ AlphaNode %s supprimé du AlphaSharingManager\n", nodeID)
 					}
 				}
-				delete(rn.BetaNodes, nodeID)
-				return rn.LifecycleManager.RemoveNode(nodeID)
 			}
+
+			return rn.LifecycleManager.RemoveNode(nodeID)
+		}
+
+	case "terminal":
+		// Supprimer le TerminalNode
+		if terminalNode, exists := rn.TerminalNodes[nodeID]; exists {
+			// Déconnecter des parents (AlphaNodes ou JoinNodes)
+			for _, alphaNode := range rn.AlphaNodes {
+				rn.removeChildFromNode(alphaNode, terminalNode)
+			}
+			// Aussi déconnecter des BetaNodes si nécessaire
+			for _, betaNode := range rn.BetaNodes {
+				if node, ok := betaNode.(Node); ok {
+					rn.removeChildFromNode(node, terminalNode)
+				}
+			}
+			delete(rn.TerminalNodes, nodeID)
+			return rn.LifecycleManager.RemoveNode(nodeID)
+		}
+
+	case "join", "exists", "accumulate":
+		// Supprimer le BetaNode
+		if betaNode, exists := rn.BetaNodes[nodeID]; exists {
+			// Déconnecter des parents
+			for _, typeNode := range rn.TypeNodes {
+				if node, ok := betaNode.(Node); ok {
+					rn.removeChildFromNode(typeNode, node)
+				}
+			}
+			delete(rn.BetaNodes, nodeID)
+			return rn.LifecycleManager.RemoveNode(nodeID)
 		}
 	}
 

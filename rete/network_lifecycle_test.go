@@ -45,8 +45,8 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 	stats := network.GetNetworkStats()
 	t.Logf("Stats avant suppression: %+v", stats)
 
-	// Supprimer rule_0
-	err = network.RemoveRule("rule_0")
+	// Supprimer r1
+	err = network.RemoveRule("r1")
 	if err != nil {
 		t.Fatalf("Erreur suppression règle: %v", err)
 	}
@@ -93,14 +93,14 @@ rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
 	}
 
 	// Supprimer les deux règles
-	err = network.RemoveRule("rule_0")
+	err = network.RemoveRule("r1")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_0: %v", err)
+		t.Fatalf("Erreur suppression r1: %v", err)
 	}
 
-	err = network.RemoveRule("rule_1")
+	err = network.RemoveRule("r2")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_1: %v", err)
+		t.Fatalf("Erreur suppression r2: %v", err)
 	}
 
 	// Tous les nœuds sauf le TypeNode devraient être supprimés
@@ -152,10 +152,10 @@ rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
 		}
 	}
 
-	// Supprimer rule_0
-	err = network.RemoveRule("rule_0")
+	// Supprimer r1
+	err = network.RemoveRule("r1")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_0: %v", err)
+		t.Fatalf("Erreur suppression r1: %v", err)
 	}
 
 	// Le TypeNode doit toujours exister (partagé avec rule_1)
@@ -187,12 +187,12 @@ rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 	}
 
 	// Récupérer les informations de la règle
-	info := network.GetRuleInfo("rule_0")
+	info := network.GetRuleInfo("r1")
 	if info == nil {
 		t.Fatal("GetRuleInfo ne devrait pas retourner nil")
 	}
 
-	t.Logf("Informations de rule_0:")
+	t.Logf("Informations de r1:")
 	t.Logf("  RuleID: %s", info.RuleID)
 	t.Logf("  RuleName: %s", info.RuleName)
 	t.Logf("  NodeCount: %d", info.NodeCount)
@@ -342,18 +342,18 @@ rule r3 : {p: Person} / p.salary > 50000 ==> high_earner(p.id)
 		t.Errorf("Attendu 3 AlphaNodes, obtenu %d", initialAlpha)
 	}
 
-	// Supprimer rule_1 (au milieu)
-	err = network.RemoveRule("rule_1")
+	// Supprimer r2 (au milieu)
+	err = network.RemoveRule("r2")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_1: %v", err)
+		t.Fatalf("Erreur suppression r2: %v", err)
 	}
 
 	// Vérifier qu'un nœud a été supprimé
 	if len(network.AlphaNodes) != 2 {
-		t.Errorf("Après suppression rule_1, attendu 2 AlphaNodes, obtenu %d", len(network.AlphaNodes))
+		t.Errorf("Après suppression r2, attendu 2 AlphaNodes, obtenu %d", len(network.AlphaNodes))
 	}
 	if len(network.TerminalNodes) != 2 {
-		t.Errorf("Après suppression rule_1, attendu 2 TerminalNodes, obtenu %d", len(network.TerminalNodes))
+		t.Errorf("Après suppression r2, attendu 2 TerminalNodes, obtenu %d", len(network.TerminalNodes))
 	}
 
 	// Le TypeNode doit toujours exister
@@ -361,10 +361,11 @@ rule r3 : {p: Person} / p.salary > 50000 ==> high_earner(p.id)
 		t.Errorf("Le TypeNode devrait toujours exister, obtenu %d", len(network.TypeNodes))
 	}
 
-	// Supprimer rule_0
-	err = network.RemoveRule("rule_0")
+	// Supprimer r2
+	// Supprimer r1
+	err = network.RemoveRule("r1")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_0: %v", err)
+		t.Fatalf("Erreur suppression r1: %v", err)
 	}
 
 	if len(network.AlphaNodes) != 1 {
@@ -372,9 +373,10 @@ rule r3 : {p: Person} / p.salary > 50000 ==> high_earner(p.id)
 	}
 
 	// Supprimer rule_2 (la dernière)
-	err = network.RemoveRule("rule_2")
+	// Supprimer r3
+	err = network.RemoveRule("r3")
 	if err != nil {
-		t.Fatalf("Erreur suppression rule_2: %v", err)
+		t.Fatalf("Erreur suppression r3: %v", err)
 	}
 
 	if len(network.AlphaNodes) != 0 {

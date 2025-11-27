@@ -28,17 +28,32 @@ func (e *AlphaConditionEvaluator) evaluateConstraint(constraint constraint.Const
 // evaluateConstraintMap évalue une contrainte depuis une map
 func (e *AlphaConditionEvaluator) evaluateConstraintMap(expr map[string]interface{}) (bool, error) {
 	// Si l'expression a une clé "constraint", extraire la contrainte réelle
-	var actualConstraint map[string]interface{}
 	if constraintData, hasConstraint := expr["constraint"]; hasConstraint {
-		if constraintMap, ok := constraintData.(map[string]interface{}); ok {
-			actualConstraint = constraintMap
-		} else {
-			return false, fmt.Errorf("format contrainte invalide: %T", constraintData)
+		// Si c'est une LogicalExpression structurée (pas une map), l'évaluer directement
+		if logicalExpr, ok := constraintData.(constraint.LogicalExpression); ok {
+			return e.evaluateLogicalExpression(logicalExpr)
 		}
-	} else {
-		// Utiliser directement l'expression si pas d'indirection
-		actualConstraint = expr
+
+		// Si c'est une map, continuer avec le traitement map
+		if constraintMap, ok := constraintData.(map[string]interface{}); ok {
+			// Gérer directement les expressions logiques map
+			if condType, hasType := constraintMap["type"].(string); hasType {
+				if condType == "logicalExpr" || condType == "logicalExpression" {
+					return e.evaluateLogicalExpressionMap(constraintMap)
+				}
+			}
+			return e.evaluateConstraintMapInternal(constraintMap)
+		}
+
+		return false, fmt.Errorf("format contrainte invalide: %T", constraintData)
 	}
+
+	// Utiliser directement l'expression si pas d'indirection
+	return e.evaluateConstraintMapInternal(expr)
+}
+
+// evaluateConstraintMapInternal évalue une map de contrainte
+func (e *AlphaConditionEvaluator) evaluateConstraintMapInternal(actualConstraint map[string]interface{}) (bool, error) {
 
 	operator, ok := actualConstraint["operator"].(string)
 	if !ok {

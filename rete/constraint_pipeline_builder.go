@@ -125,8 +125,13 @@ func (cp *ConstraintPipeline) createRuleNodes(network *ReteNetwork, expressions 
 			return fmt.Errorf("format expression invalide: %T", exprInterface)
 		}
 
-		// Générer un ID de règle
-		ruleID := fmt.Sprintf("rule_%d", i)
+		// Extraire le ruleId de l'expression
+		ruleID := fmt.Sprintf("rule_%d", i) // Default fallback
+		if ruleIdValue, ok := exprMap["ruleId"]; ok {
+			if ruleIdStr, ok := ruleIdValue.(string); ok && ruleIdStr != "" {
+				ruleID = ruleIdStr
+			}
+		}
 
 		// Créer la règle
 		err := cp.createSingleRule(network, ruleID, exprMap, storage)

@@ -14,11 +14,12 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types, expressions, faits, retractions et reset
+    // Séparer types, expressions, faits, retractions, ruleRemovals et reset
     types := []interface{}{}
     expressions := []interface{}{}
     facts := []interface{}{}
     retractions := []interface{}{}
+    ruleRemovals := []interface{}{}
     resets := []interface{}{}
 
     if statements != nil {
@@ -32,6 +33,8 @@ Start <- _ statements:StatementList _ EOF {
                     facts = append(facts, stmt)
                 } else if stmtMap["type"] == "retraction" {
                     retractions = append(retractions, stmt)
+                } else if stmtMap["type"] == "ruleRemoval" {
+                    ruleRemovals = append(ruleRemovals, stmt)
                 } else if stmtMap["type"] == "reset" {
                     resets = append(resets, stmt)
                 }
@@ -44,6 +47,7 @@ Start <- _ statements:StatementList _ EOF {
         "expressions": expressions,
         "facts": facts,
         "retractions": retractions,
+        "ruleRemovals": ruleRemovals,
         "resets": resets,
     }, nil
 }
@@ -58,7 +62,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / Expression / RemoveFact / Fact / Reset
+Statement <- TypeDefinition / Expression / RemoveRule / RemoveFact / Fact / Reset
 
 Reset <- "reset" {
     return map[string]interface{}{
@@ -456,8 +460,16 @@ EscapeChar <- "n" { return "n", nil } /
 
 UnicodeChar <- .
 
-// RemoveFact définit le parsing d'une rétractation de fait avec le format: remove TypeName ID
-RemoveFact <- "remove" _ typeName:IdentName _ factID:FactID {
+// RemoveRule définit le parsing d'une suppression de règle avec le format: remove rule <ruleID>
+RemoveRule <- "remove" _ "rule" _ ruleID:IdentName {
+    return map[string]interface{}{
+        "type": "ruleRemoval",
+        "ruleID": ruleID,
+    }, nil
+}
+
+// RemoveFact définit le parsing d'une rétractation de fait avec le format: remove fact TypeName ID
+RemoveFact <- "remove" _ "fact" _ typeName:IdentName _ factID:FactID {
     return map[string]interface{}{
         "type": "retraction",
         "typeName": typeName,

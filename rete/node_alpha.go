@@ -103,21 +103,49 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	// Log désactivé pour les performances
 	// fmt.Printf("[ALPHA_%s] Condition satisfaite pour le fait: %s\n", an.ID, fact.String())
 
+	// Vérifier si le fait existe déjà (idempotence pour les propagations multiples)
 	an.mutex.Lock()
-	if err := an.Memory.AddFact(fact); err != nil {
-		an.mutex.Unlock()
-		return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+	internalID := fact.GetInternalID()
+	_, alreadyExists := an.Memory.Facts[internalID]
+	if !alreadyExists {
+		if err := an.Memory.AddFact(fact); err != nil {
+			an.mutex.Unlock()
+			return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+		}
 	}
 	an.mutex.Unlock()
 
-	// Persistance désactivée pour les performances
-
-	// Créer un token et le propager
-	token := &Token{
-		ID:     fmt.Sprintf("token_%s_%s", an.ID, fact.ID),
-		Facts:  []*Fact{fact},
-		NodeID: an.ID,
+	// Si le fait existait déjà, ne pas propager à nouveau
+	if alreadyExists {
+		return nil
 	}
 
-	return an.PropagateToChildren(nil, token)
+	// Persistance désactivée pour les performances
+
+	// Propager aux enfants
+	// Dans une chaîne d'AlphaNodes, propager le fait directement via ActivateRight
+	// Pour les autres types de nœuds (Terminal, Join), créer un token et propager via ActivateLeft
+	for _, child := range an.GetChildren() {
+		childType := child.GetType()
+
+		if childType == "alpha" {
+			// Propager le fait directement aux AlphaNodes enfants (chaîne)
+			if err := child.ActivateRight(fact); err != nil {
+				return fmt.Errorf("erreur propagation fait vers %s: %w", child.GetID(), err)
+			}
+		} else {
+			// Pour les autres types de nœuds, créer un token et propager via ActivateLeft
+			token := &Token{
+				ID:       fmt.Sprintf("token_%s_%s", an.ID, fact.ID),
+				Facts:    []*Fact{fact},
+				NodeID:   an.ID,
+				Bindings: map[string]*Fact{an.VariableName: fact},
+			}
+			if err := child.ActivateLeft(token); err != nil {
+				return fmt.Errorf("erreur propagation token vers %s: %w", child.GetID(), err)
+			}
+		}
+	}
+
+	return nil
 }
