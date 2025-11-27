@@ -1,0 +1,367 @@
+================================================================================
+PLAN D'IMPLÉMENTATION: PARTAGE DE NŒUDS AVEC CHAÎNES D'ALPHANODES
+Phase 2 - Tous les Opérateurs
+================================================================================
+
+Objectif: Implémenter le partage maximal de nœuds RETE en décomposant les
+expressions complexes en chaînes d'AlphaNodes réutilisables.
+
+Durée: 2 semaines (14 jours)
+
+================================================================================
+PROMPTS À LANCER SUCCESSIVEMENT
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 1: Analyse et Extraction des Conditions (Jour 1)
+────────────────────────────────────────────────────────────────────────────────
+
+Crée le fichier `tsd/rete/alpha_chain_extractor.go` qui extrait et analyse les
+conditions de n'importe quelle expression (AND, OR, comparaisons, opérations
+arithmétiques, etc.).
+
+Implémente:
+
+1. `ExtractConditions(expr interface{}) ([]SimpleCondition, string, error)`
+   - Extrait toutes les conditions simples d'une expression complexe
+   - Retourne: liste de conditions, type d'opérateur principal, erreur
+   - Gère les expressions imbriquées récursivement
+
+2. Type `SimpleCondition` avec:
+   - Type, Left, Operator, Right, Hash
+
+3. `CanonicalString(condition SimpleCondition) string`
+   - Génère une représentation textuelle unique et déterministe
+   - Exemples: "binaryOp(fieldAccess(p,age),>,literal(18))"
+
+4. Tests unitaires complets pour toutes les fonctions
+
+Critères: Tous les tests passent, gère expressions imbriquées, déterministe.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 2: Normalisation Canonique (Jour 2)
+────────────────────────────────────────────────────────────────────────────────
+
+Dans `tsd/rete/alpha_chain_extractor.go`, ajoute les fonctions de normalisation.
+
+Implémente:
+
+1. `NormalizeConditions(conditions []SimpleCondition, operator string) []SimpleCondition`
+   - Trie les conditions dans un ordre canonique déterministe
+   - Respecte la commutativité (AND, OR commutatifs → trier)
+
+2. `IsCommutative(operator string) bool`
+   - true pour AND, OR, +, *, etc.
+   - false pour -, /, séquences
+
+3. `NormalizeExpression(expr interface{}) (interface{}, error)`
+   - Point d'entrée principal
+
+4. Tests: ordre indépendant pour opérateurs commutatifs, préservation pour
+   non-commutatifs
+
+Critères: `A AND B` = `B AND A` après normalisation, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 3: Constructeur de Chaînes (Jours 3-4)
+────────────────────────────────────────────────────────────────────────────────
+
+Crée `tsd/rete/alpha_chain_builder.go` qui construit des chaînes d'AlphaNodes
+avec partage automatique.
+
+Implémente:
+
+1. Types `AlphaChain` et `AlphaChainBuilder`
+
+2. `NewAlphaChainBuilder(network, storage)`
+
+3. `BuildChain(conditions []SimpleCondition, variableName string, parentNode Node, ruleID string) (*AlphaChain, error)`
+   Algorithme:
+   - Pour chaque condition: GetOrCreateAlphaNode()
+   - Si nouveau: connecter, ajouter au réseau
+   - Si réutilisé: vérifier connexion, logger
+   - Enregistrer dans LifecycleManager
+   - Le nœud devient parent pour le suivant
+
+4. Helper `isAlreadyConnected(parent, child Node) bool`
+
+5. Tests: création, réutilisation, partage partiel, partage complet
+
+Critères: Partage automatique fonctionne, logging clair, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 4: Détection d'Expressions (Jour 5)
+────────────────────────────────────────────────────────────────────────────────
+
+Crée `tsd/rete/expression_analyzer.go` qui analyse et décide comment traiter
+une condition.
+
+Implémente:
+
+1. Type `ExpressionType` (SimpleCondition, ANDExpression, ORExpression,
+   MixedExpression, ArithmeticChain)
+
+2. `AnalyzeExpression(expr interface{}) (ExpressionType, error)`
+
+3. `CanDecompose(exprType ExpressionType) bool`
+   - true: SimpleCondition, ANDExpression, ArithmeticChain (commutatif)
+   - false: ORExpression, MixedExpression
+
+4. `ShouldNormalize(exprType ExpressionType) bool`
+
+5. Tests pour tous types d'expressions
+
+Critères: Détection correcte, gestion cas edge, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 5: Intégration Pipeline (Jours 6-7)
+────────────────────────────────────────────────────────────────────────────────
+
+Modifie `tsd/rete/constraint_pipeline_helpers.go` pour intégrer la décomposition.
+
+1. Renomme `createAlphaNodeWithTerminal` → `createSimpleAlphaNodeWithTerminal`
+
+2. Crée nouvelle `createAlphaNodeWithTerminal`:
+   - Appelle AnalyzeExpression()
+   - Si CanDecompose(): ExtractConditions → Normalize → BuildChain
+   - Sinon: createSimpleAlphaNodeWithTerminal()
+
+3. Logging détaillé:
+   - "🔗 Décomposition en chaîne: X conditions"
+   - "✨ Nouveau AlphaNode: [hash]"
+   - "♻️ AlphaNode partagé: [hash]"
+   - "✅ Chaîne construite: X nœud(s), Y partagé(s)"
+
+4. Gère cas spéciaux (OR, simples, erreurs)
+
+5. Tests d'intégration complets
+
+Critères: Backward compatible, chaînes pour AND, logging, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 6: Lifecycle Management (Jours 8-9)
+────────────────────────────────────────────────────────────────────────────────
+
+Modifie `tsd/rete/network.go` pour gérer la suppression des chaînes.
+
+1. Modifie `removeNodeFromNetwork()`:
+   - Détecte nœuds de chaîne
+   - Supprime seulement si RefCount == 0
+   - Déconnecte, supprime des registres
+
+2. Crée `removeAlphaChain(ruleID string) error`:
+   - Récupère AlphaNodes de la règle
+   - Remonte en ordre inverse
+   - Décrémenter RefCount, supprimer si 0
+   - Arrêter si RefCount > 0 (partagé)
+
+3. Améliore `RemoveRule()` pour utiliser removeAlphaChain()
+
+4. Helpers: `isPartOfChain()`, `getChainParent()`
+
+5. Tests: suppression complète, partielle, préservation nœuds partagés
+
+Critères: Pas d'orphelins, nœuds partagés préservés, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 7: Tests End-to-End (Jours 10-11)
+────────────────────────────────────────────────────────────────────────────────
+
+Crée `tsd/rete/alpha_chain_integration_test.go` avec tests sur rulesets réels.
+
+Tests requis:
+
+1. TwoRules_SameConditions_DifferentOrder
+   - r1: p.age > 18 AND p.name='toto'
+   - r2: p.name='toto' AND p.age > 18
+   - Vérifie: 2 AlphaNodes partagés
+
+2. PartialSharing_ThreeRules
+   - r1: p.age > 18
+   - r2: p.age > 18 AND p.name='toto'
+   - r3: p.age > 18 AND p.name='toto' AND p.salary > 1000
+   - Vérifie: partage partiel
+
+3. FactPropagation_ThroughChain
+   - Soumet fait satisfaisant toute la chaîne
+   - Vérifie tous TerminalNodes activés
+   - Vérifie chaque condition évaluée une seule fois
+
+4. RuleRemoval_PreservesShared
+   - 3 règles avec partage
+   - Supprime celle du milieu
+   - Vérifie nœuds partagés restent
+
+5. ComplexScenario_FraudDetection
+   - 4 règles avec conditions communes sur Transaction
+   - Vérifie partage optimal
+
+6. OR_NotDecomposed
+   - Règle avec OR
+   - Vérifie un seul AlphaNode
+
+7. NetworkStats_Accurate
+   - Vérifie statistiques correctes
+
+Critères: Tous scénarios passent, partage vérifié, propagation correcte.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 8: Gestion Opérateurs OR (Jour 12)
+────────────────────────────────────────────────────────────────────────────────
+
+Améliore la gestion des expressions OR.
+
+1. Dans `expression_analyzer.go`:
+   - Détecte OR pures et mixtes (AND + OR)
+   - Retourne type approprié
+
+2. Dans `alpha_chain_extractor.go`:
+   - `NormalizeORExpression(expr) (interface{}, error)`
+   - Trie termes OR, reconstruit sans décomposer
+
+3. Dans `constraint_pipeline_helpers.go`:
+   - OR: normaliser mais un seul AlphaNode
+   - MixedExpression: un seul AlphaNode normalisé
+
+4. Tests: OR pas décomposé, normalisation ordre, propagation
+
+Critères: OR pas en chaîne, mais normalisé, tous tests passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 9: Optimisation Performances (Jour 13)
+────────────────────────────────────────────────────────────────────────────────
+
+Optimise les performances.
+
+1. Dans `alpha_sharing.go`:
+   - Cache hash calculés
+
+2. Dans `alpha_chain_builder.go`:
+   - Cache détection connexions
+   - Réutilise normalisation
+
+3. Ajoute type `ChainBuildMetrics` avec:
+   - TotalChainsBuilt, NodesCreated, NodesReused
+   - AverageChainLength, SharingRatio
+
+4. Dans `network.go`:
+   - `GetChainMetrics() *ChainBuildMetrics`
+
+5. Benchmarks: 100 règles, 1000 règles
+
+Critères: Cache fonctionne, amélioration mesurable, benchmarks passent.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 10: Documentation Complète (Jour 14)
+────────────────────────────────────────────────────────────────────────────────
+
+Crée documentation complète.
+
+Fichiers à créer:
+
+1. `ALPHA_CHAINS_USER_GUIDE.md`
+   - Introduction, bénéfices, exemples, débogage
+
+2. `ALPHA_CHAINS_TECHNICAL_GUIDE.md`
+   - Architecture, algorithmes, lifecycle, API
+
+3. `ALPHA_CHAINS_EXAMPLES.md`
+   - 10+ exemples concrets avec visualisations
+
+4. `ALPHA_CHAINS_MIGRATION.md`
+   - Impact, activation, troubleshooting
+
+5. Mise à jour `ALPHA_NODE_SHARING.md`
+   - Ajoute section chaînes
+
+6. Commentaires code: docstrings, exemples, diagrammes ASCII
+
+Critères: Documentation complète, exemples exécutables, diagrammes.
+
+────────────────────────────────────────────────────────────────────────────────
+PROMPT 11 (BONUS): Tests de Régression (Si temps)
+────────────────────────────────────────────────────────────────────────────────
+
+Vérifie fonctionnalités existantes.
+
+1. Exécute: `cd tsd/rete && go test -v`
+
+2. Si échecs: identifier, corriger, re-tester
+
+3. Teste scénarios précédents:
+   - TypeNode sharing
+   - Lifecycle management
+   - Removal règles simples
+
+4. Ajoute tests régression:
+   - BackwardCompatibility_SimpleRules
+   - NoRegression_AllPreviousTests
+
+Critères: 100% tests passent, aucune régression, backward compatible.
+
+================================================================================
+ORDRE D'EXÉCUTION
+================================================================================
+
+Lancer les prompts dans l'ordre numérique: 1 → 11
+
+Validation à chaque étape:
+1. Code compile sans erreur
+2. Tests du prompt passent
+3. Aucune régression sur tests existants
+
+================================================================================
+MÉTRIQUES DE SUCCÈS FINALES
+================================================================================
+
+Fonctionnalité:
+✅ Décomposition en chaînes pour AND
+✅ Partage partiel et complet
+✅ Normalisation ordre-indépendante
+✅ OR géré correctement
+✅ Backward compatible
+
+Qualité:
+✅ 100% tests unitaires passent
+✅ 100% tests intégration passent
+✅ Aucune régression
+✅ Coverage > 80%
+
+Performance:
+✅ Ratio partage > 1.0
+✅ Pas de dégradation règles simples
+✅ Amélioration pour conditions communes
+
+Documentation:
+✅ Complète et claire
+✅ Exemples exécutables
+✅ Guide migration disponible
+
+================================================================================
+NOTES IMPORTANTES
+================================================================================
+
+Opérateurs couverts: AND, OR, NOT, >, <, >=, <=, =, !=, +, -, *, /, LIKE,
+                     CONTAINS, MATCHES, IN
+
+Commutativité: Seuls AND, +, * sont décomposables. OR traité spécialement.
+
+Extensibilité: Architecture permet ajout facile de nouveaux opérateurs.
+
+Documentation complète: Voir tsd/ALPHA_CHAIN_IMPLEMENTATION_PLAN.md
+
+================================================================================
+SUPPORT
+================================================================================
+
+En cas de blocage:
+1. Consulter documentation technique
+2. Examiner tests existants
+3. Revenir à prompt précédent si nécessaire
+
+Bonne implémentation! 🚀
+
+Créé: Janvier 2025
+Version: 1.0
+Statut: Prêt pour exécution séquentielle
+================================================================================

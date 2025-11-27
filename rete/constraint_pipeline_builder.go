@@ -64,6 +64,11 @@ func (cp *ConstraintPipeline) createTypeNodes(network *ReteNetwork, types []inte
 		typeNode := NewTypeNode(typeName, typeDef, storage)
 		network.TypeNodes[typeName] = typeNode
 
+		// Enregistrer le TypeNode dans le LifecycleManager
+		if network.LifecycleManager != nil {
+			network.LifecycleManager.RegisterNode(typeNode.GetID(), "type")
+		}
+
 		// CRUCIAL: Connecter le TypeNode au RootNode pour permettre la propagation des faits
 		network.RootNode.AddChild(typeNode)
 

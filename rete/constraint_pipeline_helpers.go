@@ -180,7 +180,7 @@ func (cp *ConstraintPipeline) connectAlphaNodeToTypeNode(
 	}
 }
 
-// createAlphaNodeWithTerminal crée un AlphaNode et son nœud terminal associé
+// createAlphaNodeWithTerminal crée un AlphaNode (partagé si possible) et son nœud terminal associé
 func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	network *ReteNetwork,
 	ruleID string,
@@ -190,21 +190,50 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	action *Action,
 	storage Storage,
 ) error {
-	// Créer un nœud Alpha avec la condition appropriée
-	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, variableName, storage)
+	// Utiliser le gestionnaire de partage pour obtenir ou créer un AlphaNode
+	alphaNode, alphaHash, wasShared, err := network.AlphaSharingManager.GetOrCreateAlphaNode(
+		condition,
+		variableName,
+		storage,
+	)
+	if err != nil {
+		return fmt.Errorf("erreur création AlphaNode partagé: %w", err)
+	}
 
-	// Connecter au type node approprié
-	cp.connectAlphaNodeToTypeNode(network, alphaNode, variableType, variableName)
+	if wasShared {
+		fmt.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+	} else {
+		fmt.Printf("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
 
-	network.AlphaNodes[alphaNode.ID] = alphaNode
+		// Connecter au type node approprié (seulement pour les nouveaux nœuds)
+		cp.connectAlphaNodeToTypeNode(network, alphaNode, variableType, variableName)
 
-	// Créer le terminal
+		// Ajouter au registre global des AlphaNodes du réseau
+		network.AlphaNodes[alphaNode.ID] = alphaNode
+	}
+
+	// Enregistrer ou mettre à jour l'AlphaNode dans le LifecycleManager
+	if network.LifecycleManager != nil {
+		lifecycle := network.LifecycleManager.RegisterNode(alphaNode.ID, "alpha")
+		lifecycle.AddRuleReference(ruleID, ruleID)
+	}
+
+	// Créer le terminal (toujours spécifique à la règle)
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	alphaNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	// Enregistrer le TerminalNode dans le LifecycleManager
+	if network.LifecycleManager != nil {
+		lifecycle := network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		lifecycle.AddRuleReference(ruleID, ruleID)
+	}
+
 	if condition["type"] == "negation" {
 		fmt.Printf("   ✓ AlphaNode de négation créé: %s -> %s\n", alphaNode.ID, terminalNode.ID)
+	} else if wasShared {
+		fmt.Printf("   ✓ Règle %s attachée à l'AlphaNode partagé %s via terminal %s\n",
+			ruleID, alphaNode.ID, terminalNode.ID)
 	}
 
 	return nil
