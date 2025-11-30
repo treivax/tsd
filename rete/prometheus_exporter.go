@@ -13,9 +13,10 @@ import (
 
 // PrometheusExporter exporte les métriques RETE vers Prometheus
 type PrometheusExporter struct {
-	metrics *ChainBuildMetrics
-	config  *ChainPerformanceConfig
-	mutex   sync.RWMutex
+	alphaMetrics *ChainBuildMetrics
+	betaMetrics  *BetaChainMetrics
+	config       *ChainPerformanceConfig
+	mutex        sync.RWMutex
 
 	// Registres des métriques
 	registry map[string]*prometheusMetric
@@ -30,16 +31,30 @@ type prometheusMetric struct {
 	labels     map[string]string
 }
 
-// NewPrometheusExporter crée un nouveau exporteur Prometheus
+// NewPrometheusExporter crée un nouveau exporteur Prometheus pour les métriques alpha
 func NewPrometheusExporter(metrics *ChainBuildMetrics, config *ChainPerformanceConfig) *PrometheusExporter {
 	if config == nil {
 		config = DefaultChainPerformanceConfig()
 	}
 
 	return &PrometheusExporter{
-		metrics:  metrics,
-		config:   config,
-		registry: make(map[string]*prometheusMetric),
+		alphaMetrics: metrics,
+		config:       config,
+		registry:     make(map[string]*prometheusMetric),
+	}
+}
+
+// NewPrometheusExporterWithBeta crée un exporteur avec métriques alpha et beta
+func NewPrometheusExporterWithBeta(alphaMetrics *ChainBuildMetrics, betaMetrics *BetaChainMetrics, config *ChainPerformanceConfig) *PrometheusExporter {
+	if config == nil {
+		config = DefaultChainPerformanceConfig()
+	}
+
+	return &PrometheusExporter{
+		alphaMetrics: alphaMetrics,
+		betaMetrics:  betaMetrics,
+		config:       config,
+		registry:     make(map[string]*prometheusMetric),
 	}
 }
 
@@ -47,70 +62,192 @@ func NewPrometheusExporter(metrics *ChainBuildMetrics, config *ChainPerformanceC
 func (pe *PrometheusExporter) RegisterMetrics() {
 	prefix := pe.config.PrometheusPrefix
 
-	// Métriques de chaînes
-	pe.registerMetric(fmt.Sprintf("%s_chains_built_total", prefix),
+	// Métriques de chaînes alpha
+	pe.registerMetric(fmt.Sprintf("%s_alpha_chains_built_total", prefix),
 		"Total number of alpha chains built",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_chains_length_avg", prefix),
+	pe.registerMetric(fmt.Sprintf("%s_alpha_chains_length_avg", prefix),
 		"Average length of alpha chains",
 		"gauge")
 
-	// Métriques de nœuds
-	pe.registerMetric(fmt.Sprintf("%s_nodes_created_total", prefix),
+	// Métriques de nœuds alpha
+	pe.registerMetric(fmt.Sprintf("%s_alpha_nodes_created_total", prefix),
 		"Total number of alpha nodes created",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_nodes_reused_total", prefix),
+	pe.registerMetric(fmt.Sprintf("%s_alpha_nodes_reused_total", prefix),
 		"Total number of alpha nodes reused",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_nodes_sharing_ratio", prefix),
-		"Ratio of node sharing (0.0 to 1.0)",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_nodes_sharing_ratio", prefix),
+		"Ratio of alpha node sharing (0.0 to 1.0)",
 		"gauge")
 
-	// Métriques de cache de hash
-	pe.registerMetric(fmt.Sprintf("%s_hash_cache_hits_total", prefix),
-		"Total number of hash cache hits",
+	// Métriques de cache de hash alpha
+	pe.registerMetric(fmt.Sprintf("%s_alpha_hash_cache_hits_total", prefix),
+		"Total number of alpha hash cache hits",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_hash_cache_misses_total", prefix),
-		"Total number of hash cache misses",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_hash_cache_misses_total", prefix),
+		"Total number of alpha hash cache misses",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_hash_cache_size", prefix),
-		"Current size of hash cache",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_hash_cache_size", prefix),
+		"Current size of alpha hash cache",
 		"gauge")
 
-	pe.registerMetric(fmt.Sprintf("%s_hash_cache_efficiency", prefix),
-		"Hash cache efficiency (0.0 to 1.0)",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_hash_cache_efficiency", prefix),
+		"Alpha hash cache efficiency (0.0 to 1.0)",
 		"gauge")
 
-	// Métriques de cache de connexion
-	pe.registerMetric(fmt.Sprintf("%s_connection_cache_hits_total", prefix),
-		"Total number of connection cache hits",
+	// Métriques de cache de connexion alpha
+	pe.registerMetric(fmt.Sprintf("%s_alpha_connection_cache_hits_total", prefix),
+		"Total number of alpha connection cache hits",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_connection_cache_misses_total", prefix),
-		"Total number of connection cache misses",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_connection_cache_misses_total", prefix),
+		"Total number of alpha connection cache misses",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_connection_cache_efficiency", prefix),
-		"Connection cache efficiency (0.0 to 1.0)",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_connection_cache_efficiency", prefix),
+		"Alpha connection cache efficiency (0.0 to 1.0)",
 		"gauge")
 
-	// Métriques de temps
-	pe.registerMetric(fmt.Sprintf("%s_build_time_seconds_total", prefix),
-		"Total time spent building chains in seconds",
+	// Métriques de temps alpha
+	pe.registerMetric(fmt.Sprintf("%s_alpha_build_time_seconds_total", prefix),
+		"Total time spent building alpha chains in seconds",
 		"counter")
 
-	pe.registerMetric(fmt.Sprintf("%s_build_time_seconds_avg", prefix),
-		"Average time spent building a chain in seconds",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_build_time_seconds_avg", prefix),
+		"Average time spent building an alpha chain in seconds",
 		"gauge")
 
-	pe.registerMetric(fmt.Sprintf("%s_hash_compute_time_seconds_total", prefix),
-		"Total time spent computing hashes in seconds",
+	pe.registerMetric(fmt.Sprintf("%s_alpha_hash_compute_time_seconds_total", prefix),
+		"Total time spent computing alpha hashes in seconds",
 		"counter")
+
+	// Métriques de chaînes beta (si disponibles)
+	if pe.betaMetrics != nil {
+		pe.registerMetric(fmt.Sprintf("%s_beta_chains_built_total", prefix),
+			"Total number of beta chains built",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_chains_length_avg", prefix),
+			"Average length of beta chains",
+			"gauge")
+
+		// Métriques de nœuds beta
+		pe.registerMetric(fmt.Sprintf("%s_beta_nodes_created_total", prefix),
+			"Total number of beta nodes created",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_nodes_reused_total", prefix),
+			"Total number of beta nodes reused",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_nodes_sharing_ratio", prefix),
+			"Ratio of beta node sharing (0.0 to 1.0)",
+			"gauge")
+
+		// Métriques de jointures
+		pe.registerMetric(fmt.Sprintf("%s_beta_joins_executed_total", prefix),
+			"Total number of beta joins executed",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_joins_time_seconds_avg", prefix),
+			"Average time per beta join in seconds",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_joins_selectivity_avg", prefix),
+			"Average beta join selectivity (0.0 to 1.0)",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_joins_result_size_avg", prefix),
+			"Average beta join result size",
+			"gauge")
+
+		// Métriques de cache de hash beta
+		pe.registerMetric(fmt.Sprintf("%s_beta_hash_cache_hits_total", prefix),
+			"Total number of beta hash cache hits",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_hash_cache_misses_total", prefix),
+			"Total number of beta hash cache misses",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_hash_cache_size", prefix),
+			"Current size of beta hash cache",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_hash_cache_efficiency", prefix),
+			"Beta hash cache efficiency (0.0 to 1.0)",
+			"gauge")
+
+		// Métriques de cache de jointure
+		pe.registerMetric(fmt.Sprintf("%s_beta_join_cache_hits_total", prefix),
+			"Total number of beta join cache hits",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_join_cache_misses_total", prefix),
+			"Total number of beta join cache misses",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_join_cache_size", prefix),
+			"Current size of beta join cache",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_join_cache_evictions_total", prefix),
+			"Total number of beta join cache evictions",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_join_cache_efficiency", prefix),
+			"Beta join cache efficiency (0.0 to 1.0)",
+			"gauge")
+
+		// Métriques de cache de connexion beta
+		pe.registerMetric(fmt.Sprintf("%s_beta_connection_cache_hits_total", prefix),
+			"Total number of beta connection cache hits",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_connection_cache_misses_total", prefix),
+			"Total number of beta connection cache misses",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_connection_cache_efficiency", prefix),
+			"Beta connection cache efficiency (0.0 to 1.0)",
+			"gauge")
+
+		// Métriques de cache de préfixe beta
+		pe.registerMetric(fmt.Sprintf("%s_beta_prefix_cache_hits_total", prefix),
+			"Total number of beta prefix cache hits",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_prefix_cache_misses_total", prefix),
+			"Total number of beta prefix cache misses",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_prefix_cache_size", prefix),
+			"Current size of beta prefix cache",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_prefix_cache_efficiency", prefix),
+			"Beta prefix cache efficiency (0.0 to 1.0)",
+			"gauge")
+
+		// Métriques de temps beta
+		pe.registerMetric(fmt.Sprintf("%s_beta_build_time_seconds_total", prefix),
+			"Total time spent building beta chains in seconds",
+			"counter")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_build_time_seconds_avg", prefix),
+			"Average time spent building a beta chain in seconds",
+			"gauge")
+
+		pe.registerMetric(fmt.Sprintf("%s_beta_hash_compute_time_seconds_total", prefix),
+			"Total time spent computing beta hashes in seconds",
+			"counter")
+	}
 }
 
 // registerMetric enregistre une métrique
@@ -128,40 +265,89 @@ func (pe *PrometheusExporter) registerMetric(name, help, metricType string) {
 
 // UpdateMetrics met à jour toutes les métriques avec les valeurs actuelles
 func (pe *PrometheusExporter) UpdateMetrics() {
-	if pe.metrics == nil {
-		return
-	}
-
-	snapshot := pe.metrics.GetSnapshot()
-	prefix := pe.config.PrometheusPrefix
-
 	pe.mutex.Lock()
 	defer pe.mutex.Unlock()
 
-	// Chaînes
-	pe.updateValue(fmt.Sprintf("%s_chains_built_total", prefix), float64(snapshot.TotalChainsBuilt))
-	pe.updateValue(fmt.Sprintf("%s_chains_length_avg", prefix), snapshot.AverageChainLength)
+	prefix := pe.config.PrometheusPrefix
 
-	// Nœuds
-	pe.updateValue(fmt.Sprintf("%s_nodes_created_total", prefix), float64(snapshot.TotalNodesCreated))
-	pe.updateValue(fmt.Sprintf("%s_nodes_reused_total", prefix), float64(snapshot.TotalNodesReused))
-	pe.updateValue(fmt.Sprintf("%s_nodes_sharing_ratio", prefix), snapshot.SharingRatio)
+	// Métriques alpha
+	if pe.alphaMetrics != nil {
+		snapshot := pe.alphaMetrics.GetSnapshot()
 
-	// Cache de hash
-	pe.updateValue(fmt.Sprintf("%s_hash_cache_hits_total", prefix), float64(snapshot.HashCacheHits))
-	pe.updateValue(fmt.Sprintf("%s_hash_cache_misses_total", prefix), float64(snapshot.HashCacheMisses))
-	pe.updateValue(fmt.Sprintf("%s_hash_cache_size", prefix), float64(snapshot.HashCacheSize))
-	pe.updateValue(fmt.Sprintf("%s_hash_cache_efficiency", prefix), pe.metrics.GetHashCacheEfficiency())
+		// Chaînes alpha
+		pe.updateValue(fmt.Sprintf("%s_alpha_chains_built_total", prefix), float64(snapshot.TotalChainsBuilt))
+		pe.updateValue(fmt.Sprintf("%s_alpha_chains_length_avg", prefix), snapshot.AverageChainLength)
 
-	// Cache de connexion
-	pe.updateValue(fmt.Sprintf("%s_connection_cache_hits_total", prefix), float64(snapshot.ConnectionCacheHits))
-	pe.updateValue(fmt.Sprintf("%s_connection_cache_misses_total", prefix), float64(snapshot.ConnectionCacheMisses))
-	pe.updateValue(fmt.Sprintf("%s_connection_cache_efficiency", prefix), pe.metrics.GetConnectionCacheEfficiency())
+		// Nœuds alpha
+		pe.updateValue(fmt.Sprintf("%s_alpha_nodes_created_total", prefix), float64(snapshot.TotalNodesCreated))
+		pe.updateValue(fmt.Sprintf("%s_alpha_nodes_reused_total", prefix), float64(snapshot.TotalNodesReused))
+		pe.updateValue(fmt.Sprintf("%s_alpha_nodes_sharing_ratio", prefix), snapshot.SharingRatio)
 
-	// Temps
-	pe.updateValue(fmt.Sprintf("%s_build_time_seconds_total", prefix), snapshot.TotalBuildTime.Seconds())
-	pe.updateValue(fmt.Sprintf("%s_build_time_seconds_avg", prefix), snapshot.AverageBuildTime.Seconds())
-	pe.updateValue(fmt.Sprintf("%s_hash_compute_time_seconds_total", prefix), snapshot.TotalHashComputeTime.Seconds())
+		// Cache de hash alpha
+		pe.updateValue(fmt.Sprintf("%s_alpha_hash_cache_hits_total", prefix), float64(snapshot.HashCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_alpha_hash_cache_misses_total", prefix), float64(snapshot.HashCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_alpha_hash_cache_size", prefix), float64(snapshot.HashCacheSize))
+		pe.updateValue(fmt.Sprintf("%s_alpha_hash_cache_efficiency", prefix), pe.alphaMetrics.GetHashCacheEfficiency())
+
+		// Cache de connexion alpha
+		pe.updateValue(fmt.Sprintf("%s_alpha_connection_cache_hits_total", prefix), float64(snapshot.ConnectionCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_alpha_connection_cache_misses_total", prefix), float64(snapshot.ConnectionCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_alpha_connection_cache_efficiency", prefix), pe.alphaMetrics.GetConnectionCacheEfficiency())
+
+		// Temps alpha
+		pe.updateValue(fmt.Sprintf("%s_alpha_build_time_seconds_total", prefix), snapshot.TotalBuildTime.Seconds())
+		pe.updateValue(fmt.Sprintf("%s_alpha_build_time_seconds_avg", prefix), snapshot.AverageBuildTime.Seconds())
+		pe.updateValue(fmt.Sprintf("%s_alpha_hash_compute_time_seconds_total", prefix), snapshot.TotalHashComputeTime.Seconds())
+	}
+
+	// Métriques beta
+	if pe.betaMetrics != nil {
+		snapshot := pe.betaMetrics.GetSnapshot()
+
+		// Chaînes beta
+		pe.updateValue(fmt.Sprintf("%s_beta_chains_built_total", prefix), float64(snapshot.TotalChainsBuilt))
+		pe.updateValue(fmt.Sprintf("%s_beta_chains_length_avg", prefix), snapshot.AverageChainLength)
+
+		// Nœuds beta
+		pe.updateValue(fmt.Sprintf("%s_beta_nodes_created_total", prefix), float64(snapshot.TotalNodesCreated))
+		pe.updateValue(fmt.Sprintf("%s_beta_nodes_reused_total", prefix), float64(snapshot.TotalNodesReused))
+		pe.updateValue(fmt.Sprintf("%s_beta_nodes_sharing_ratio", prefix), snapshot.SharingRatio)
+
+		// Jointures
+		pe.updateValue(fmt.Sprintf("%s_beta_joins_executed_total", prefix), float64(snapshot.TotalJoinsExecuted))
+		pe.updateValue(fmt.Sprintf("%s_beta_joins_time_seconds_avg", prefix), snapshot.AverageJoinTime.Seconds())
+		pe.updateValue(fmt.Sprintf("%s_beta_joins_selectivity_avg", prefix), snapshot.AverageJoinSelectivity)
+		pe.updateValue(fmt.Sprintf("%s_beta_joins_result_size_avg", prefix), snapshot.AverageResultSize)
+
+		// Cache de hash beta
+		pe.updateValue(fmt.Sprintf("%s_beta_hash_cache_hits_total", prefix), float64(snapshot.HashCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_beta_hash_cache_misses_total", prefix), float64(snapshot.HashCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_beta_hash_cache_size", prefix), float64(snapshot.HashCacheSize))
+		pe.updateValue(fmt.Sprintf("%s_beta_hash_cache_efficiency", prefix), pe.betaMetrics.GetHashCacheEfficiency())
+
+		// Cache de jointure
+		pe.updateValue(fmt.Sprintf("%s_beta_join_cache_hits_total", prefix), float64(snapshot.JoinCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_beta_join_cache_misses_total", prefix), float64(snapshot.JoinCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_beta_join_cache_size", prefix), float64(snapshot.JoinCacheSize))
+		pe.updateValue(fmt.Sprintf("%s_beta_join_cache_evictions_total", prefix), float64(snapshot.JoinCacheEvictions))
+		pe.updateValue(fmt.Sprintf("%s_beta_join_cache_efficiency", prefix), pe.betaMetrics.GetJoinCacheEfficiency())
+
+		// Cache de connexion beta
+		pe.updateValue(fmt.Sprintf("%s_beta_connection_cache_hits_total", prefix), float64(snapshot.ConnectionCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_beta_connection_cache_misses_total", prefix), float64(snapshot.ConnectionCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_beta_connection_cache_efficiency", prefix), pe.betaMetrics.GetConnectionCacheEfficiency())
+
+		// Cache de préfixe beta
+		pe.updateValue(fmt.Sprintf("%s_beta_prefix_cache_hits_total", prefix), float64(snapshot.PrefixCacheHits))
+		pe.updateValue(fmt.Sprintf("%s_beta_prefix_cache_misses_total", prefix), float64(snapshot.PrefixCacheMisses))
+		pe.updateValue(fmt.Sprintf("%s_beta_prefix_cache_size", prefix), float64(snapshot.PrefixCacheSize))
+		pe.updateValue(fmt.Sprintf("%s_beta_prefix_cache_efficiency", prefix), pe.betaMetrics.GetPrefixCacheEfficiency())
+
+		// Temps beta
+		pe.updateValue(fmt.Sprintf("%s_beta_build_time_seconds_total", prefix), snapshot.TotalBuildTime.Seconds())
+		pe.updateValue(fmt.Sprintf("%s_beta_build_time_seconds_avg", prefix), snapshot.AverageBuildTime.Seconds())
+		pe.updateValue(fmt.Sprintf("%s_beta_hash_compute_time_seconds_total", prefix), snapshot.TotalHashComputeTime.Seconds())
+	}
 }
 
 // updateValue met à jour la valeur d'une métrique

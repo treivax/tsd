@@ -512,7 +512,42 @@ func (cp *ConstraintPipeline) createBinaryJoinRule(
 		varTypes[varName] = variableTypes[i]
 	}
 
-	joinNode := NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, storage)
+	var joinNode *JoinNode
+	var wasShared bool
+
+	// Try to use BetaSharingRegistry if available and enabled
+	if network.BetaSharingRegistry != nil && network.Config != nil && network.Config.BetaSharingEnabled {
+		allVars := []string{variableNames[0], variableNames[1]}
+		node, hash, shared, err := network.BetaSharingRegistry.GetOrCreateJoinNode(
+			condition,
+			leftVars,
+			rightVars,
+			allVars,
+			varTypes,
+			storage,
+		)
+		if err != nil {
+			// Fallback to direct creation on error
+			fmt.Printf("   ⚠️ Beta sharing failed: %v, falling back to direct creation\n", err)
+			joinNode = NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, storage)
+		} else {
+			joinNode = node
+			wasShared = shared
+			if shared {
+				fmt.Printf("   ♻️  Reused shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
+			} else {
+				fmt.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
+			}
+			// Register with lifecycle manager
+			if network.LifecycleManager != nil {
+				network.LifecycleManager.RegisterNode(hash, "JoinNode")
+			}
+		}
+	} else {
+		// Legacy mode: direct creation
+		joinNode = NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, storage)
+	}
+
 	joinNode.AddChild(terminalNode)
 
 	// Stocker le JoinNode dans les BetaNodes du réseau
@@ -532,7 +567,11 @@ func (cp *ConstraintPipeline) createBinaryJoinRule(
 		}
 	}
 
-	fmt.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+	if wasShared {
+		fmt.Printf("   ✅ JoinNode %s réutilisé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+	} else {
+		fmt.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+	}
 	return nil
 }
 
@@ -547,7 +586,14 @@ func (cp *ConstraintPipeline) createCascadeJoinRule(
 	storage Storage,
 ) error {
 	fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
-	fmt.Printf("   🔧 Construction d'architecture en cascade de JoinNodes\n")
+
+	// Try to use BetaChainBuilder if available and enabled
+	if network.BetaChainBuilder != nil && network.Config != nil && network.Config.BetaSharingEnabled {
+		return cp.createCascadeJoinRuleWithBuilder(network, ruleID, variableNames, variableTypes, condition, terminalNode, storage)
+	}
+
+	// Fallback to legacy cascade implementation
+	fmt.Printf("   🔧 Construction d'architecture en cascade de JoinNodes (legacy mode)\n")
 
 	// Créer le mapping variable -> type
 	varTypes := make(map[string]string)
@@ -626,6 +672,103 @@ func (cp *ConstraintPipeline) createCascadeJoinRule(
 	// Connecter le dernier JoinNode au terminal
 	currentJoinNode.AddChild(terminalNode)
 	fmt.Printf("   ✅ Architecture en cascade complète: %s\n", strings.Join(variableNames, " ⋈ "))
+
+	return nil
+}
+
+// createCascadeJoinRuleWithBuilder creates a cascade using BetaChainBuilder with sharing support
+func (cp *ConstraintPipeline) createCascadeJoinRuleWithBuilder(
+	network *ReteNetwork,
+	ruleID string,
+	variableNames []string,
+	variableTypes []string,
+	condition map[string]interface{},
+	terminalNode *TerminalNode,
+	storage Storage,
+) error {
+	fmt.Printf("   🔧 Construction avec BetaChainBuilder (sharing enabled)\n")
+
+	// Créer le mapping variable -> type
+	varTypes := make(map[string]string)
+	for i, varName := range variableNames {
+		varTypes[varName] = variableTypes[i]
+	}
+
+	// Build join patterns for the chain
+	patterns := make([]JoinPattern, 0, len(variableNames)-1)
+
+	// Pattern 1: First two variables
+	patterns = append(patterns, JoinPattern{
+		LeftVars:    []string{variableNames[0]},
+		RightVars:   []string{variableNames[1]},
+		AllVars:     []string{variableNames[0], variableNames[1]},
+		VarTypes:    varTypes,
+		Condition:   condition,
+		Selectivity: 0.5, // Default selectivity
+	})
+
+	// Patterns 2+: Each subsequent variable joins with accumulated results
+	for i := 2; i < len(variableNames); i++ {
+		accumulatedVars := make([]string, i)
+		copy(accumulatedVars, variableNames[0:i])
+
+		allVars := make([]string, i+1)
+		copy(allVars, variableNames[0:i+1])
+
+		patterns = append(patterns, JoinPattern{
+			LeftVars:    accumulatedVars,
+			RightVars:   []string{variableNames[i]},
+			AllVars:     allVars,
+			VarTypes:    varTypes,
+			Condition:   condition,
+			Selectivity: 0.5, // Default selectivity
+		})
+	}
+
+	// Build the chain using BetaChainBuilder
+	chain, err := network.BetaChainBuilder.BuildChain(patterns, ruleID)
+	if err != nil {
+		return fmt.Errorf("failed to build beta chain: %w", err)
+	}
+
+	// Add all nodes to network's BetaNodes map
+	for _, node := range chain.Nodes {
+		network.BetaNodes[node.ID] = node
+	}
+
+	// Connect type nodes to the first join node (for first two variables)
+	if len(chain.Nodes) > 0 {
+		firstJoin := chain.Nodes[0]
+		for i := 0; i < 2 && i < len(variableNames); i++ {
+			varName := variableNames[i]
+			varType := variableTypes[i]
+			side := NodeSideRight
+			if i == 0 {
+				side = NodeSideLeft
+			}
+			cp.connectTypeNodeToBetaNode(network, ruleID, varName, varType, firstJoin, side)
+		}
+		fmt.Printf("   ✓ Connected first two variables to initial JoinNode\n")
+	}
+
+	// Connect subsequent variables to their respective join nodes
+	for i := 2; i < len(variableNames) && i-1 < len(chain.Nodes); i++ {
+		joinNode := chain.Nodes[i-1]
+		varName := variableNames[i]
+		varType := variableTypes[i]
+		cp.connectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, NodeSideRight)
+		fmt.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
+	}
+
+	// Connect the final node to the terminal
+	if chain.FinalNode != nil {
+		chain.FinalNode.AddChild(terminalNode)
+		fmt.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
+			len(chain.Nodes),
+			network.BetaChainBuilder.GetMetrics().SharedJoinNodesReused)
+	}
+
+	fmt.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
 
 	return nil
 }

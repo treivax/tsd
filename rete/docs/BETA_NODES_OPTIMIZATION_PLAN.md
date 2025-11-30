@@ -243,6 +243,8 @@ Fichiers de référence :
 - `rete/beta_sharing_test.go` (tests unitaires)
 - Documentation GoDoc
 
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 ---
 
 ### Prompt 5: Implémenter BetaChainBuilder
@@ -299,6 +301,8 @@ Fichiers de référence :
 - `rete/beta_chain_builder.go` (~500 lignes)
 - `rete/beta_chain_builder_test.go` (tests)
 - Diagrammes ASCII dans les commentaires
+
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
 
 ---
 
@@ -357,6 +361,9 @@ Fichiers de référence :
 - `rete/beta_join_cache_test.go`
 - Tests de performance
 
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 ---
 
 ### Prompt 7: Intégrer Beta Sharing dans ReteNetwork
@@ -413,6 +420,11 @@ Fichiers à modifier :
 - Modifications dans le builder de règles
 - Tests d'intégration
 - Migration guide
+- Documentation mise à jour
+
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ---
 
@@ -471,6 +483,10 @@ Fichiers de référence :
 - `rete/beta_chain_metrics_test.go`
 - Extension de Prometheus exporter
 
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
+
 ---
 
 ### Prompt 9: Benchmarks et Optimisation de Performance
@@ -528,6 +544,10 @@ Commandes :
 - `rete/beta_chain_performance_test.go`
 - Rapport de benchmarks : `rete/docs/BETA_PERFORMANCE_REPORT.md`
 - Graphiques de comparaison
+
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ---
 
@@ -594,6 +614,10 @@ Structure :
 - Diagrammes et exemples
 - Index centralisé
 
+
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 ---
 
 ### Prompt 11: Exemples et Migration Guide
@@ -658,6 +682,9 @@ Structure :
 - Exemple exécutable complet
 - Index centralisé
 
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 ---
 
 ## ✅ Phase 5 : Tests et Validation (Prompts 12-13)
@@ -716,6 +743,9 @@ Fichiers de référence :
 - `rete/beta_chain_integration_test.go` (~800 lignes)
 - Couverture > 80% sur les nouveaux fichiers
 - Rapport de couverture
+
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
 
 ---
 
@@ -850,6 +880,9 @@ Fichiers à créer/mettre à jour :
 - 2 documents de synthèse
 - CHANGELOG mis à jour
 - README mis à jour
+
+**Règles à respecter:
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
 
 ---
 

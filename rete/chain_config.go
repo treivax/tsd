@@ -46,6 +46,18 @@ type ChainPerformanceConfig struct {
 	// Monitoring
 	PrometheusEnabled bool   `json:"prometheus_enabled"`
 	PrometheusPrefix  string `json:"prometheus_prefix"` // Préfixe pour les métriques Prometheus
+
+	// Beta Cache - Cache pour les opérations de jointure
+	BetaCacheEnabled           bool                `json:"beta_cache_enabled"`
+	BetaHashCacheMaxSize       int                 `json:"beta_hash_cache_max_size"`
+	BetaHashCacheEviction      CacheEvictionPolicy `json:"beta_hash_cache_eviction"`
+	BetaHashCacheTTL           time.Duration       `json:"beta_hash_cache_ttl,omitempty"`
+	BetaJoinResultCacheEnabled bool                `json:"beta_join_result_cache_enabled"`
+	BetaJoinResultCacheMaxSize int                 `json:"beta_join_result_cache_max_size"`
+	BetaJoinResultCacheTTL     time.Duration       `json:"beta_join_result_cache_ttl,omitempty"`
+
+	// Beta Sharing - Partage de JoinNodes entre règles
+	BetaSharingEnabled bool `json:"beta_sharing_enabled"`
 }
 
 // DefaultChainPerformanceConfig retourne la configuration par défaut
@@ -74,6 +86,18 @@ func DefaultChainPerformanceConfig() *ChainPerformanceConfig {
 		// Prometheus - désactivé par défaut
 		PrometheusEnabled: false,
 		PrometheusPrefix:  "tsd_rete",
+
+		// Beta Cache - activé avec tailles raisonnables
+		BetaCacheEnabled:           true,
+		BetaHashCacheMaxSize:       10000, // 10k entrées pour les hash de jointure
+		BetaHashCacheEviction:      EvictionPolicyLRU,
+		BetaHashCacheTTL:           0, // Pas d'expiration
+		BetaJoinResultCacheEnabled: true,
+		BetaJoinResultCacheMaxSize: 5000,        // 5k résultats de jointure cachés
+		BetaJoinResultCacheTTL:     time.Minute, // Expiration après 1 minute
+
+		// Beta Sharing - désactivé par défaut (safe rollout)
+		BetaSharingEnabled: false,
 	}
 }
 
@@ -98,6 +122,18 @@ func HighPerformanceConfig() *ChainPerformanceConfig {
 
 		PrometheusEnabled: true,
 		PrometheusPrefix:  "tsd_rete",
+
+		// Beta Cache - configuration haute performance
+		BetaCacheEnabled:           true,
+		BetaHashCacheMaxSize:       100000, // 100k entrées
+		BetaHashCacheEviction:      EvictionPolicyLRU,
+		BetaHashCacheTTL:           0,
+		BetaJoinResultCacheEnabled: true,
+		BetaJoinResultCacheMaxSize: 50000,           // 50k résultats cachés
+		BetaJoinResultCacheTTL:     5 * time.Minute, // TTL plus long
+
+		// Beta Sharing - activé pour haute performance
+		BetaSharingEnabled: true,
 	}
 }
 
@@ -122,6 +158,18 @@ func LowMemoryConfig() *ChainPerformanceConfig {
 
 		PrometheusEnabled: false,
 		PrometheusPrefix:  "tsd_rete",
+
+		// Beta Cache - configuration light
+		BetaCacheEnabled:           true,
+		BetaHashCacheMaxSize:       1000, // 1k entrées seulement
+		BetaHashCacheEviction:      EvictionPolicyLRU,
+		BetaHashCacheTTL:           0,
+		BetaJoinResultCacheEnabled: false, // Désactivé en mode léger
+		BetaJoinResultCacheMaxSize: 0,
+		BetaJoinResultCacheTTL:     0,
+
+		// Beta Sharing - désactivé en mode léger
+		BetaSharingEnabled: false,
 	}
 }
 
@@ -213,6 +261,16 @@ func (c *ChainPerformanceConfig) Validate() error {
 	// Valider le préfixe Prometheus
 	if c.PrometheusEnabled && c.PrometheusPrefix == "" {
 		return fmt.Errorf("prometheus_prefix ne peut pas être vide quand Prometheus est activé")
+	}
+
+	// Valider Beta Cache
+	if c.BetaCacheEnabled {
+		if c.BetaHashCacheMaxSize <= 0 {
+			return fmt.Errorf("BetaHashCacheMaxSize doit être > 0 quand BetaCacheEnabled=true")
+		}
+		if c.BetaJoinResultCacheEnabled && c.BetaJoinResultCacheMaxSize <= 0 {
+			return fmt.Errorf("BetaJoinResultCacheMaxSize doit être > 0 quand BetaJoinResultCacheEnabled=true")
+		}
 	}
 
 	return nil

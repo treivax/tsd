@@ -17,9 +17,11 @@ type ReteNetwork struct {
 	TerminalNodes       map[string]*TerminalNode `json:"terminal_nodes"`
 	Storage             Storage                  `json:"-"`
 	Types               []TypeDefinition         `json:"types"`
-	BetaBuilder         interface{}              `json:"-"` // Constructeur de réseau Beta
+	BetaBuilder         interface{}              `json:"-"` // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
 	LifecycleManager    *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
 	AlphaSharingManager *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
+	BetaSharingRegistry BetaSharingRegistry      `json:"-"` // Gestionnaire du partage des JoinNodes
+	BetaChainBuilder    *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
 	ChainMetrics        *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
 	Config              *ChainPerformanceConfig  `json:"-"` // Configuration de performance
 }
@@ -37,8 +39,25 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 
 	rootNode := NewRootNode(storage)
 	metrics := NewChainBuildMetrics()
+	lifecycleManager := NewLifecycleManager()
 
-	return &ReteNetwork{
+	// Initialize Beta sharing if enabled
+	var betaSharingRegistry BetaSharingRegistry
+	var betaChainBuilder *BetaChainBuilder
+
+	if config.BetaSharingEnabled {
+		betaSharingConfig := BetaSharingConfig{
+			Enabled:                     true,
+			HashCacheSize:               config.BetaHashCacheMaxSize,
+			MaxSharedNodes:              10000, // Default limit
+			EnableMetrics:               true,
+			NormalizeOrder:              true,
+			EnableAdvancedNormalization: false,
+		}
+		betaSharingRegistry = NewBetaSharingRegistry(betaSharingConfig, lifecycleManager)
+	}
+
+	network := &ReteNetwork{
 		RootNode:            rootNode,
 		TypeNodes:           make(map[string]*TypeNode),
 		AlphaNodes:          make(map[string]*AlphaNode),
@@ -46,12 +65,29 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		TerminalNodes:       make(map[string]*TerminalNode),
 		Storage:             storage,
 		Types:               make([]TypeDefinition, 0),
-		BetaBuilder:         nil, // Sera initialisé si nécessaire
-		LifecycleManager:    NewLifecycleManager(),
+		BetaBuilder:         nil, // Deprecated field, kept for backward compatibility
+		LifecycleManager:    lifecycleManager,
 		AlphaSharingManager: NewAlphaSharingRegistryWithConfig(config, metrics),
+		BetaSharingRegistry: betaSharingRegistry,
+		BetaChainBuilder:    betaChainBuilder, // Will be initialized lazily if needed
 		ChainMetrics:        metrics,
 		Config:              config,
 	}
+
+	// Initialize BetaChainBuilder if Beta sharing is enabled
+	if betaSharingRegistry != nil {
+		betaChainBuilder = NewBetaChainBuilderWithComponents(
+			network,
+			storage,
+			betaSharingRegistry,
+			lifecycleManager,
+		)
+		betaChainBuilder.SetOptimizationEnabled(true)
+		betaChainBuilder.SetPrefixSharingEnabled(true)
+		network.BetaChainBuilder = betaChainBuilder
+	}
+
+	return network
 }
 
 // GetChainMetrics retourne les métriques de performance pour la construction des chaînes alpha
@@ -60,6 +96,22 @@ func (rn *ReteNetwork) GetChainMetrics() *ChainBuildMetrics {
 		rn.ChainMetrics = NewChainBuildMetrics()
 	}
 	return rn.ChainMetrics
+}
+
+// GetBetaSharingStats retourne les statistiques de partage des JoinNodes
+func (rn *ReteNetwork) GetBetaSharingStats() *BetaSharingStats {
+	if rn.BetaSharingRegistry == nil {
+		return nil
+	}
+	return rn.BetaSharingRegistry.GetSharingStats()
+}
+
+// GetBetaChainMetrics retourne les métriques de construction des chaînes beta
+func (rn *ReteNetwork) GetBetaChainMetrics() *BetaChainMetrics {
+	if rn.BetaChainBuilder == nil {
+		return nil
+	}
+	return rn.BetaChainBuilder.GetMetrics()
 }
 
 // GetConfig retourne la configuration de performance
@@ -74,6 +126,9 @@ func (rn *ReteNetwork) GetConfig() *ChainPerformanceConfig {
 func (rn *ReteNetwork) ResetChainMetrics() {
 	if rn.ChainMetrics != nil {
 		rn.ChainMetrics.Reset()
+	}
+	if rn.BetaChainBuilder != nil {
+		rn.BetaChainBuilder.ResetMetrics()
 	}
 }
 
