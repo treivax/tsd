@@ -273,7 +273,9 @@ rule join_xy : {x: X, y: Y} / x.id == y.xId ==> print("Join")`,
 
 			// Soumettre les faits
 			for _, fact := range tt.facts {
-				if err := network.SubmitFact(&fact); err != nil {
+				// Copy fact to avoid loop variable reuse bug
+				factCopy := fact
+				if err := network.SubmitFact(&factCopy); err != nil {
 					t.Fatalf("Erreur ajout fait %s: %v", fact.ID, err)
 				}
 			}
