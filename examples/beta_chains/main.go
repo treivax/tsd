@@ -136,7 +136,7 @@ func runScenario(name string) {
 	var resultsWithout *Results
 	if *noSharing || *compare {
 		configNoSharing := config
-		configNoSharing.EnableBetaSharing = false
+		configNoSharing.BetaSharingEnabled = false
 		fmt.Println()
 		fmt.Println("🏗️  Building network WITHOUT Beta Sharing (comparison)...")
 		resultsWithout = runWithConfig(name, configNoSharing)
@@ -234,7 +234,7 @@ func runWithConfig(scenario string, config *rete.ChainPerformanceConfig) *Result
 
 	// Get metrics
 	var metricsData MetricsData
-	if config.EnableMetrics {
+	if config.MetricsEnabled {
 		metrics := network.GetBetaChainMetrics()
 		snapshot := metrics.GetSnapshot()
 
@@ -260,10 +260,10 @@ func runWithConfig(scenario string, config *rete.ChainPerformanceConfig) *Result
 	results := &Results{
 		Scenario: scenario,
 		Config: map[string]interface{}{
-			"enable_beta_sharing": config.EnableBetaSharing,
-			"join_cache_size":     config.JoinCacheSize,
-			"hash_cache_size":     config.HashCacheSize,
-			"enable_metrics":      config.EnableMetrics,
+			"enable_beta_sharing": config.BetaSharingEnabled,
+			"join_cache_size":     config.BetaJoinResultCacheMaxSize,
+			"hash_cache_size":     config.BetaHashCacheMaxSize,
+			"enable_metrics":      config.MetricsEnabled,
 		},
 		Metrics: metricsData,
 	}
@@ -370,12 +370,12 @@ func runComparison() {
 
 		// With sharing
 		configWith := config
-		configWith.EnableBetaSharing = true
+		configWith.BetaSharingEnabled = true
 		resultsWith := runWithConfig(scenario, configWith)
 
 		// Without sharing
 		configWithout := config
-		configWithout.EnableBetaSharing = false
+		configWithout.BetaSharingEnabled = false
 		resultsWithout := runWithConfig(scenario, configWithout)
 
 		// Display comparison
