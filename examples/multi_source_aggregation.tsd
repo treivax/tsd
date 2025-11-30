@@ -1,0 +1,99 @@
+// Multi-Source Aggregation Examples
+// This file demonstrates how to use aggregations over multiple joined fact types
+
+// Define types for HR analytics
+type Department : <id: string, name: string, budget: number>
+type Employee : <id: string, name: string, deptId: string, salary: number, hireDate: string>
+type Performance : <id: string, employeeId: string, score: number, year: number>
+type Training : <id: string, employeeId: string, hours: number, cost: number>
+
+// Example 1: Basic two-source aggregation
+// Combine salary and performance data by department
+rule dept_performance_overview :
+  {d: Department, avg_salary: AVG(e.salary), avg_score: AVG(p.score)}
+  / {e: Employee}
+  / {p: Performance}
+  / e.deptId == d.id AND p.employeeId == e.id
+  ==> print("Department", d.name, "has avg salary", avg_salary, "and avg score", avg_score)
+
+// Example 2: Three-source aggregation with multiple metrics
+// Comprehensive department analytics combining employees, performance, and training
+rule dept_comprehensive_stats :
+  {d: Department,
+   emp_count: COUNT(e.id),
+   avg_salary: AVG(e.salary),
+   total_salary: SUM(e.salary),
+   avg_performance: AVG(p.score),
+   total_training_hours: SUM(t.hours),
+   total_training_cost: SUM(t.cost)}
+  / {e: Employee}
+  / {p: Performance}
+  / {t: Training}
+  / e.deptId == d.id
+    AND p.employeeId == e.id
+    AND t.employeeId == e.id
+  ==> print("Department", d.name, "comprehensive stats computed")
+
+// Example 3: Aggregation with thresholds
+// Identify high-performing departments that meet multiple criteria
+rule high_performing_departments :
+  {d: Department,
+   avg_sal: AVG(e.salary),
+   avg_perf: AVG(p.score),
+   training_investment: SUM(t.cost)}
+  / {e: Employee}
+  / {p: Performance}
+  / {t: Training}
+  / e.deptId == d.id
+    AND p.employeeId == e.id
+    AND t.employeeId == e.id
+    AND avg_sal > 60000
+    AND avg_perf > 85
+    AND training_investment > 50000
+  ==> print("High performing department:", d.name)
+
+// Example 4: Different aggregation functions on different sources
+// Use MIN/MAX along with AVG to find range of metrics
+rule dept_salary_performance_range :
+  {d: Department,
+   min_salary: MIN(e.salary),
+   max_salary: MAX(e.salary),
+   avg_salary: AVG(e.salary),
+   min_score: MIN(p.score),
+   max_score: MAX(p.score)}
+  / {e: Employee}
+  / {p: Performance}
+  / e.deptId == d.id AND p.employeeId == e.id
+  ==> print("Dept", d.name, "salary range:", min_salary, "-", max_salary)
+
+// Example 5: Budget utilization analysis
+// Compare actual spending vs budget using aggregations
+rule budget_analysis :
+  {d: Department,
+   total_salaries: SUM(e.salary),
+   training_costs: SUM(t.cost)}
+  / {e: Employee}
+  / {t: Training}
+  / e.deptId == d.id
+    AND t.employeeId == e.id
+    AND total_salaries > d.budget
+  ==> print("WARNING: Department", d.name, "over budget!")
+
+// Example 6: Counting with aggregation
+// Department size and training participation metrics
+rule dept_training_participation :
+  {d: Department,
+   employee_count: COUNT(e.id),
+   trained_count: COUNT(t.employeeId)}
+  / {e: Employee}
+  / {t: Training}
+  / e.deptId == d.id AND t.employeeId == e.id
+  ==> print("Dept", d.name, "has", employee_count, "employees,", trained_count, "trained")
+
+// Notes:
+// 1. All aggregation functions are supported: AVG, SUM, COUNT, MIN, MAX
+// 2. Use AND to combine join conditions and thresholds
+// 3. Aggregation variables can reference any source pattern
+// 4. Thresholds can be applied to any computed aggregation value
+// 5. Pattern blocks are separated by / (slash)
+// 6. Join conditions must properly link all sources to the main entity

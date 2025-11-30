@@ -195,7 +195,13 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 
 		// Check if this is the new multi-pattern aggregation syntax
 		if _, hasPatterns := exprMap["patterns"]; hasPatterns {
-			aggInfo, err = cp.extractAggregationInfoFromVariables(exprMap)
+			// Check if this is multi-source aggregation
+			if cp.isMultiSourceAggregation(exprMap) {
+				fmt.Printf("   📊 Multi-source aggregation détectée pour: %s\n", ruleID)
+				aggInfo, err = cp.extractMultiSourceAggregationInfo(exprMap)
+			} else {
+				aggInfo, err = cp.extractAggregationInfoFromVariables(exprMap)
+			}
 		} else {
 			// Old AccumulateConstraint syntax
 			aggInfo, err = cp.extractAggregationInfo(constraintsData)
@@ -205,6 +211,12 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 			fmt.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
 			return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)
 		}
+
+		// Check if we need multi-source accumulator
+		if len(aggInfo.SourcePatterns) > 1 || len(aggInfo.AggregationVars) > 1 {
+			return cp.createMultiSourceAccumulatorRule(network, ruleID, aggInfo, action, storage)
+		}
+
 		return cp.createAccumulatorRule(network, ruleID, variables, variableNames, variableTypes, aggInfo, action, storage)
 
 	case "join":
@@ -216,6 +228,205 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	default:
 		return fmt.Errorf("type de règle inconnu: %s", ruleType)
 	}
+}
+
+// isMultiSourceAggregation checks if the rule has multiple aggregation sources
+func (cp *ConstraintPipeline) isMultiSourceAggregation(exprMap map[string]interface{}) bool {
+	patternsData, hasPatterns := exprMap["patterns"]
+	if !hasPatterns {
+		return false
+	}
+
+	patternsList, ok := patternsData.([]interface{})
+	if !ok {
+		return false
+	}
+
+	// Multi-source if we have more than 2 pattern blocks
+	if len(patternsList) > 2 {
+		return true
+	}
+
+	// Or if we have multiple aggregation variables
+	if len(patternsList) >= 1 {
+		firstPattern, ok := patternsList[0].(map[string]interface{})
+		if !ok {
+			return false
+		}
+
+		varsData, hasVars := firstPattern["variables"]
+		if !hasVars {
+			return false
+		}
+
+		varsList, ok := varsData.([]interface{})
+		if !ok {
+			return false
+		}
+
+		aggVarCount := 0
+		for _, varInterface := range varsList {
+			if varMap, ok := varInterface.(map[string]interface{}); ok {
+				if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
+					aggVarCount++
+					if aggVarCount > 1 {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// createMultiSourceAccumulatorRule creates a rule with multiple aggregation sources
+func (cp *ConstraintPipeline) createMultiSourceAccumulatorRule(
+	network *ReteNetwork,
+	ruleID string,
+	aggInfo *AggregationInfo,
+	action *Action,
+	storage Storage,
+) error {
+	fmt.Printf("   🔗 Création règle multi-source avec %d sources et %d agrégations\n",
+		len(aggInfo.SourcePatterns), len(aggInfo.AggregationVars))
+
+	// Create a join chain that feeds into a MultiSourceAccumulatorNode
+	// The join chain combines all sources, then the accumulator computes aggregations
+
+	// Create a join chain for all source patterns
+	var lastJoinNode Node
+
+	// Start with the main variable's type node
+	mainTypeNode, exists := network.TypeNodes[aggInfo.MainType]
+	if !exists {
+		return fmt.Errorf("TypeNode pour %s non trouvé", aggInfo.MainType)
+	}
+
+	// For each source pattern, create a join node
+	for i, sourcePattern := range aggInfo.SourcePatterns {
+		sourceTypeNode, exists := network.TypeNodes[sourcePattern.Type]
+		if !exists {
+			return fmt.Errorf("TypeNode pour %s non trouvé", sourcePattern.Type)
+		}
+
+		// Create join node - build condition map and variable lists
+		joinConditionMap := make(map[string]interface{})
+		var leftVars, rightVars []string
+		varTypes := make(map[string]string)
+
+		// Find the join condition for this source
+		var joinCondition *JoinCondition
+		for j := range aggInfo.JoinConditions {
+			cond := &aggInfo.JoinConditions[j]
+			if cond.LeftVar == sourcePattern.Variable || cond.RightVar == sourcePattern.Variable {
+				joinCondition = cond
+				break
+			}
+		}
+
+		if joinCondition != nil {
+			// Build a simple comparison condition
+			joinConditionMap = map[string]interface{}{
+				"type":     "comparison",
+				"operator": joinCondition.Operator,
+				"left": map[string]interface{}{
+					"type":   "fieldAccess",
+					"object": joinCondition.LeftVar,
+					"field":  joinCondition.LeftField,
+				},
+				"right": map[string]interface{}{
+					"type":   "fieldAccess",
+					"object": joinCondition.RightVar,
+					"field":  joinCondition.RightField,
+				},
+			}
+
+			fmt.Printf("   ✓ Creating JoinNode: %s.%s == %s.%s\n",
+				joinCondition.LeftVar, joinCondition.LeftField,
+				joinCondition.RightVar, joinCondition.RightField)
+		}
+
+		// Build variable lists - always accumulate variables from left side
+		if i == 0 {
+			// First join: main + first source
+			leftVars = []string{aggInfo.MainVariable}
+			varTypes[aggInfo.MainVariable] = aggInfo.MainType
+		} else {
+			// Subsequent joins: all previous variables on left side
+			leftVars = []string{aggInfo.MainVariable}
+			varTypes[aggInfo.MainVariable] = aggInfo.MainType
+			for j := 0; j < i; j++ {
+				leftVars = append(leftVars, aggInfo.SourcePatterns[j].Variable)
+				varTypes[aggInfo.SourcePatterns[j].Variable] = aggInfo.SourcePatterns[j].Type
+			}
+		}
+		rightVars = []string{sourcePattern.Variable}
+		varTypes[sourcePattern.Variable] = sourcePattern.Type
+
+		joinNodeID := fmt.Sprintf("%s_join_%d", ruleID, i)
+		joinNode := NewJoinNode(joinNodeID, joinConditionMap, leftVars, rightVars, varTypes, storage)
+		network.BetaNodes[joinNodeID] = joinNode
+
+		// Connect nodes
+		if i == 0 {
+			// First join: main type -> join node (left)
+			cp.connectTypeNodeToBetaNode(network, ruleID, aggInfo.MainVariable, aggInfo.MainType, joinNode, "left")
+			// Source type -> join node (right)
+			cp.connectTypeNodeToBetaNode(network, ruleID, sourcePattern.Variable, sourcePattern.Type, joinNode, "right")
+		} else {
+			// Subsequent joins: previous join -> join node (left)
+			if lastJoinNode != nil {
+				lastJoinNode.AddChild(joinNode)
+			}
+			// Source type -> join node (right)
+			cp.connectTypeNodeToBetaNode(network, ruleID, sourcePattern.Variable, sourcePattern.Type, joinNode, "right")
+		}
+
+		lastJoinNode = joinNode
+
+		// Update mainTypeNode reference for logging
+		_ = mainTypeNode
+		_ = sourceTypeNode
+	}
+
+	// Create MultiSourceAccumulatorNode to compute aggregations
+	accumulatorNode := NewMultiSourceAccumulatorNode(
+		ruleID+"_msaccum",
+		aggInfo.MainVariable,
+		aggInfo.MainType,
+		aggInfo.AggregationVars,
+		aggInfo.SourcePatterns,
+		storage,
+	)
+	network.BetaNodes[accumulatorNode.ID] = accumulatorNode
+
+	// Connect the last join node to the accumulator
+	if lastJoinNode != nil {
+		lastJoinNode.AddChild(accumulatorNode)
+		fmt.Printf("   ✓ JoinChain -> MultiSourceAccumulatorNode[%s]\n", accumulatorNode.ID)
+	}
+
+	fmt.Printf("   📊 MultiSourceAccumulatorNode créé avec %d agrégations\n", len(aggInfo.AggregationVars))
+	for _, aggVar := range aggInfo.AggregationVars {
+		thresholdStr := ""
+		if aggVar.Operator != "" && (aggVar.Operator != ">=" || aggVar.Threshold != 0) {
+			thresholdStr = fmt.Sprintf(" (threshold: %s %.2f)", aggVar.Operator, aggVar.Threshold)
+		}
+		fmt.Printf("     • %s: %s(%s.%s)%s\n",
+			aggVar.Name, aggVar.Function, aggVar.SourceVar, aggVar.Field, thresholdStr)
+	}
+
+	// Create terminal node for action
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Connect the accumulator to the terminal
+	accumulatorNode.AddChild(terminalNode)
+	fmt.Printf("   ✓ MultiSourceAccumulatorNode -> TerminalNode[%s]\n", terminalNode.ID)
+
+	fmt.Printf("   ✅ Multi-source accumulator rule créée: %s\n", ruleID)
+	return nil
 }
 
 // createAlphaRule crée une règle alpha simple avec une seule variable

@@ -981,10 +981,6 @@ func BenchmarkBuildChain_Cascade(b *testing.B) {
 func TestBetaBuildMetrics(t *testing.T) {
 	metrics := &BetaBuildMetrics{}
 
-	if metrics == nil {
-		t.Fatal("Expected non-nil metrics")
-	}
-
 	// Metrics structure is initialized
 
 	// Test basic metrics tracking

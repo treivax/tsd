@@ -68,6 +68,24 @@ type BetaSharingRegistry interface {
 	// Returns error if the hash is not found.
 	GetSharedJoinNodeDetails(hash string) (*JoinNodeDetails, error)
 
+	// AddRuleToJoinNode associates a rule with a join node.
+	// Used for tracking which rules reference which join nodes.
+	AddRuleToJoinNode(nodeID, ruleID string) error
+
+	// RemoveRuleFromJoinNode removes a rule's reference from a join node.
+	// Returns true if the node has no more rules and can be deleted.
+	RemoveRuleFromJoinNode(nodeID, ruleID string) (bool, error)
+
+	// GetJoinNodeRules returns all rules using a specific join node.
+	GetJoinNodeRules(nodeID string) []string
+
+	// GetJoinNodeRefCount returns the number of rules referencing a join node.
+	GetJoinNodeRefCount(nodeID string) int
+
+	// ReleaseJoinNodeByID removes a join node by its node ID.
+	// Returns true if the node was found and removed.
+	ReleaseJoinNodeByID(nodeID string) (bool, error)
+
 	// ClearCache clears the hash cache.
 	// Used for testing or when normalization rules change.
 	ClearCache()
@@ -104,13 +122,19 @@ type BetaSharingRegistryImpl struct {
 	// Shared JoinNodes indexed by canonical hash
 	sharedJoinNodes map[string]*JoinNode
 
+	// Hash to NodeID mapping for efficient lookups
+	hashToNodeID map[string]string
+
+	// Join node to rules mapping (nodeID -> set of ruleIDs)
+	joinNodeRules map[string]map[string]bool
+
 	// LRU cache for condition hash computation
 	// Key: normalized signature JSON
 	// Value: computed hash string
 	hashCache *LRUCache
 
 	// Lifecycle manager for reference counting (optional)
-	lifecycle *LifecycleManager
+	lifecycleManager *LifecycleManager
 
 	// Normalizer for join signatures
 	normalizer JoinNodeNormalizer
@@ -363,13 +387,15 @@ func NewBetaSharingRegistry(
 	lifecycle *LifecycleManager,
 ) *BetaSharingRegistryImpl {
 	return &BetaSharingRegistryImpl{
-		sharedJoinNodes: make(map[string]*JoinNode),
-		hashCache:       NewLRUCache(config.HashCacheSize, 0), // 0 = no TTL
-		lifecycle:       lifecycle,
-		normalizer:      NewDefaultJoinNodeNormalizer(config),
-		hasher:          NewDefaultJoinNodeHasher(config),
-		metrics:         &BetaBuildMetrics{},
-		config:          config,
+		sharedJoinNodes:  make(map[string]*JoinNode),
+		hashToNodeID:     make(map[string]string),
+		joinNodeRules:    make(map[string]map[string]bool),
+		hashCache:        NewLRUCache(config.HashCacheSize, 0), // 0 = no TTL
+		lifecycleManager: lifecycle,
+		normalizer:       NewDefaultJoinNodeNormalizer(config),
+		hasher:           NewDefaultJoinNodeHasher(config),
+		metrics:          &BetaBuildMetrics{},
+		config:           config,
 	}
 }
 

@@ -279,16 +279,26 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 
 	fmt.Printf("   📊 Nœuds associés à la règle: %d\n", len(nodeIDs))
 
-	// Détecter si la règle utilise une chaîne d'AlphaNodes
+	// Detect rule type and use appropriate removal strategy
 	hasChain := false
+	hasJoinNodes := false
+
 	for _, nodeID := range nodeIDs {
 		if rn.isPartOfChain(nodeID) {
 			hasChain = true
-			break
+		}
+		if rn.isJoinNode(nodeID) {
+			hasJoinNodes = true
 		}
 	}
 
-	// Utiliser la suppression optimisée pour les chaînes
+	// Utiliser la suppression optimisée pour les chaînes avec joins
+	if hasJoinNodes {
+		fmt.Printf("   🔗 JoinNodes détectés, utilisation de la suppression avec lifecycle\n")
+		return rn.removeRuleWithJoins(ruleID, nodeIDs)
+	}
+
+	// Utiliser la suppression optimisée pour les chaînes alpha
 	if hasChain {
 		fmt.Printf("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée\n")
 		return rn.removeAlphaChain(ruleID)
@@ -723,4 +733,189 @@ func (rn *ReteNetwork) GetNetworkStats() map[string]interface{} {
 	}
 
 	return stats
+}
+
+// isJoinNode checks if a node ID corresponds to a JoinNode
+func (rn *ReteNetwork) isJoinNode(nodeID string) bool {
+	_, exists := rn.BetaNodes[nodeID]
+	return exists
+}
+
+// removeRuleWithJoins removes a rule that contains join nodes
+func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) error {
+	fmt.Printf("   🔗 Removing rule with join nodes: %s\n", ruleID)
+
+	// Separate nodes by type
+	var terminalNodes []string
+	var joinNodes []string
+	var alphaNodes []string
+	var typeNodes []string
+
+	for _, nodeID := range nodeIDs {
+		lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+		if !exists {
+			continue
+		}
+
+		switch lifecycle.NodeType {
+		case "terminal":
+			terminalNodes = append(terminalNodes, nodeID)
+		case "join":
+			joinNodes = append(joinNodes, nodeID)
+		case "alpha":
+			alphaNodes = append(alphaNodes, nodeID)
+		case "type":
+			typeNodes = append(typeNodes, nodeID)
+		}
+	}
+
+	deletedCount := 0
+
+	// Step 1: Remove terminal nodes first
+	for _, nodeID := range terminalNodes {
+		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
+			deletedCount++
+			fmt.Printf("   🗑️  TerminalNode %s removed\n", nodeID)
+		}
+	}
+
+	// Step 2: Remove join nodes with reference counting
+	for _, nodeID := range joinNodes {
+		// Remove rule reference from join node
+		if rn.BetaSharingRegistry != nil {
+			canDelete, err := rn.BetaSharingRegistry.RemoveRuleFromJoinNode(nodeID, ruleID)
+			if err != nil {
+				fmt.Printf("   ⚠️  Error removing rule from join node %s: %v\n", nodeID, err)
+				continue
+			}
+
+			if canDelete {
+				// No more rules reference this join node - safe to delete
+				if err := rn.removeJoinNodeFromNetwork(nodeID); err == nil {
+					deletedCount++
+					fmt.Printf("   🗑️  JoinNode %s removed (no more references)\n", nodeID)
+				}
+			} else {
+				// Join node is still shared by other rules
+				refCount := rn.BetaSharingRegistry.GetJoinNodeRefCount(nodeID)
+				fmt.Printf("   ✓ JoinNode %s preserved (%d rule(s) remaining)\n", nodeID, refCount)
+			}
+		} else {
+			// No sharing registry - use lifecycle manager
+			if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
+				deletedCount++
+				fmt.Printf("   🗑️  JoinNode %s removed\n", nodeID)
+			}
+		}
+	}
+
+	// Step 3: Remove alpha nodes
+	for _, nodeID := range alphaNodes {
+		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
+			deletedCount++
+			fmt.Printf("   🗑️  AlphaNode %s removed\n", nodeID)
+		} else {
+			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+			if lifecycle != nil && lifecycle.HasReferences() {
+				fmt.Printf("   ✓ AlphaNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+			}
+		}
+	}
+
+	// Step 4: Type nodes are usually shared - only remove if no references
+	for _, nodeID := range typeNodes {
+		lifecycle, exists := rn.LifecycleManager.GetNodeLifecycle(nodeID)
+		if !exists {
+			continue
+		}
+
+		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
+		if err != nil {
+			fmt.Printf("   ⚠️  Error removing rule from type node %s: %v\n", nodeID, err)
+			continue
+		}
+
+		if shouldDelete {
+			if err := rn.removeNodeFromNetwork(nodeID); err == nil {
+				deletedCount++
+				fmt.Printf("   🗑️  TypeNode %s removed\n", nodeID)
+			}
+		} else {
+			fmt.Printf("   ✓ TypeNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+		}
+	}
+
+	fmt.Printf("✅ Rule %s removed successfully (%d node(s) deleted)\n", ruleID, deletedCount)
+	return nil
+}
+
+// removeJoinNodeFromNetwork removes a join node from the network
+func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
+	joinNode, exists := rn.BetaNodes[nodeID]
+	if !exists {
+		return fmt.Errorf("join node %s not found in network", nodeID)
+	}
+
+	// Convert to Node interface
+	var node Node
+	if jn, ok := joinNode.(*JoinNode); ok {
+		node = jn
+	} else {
+		return fmt.Errorf("beta node %s is not a JoinNode", nodeID)
+	}
+
+	// Find and disconnect from all parent nodes that reference this join node
+	// Check all alpha nodes
+	for _, alphaNode := range rn.AlphaNodes {
+		rn.disconnectChild(alphaNode, node)
+	}
+
+	// Check all other beta nodes (for cascading joins)
+	for betaNodeID, betaNode := range rn.BetaNodes {
+		if betaNodeID != nodeID {
+			if bn, ok := betaNode.(*JoinNode); ok {
+				rn.disconnectChild(bn, node)
+			}
+		}
+	}
+
+	// Check type nodes
+	for _, typeNode := range rn.TypeNodes {
+		rn.disconnectChild(typeNode, node)
+	}
+
+	// Remove from network
+	delete(rn.BetaNodes, nodeID)
+
+	// Remove from lifecycle manager
+	if rn.LifecycleManager != nil {
+		rn.LifecycleManager.RemoveNode(nodeID)
+	}
+
+	// Remove from beta sharing registry
+	if rn.BetaSharingRegistry != nil {
+		rn.BetaSharingRegistry.ReleaseJoinNodeByID(nodeID)
+	}
+
+	return nil
+}
+
+// disconnectChild removes a child from a node's children list
+func (rn *ReteNetwork) disconnectChild(parent Node, child Node) {
+	if parent == nil || child == nil {
+		return
+	}
+
+	children := parent.GetChildren()
+	newChildren := make([]Node, 0, len(children))
+	for _, c := range children {
+		if c.GetID() != child.GetID() {
+			newChildren = append(newChildren, c)
+		}
+	}
+
+	// Update parent's children list (this assumes BaseNode structure)
+	if baseNode, ok := parent.(interface{ SetChildren([]Node) }); ok {
+		baseNode.SetChildren(newChildren)
+	}
 }

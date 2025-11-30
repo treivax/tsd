@@ -1,0 +1,588 @@
+// IoT Sensor Monitoring with Multi-Source Aggregations
+// ======================================================
+// Real-world example demonstrating IoT device monitoring, sensor analytics,
+// alert management, and predictive maintenance using multi-source aggregations.
+//
+// Business Context:
+// An industrial facility needs to monitor hundreds of IoT sensors across equipment,
+// detect anomalies, predict failures, and optimize maintenance schedules.
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+type Device : <
+  id: string,
+  name: string,
+  type: string,           // "temperature", "pressure", "vibration", "humidity"
+  location: string,
+  installDate: string,
+  lastMaintenance: string,
+  status: string          // "active", "warning", "critical", "offline"
+>
+
+type SensorReading : <
+  id: string,
+  deviceId: string,
+  timestamp: string,
+  value: number,
+  unit: string,
+  quality: string         // "good", "uncertain", "bad"
+>
+
+type Alert : <
+  id: string,
+  deviceId: string,
+  severity: string,       // "info", "warning", "critical", "emergency"
+  message: string,
+  timestamp: string,
+  acknowledged: string,   // "yes", "no"
+  resolvedDate: string
+>
+
+type MaintenanceRecord : <
+  id: string,
+  deviceId: string,
+  maintenanceDate: string,
+  type: string,           // "preventive", "corrective", "emergency"
+  cost: number,
+  duration: number,       // hours
+  technician: string
+>
+
+type DeviceFailure : <
+  id: string,
+  deviceId: string,
+  failureDate: string,
+  cause: string,
+  downtime: number,       // hours
+  repairCost: number
+>
+
+type EnergyConsumption : <
+  id: string,
+  deviceId: string,
+  timestamp: string,
+  kwh: number,
+  cost: number
+>
+
+type ProductionMetric : <
+  id: string,
+  deviceId: string,
+  timestamp: string,
+  unitsProduced: number,
+  qualityScore: number,   // 0-100
+  efficiency: number      // 0-100 percentage
+>
+
+// ============================================================================
+// Device Health Monitoring Rules
+// ============================================================================
+
+// Rule 1: Device Health Score
+// Calculates overall health based on sensor readings, alerts, and maintenance
+rule device_health_score :
+  {d: Device,
+   avg_reading: AVG(sr.value),
+   reading_quality: COUNT(sr.id),
+   critical_alerts: COUNT(a.id),
+   days_since_maintenance: COUNT(mr.id)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / {mr: MaintenanceRecord}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND mr.deviceId == d.id
+    AND sr.quality == "good"
+    AND critical_alerts < 3
+    AND days_since_maintenance >= 1
+  ==> print("Device Health:", d.name, "| Readings:", reading_quality, "| Alerts:", critical_alerts, "| Maintenance:", days_since_maintenance)
+
+// Rule 2: Critical Device Status
+// Identifies devices requiring immediate attention
+rule critical_device_alert :
+  {d: Device,
+   bad_readings: COUNT(sr.id),
+   critical_alerts: COUNT(a.id),
+   recent_failures: COUNT(df.id),
+   avg_sensor_value: AVG(sr.value)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / {df: DeviceFailure}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND df.deviceId == d.id
+    AND sr.quality == "bad"
+    AND a.severity == "critical"
+    AND critical_alerts >= 3
+  ==> print("CRITICAL DEVICE:", d.name, "| Bad Readings:", bad_readings, "| Critical Alerts:", critical_alerts, "| Failures:", recent_failures)
+
+// Rule 3: Device Anomaly Detection
+// Detects abnormal sensor patterns using statistical aggregations
+rule device_anomaly_detection :
+  {d: Device,
+   avg_value: AVG(sr.value),
+   max_value: MAX(sr.value),
+   min_value: MIN(sr.value),
+   reading_count: COUNT(sr.id),
+   alert_count: COUNT(a.id)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND max_value > avg_value
+    AND alert_count >= 2
+  ==> print("Anomaly Detected:", d.name, "| Avg:", avg_value, "| Max:", max_value, "| Min:", min_value)
+
+// Rule 4: Device Performance Degradation
+// Identifies gradual performance decline
+rule performance_degradation_detection :
+  {d: Device,
+   avg_reading: AVG(sr.value),
+   avg_efficiency: AVG(pm.efficiency),
+   quality_score: AVG(pm.qualityScore),
+   warning_alerts: COUNT(a.id)}
+  / {sr: SensorReading}
+  / {pm: ProductionMetric}
+  / {a: Alert}
+  / sr.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND a.deviceId == d.id
+    AND avg_efficiency < 80.0
+    AND quality_score < 85.0
+    AND warning_alerts >= 5
+  ==> print("Performance Degrading:", d.name, "| Efficiency:", avg_efficiency, "% | Quality:", quality_score, "| Warnings:", warning_alerts)
+
+// ============================================================================
+// Predictive Maintenance Rules
+// ============================================================================
+
+// Rule 5: Predictive Maintenance Alert
+// Predicts maintenance needs based on multiple indicators
+rule predictive_maintenance_trigger :
+  {d: Device,
+   failure_count: COUNT(df.id),
+   total_downtime: SUM(df.downtime),
+   total_repair_cost: SUM(df.repairCost),
+   maintenance_count: COUNT(mr.id),
+   days_since_last: COUNT(mr.id)}
+  / {df: DeviceFailure}
+  / {mr: MaintenanceRecord}
+  / df.deviceId == d.id
+    AND mr.deviceId == d.id
+    AND failure_count >= 2
+    AND total_downtime > 24.0
+    AND maintenance_count < 3
+  ==> print("PREDICTIVE MAINTENANCE:", d.name, "| Failures:", failure_count, "| Downtime:", total_downtime, "hrs | Cost: $", total_repair_cost)
+
+// Rule 6: Maintenance Overdue Alert
+// Identifies devices overdue for scheduled maintenance
+rule maintenance_overdue_alert :
+  {d: Device,
+   last_maintenance_days: COUNT(mr.id),
+   sensor_quality_decline: COUNT(sr.id),
+   alert_increase: COUNT(a.id)}
+  / {mr: MaintenanceRecord}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / mr.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND sr.quality == "uncertain"
+    AND alert_increase >= 3
+  ==> print("MAINTENANCE OVERDUE:", d.name, "| Last Service:", last_maintenance_days, "days | Quality Issues:", sensor_quality_decline)
+
+// Rule 7: Maintenance Cost Optimization
+// Analyzes maintenance patterns and costs
+rule maintenance_cost_analysis :
+  {d: Device,
+   preventive_count: COUNT(mr.id),
+   corrective_count: COUNT(mr.id),
+   total_cost: SUM(mr.cost),
+   avg_duration: AVG(mr.duration),
+   failure_cost: SUM(df.repairCost)}
+  / {mr: MaintenanceRecord}
+  / {df: DeviceFailure}
+  / mr.deviceId == d.id
+    AND df.deviceId == d.id
+    AND mr.type == "preventive"
+    AND total_cost > 5000
+  ==> print("Maintenance Analysis:", d.name, "| Preventive:", preventive_count, "| Cost: $", total_cost, "| Failure Cost: $", failure_cost)
+
+// Rule 8: High-Reliability Device Identification
+// Finds devices with excellent uptime and minimal issues
+rule high_reliability_devices :
+  {d: Device,
+   total_readings: COUNT(sr.id),
+   good_readings: COUNT(sr.id),
+   alert_count: COUNT(a.id),
+   failure_count: COUNT(df.id),
+   avg_efficiency: AVG(pm.efficiency)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / {df: DeviceFailure}
+  / {pm: ProductionMetric}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND df.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND sr.quality == "good"
+    AND alert_count < 2
+    AND failure_count == 0
+    AND avg_efficiency > 95.0
+  ==> print("High Reliability:", d.name, "| Good Readings:", good_readings, "| Efficiency:", avg_efficiency, "%")
+
+// ============================================================================
+// Alert Management Rules
+// ============================================================================
+
+// Rule 9: Alert Storm Detection
+// Detects cascading failures through alert patterns
+rule alert_storm_detection :
+  {d: Device,
+   total_alerts: COUNT(a.id),
+   critical_count: COUNT(a.id),
+   unacknowledged: COUNT(a.id),
+   sensor_issues: COUNT(sr.id)}
+  / {a: Alert}
+  / {sr: SensorReading}
+  / a.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND a.acknowledged == "no"
+    AND total_alerts > 10
+    AND critical_count >= 3
+  ==> print("ALERT STORM:", d.name, "| Total:", total_alerts, "| Critical:", critical_count, "| Unack:", unacknowledged)
+
+// Rule 10: Alert Response Time Analysis
+// Measures alert acknowledgment and resolution metrics
+rule alert_response_analysis :
+  {d: Device,
+   total_alerts: COUNT(a.id),
+   acknowledged_alerts: COUNT(a.id),
+   resolved_alerts: COUNT(a.id)}
+  / {a: Alert}
+  / a.deviceId == d.id
+    AND total_alerts >= 5
+  ==> print("Alert Response:", d.name, "| Total:", total_alerts, "| Ack:", acknowledged_alerts, "| Resolved:", resolved_alerts)
+
+// Rule 11: Critical Alert Escalation
+// Escalates unresolved critical alerts
+rule critical_alert_escalation :
+  {d: Device,
+   critical_unresolved: COUNT(a.id),
+   sensor_degradation: COUNT(sr.id),
+   recent_failures: COUNT(df.id)}
+  / {a: Alert}
+  / {sr: SensorReading}
+  / {df: DeviceFailure}
+  / a.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND df.deviceId == d.id
+    AND a.severity == "critical"
+    AND a.acknowledged == "no"
+    AND critical_unresolved >= 2
+  ==> print("ESCALATE CRITICAL:", d.name, "| Critical:", critical_unresolved, "| Sensor Issues:", sensor_degradation, "| Failures:", recent_failures)
+
+// ============================================================================
+// Energy & Efficiency Rules
+// ============================================================================
+
+// Rule 12: Energy Consumption Analysis
+// Monitors device energy usage patterns
+rule energy_consumption_monitoring :
+  {d: Device,
+   total_kwh: SUM(ec.kwh),
+   total_cost: SUM(ec.cost),
+   avg_consumption: AVG(ec.kwh),
+   readings: COUNT(sr.id)}
+  / {ec: EnergyConsumption}
+  / {sr: SensorReading}
+  / ec.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND total_kwh > 1000
+  ==> print("Energy Usage:", d.name, "| Total:", total_kwh, "kWh | Cost: $", total_cost, "| Avg:", avg_consumption)
+
+// Rule 13: Energy Efficiency Alert
+// Detects devices with poor energy efficiency
+rule energy_efficiency_alert :
+  {d: Device,
+   energy_consumed: SUM(ec.kwh),
+   energy_cost: SUM(ec.cost),
+   production_output: SUM(pm.unitsProduced),
+   efficiency_score: AVG(pm.efficiency)}
+  / {ec: EnergyConsumption}
+  / {pm: ProductionMetric}
+  / ec.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND efficiency_score < 70.0
+    AND energy_consumed > 500
+  ==> print("Low Energy Efficiency:", d.name, "| Consumed:", energy_consumed, "kWh | Efficiency:", efficiency_score, "%")
+
+// Rule 14: High Energy Cost Device
+// Identifies devices with excessive energy costs
+rule high_energy_cost_devices :
+  {d: Device,
+   total_cost: SUM(ec.cost),
+   total_kwh: SUM(ec.kwh),
+   avg_efficiency: AVG(pm.efficiency),
+   alert_count: COUNT(a.id)}
+  / {ec: EnergyConsumption}
+  / {pm: ProductionMetric}
+  / {a: Alert}
+  / ec.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND a.deviceId == d.id
+    AND total_cost > 1000
+    AND avg_efficiency < 85.0
+  ==> print("High Energy Cost:", d.name, "| Cost: $", total_cost, "| kWh:", total_kwh, "| Efficiency:", avg_efficiency, "%")
+
+// ============================================================================
+// Production Quality Rules
+// ============================================================================
+
+// Rule 15: Production Quality Monitoring
+// Tracks production quality and efficiency metrics
+rule production_quality_monitoring :
+  {d: Device,
+   total_produced: SUM(pm.unitsProduced),
+   avg_quality: AVG(pm.qualityScore),
+   avg_efficiency: AVG(pm.efficiency),
+   sensor_health: COUNT(sr.id)}
+  / {pm: ProductionMetric}
+  / {sr: SensorReading}
+  / pm.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND sr.quality == "good"
+    AND total_produced > 100
+  ==> print("Production Quality:", d.name, "| Units:", total_produced, "| Quality:", avg_quality, "| Efficiency:", avg_efficiency, "%")
+
+// Rule 16: Quality Degradation Alert
+// Detects declining product quality
+rule quality_degradation_alert :
+  {d: Device,
+   avg_quality: AVG(pm.qualityScore),
+   avg_efficiency: AVG(pm.efficiency),
+   sensor_issues: COUNT(sr.id),
+   alert_count: COUNT(a.id)}
+  / {pm: ProductionMetric}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / pm.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND avg_quality < 80.0
+    AND sr.quality == "uncertain"
+  ==> print("Quality Degrading:", d.name, "| Quality:", avg_quality, "| Efficiency:", avg_efficiency, "% | Issues:", sensor_issues)
+
+// Rule 17: Optimal Production Performance
+// Identifies best-performing devices
+rule optimal_production_performance :
+  {d: Device,
+   units_produced: SUM(pm.unitsProduced),
+   quality_score: AVG(pm.qualityScore),
+   efficiency: AVG(pm.efficiency),
+   energy_per_unit: AVG(ec.kwh)}
+  / {pm: ProductionMetric}
+  / {ec: EnergyConsumption}
+  / pm.deviceId == d.id
+    AND ec.deviceId == d.id
+    AND quality_score > 95.0
+    AND efficiency > 95.0
+    AND units_produced > 500
+  ==> print("Optimal Performance:", d.name, "| Units:", units_produced, "| Quality:", quality_score, "| Efficiency:", efficiency, "%")
+
+// ============================================================================
+// Comprehensive Analytics Rules
+// ============================================================================
+
+// Rule 18: Device Total Cost of Ownership
+// Calculates complete cost profile including energy, maintenance, and failures
+rule device_total_cost_ownership :
+  {d: Device,
+   maintenance_cost: SUM(mr.cost),
+   failure_cost: SUM(df.repairCost),
+   energy_cost: SUM(ec.cost),
+   total_downtime: SUM(df.downtime)}
+  / {mr: MaintenanceRecord}
+  / {df: DeviceFailure}
+  / {ec: EnergyConsumption}
+  / mr.deviceId == d.id
+    AND df.deviceId == d.id
+    AND ec.deviceId == d.id
+  ==> print("TCO Analysis:", d.name, "| Maintenance: $", maintenance_cost, "| Failures: $", failure_cost, "| Energy: $", energy_cost, "| Downtime:", total_downtime, "hrs")
+
+// Rule 19: Device ROI Analysis
+// Analyzes return on investment based on production vs costs
+rule device_roi_analysis :
+  {d: Device,
+   total_produced: SUM(pm.unitsProduced),
+   avg_quality: AVG(pm.qualityScore),
+   total_costs: SUM(mr.cost),
+   energy_costs: SUM(ec.cost),
+   failure_costs: SUM(df.repairCost)}
+  / {pm: ProductionMetric}
+  / {mr: MaintenanceRecord}
+  / {ec: EnergyConsumption}
+  / {df: DeviceFailure}
+  / pm.deviceId == d.id
+    AND mr.deviceId == d.id
+    AND ec.deviceId == d.id
+    AND df.deviceId == d.id
+    AND total_produced > 1000
+  ==> print("ROI Analysis:", d.name, "| Produced:", total_produced, "| Quality:", avg_quality, "| Total Cost: $", total_costs)
+
+// Rule 20: End-to-End Device Intelligence
+// Complete device profile combining all metrics
+rule device_intelligence_profile :
+  {d: Device,
+   sensor_readings: COUNT(sr.id),
+   good_quality_ratio: COUNT(sr.id),
+   total_alerts: COUNT(a.id),
+   critical_alerts: COUNT(a.id),
+   maintenance_count: COUNT(mr.id),
+   failure_count: COUNT(df.id),
+   energy_consumed: SUM(ec.kwh),
+   units_produced: SUM(pm.unitsProduced),
+   avg_quality: AVG(pm.qualityScore)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / {mr: MaintenanceRecord}
+  / {df: DeviceFailure}
+  / {ec: EnergyConsumption}
+  / {pm: ProductionMetric}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND mr.deviceId == d.id
+    AND df.deviceId == d.id
+    AND ec.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND sensor_readings >= 100
+  ==> print("Device Profile:", d.name, "| Readings:", sensor_readings, "| Alerts:", total_alerts, "| Maint:", maintenance_count, "| Failures:", failure_count, "| Energy:", energy_consumed, "kWh | Production:", units_produced)
+
+// Rule 21: Fleet-Wide Sensor Quality
+// Monitors sensor data quality across device types
+rule fleet_sensor_quality :
+  {d: Device,
+   total_readings: COUNT(sr.id),
+   good_readings: COUNT(sr.id),
+   bad_readings: COUNT(sr.id),
+   uncertain_readings: COUNT(sr.id)}
+  / {sr: SensorReading}
+  / sr.deviceId == d.id
+    AND total_readings >= 50
+  ==> print("Sensor Quality:", d.name, "| Type:", d.type, "| Good:", good_readings, "| Bad:", bad_readings, "| Uncertain:", uncertain_readings)
+
+// Rule 22: Failure Pattern Recognition
+// Identifies recurring failure patterns for root cause analysis
+rule failure_pattern_recognition :
+  {d: Device,
+   failure_count: COUNT(df.id),
+   total_downtime: SUM(df.downtime),
+   total_repair_cost: SUM(df.repairCost),
+   avg_downtime: AVG(df.downtime),
+   sensor_anomalies: COUNT(sr.id)}
+  / {df: DeviceFailure}
+  / {sr: SensorReading}
+  / df.deviceId == d.id
+    AND sr.deviceId == d.id
+    AND sr.quality == "bad"
+    AND failure_count >= 3
+  ==> print("Failure Pattern:", d.name, "| Count:", failure_count, "| Total Downtime:", total_downtime, "hrs | Avg:", avg_downtime, "hrs | Cost: $", total_repair_cost)
+
+// Rule 23: Preventive vs Corrective Maintenance Ratio
+// Analyzes maintenance strategy effectiveness
+rule maintenance_strategy_analysis :
+  {d: Device,
+   preventive_count: COUNT(mr.id),
+   corrective_count: COUNT(mr.id),
+   emergency_count: COUNT(mr.id),
+   total_maintenance_cost: SUM(mr.cost),
+   failure_count: COUNT(df.id)}
+  / {mr: MaintenanceRecord}
+  / {df: DeviceFailure}
+  / mr.deviceId == d.id
+    AND df.deviceId == d.id
+  ==> print("Maintenance Strategy:", d.name, "| Preventive:", preventive_count, "| Corrective:", corrective_count, "| Emergency:", emergency_count, "| Failures:", failure_count)
+
+// Rule 24: Device Replacement Recommendation
+// Recommends device replacement based on cost and reliability
+rule device_replacement_recommendation :
+  {d: Device,
+   total_failures: COUNT(df.id),
+   total_downtime: SUM(df.downtime),
+   total_repair_cost: SUM(df.repairCost),
+   maintenance_cost: SUM(mr.cost),
+   avg_efficiency: AVG(pm.efficiency)}
+  / {df: DeviceFailure}
+  / {mr: MaintenanceRecord}
+  / {pm: ProductionMetric}
+  / df.deviceId == d.id
+    AND mr.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND total_failures >= 5
+    AND total_repair_cost > 10000
+    AND avg_efficiency < 60.0
+  ==> print("REPLACEMENT RECOMMENDED:", d.name, "| Failures:", total_failures, "| Downtime:", total_downtime, "hrs | Cost: $", total_repair_cost, "| Efficiency:", avg_efficiency, "%")
+
+// Rule 25: Best Practice Device Benchmark
+// Establishes benchmarks from best-performing devices
+rule best_practice_benchmark :
+  {d: Device,
+   total_readings: COUNT(sr.id),
+   good_quality_pct: COUNT(sr.id),
+   alert_rate: COUNT(a.id),
+   failure_rate: COUNT(df.id),
+   avg_efficiency: AVG(pm.efficiency),
+   avg_quality: AVG(pm.qualityScore),
+   units_produced: SUM(pm.unitsProduced)}
+  / {sr: SensorReading}
+  / {a: Alert}
+  / {df: DeviceFailure}
+  / {pm: ProductionMetric}
+  / sr.deviceId == d.id
+    AND a.deviceId == d.id
+    AND df.deviceId == d.id
+    AND pm.deviceId == d.id
+    AND sr.quality == "good"
+    AND failure_rate == 0
+    AND avg_efficiency > 98.0
+    AND avg_quality > 98.0
+  ==> print("BENCHMARK DEVICE:", d.name, "| Efficiency:", avg_efficiency, "% | Quality:", avg_quality, "| Production:", units_produced, "| Failures:", failure_rate)
+
+// ============================================================================
+// Usage Notes
+// ============================================================================
+//
+// This example demonstrates:
+// 1. Device health monitoring (sensor quality, alerts, maintenance)
+// 2. Predictive maintenance (failure patterns, cost optimization)
+// 3. Alert management (storm detection, response time, escalation)
+// 4. Energy efficiency (consumption analysis, cost tracking)
+// 5. Production quality (output monitoring, quality degradation)
+// 6. Comprehensive analytics (TCO, ROI, replacement recommendations)
+// 7. Fleet intelligence (sensor quality, failure patterns, benchmarks)
+//
+// Key IoT Patterns:
+// - Combine sensor data with operational metrics
+// - Track device lifecycle from installation to replacement
+// - Correlate energy consumption with production output
+// - Use statistical aggregations (AVG, MIN, MAX) for anomaly detection
+// - Monitor both real-time alerts and historical trends
+// - Calculate cost metrics across multiple dimensions
+//
+// Business Value:
+// - Reduce unplanned downtime through predictive maintenance
+// - Optimize energy consumption and costs
+// - Improve production quality and efficiency
+// - Extend device lifespan through proper maintenance
+// - Data-driven decision making for device replacement
+// - Early detection of cascading failures
+//
+// Implementation Tips:
+// - Set thresholds based on historical device performance
+// - Adjust sensitivity based on device criticality
+// - Combine multiple indicators for accurate predictions
+// - Track seasonal and operational patterns
+// - Use sliding time windows for trend analysis
+// - Integrate with maintenance scheduling systems

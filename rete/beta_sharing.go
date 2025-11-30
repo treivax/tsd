@@ -100,6 +100,7 @@ func (bsr *BetaSharingRegistryImpl) GetOrCreateJoinNode(
 	}
 	node := NewJoinNode(hash, conditionMap, leftVars, rightVars, varTypes, storage)
 	bsr.sharedJoinNodes[hash] = node
+	bsr.hashToNodeID[hash] = hash // Track hash to node ID mapping
 
 	// Record metrics
 	if bsr.config.EnableMetrics {
@@ -133,6 +134,89 @@ func (bsr *BetaSharingRegistryImpl) RegisterJoinNode(node *JoinNode, hash string
 	return nil
 }
 
+// AddRuleToJoinNode associates a rule with a join node.
+func (bsr *BetaSharingRegistryImpl) AddRuleToJoinNode(nodeID, ruleID string) error {
+	if !bsr.config.Enabled {
+		return nil
+	}
+
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	if _, exists := bsr.joinNodeRules[nodeID]; !exists {
+		bsr.joinNodeRules[nodeID] = make(map[string]bool)
+	}
+
+	bsr.joinNodeRules[nodeID][ruleID] = true
+
+	// Also register with lifecycle manager if available
+	if bsr.lifecycleManager != nil {
+		bsr.lifecycleManager.AddRuleToNode(nodeID, ruleID, ruleID)
+	}
+
+	return nil
+}
+
+// RemoveRuleFromJoinNode removes a rule's reference from a join node.
+// Returns true if the node has no more rules and can be deleted.
+func (bsr *BetaSharingRegistryImpl) RemoveRuleFromJoinNode(nodeID, ruleID string) (bool, error) {
+	if !bsr.config.Enabled {
+		return false, nil
+	}
+
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	rules, exists := bsr.joinNodeRules[nodeID]
+	if !exists {
+		return false, fmt.Errorf("join node %s not found in rule tracking", nodeID)
+	}
+
+	delete(rules, ruleID)
+
+	// Also update lifecycle manager if available
+	if bsr.lifecycleManager != nil {
+		bsr.lifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
+	}
+
+	// If no more rules reference this node, it can be deleted
+	canDelete := len(rules) == 0
+	if canDelete {
+		delete(bsr.joinNodeRules, nodeID)
+	}
+
+	return canDelete, nil
+}
+
+// GetJoinNodeRules returns all rules using a specific join node.
+func (bsr *BetaSharingRegistryImpl) GetJoinNodeRules(nodeID string) []string {
+	bsr.mutex.RLock()
+	defer bsr.mutex.RUnlock()
+
+	rules, exists := bsr.joinNodeRules[nodeID]
+	if !exists {
+		return []string{}
+	}
+
+	ruleList := make([]string, 0, len(rules))
+	for ruleID := range rules {
+		ruleList = append(ruleList, ruleID)
+	}
+	return ruleList
+}
+
+// GetJoinNodeRefCount returns the number of rules referencing a join node.
+func (bsr *BetaSharingRegistryImpl) GetJoinNodeRefCount(nodeID string) int {
+	bsr.mutex.RLock()
+	defer bsr.mutex.RUnlock()
+
+	rules, exists := bsr.joinNodeRules[nodeID]
+	if !exists {
+		return 0
+	}
+	return len(rules)
+}
+
 // ReleaseJoinNode decrements refcount and removes node if unused.
 func (bsr *BetaSharingRegistryImpl) ReleaseJoinNode(hash string) error {
 	if !bsr.config.Enabled {
@@ -142,15 +226,56 @@ func (bsr *BetaSharingRegistryImpl) ReleaseJoinNode(hash string) error {
 	bsr.mutex.Lock()
 	defer bsr.mutex.Unlock()
 
-	_, exists := bsr.sharedJoinNodes[hash]
+	nodeID, exists := bsr.hashToNodeID[hash]
 	if !exists {
 		return fmt.Errorf("join node with hash %s not found", hash)
 	}
 
-	// Remove node (simplified - no refcounting in this version)
+	// Check if node still has rules referencing it
+	if rules, exists := bsr.joinNodeRules[nodeID]; exists && len(rules) > 0 {
+		return fmt.Errorf("cannot release join node %s: still referenced by %d rule(s)", nodeID, len(rules))
+	}
+
+	// Remove node from all tracking structures
 	delete(bsr.sharedJoinNodes, hash)
+	delete(bsr.hashToNodeID, hash)
+	delete(bsr.joinNodeRules, nodeID)
 
 	return nil
+}
+
+// ReleaseJoinNodeByID removes a join node by its node ID.
+// Returns true if the node was found and removed.
+func (bsr *BetaSharingRegistryImpl) ReleaseJoinNodeByID(nodeID string) (bool, error) {
+	if !bsr.config.Enabled {
+		return false, nil
+	}
+
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	// Check if node still has rules referencing it
+	if rules, exists := bsr.joinNodeRules[nodeID]; exists && len(rules) > 0 {
+		return false, fmt.Errorf("cannot release join node %s: still referenced by %d rule(s)", nodeID, len(rules))
+	}
+
+	// Find and remove the hash mapping
+	var foundHash string
+	for hash, nid := range bsr.hashToNodeID {
+		if nid == nodeID {
+			foundHash = hash
+			break
+		}
+	}
+
+	if foundHash != "" {
+		delete(bsr.sharedJoinNodes, foundHash)
+		delete(bsr.hashToNodeID, foundHash)
+	}
+
+	delete(bsr.joinNodeRules, nodeID)
+
+	return foundHash != "", nil
 }
 
 // GetSharingStats returns current sharing metrics.

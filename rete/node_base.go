@@ -49,6 +49,13 @@ func (bn *BaseNode) GetChildren() []Node {
 	return bn.Children
 }
 
+// SetChildren sets the children nodes
+func (bn *BaseNode) SetChildren(children []Node) {
+	bn.mutex.Lock()
+	defer bn.mutex.Unlock()
+	bn.Children = children
+}
+
 // PropagateToChildren propage un fait ou token aux enfants
 func (bn *BaseNode) PropagateToChildren(fact *Fact, token *Token) error {
 	for _, child := range bn.GetChildren() {

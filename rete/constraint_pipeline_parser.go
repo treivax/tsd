@@ -194,6 +194,269 @@ func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[st
 	return aggInfo, nil
 }
 
+// extractMultiSourceAggregationInfo extracts aggregation info for multi-source aggregations
+// This supports aggregating over multiple joined patterns
+func (cp *ConstraintPipeline) extractMultiSourceAggregationInfo(exprMap map[string]interface{}) (*AggregationInfo, error) {
+	aggInfo := &AggregationInfo{}
+	aggInfo.AggregationVars = []AggregationVariable{}
+	aggInfo.SourcePatterns = []SourcePattern{}
+	aggInfo.JoinConditions = []JoinCondition{}
+
+	// Check for multi-pattern syntax
+	patternsData, hasPatterns := exprMap["patterns"]
+	if !hasPatterns {
+		return nil, fmt.Errorf("no patterns field found")
+	}
+
+	patternsList, ok := patternsData.([]interface{})
+	if !ok || len(patternsList) < 2 {
+		return nil, fmt.Errorf("expected at least 2 pattern blocks for aggregation")
+	}
+
+	// First pattern block contains main variable and aggregation variable(s)
+	firstPattern, ok := patternsList[0].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("first pattern is not a map")
+	}
+
+	varsData, hasVars := firstPattern["variables"]
+	if !hasVars {
+		return nil, fmt.Errorf("no variables in first pattern")
+	}
+
+	varsList, ok := varsData.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("variables is not a list")
+	}
+
+	// Extract main variable and aggregation variables from first pattern
+	for _, varInterface := range varsList {
+		varMap, ok := varInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		varType, _ := varMap["type"].(string)
+		if varType == "aggregationVariable" {
+			// This is an aggregation variable
+			aggVar := AggregationVariable{}
+
+			if name, ok := varMap["name"].(string); ok {
+				aggVar.Name = name
+			}
+
+			if function, ok := varMap["function"].(string); ok {
+				aggVar.Function = function
+			}
+
+			// Extract field being aggregated
+			if fieldData, ok := varMap["field"].(map[string]interface{}); ok {
+				if fieldObj, ok := fieldData["object"].(string); ok {
+					aggVar.SourceVar = fieldObj
+				}
+				if fieldName, ok := fieldData["field"].(string); ok {
+					aggVar.Field = fieldName
+				}
+			}
+
+			aggInfo.AggregationVars = append(aggInfo.AggregationVars, aggVar)
+		} else {
+			// This is the main variable
+			if name, ok := varMap["name"].(string); ok {
+				aggInfo.MainVariable = name
+			}
+			if dataType, ok := varMap["dataType"].(string); ok {
+				aggInfo.MainType = dataType
+			}
+		}
+	}
+
+	// Extract source patterns from remaining pattern blocks
+	for i := 1; i < len(patternsList); i++ {
+		pattern, ok := patternsList[i].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if varsData, hasVars := pattern["variables"]; hasVars {
+			if varsList, ok := varsData.([]interface{}); ok && len(varsList) > 0 {
+				if varMap, ok := varsList[0].(map[string]interface{}); ok {
+					sourcePattern := SourcePattern{}
+
+					if varName, ok := varMap["name"].(string); ok {
+						sourcePattern.Variable = varName
+					}
+					if varType, ok := varMap["dataType"].(string); ok {
+						sourcePattern.Type = varType
+					}
+
+					aggInfo.SourcePatterns = append(aggInfo.SourcePatterns, sourcePattern)
+
+					// Also update legacy fields if this is the first/primary aggregation source
+					if i == 1 && len(aggInfo.AggregationVars) > 0 {
+						aggInfo.AggVariable = sourcePattern.Variable
+						aggInfo.AggType = sourcePattern.Type
+						aggInfo.Function = aggInfo.AggregationVars[0].Function
+						aggInfo.Field = aggInfo.AggregationVars[0].Field
+					}
+				}
+			}
+		}
+	}
+
+	// Extract join conditions and thresholds from constraints
+	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
+		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+			aggInfo.JoinCondition = constraintMap
+
+			// Get list of aggregation variable names
+			aggVarNames := cp.getAggregationVariableNames(exprMap)
+
+			// Separate join conditions and threshold conditions
+			joinConditionsMap, thresholdConditions := cp.separateAggregationConstraints(constraintMap, aggVarNames)
+
+			// Extract all join conditions
+			cp.extractJoinConditionsRecursive(constraintMap, aggVarNames, &aggInfo.JoinConditions)
+
+			// Extract join fields from the first join condition (for backward compatibility)
+			if joinConditionsMap != nil && joinConditionsMap["type"] == "comparison" {
+				if leftData, ok := joinConditionsMap["left"].(map[string]interface{}); ok {
+					if leftData["type"] == "fieldAccess" {
+						if leftObj, ok := leftData["object"].(string); ok {
+							if field, ok := leftData["field"].(string); ok {
+								// Determine if this is the main or agg side
+								if leftObj == aggInfo.MainVariable {
+									aggInfo.MainField = field
+								} else {
+									aggInfo.JoinField = field
+								}
+							}
+						}
+					}
+				}
+
+				if rightData, ok := joinConditionsMap["right"].(map[string]interface{}); ok {
+					if rightData["type"] == "fieldAccess" {
+						if rightObj, ok := rightData["object"].(string); ok {
+							if field, ok := rightData["field"].(string); ok {
+								if rightObj == aggInfo.MainVariable {
+									aggInfo.MainField = field
+								} else {
+									aggInfo.JoinField = field
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Extract thresholds and apply to aggregation variables
+			for _, threshold := range thresholdConditions {
+				if leftData, ok := threshold["left"].(map[string]interface{}); ok {
+					if leftData["type"] == "variable" {
+						if aggVarName, ok := leftData["name"].(string); ok {
+							// Find the matching aggregation variable
+							for i := range aggInfo.AggregationVars {
+								if aggInfo.AggregationVars[i].Name == aggVarName {
+									if operator, ok := threshold["operator"].(string); ok {
+										aggInfo.AggregationVars[i].Operator = operator
+									}
+									if rightData, ok := threshold["right"].(map[string]interface{}); ok {
+										if value, ok := rightData["value"].(float64); ok {
+											aggInfo.AggregationVars[i].Threshold = value
+										}
+									}
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Set default threshold for first aggregation variable (backward compatibility)
+			if len(aggInfo.AggregationVars) > 0 {
+				if aggInfo.AggregationVars[0].Operator != "" {
+					aggInfo.Operator = aggInfo.AggregationVars[0].Operator
+					aggInfo.Threshold = aggInfo.AggregationVars[0].Threshold
+				} else {
+					aggInfo.Operator = ">="
+					aggInfo.Threshold = 0
+					aggInfo.AggregationVars[0].Operator = ">="
+					aggInfo.AggregationVars[0].Threshold = 0
+				}
+			}
+		}
+	} else {
+		// No constraints - set default threshold
+		aggInfo.Operator = ">="
+		aggInfo.Threshold = 0
+		for i := range aggInfo.AggregationVars {
+			aggInfo.AggregationVars[i].Operator = ">="
+			aggInfo.AggregationVars[i].Threshold = 0
+		}
+	}
+
+	return aggInfo, nil
+}
+
+// extractJoinConditionsRecursive recursively extracts all join conditions from constraint tree
+func (cp *ConstraintPipeline) extractJoinConditionsRecursive(constraints map[string]interface{}, aggVarNames map[string]bool, joinConditions *[]JoinCondition) {
+	constraintType, _ := constraints["type"].(string)
+
+	if constraintType == "comparison" {
+		// Check if this is a join condition (not a threshold)
+		if !cp.isThresholdCondition(constraints, aggVarNames) {
+			// Extract join condition details
+			joinCond := JoinCondition{}
+
+			if operator, ok := constraints["operator"].(string); ok {
+				joinCond.Operator = operator
+			}
+
+			if leftData, ok := constraints["left"].(map[string]interface{}); ok {
+				if leftData["type"] == "fieldAccess" {
+					if obj, ok := leftData["object"].(string); ok {
+						joinCond.LeftVar = obj
+					}
+					if field, ok := leftData["field"].(string); ok {
+						joinCond.LeftField = field
+					}
+				}
+			}
+
+			if rightData, ok := constraints["right"].(map[string]interface{}); ok {
+				if rightData["type"] == "fieldAccess" {
+					if obj, ok := rightData["object"].(string); ok {
+						joinCond.RightVar = obj
+					}
+					if field, ok := rightData["field"].(string); ok {
+						joinCond.RightField = field
+					}
+				}
+			}
+
+			*joinConditions = append(*joinConditions, joinCond)
+		}
+	} else if constraintType == "logicalExpr" {
+		// Recursively process left side
+		if leftData, ok := constraints["left"].(map[string]interface{}); ok {
+			cp.extractJoinConditionsRecursive(leftData, aggVarNames, joinConditions)
+		}
+
+		// Recursively process operations
+		if ops, ok := constraints["operations"].([]interface{}); ok {
+			for _, opInterface := range ops {
+				if opMap, ok := opInterface.(map[string]interface{}); ok {
+					if rightData, ok := opMap["right"].(map[string]interface{}); ok {
+						cp.extractJoinConditionsRecursive(rightData, aggVarNames, joinConditions)
+					}
+				}
+			}
+		}
+	}
+}
+
 // getAggregationVariableNames extracts the names of all aggregation variables from patterns
 func (cp *ConstraintPipeline) getAggregationVariableNames(exprMap map[string]interface{}) map[string]bool {
 	aggVarNames := make(map[string]bool)

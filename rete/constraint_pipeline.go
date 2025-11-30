@@ -24,6 +24,27 @@ type AggregationInfo struct {
 	JoinField     string      // Champ de jointure dans faits agrégés (ex: "employee_id")
 	MainField     string      // Champ de jointure dans fait principal (ex: "id")
 	JoinCondition interface{} // Condition de jointure complète
+
+	// Multi-source aggregation support
+	AggregationVars []AggregationVariable // Multiple aggregation variables
+	SourcePatterns  []SourcePattern       // Multiple source patterns to join
+	JoinConditions  []JoinCondition       // Join conditions between patterns
+}
+
+// AggregationVariable represents a single aggregation variable
+type AggregationVariable struct {
+	Name      string  // Variable name (ex: "avg_sal")
+	Function  string  // AVG, SUM, COUNT, MIN, MAX
+	SourceVar string  // Source variable (ex: "e")
+	Field     string  // Field to aggregate (ex: "salary")
+	Operator  string  // Threshold operator (>=, >, etc.)
+	Threshold float64 // Threshold value
+}
+
+// SourcePattern represents a pattern block in multi-source aggregation
+type SourcePattern struct {
+	Variable string // Variable name (ex: "e")
+	Type     string // Type name (ex: "Employee")
 }
 
 // ConstraintPipeline implémente le pipeline complet :

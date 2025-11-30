@@ -1,0 +1,423 @@
+// E-Commerce Analytics with Multi-Source Aggregations
+// ====================================================
+// Real-world example demonstrating order analytics, customer metrics,
+// and inventory management using multi-source aggregations.
+//
+// Business Context:
+// An e-commerce platform needs to monitor customer behavior, order patterns,
+// and inventory levels in real-time to make informed business decisions.
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+type Customer : <
+  id: string,
+  name: string,
+  email: string,
+  tier: string,           // "bronze", "silver", "gold", "platinum"
+  joinDate: string
+>
+
+type Order : <
+  id: string,
+  customerId: string,
+  orderDate: string,
+  status: string,         // "pending", "shipped", "delivered", "cancelled"
+  totalAmount: number
+>
+
+type OrderItem : <
+  id: string,
+  orderId: string,
+  productId: string,
+  quantity: number,
+  price: number
+>
+
+type Payment : <
+  id: string,
+  orderId: string,
+  amount: number,
+  method: string,         // "credit_card", "paypal", "bank_transfer"
+  status: string,         // "pending", "completed", "failed"
+  processedDate: string
+>
+
+type Product : <
+  id: string,
+  name: string,
+  category: string,
+  sku: string,
+  stockLevel: number,
+  reorderPoint: number
+>
+
+type Review : <
+  id: string,
+  productId: string,
+  customerId: string,
+  rating: number,         // 1-5 stars
+  date: string
+>
+
+// ============================================================================
+// Customer Analytics Rules
+// ============================================================================
+
+// Rule 1: High-Value Customer Identification
+// Identifies customers with high order volume and payment completion rate
+rule identify_vip_customers :
+  {c: Customer,
+   total_orders: COUNT(o.id),
+   total_spent: SUM(p.amount),
+   avg_order_value: AVG(o.totalAmount)}
+  / {o: Order}
+  / {p: Payment}
+  / o.customerId == c.id
+    AND p.orderId == o.id
+    AND p.status == "completed"
+    AND total_orders > 10
+    AND total_spent > 5000
+  ==> print("VIP Customer Alert:", c.name, "has spent $", total_spent, "across", total_orders, "orders")
+
+// Rule 2: Customer Lifetime Value Analysis
+// Comprehensive customer metrics for retention strategies
+rule customer_lifetime_value :
+  {c: Customer,
+   order_count: COUNT(o.id),
+   total_revenue: SUM(p.amount),
+   avg_order_value: AVG(o.totalAmount),
+   completed_payments: COUNT(p.id)}
+  / {o: Order}
+  / {p: Payment}
+  / o.customerId == c.id
+    AND p.orderId == o.id
+    AND p.status == "completed"
+    AND order_count >= 5
+  ==> print("Customer LTV:", c.name, "| Orders:", order_count, "| Revenue: $", total_revenue, "| AOV: $", avg_order_value)
+
+// Rule 3: At-Risk Customer Detection
+// Identifies customers with low order frequency or failed payments
+rule at_risk_customers :
+  {c: Customer,
+   total_orders: COUNT(o.id),
+   failed_payments: COUNT(p.id),
+   avg_spent: AVG(p.amount)}
+  / {o: Order}
+  / {p: Payment}
+  / o.customerId == c.id
+    AND p.orderId == o.id
+    AND total_orders < 3
+    AND failed_payments > 0
+  ==> print("At-Risk Customer:", c.name, "| Low orders:", total_orders, "| Failed payments:", failed_payments)
+
+// ============================================================================
+// Order Analytics Rules
+// ============================================================================
+
+// Rule 4: Large Order Monitoring
+// Tracks high-value orders that need special handling
+rule monitor_large_orders :
+  {o: Order,
+   item_count: COUNT(oi.id),
+   total_value: SUM(oi.price),
+   payment_amount: SUM(p.amount)}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / oi.orderId == o.id
+    AND p.orderId == o.id
+    AND total_value > 1000
+    AND payment_amount > 1000
+  ==> print("Large Order Alert:", o.id, "| Items:", item_count, "| Value: $", total_value, "| Status:", o.status)
+
+// Rule 5: Order Fulfillment Metrics
+// Monitors order completion and payment success rates
+rule order_fulfillment_status :
+  {o: Order,
+   item_quantity: SUM(oi.quantity),
+   total_items: COUNT(oi.id),
+   payment_total: SUM(p.amount)}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / oi.orderId == o.id
+    AND p.orderId == o.id
+    AND p.status == "completed"
+    AND o.status == "delivered"
+  ==> print("Order Fulfilled:", o.id, "| Items:", total_items, "| Qty:", item_quantity, "| Paid: $", payment_total)
+
+// Rule 6: Abandoned Cart Detection
+// Identifies orders with pending payments or incomplete status
+rule detect_abandoned_carts :
+  {o: Order,
+   cart_value: SUM(oi.price),
+   item_count: COUNT(oi.id)}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / oi.orderId == o.id
+    AND p.orderId == o.id
+    AND p.status == "pending"
+    AND o.status == "pending"
+    AND cart_value > 100
+  ==> print("Abandoned Cart:", o.id, "| Customer:", o.customerId, "| Value: $", cart_value, "| Items:", item_count)
+
+// ============================================================================
+// Product & Inventory Analytics Rules
+// ============================================================================
+
+// Rule 7: Low Stock Alert with Sales Velocity
+// Triggers when products are selling fast and approaching reorder point
+rule low_stock_alert :
+  {p: Product,
+   total_ordered: SUM(oi.quantity),
+   order_count: COUNT(oi.id)}
+  / {oi: OrderItem}
+  / oi.productId == p.id
+    AND p.stockLevel < p.reorderPoint
+    AND total_ordered > 100
+  ==> print("LOW STOCK ALERT:", p.name, "| Current:", p.stockLevel, "| Reorder:", p.reorderPoint, "| Total sold:", total_ordered)
+
+// Rule 8: Best-Selling Products
+// Identifies top products by order volume and revenue
+rule identify_best_sellers :
+  {p: Product,
+   units_sold: SUM(oi.quantity),
+   total_revenue: SUM(oi.price),
+   order_count: COUNT(oi.id),
+   avg_rating: AVG(r.rating),
+   review_count: COUNT(r.id)}
+  / {oi: OrderItem}
+  / {r: Review}
+  / oi.productId == p.id
+    AND r.productId == p.id
+    AND units_sold > 50
+    AND avg_rating > 4.0
+  ==> print("Best Seller:", p.name, "| Units:", units_sold, "| Revenue: $", total_revenue, "| Rating:", avg_rating, "| Reviews:", review_count)
+
+// Rule 9: Product Performance by Category
+// Analyzes product sales and ratings within categories
+rule category_performance :
+  {p: Product,
+   items_sold: SUM(oi.quantity),
+   revenue: SUM(oi.price),
+   avg_rating: AVG(r.rating),
+   num_reviews: COUNT(r.id)}
+  / {oi: OrderItem}
+  / {r: Review}
+  / oi.productId == p.id
+    AND r.productId == p.id
+    AND items_sold > 20
+  ==> print("Product Performance:", p.name, "| Category:", p.category, "| Sold:", items_sold, "| Rating:", avg_rating, "/5.0")
+
+// Rule 10: Slow-Moving Inventory
+// Identifies products with low sales that may need promotion
+rule slow_moving_inventory :
+  {p: Product,
+   units_sold: SUM(oi.quantity),
+   order_count: COUNT(oi.id),
+   avg_rating: AVG(r.rating)}
+  / {oi: OrderItem}
+  / {r: Review}
+  / oi.productId == p.id
+    AND r.productId == p.id
+    AND units_sold < 5
+    AND p.stockLevel > 100
+  ==> print("Slow Mover:", p.name, "| Stock:", p.stockLevel, "| Sold:", units_sold, "| Rating:", avg_rating)
+
+// ============================================================================
+// Payment & Revenue Analytics Rules
+// ============================================================================
+
+// Rule 11: Payment Method Performance
+// Analyzes success rates and volumes by payment method
+rule payment_method_analysis :
+  {o: Order,
+   payment_count: COUNT(p.id),
+   total_processed: SUM(p.amount),
+   avg_amount: AVG(p.amount)}
+  / {p: Payment}
+  / p.orderId == o.id
+    AND p.status == "completed"
+    AND payment_count > 5
+  ==> print("Order Payment Summary:", o.id, "| Payments:", payment_count, "| Total: $", total_processed, "| Avg: $", avg_amount)
+
+// Rule 12: Revenue Reconciliation
+// Matches order totals with payment amounts for accounting
+rule revenue_reconciliation :
+  {o: Order,
+   order_total: SUM(oi.price),
+   payment_total: SUM(p.amount),
+   item_count: COUNT(oi.id)}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / oi.orderId == o.id
+    AND p.orderId == o.id
+    AND p.status == "completed"
+    AND order_total == payment_total
+  ==> print("Revenue Reconciled:", o.id, "| Order: $", order_total, "| Paid: $", payment_total, "| Items:", item_count)
+
+// Rule 13: Payment Discrepancy Detection
+// Flags orders where payment doesn't match order total
+rule detect_payment_discrepancy :
+  {o: Order,
+   order_value: SUM(oi.price),
+   payment_received: SUM(p.amount)}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / oi.orderId == o.id
+    AND p.orderId == o.id
+    AND order_value > payment_received
+  ==> print("PAYMENT DISCREPANCY:", o.id, "| Expected: $", order_value, "| Received: $", payment_received)
+
+// Rule 14: Failed Payment Analysis
+// Monitors orders with payment failures for follow-up
+rule failed_payment_tracking :
+  {o: Order,
+   total_attempts: COUNT(p.id),
+   failed_amount: SUM(p.amount)}
+  / {p: Payment}
+  / p.orderId == o.id
+    AND p.status == "failed"
+    AND total_attempts >= 2
+  ==> print("Failed Payment Alert:", o.id, "| Attempts:", total_attempts, "| Amount: $", failed_amount, "| Customer:", o.customerId)
+
+// ============================================================================
+// Cross-Functional Analytics Rules
+// ============================================================================
+
+// Rule 15: Customer Product Affinity
+// Analyzes which products customers buy together (basket analysis basis)
+rule customer_product_affinity :
+  {c: Customer,
+   orders_placed: COUNT(o.id),
+   products_bought: COUNT(oi.productId),
+   total_spent: SUM(p.amount),
+   avg_rating_given: AVG(r.rating)}
+  / {o: Order}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / {r: Review}
+  / o.customerId == c.id
+    AND oi.orderId == o.id
+    AND p.orderId == o.id
+    AND r.customerId == c.id
+    AND p.status == "completed"
+    AND orders_placed > 5
+  ==> print("Customer Insights:", c.name, "| Orders:", orders_placed, "| Products:", products_bought, "| Spent: $", total_spent, "| Avg Rating:", avg_rating_given)
+
+// Rule 16: Revenue vs Reviews Correlation
+// Analyzes if highly-reviewed products generate more revenue
+rule revenue_review_correlation :
+  {p: Product,
+   units_sold: SUM(oi.quantity),
+   revenue: SUM(oi.price),
+   avg_rating: AVG(r.rating),
+   review_count: COUNT(r.id)}
+  / {oi: OrderItem}
+  / {r: Review}
+  / oi.productId == p.id
+    AND r.productId == p.id
+    AND review_count > 10
+    AND avg_rating > 4.5
+    AND revenue > 1000
+  ==> print("High-Performing Product:", p.name, "| Revenue: $", revenue, "| Rating:", avg_rating, "| Reviews:", review_count)
+
+// Rule 17: Customer Tier Upgrade Candidates
+// Identifies customers ready for tier promotion based on spending
+rule tier_upgrade_candidates :
+  {c: Customer,
+   total_orders: COUNT(o.id),
+   lifetime_value: SUM(p.amount),
+   avg_order: AVG(o.totalAmount),
+   products_reviewed: COUNT(r.id)}
+  / {o: Order}
+  / {p: Payment}
+  / {r: Review}
+  / o.customerId == c.id
+    AND p.orderId == o.id
+    AND r.customerId == c.id
+    AND p.status == "completed"
+    AND c.tier == "bronze"
+    AND lifetime_value > 2000
+    AND total_orders > 8
+  ==> print("TIER UPGRADE CANDIDATE:", c.name, "| Current:", c.tier, "| LTV: $", lifetime_value, "| Orders:", total_orders)
+
+// Rule 18: Inventory Turnover Rate
+// Calculates how quickly products are selling relative to stock
+rule inventory_turnover_analysis :
+  {p: Product,
+   total_sold: SUM(oi.quantity),
+   order_frequency: COUNT(oi.id)}
+  / {oi: OrderItem}
+  / oi.productId == p.id
+    AND total_sold > p.stockLevel
+    AND order_frequency > 20
+  ==> print("High Turnover:", p.name, "| Stock:", p.stockLevel, "| Sold:", total_sold, "| Orders:", order_frequency)
+
+// ============================================================================
+// Business Intelligence & Reporting Rules
+// ============================================================================
+
+// Rule 19: Daily Sales Summary (per customer basis)
+// Aggregates daily metrics for reporting dashboards
+rule daily_customer_sales_summary :
+  {c: Customer,
+   orders_today: COUNT(o.id),
+   items_purchased: SUM(oi.quantity),
+   revenue_generated: SUM(p.amount),
+   avg_order_value: AVG(o.totalAmount)}
+  / {o: Order}
+  / {oi: OrderItem}
+  / {p: Payment}
+  / o.customerId == c.id
+    AND oi.orderId == o.id
+    AND p.orderId == o.id
+    AND p.status == "completed"
+    AND orders_today > 0
+  ==> print("Daily Summary -", c.name, "| Orders:", orders_today, "| Items:", items_purchased, "| Revenue: $", revenue_generated)
+
+// Rule 20: Product Recommendation Trigger
+// Identifies when products should be recommended based on patterns
+rule product_recommendation_trigger :
+  {p: Product,
+   purchase_count: COUNT(oi.id),
+   unique_customers: COUNT(o.customerId),
+   avg_rating: AVG(r.rating),
+   review_count: COUNT(r.id)}
+  / {oi: OrderItem}
+  / {o: Order}
+  / {r: Review}
+  / oi.productId == p.id
+    AND oi.orderId == o.id
+    AND r.productId == p.id
+    AND avg_rating >= 4.0
+    AND review_count >= 5
+    AND purchase_count >= 10
+  ==> print("RECOMMEND:", p.name, "| Purchases:", purchase_count, "| Customers:", unique_customers, "| Rating:", avg_rating)
+
+// ============================================================================
+// Usage Notes
+// ============================================================================
+//
+// This example demonstrates:
+// 1. Customer analytics (LTV, segmentation, risk detection)
+// 2. Order management (fulfillment, abandonment, large orders)
+// 3. Inventory optimization (stock alerts, turnover, slow movers)
+// 4. Payment processing (reconciliation, failures, discrepancies)
+// 5. Product performance (best sellers, ratings, recommendations)
+// 6. Cross-functional insights (customer-product affinity, tier upgrades)
+//
+// Key Patterns:
+// - Use COUNT() for volume metrics (orders, items, reviews)
+// - Use SUM() for totals (revenue, quantities, costs)
+// - Use AVG() for averages (order value, ratings, prices)
+// - Use MIN/MAX() for ranges (price ranges, rating ranges)
+// - Combine multiple thresholds with AND for precise targeting
+// - Join multiple sources to get comprehensive business insights
+//
+// Best Practices:
+// - Set meaningful thresholds based on business requirements
+// - Use descriptive variable names for clarity
+// - Combine related metrics in single rules for efficiency
+// - Monitor both successful and failed transactions
+// - Balance between real-time alerts and batch reporting

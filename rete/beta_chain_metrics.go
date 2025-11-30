@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// BetaChainMetrics collecte les métriques de performance pour la construction des chaînes beta
-type BetaChainMetrics struct {
+// BetaChainMetricsData contient les données de métriques sans le mutex
+type BetaChainMetricsData struct {
 	// Métriques de chaînes
 	TotalChainsBuilt   int     `json:"total_chains_built"`
 	TotalNodesCreated  int     `json:"total_nodes_created"`
@@ -57,7 +57,11 @@ type BetaChainMetrics struct {
 
 	// Détails par chaîne
 	ChainDetails []BetaChainMetricDetail `json:"chain_details,omitempty"`
+}
 
+// BetaChainMetrics collecte les métriques de performance pour la construction des chaînes beta
+type BetaChainMetrics struct {
+	BetaChainMetricsData
 	mutex sync.RWMutex
 }
 
@@ -92,7 +96,9 @@ type JoinMetricDetail struct {
 // NewBetaChainMetrics crée une nouvelle instance de métriques
 func NewBetaChainMetrics() *BetaChainMetrics {
 	return &BetaChainMetrics{
-		ChainDetails: make([]BetaChainMetricDetail, 0),
+		BetaChainMetricsData: BetaChainMetricsData{
+			ChainDetails: make([]BetaChainMetricDetail, 0),
+		},
 	}
 }
 
@@ -249,12 +255,12 @@ func (m *BetaChainMetrics) AddHashComputeTime(duration time.Duration) {
 }
 
 // GetSnapshot retourne une copie thread-safe des métriques actuelles
-func (m *BetaChainMetrics) GetSnapshot() BetaChainMetrics {
+func (m *BetaChainMetrics) GetSnapshot() BetaChainMetricsData {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
 	// Copie profonde de la structure SANS le mutex
-	snapshot := BetaChainMetrics{
+	snapshot := BetaChainMetricsData{
 		TotalChainsBuilt:        m.TotalChainsBuilt,
 		TotalNodesCreated:       m.TotalNodesCreated,
 		TotalNodesReused:        m.TotalNodesReused,

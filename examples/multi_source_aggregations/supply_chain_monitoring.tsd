@@ -1,0 +1,542 @@
+// Supply Chain Monitoring with Multi-Source Aggregations
+// =======================================================
+// Real-world example demonstrating supply chain analytics, shipment tracking,
+// quality control, and supplier performance using multi-source aggregations.
+//
+// Business Context:
+// A manufacturing company needs to monitor supplier performance, track shipments,
+// manage inventory levels, and ensure quality standards across the supply chain.
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+type Supplier : <
+  id: string,
+  name: string,
+  country: string,
+  rating: string,          // "A", "B", "C", "D"
+  contractStart: string,
+  reliability: number      // 0-100 score
+>
+
+type Shipment : <
+  id: string,
+  supplierId: string,
+  orderDate: string,
+  deliveryDate: string,
+  expectedDate: string,
+  status: string,          // "in_transit", "delivered", "delayed", "cancelled"
+  totalValue: number,
+  weight: number
+>
+
+type ShipmentItem : <
+  id: string,
+  shipmentId: string,
+  partId: string,
+  quantity: number,
+  unitCost: number,
+  condition: string        // "new", "damaged", "acceptable"
+>
+
+type Part : <
+  id: string,
+  name: string,
+  category: string,
+  sku: string,
+  currentStock: number,
+  minStock: number,
+  maxStock: number,
+  unitPrice: number
+>
+
+type QualityInspection : <
+  id: string,
+  shipmentId: string,
+  partId: string,
+  inspectionDate: string,
+  passed: number,          // number of items passed
+  failed: number,          // number of items failed
+  defectRate: number       // percentage 0-100
+>
+
+type SupplierInvoice : <
+  id: string,
+  supplierId: string,
+  shipmentId: string,
+  amount: number,
+  dueDate: string,
+  paidDate: string,
+  status: string           // "pending", "paid", "overdue", "disputed"
+>
+
+type Warehouse : <
+  id: string,
+  location: string,
+  capacity: number,
+  currentUtilization: number
+>
+
+type WarehouseInventory : <
+  id: string,
+  warehouseId: string,
+  partId: string,
+  quantity: number,
+  lastUpdated: string
+>
+
+// ============================================================================
+// Supplier Performance Rules
+// ============================================================================
+
+// Rule 1: Supplier Reliability Score
+// Calculates overall supplier performance based on deliveries and quality
+rule supplier_reliability_score :
+  {s: Supplier,
+   total_shipments: COUNT(sh.id),
+   on_time_deliveries: COUNT(sh.id),
+   total_value: SUM(sh.totalValue),
+   avg_quality_pass: AVG(qi.passed),
+   avg_defect_rate: AVG(qi.defectRate)}
+  / {sh: Shipment}
+  / {qi: QualityInspection}
+  / sh.supplierId == s.id
+    AND qi.shipmentId == sh.id
+    AND sh.status == "delivered"
+    AND total_shipments >= 10
+    AND avg_defect_rate < 5.0
+  ==> print("Reliable Supplier:", s.name, "| Shipments:", total_shipments, "| Defect Rate:", avg_defect_rate, "%")
+
+// Rule 2: High-Risk Supplier Alert
+// Identifies suppliers with poor performance metrics
+rule high_risk_supplier_alert :
+  {s: Supplier,
+   total_shipments: COUNT(sh.id),
+   delayed_shipments: COUNT(sh.id),
+   avg_defect_rate: AVG(qi.defectRate),
+   failed_inspections: SUM(qi.failed)}
+  / {sh: Shipment}
+  / {qi: QualityInspection}
+  / sh.supplierId == s.id
+    AND qi.shipmentId == sh.id
+    AND sh.status == "delayed"
+    AND avg_defect_rate > 10.0
+    AND total_shipments >= 5
+  ==> print("HIGH RISK SUPPLIER:", s.name, "| Delayed:", delayed_shipments, "| Defect Rate:", avg_defect_rate, "%")
+
+// Rule 3: Supplier Cost Analysis
+// Analyzes total cost and payment patterns per supplier
+rule supplier_cost_analysis :
+  {s: Supplier,
+   shipment_count: COUNT(sh.id),
+   total_cost: SUM(inv.amount),
+   avg_shipment_value: AVG(sh.totalValue),
+   pending_payments: COUNT(inv.id)}
+  / {sh: Shipment}
+  / {inv: SupplierInvoice}
+  / sh.supplierId == s.id
+    AND inv.supplierId == s.id
+    AND inv.shipmentId == sh.id
+    AND shipment_count >= 5
+  ==> print("Supplier Cost:", s.name, "| Total: $", total_cost, "| Avg Shipment: $", avg_shipment_value, "| Pending:", pending_payments)
+
+// Rule 4: Supplier Performance Rating Update
+// Recommends rating changes based on recent performance
+rule supplier_rating_review :
+  {s: Supplier,
+   recent_shipments: COUNT(sh.id),
+   on_time_rate: AVG(sh.totalValue),
+   quality_score: AVG(qi.passed),
+   invoice_paid_count: COUNT(inv.id)}
+  / {sh: Shipment}
+  / {qi: QualityInspection}
+  / {inv: SupplierInvoice}
+  / sh.supplierId == s.id
+    AND qi.shipmentId == sh.id
+    AND inv.shipmentId == sh.id
+    AND inv.status == "paid"
+    AND recent_shipments >= 20
+    AND quality_score > 95.0
+  ==> print("RATING UPGRADE CANDIDATE:", s.name, "| Current:", s.rating, "| Quality:", quality_score, "%")
+
+// ============================================================================
+// Shipment Tracking & Logistics Rules
+// ============================================================================
+
+// Rule 5: Delayed Shipment Impact Analysis
+// Calculates the business impact of delayed shipments
+rule delayed_shipment_impact :
+  {sh: Shipment,
+   item_count: COUNT(si.id),
+   total_parts: SUM(si.quantity),
+   shipment_value: SUM(si.unitCost),
+   affected_parts: COUNT(si.partId)}
+  / {si: ShipmentItem}
+  / si.shipmentId == sh.id
+    AND sh.status == "delayed"
+    AND shipment_value > 10000
+  ==> print("DELAYED SHIPMENT IMPACT:", sh.id, "| Value: $", shipment_value, "| Parts:", total_parts, "| Items:", item_count)
+
+// Rule 6: Shipment Quality Summary
+// Aggregates quality metrics per shipment
+rule shipment_quality_summary :
+  {sh: Shipment,
+   total_items: SUM(si.quantity),
+   items_passed: SUM(qi.passed),
+   items_failed: SUM(qi.failed),
+   avg_defect_rate: AVG(qi.defectRate),
+   inspection_count: COUNT(qi.id)}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / si.shipmentId == sh.id
+    AND qi.shipmentId == sh.id
+    AND sh.status == "delivered"
+    AND total_items > 0
+  ==> print("Shipment Quality:", sh.id, "| Total:", total_items, "| Passed:", items_passed, "| Failed:", items_failed, "| Defect:", avg_defect_rate, "%")
+
+// Rule 7: High-Value Shipment Monitoring
+// Tracks high-value shipments requiring special attention
+rule high_value_shipment_tracking :
+  {sh: Shipment,
+   item_types: COUNT(si.id),
+   total_quantity: SUM(si.quantity),
+   total_cost: SUM(si.unitCost)}
+  / {si: ShipmentItem}
+  / si.shipmentId == sh.id
+    AND total_cost > 50000
+    AND sh.status == "in_transit"
+  ==> print("HIGH VALUE IN TRANSIT:", sh.id, "| Value: $", total_cost, "| Items:", item_types, "| Qty:", total_quantity)
+
+// Rule 8: Shipment Delivery Performance
+// Measures on-time delivery rates per shipment
+rule shipment_delivery_performance :
+  {sh: Shipment,
+   items_delivered: COUNT(si.id),
+   total_value: SUM(si.unitCost),
+   quality_pass_rate: AVG(qi.passed)}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / si.shipmentId == sh.id
+    AND qi.shipmentId == sh.id
+    AND sh.status == "delivered"
+    AND sh.deliveryDate == sh.expectedDate
+    AND quality_pass_rate > 90.0
+  ==> print("Excellent Delivery:", sh.id, "| On-time | Items:", items_delivered, "| Pass Rate:", quality_pass_rate, "%")
+
+// ============================================================================
+// Inventory Management Rules
+// ============================================================================
+
+// Rule 9: Critical Stock Shortage Alert
+// Identifies parts below minimum stock with active demand
+rule critical_stock_shortage :
+  {p: Part,
+   incoming_quantity: SUM(si.quantity),
+   pending_shipments: COUNT(si.id),
+   warehouse_stock: SUM(wi.quantity)}
+  / {si: ShipmentItem}
+  / {wi: WarehouseInventory}
+  / si.partId == p.id
+    AND wi.partId == p.id
+    AND p.currentStock < p.minStock
+    AND incoming_quantity < p.minStock
+  ==> print("CRITICAL SHORTAGE:", p.name, "| Current:", p.currentStock, "| Min:", p.minStock, "| Incoming:", incoming_quantity)
+
+// Rule 10: Inventory Optimization Opportunity
+// Finds parts with excessive stock that could be reduced
+rule inventory_optimization :
+  {p: Part,
+   total_warehoused: SUM(wi.quantity),
+   warehouse_count: COUNT(wi.id),
+   recent_shipments: COUNT(si.id)}
+  / {wi: WarehouseInventory}
+  / {si: ShipmentItem}
+  / wi.partId == p.id
+    AND si.partId == p.id
+    AND total_warehoused > p.maxStock
+    AND recent_shipments < 2
+  ==> print("EXCESS INVENTORY:", p.name, "| Stock:", total_warehoused, "| Max:", p.maxStock, "| Recent Use:", recent_shipments)
+
+// Rule 11: Multi-Warehouse Stock Distribution
+// Analyzes part distribution across warehouses
+rule warehouse_stock_distribution :
+  {p: Part,
+   total_stock: SUM(wi.quantity),
+   warehouse_locations: COUNT(wi.warehouseId),
+   avg_per_warehouse: AVG(wi.quantity)}
+  / {wi: WarehouseInventory}
+  / wi.partId == p.id
+    AND total_stock > 100
+    AND warehouse_locations >= 3
+  ==> print("Multi-Warehouse Part:", p.name, "| Total:", total_stock, "| Locations:", warehouse_locations, "| Avg:", avg_per_warehouse)
+
+// Rule 12: Parts Requiring Reorder
+// Combines current stock, incoming shipments, and quality to determine reorder needs
+rule parts_requiring_reorder :
+  {p: Part,
+   current_warehouse_stock: SUM(wi.quantity),
+   incoming_units: SUM(si.quantity),
+   avg_quality_pass: AVG(qi.passed)}
+  / {wi: WarehouseInventory}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / wi.partId == p.id
+    AND si.partId == p.id
+    AND qi.partId == p.id
+    AND current_warehouse_stock < p.minStock
+    AND incoming_units < p.minStock
+  ==> print("REORDER REQUIRED:", p.name, "| Warehouse:", current_warehouse_stock, "| Incoming:", incoming_units, "| Quality:", avg_quality_pass)
+
+// ============================================================================
+// Quality Control Rules
+// ============================================================================
+
+// Rule 13: Quality Failure Pattern Detection
+// Identifies patterns of quality failures across shipments
+rule quality_failure_patterns :
+  {p: Part,
+   total_inspections: COUNT(qi.id),
+   total_failed: SUM(qi.failed),
+   avg_defect_rate: AVG(qi.defectRate),
+   affected_shipments: COUNT(qi.shipmentId)}
+  / {qi: QualityInspection}
+  / qi.partId == p.id
+    AND avg_defect_rate > 15.0
+    AND total_failed > 100
+  ==> print("QUALITY ISSUE:", p.name, "| Defect Rate:", avg_defect_rate, "% | Failed:", total_failed, "| Shipments:", affected_shipments)
+
+// Rule 14: Supplier Quality Comparison
+// Compares quality metrics across suppliers for same parts
+rule supplier_quality_comparison :
+  {s: Supplier,
+   parts_supplied: COUNT(si.partId),
+   total_quantity: SUM(si.quantity),
+   avg_pass_rate: AVG(qi.passed),
+   avg_defect_rate: AVG(qi.defectRate)}
+  / {sh: Shipment}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / sh.supplierId == s.id
+    AND si.shipmentId == sh.id
+    AND qi.shipmentId == sh.id
+    AND parts_supplied >= 5
+  ==> print("Supplier Quality:", s.name, "| Parts:", parts_supplied, "| Pass Rate:", avg_pass_rate, "| Defect:", avg_defect_rate, "%")
+
+// Rule 15: Batch Quality Alert
+// Detects entire shipments with widespread quality issues
+rule batch_quality_alert :
+  {sh: Shipment,
+   items_inspected: COUNT(qi.id),
+   total_failed: SUM(qi.failed),
+   max_defect_rate: MAX(qi.defectRate),
+   avg_defect_rate: AVG(qi.defectRate)}
+  / {qi: QualityInspection}
+  / qi.shipmentId == sh.id
+    AND avg_defect_rate > 20.0
+    AND total_failed > 50
+  ==> print("BATCH FAILURE:", sh.id, "| Supplier:", sh.supplierId, "| Failed:", total_failed, "| Defect Rate:", avg_defect_rate, "%")
+
+// ============================================================================
+// Financial & Invoice Management Rules
+// ============================================================================
+
+// Rule 16: Invoice Reconciliation
+// Matches shipment values with invoice amounts
+rule invoice_reconciliation :
+  {sh: Shipment,
+   shipment_cost: SUM(si.unitCost),
+   invoice_amount: SUM(inv.amount),
+   item_count: COUNT(si.id)}
+  / {si: ShipmentItem}
+  / {inv: SupplierInvoice}
+  / si.shipmentId == sh.id
+    AND inv.shipmentId == sh.id
+    AND shipment_cost == invoice_amount
+    AND inv.status == "paid"
+  ==> print("Invoice Reconciled:", sh.id, "| Amount: $", invoice_amount, "| Items:", item_count)
+
+// Rule 17: Payment Discrepancy Detection
+// Flags mismatches between shipment value and invoice
+rule payment_discrepancy_detection :
+  {sh: Shipment,
+   calculated_cost: SUM(si.unitCost),
+   invoiced_amount: SUM(inv.amount)}
+  / {si: ShipmentItem}
+  / {inv: SupplierInvoice}
+  / si.shipmentId == sh.id
+    AND inv.shipmentId == sh.id
+    AND calculated_cost > invoiced_amount
+  ==> print("PAYMENT DISCREPANCY:", sh.id, "| Expected: $", calculated_cost, "| Invoiced: $", invoiced_amount)
+
+// Rule 18: Overdue Payment Alert
+// Tracks suppliers with overdue invoices
+rule overdue_payment_alert :
+  {s: Supplier,
+   overdue_invoices: COUNT(inv.id),
+   overdue_amount: SUM(inv.amount),
+   oldest_shipment: COUNT(sh.id)}
+  / {inv: SupplierInvoice}
+  / {sh: Shipment}
+  / inv.supplierId == s.id
+    AND inv.shipmentId == sh.id
+    AND inv.status == "overdue"
+    AND overdue_amount > 5000
+  ==> print("OVERDUE PAYMENT:", s.name, "| Count:", overdue_invoices, "| Amount: $", overdue_amount)
+
+// Rule 19: Supplier Payment Terms Analysis
+// Analyzes payment patterns and terms compliance
+rule supplier_payment_analysis :
+  {s: Supplier,
+   total_invoices: COUNT(inv.id),
+   paid_on_time: COUNT(inv.id),
+   total_paid: SUM(inv.amount),
+   shipments_involved: COUNT(sh.id)}
+  / {inv: SupplierInvoice}
+  / {sh: Shipment}
+  / inv.supplierId == s.id
+    AND inv.shipmentId == sh.id
+    AND inv.status == "paid"
+    AND total_invoices >= 10
+  ==> print("Payment Analysis:", s.name, "| Invoices:", total_invoices, "| Paid: $", total_paid, "| Shipments:", shipments_involved)
+
+// ============================================================================
+// Warehouse Operations Rules
+// ============================================================================
+
+// Rule 20: Warehouse Capacity Alert
+// Monitors warehouse utilization and capacity
+rule warehouse_capacity_alert :
+  {w: Warehouse,
+   total_parts: COUNT(wi.partId),
+   total_quantity: SUM(wi.quantity)}
+  / {wi: WarehouseInventory}
+  / wi.warehouseId == w.id
+    AND w.currentUtilization > 90.0
+  ==> print("WAREHOUSE CAPACITY ALERT:", w.location, "| Utilization:", w.currentUtilization, "% | Parts:", total_parts)
+
+// Rule 21: Cross-Warehouse Stock Balance
+// Identifies opportunities to balance inventory across warehouses
+rule cross_warehouse_balance :
+  {p: Part,
+   warehouse_count: COUNT(wi.warehouseId),
+   total_stock: SUM(wi.quantity),
+   max_at_location: MAX(wi.quantity),
+   min_at_location: MIN(wi.quantity)}
+  / {wi: WarehouseInventory}
+  / wi.partId == p.id
+    AND warehouse_count >= 2
+    AND max_at_location > min_at_location
+  ==> print("Balance Opportunity:", p.name, "| Warehouses:", warehouse_count, "| Max:", max_at_location, "| Min:", min_at_location)
+
+// ============================================================================
+// Comprehensive Supply Chain Intelligence Rules
+// ============================================================================
+
+// Rule 22: End-to-End Supply Chain Visibility
+// Complete view from supplier through warehouse
+rule supply_chain_visibility :
+  {s: Supplier,
+   active_shipments: COUNT(sh.id),
+   total_items: SUM(si.quantity),
+   avg_quality: AVG(qi.passed),
+   warehouse_stock: SUM(wi.quantity),
+   pending_invoices: COUNT(inv.id)}
+  / {sh: Shipment}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / {wi: WarehouseInventory}
+  / {inv: SupplierInvoice}
+  / sh.supplierId == s.id
+    AND si.shipmentId == sh.id
+    AND qi.shipmentId == sh.id
+    AND wi.partId == si.partId
+    AND inv.supplierId == s.id
+    AND active_shipments >= 5
+  ==> print("Supply Chain View:", s.name, "| Shipments:", active_shipments, "| Items:", total_items, "| Quality:", avg_quality, "| Stock:", warehouse_stock)
+
+// Rule 23: Cost vs Quality Trade-off Analysis
+// Evaluates supplier value considering both cost and quality
+rule cost_quality_tradeoff :
+  {s: Supplier,
+   total_cost: SUM(inv.amount),
+   shipment_count: COUNT(sh.id),
+   avg_quality_pass: AVG(qi.passed),
+   avg_defect_rate: AVG(qi.defectRate)}
+  / {inv: SupplierInvoice}
+  / {sh: Shipment}
+  / {qi: QualityInspection}
+  / inv.supplierId == s.id
+    AND sh.supplierId == s.id
+    AND qi.shipmentId == sh.id
+    AND inv.status == "paid"
+    AND avg_quality_pass > 95.0
+    AND avg_defect_rate < 3.0
+  ==> print("Premium Supplier:", s.name, "| Cost: $", total_cost, "| Quality:", avg_quality_pass, "% | Defect:", avg_defect_rate, "%")
+
+// Rule 24: Supply Chain Risk Score
+// Calculates overall risk score based on multiple factors
+rule supply_chain_risk_score :
+  {s: Supplier,
+   delayed_ratio: COUNT(sh.id),
+   quality_issues: SUM(qi.failed),
+   payment_disputes: COUNT(inv.id),
+   total_value: SUM(sh.totalValue)}
+  / {sh: Shipment}
+  / {qi: QualityInspection}
+  / {inv: SupplierInvoice}
+  / sh.supplierId == s.id
+    AND qi.shipmentId == sh.id
+    AND inv.supplierId == s.id
+    AND sh.status == "delayed"
+    AND inv.status == "disputed"
+    AND delayed_ratio >= 3
+  ==> print("HIGH RISK ALERT:", s.name, "| Delays:", delayed_ratio, "| Quality Issues:", quality_issues, "| Disputes:", payment_disputes)
+
+// Rule 25: Optimal Supplier Identification
+// Identifies best-performing suppliers for strategic partnerships
+rule optimal_supplier_identification :
+  {s: Supplier,
+   shipments_completed: COUNT(sh.id),
+   total_items_delivered: SUM(si.quantity),
+   quality_pass_rate: AVG(qi.passed),
+   on_time_delivery: COUNT(sh.id),
+   defect_rate: AVG(qi.defectRate)}
+  / {sh: Shipment}
+  / {si: ShipmentItem}
+  / {qi: QualityInspection}
+  / sh.supplierId == s.id
+    AND si.shipmentId == sh.id
+    AND qi.shipmentId == sh.id
+    AND sh.status == "delivered"
+    AND shipments_completed >= 20
+    AND quality_pass_rate > 98.0
+    AND defect_rate < 2.0
+  ==> print("OPTIMAL SUPPLIER:", s.name, "| Shipments:", shipments_completed, "| Quality:", quality_pass_rate, "% | Defect:", defect_rate, "%")
+
+// ============================================================================
+// Usage Notes
+// ============================================================================
+//
+// This example demonstrates:
+// 1. Supplier performance monitoring (reliability, cost, quality)
+// 2. Shipment tracking (delays, quality, value)
+// 3. Inventory management (stock levels, distribution, optimization)
+// 4. Quality control (defect rates, patterns, batch issues)
+// 5. Financial management (invoicing, payments, reconciliation)
+// 6. Warehouse operations (capacity, balancing, utilization)
+// 7. Comprehensive supply chain intelligence (risk, visibility, optimization)
+//
+// Key Patterns:
+// - Multi-source joins enable comprehensive supply chain visibility
+// - Quality metrics integrated with supplier and shipment data
+// - Financial data reconciled with physical shipments
+// - Warehouse inventory tracked alongside incoming shipments
+// - Risk scoring combines multiple performance indicators
+//
+// Business Value:
+// - Early detection of supplier quality issues
+// - Proactive inventory management and shortage prevention
+// - Cost optimization through supplier performance analysis
+// - Risk mitigation through comprehensive monitoring
+// - Improved decision-making with aggregated metrics
