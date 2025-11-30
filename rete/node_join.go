@@ -258,15 +258,31 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 	// Étape 2: Si on a une condition complète avec des contraintes alpha additionnelles,
 	// l'évaluer pour vérifier les conditions non-join (ex: o.amount > 100)
 	if jn.Condition != nil {
+		// Unwrap the constraint wrapper if present
+		actualCondition := jn.Condition
+		if condType, exists := jn.Condition["type"].(string); exists && condType == "constraint" {
+			if constraint, ok := jn.Condition["constraint"].(map[string]interface{}); ok {
+				actualCondition = constraint
+			}
+		}
+
+		condType, exists := actualCondition["type"].(string)
+
 		// Si c'est une simple comparison (join pur), on a déjà validé avec JoinConditions
-		if condType, exists := jn.Condition["type"].(string); exists && condType == "comparison" {
+		if exists && condType == "comparison" {
 			// Déjà validé par evaluateSimpleJoinConditions
 			return true
 		}
 
-		// Si c'est un logicalExpr, il peut contenir des contraintes alpha additionnelles
-		// On doit évaluer la condition complète
-		if condType, exists := jn.Condition["type"].(string); exists && condType == "logicalExpr" {
+		// Si c'est un logicalExpr, extraire et évaluer seulement les contraintes alpha (non-join)
+		if exists && condType == "logicalExpr" {
+			alphaConditions := jn.extractAlphaConditions(actualCondition)
+			if len(alphaConditions) == 0 {
+				// Pas de contraintes alpha, seulement des joins déjà validés
+				return true
+			}
+
+			// Évaluer chaque contrainte alpha
 			evaluator := NewAlphaConditionEvaluator()
 			evaluator.SetPartialEvalMode(true)
 
@@ -275,17 +291,74 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 				evaluator.variableBindings[varName] = fact
 			}
 
-			result, err := evaluator.evaluateExpression(jn.Condition)
-			if err != nil {
-				// Erreur d'évaluation - la condition est probablement trop complexe
-				// On a déjà validé les join conditions, donc on accepte
-				return true
+			for _, alphaCond := range alphaConditions {
+				result, err := evaluator.evaluateExpression(alphaCond)
+				if err != nil {
+					// Erreur d'évaluation - accepter par défaut
+					continue
+				}
+				if !result {
+					return false
+				}
 			}
-			return result
+			return true
 		}
 	}
 
 	return true
+}
+
+// extractAlphaConditions extrait les conditions alpha (non-join) d'une logicalExpr
+func (jn *JoinNode) extractAlphaConditions(condition map[string]interface{}) []map[string]interface{} {
+	var alphaConditions []map[string]interface{}
+
+	// Vérifier la partie gauche
+	if left, ok := condition["left"].(map[string]interface{}); ok {
+		if isAlphaCondition(left) {
+			alphaConditions = append(alphaConditions, left)
+		}
+	}
+
+	// Vérifier les opérations
+	if operations, ok := condition["operations"].([]interface{}); ok {
+		for _, op := range operations {
+			if opMap, ok := op.(map[string]interface{}); ok {
+				if right, ok := opMap["right"].(map[string]interface{}); ok {
+					if isAlphaCondition(right) {
+						alphaConditions = append(alphaConditions, right)
+					}
+				}
+			}
+		}
+	}
+
+	return alphaConditions
+}
+
+// isAlphaCondition détermine si une condition est une contrainte alpha (pas une jointure)
+func isAlphaCondition(condition map[string]interface{}) bool {
+	if condType, exists := condition["type"].(string); exists && condType == "comparison" {
+		// Vérifier si c'est une comparaison field-to-constant (alpha) ou field-to-field (join)
+		left, leftOk := condition["left"].(map[string]interface{})
+		right, rightOk := condition["right"].(map[string]interface{})
+
+		if !leftOk || !rightOk {
+			return false
+		}
+
+		leftType, _ := left["type"].(string)
+		rightType, _ := right["type"].(string)
+
+		// Si les deux côtés sont des fieldAccess, c'est une condition de jointure
+		if leftType == "fieldAccess" && rightType == "fieldAccess" {
+			return false
+		}
+
+		// Sinon, c'est une condition alpha
+		return true
+	}
+
+	return false
 }
 
 // evaluateSimpleJoinConditions évalue les conditions de jointure simples (champ à champ)
@@ -448,6 +521,31 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 				}
 			}
 		}
+	}
+
+	// Cas 4: logicalExpr avec opérations AND/OR
+	if conditionType, exists := condition["type"].(string); exists && conditionType == "logicalExpr" {
+		fmt.Printf("  ✅ LogicalExpr détectée, extraction des conditions\n")
+
+		// Extraire les conditions de la partie gauche
+		if left, ok := condition["left"].(map[string]interface{}); ok {
+			leftJoinConditions := extractJoinConditions(left)
+			joinConditions = append(joinConditions, leftJoinConditions...)
+		}
+
+		// Extraire les conditions des opérations
+		if operations, ok := condition["operations"].([]interface{}); ok {
+			for _, op := range operations {
+				if opMap, ok := op.(map[string]interface{}); ok {
+					if right, ok := opMap["right"].(map[string]interface{}); ok {
+						rightJoinConditions := extractJoinConditions(right)
+						joinConditions = append(joinConditions, rightJoinConditions...)
+					}
+				}
+			}
+		}
+
+		return joinConditions
 	}
 
 	return joinConditions
