@@ -167,9 +167,8 @@ func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, e
 		sum := 0.0
 		for _, f := range facts {
 			if val, ok := f.Fields[an.Field]; ok {
-				if numVal, ok := val.(float64); ok {
-					sum += numVal
-				}
+				numVal := an.toFloat64(val)
+				sum += numVal
 			}
 		}
 		return sum, nil
@@ -179,7 +178,8 @@ func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, e
 		count := 0
 		for _, f := range facts {
 			if val, ok := f.Fields[an.Field]; ok {
-				if numVal, ok := val.(float64); ok {
+				numVal := an.toFloat64(val)
+				if numVal != 0 || val == 0 || val == 0.0 {
 					sum += numVal
 					count++
 				}
@@ -194,10 +194,9 @@ func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, e
 		minVal := math.MaxFloat64
 		for _, f := range facts {
 			if val, ok := f.Fields[an.Field]; ok {
-				if numVal, ok := val.(float64); ok {
-					if numVal < minVal {
-						minVal = numVal
-					}
+				numVal := an.toFloat64(val)
+				if numVal < minVal {
+					minVal = numVal
 				}
 			}
 		}
@@ -210,10 +209,9 @@ func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, e
 		maxVal := -math.MaxFloat64
 		for _, f := range facts {
 			if val, ok := f.Fields[an.Field]; ok {
-				if numVal, ok := val.(float64); ok {
-					if numVal > maxVal {
-						maxVal = numVal
-					}
+				numVal := an.toFloat64(val)
+				if numVal > maxVal {
+					maxVal = numVal
 				}
 			}
 		}
@@ -224,6 +222,30 @@ func (an *AccumulatorNode) calculateAggregateForFacts(facts []*Fact) (float64, e
 
 	default:
 		return 0, fmt.Errorf("fonction d'agrégation non supportée: %s", an.AggregateFunc)
+	}
+}
+
+// toFloat64 converts various numeric types to float64
+func (an *AccumulatorNode) toFloat64(val interface{}) float64 {
+	switch v := val.(type) {
+	case float64:
+		return v
+	case float32:
+		return float64(v)
+	case int:
+		return float64(v)
+	case int32:
+		return float64(v)
+	case int64:
+		return float64(v)
+	case uint:
+		return float64(v)
+	case uint32:
+		return float64(v)
+	case uint64:
+		return float64(v)
+	default:
+		return 0
 	}
 }
 
