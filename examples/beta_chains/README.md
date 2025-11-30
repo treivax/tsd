@@ -1,5 +1,10 @@
 # Beta Chains Examples
 
+> **⚠️ WARNING: DEPRECATED EXAMPLES**  
+> These examples use an outdated API and are currently non-functional.  
+> They need to be updated to use the current `ChainPerformanceConfig` and TSD constraint file format.  
+> For working examples, see the test files in `rete/*_test.go`.
+
 This directory contains **executable Go examples** demonstrating the Beta Sharing feature (JoinNode sharing) in TSD's RETE engine.
 
 ## Table of Contents

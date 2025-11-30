@@ -152,48 +152,48 @@ func runScenario(name string) {
 	}
 }
 
-func getConfig() rete.BetaChainConfig {
-	var config rete.BetaChainConfig
+func getConfig() *rete.ChainPerformanceConfig {
+	var config *rete.ChainPerformanceConfig
 
+	// Apply preset configurations
 	switch *configType {
 	case "high-performance":
-		config = rete.HighPerformanceBetaChainConfig()
+		config = rete.HighPerformanceConfig()
 	case "memory-optimized":
-		config = rete.MemoryOptimizedBetaChainConfig()
+		config = rete.LowMemoryConfig()
 	default:
-		config = rete.DefaultBetaChainConfig()
+		config = rete.DefaultChainPerformanceConfig()
 	}
 
 	// Override with CLI flags
-	if *joinCacheSize > 0 {
-		config.JoinCacheSize = *joinCacheSize
-	}
 	if *hashCacheSize > 0 {
-		config.HashCacheSize = *hashCacheSize
+		config.BetaHashCacheMaxSize = *hashCacheSize
 	}
 	if *noMetrics {
-		config.EnableMetrics = false
+		config.MetricsEnabled = false
 	} else {
-		config.EnableMetrics = true
+		config.MetricsEnabled = true
 	}
 	if *noSharing {
-		config.EnableBetaSharing = false
+		config.BetaSharingEnabled = false
+	} else {
+		config.BetaSharingEnabled = true
 	}
 
 	return config
 }
 
-func printConfig(config rete.BetaChainConfig, scenario string) {
+func printConfig(config *rete.ChainPerformanceConfig, scenario string) {
 	fmt.Println("📊 Configuration:")
 	fmt.Printf("  Scenario:         %s\n", scenario)
-	if config.EnableBetaSharing {
+	if config.BetaSharingEnabled {
 		fmt.Println("  Beta Sharing:     ✅ Enabled")
 	} else {
 		fmt.Println("  Beta Sharing:     ❌ Disabled")
 	}
-	fmt.Printf("  Join Cache Size:  %d\n", config.JoinCacheSize)
-	fmt.Printf("  Hash Cache Size:  %d\n", config.HashCacheSize)
-	if config.EnableMetrics {
+	fmt.Printf("  Hash Cache Size:  %d\n", config.BetaHashCacheMaxSize)
+	fmt.Printf("  Join Cache Size:  %d\n", config.BetaJoinResultCacheMaxSize)
+	if config.MetricsEnabled {
 		fmt.Println("  Metrics:          ✅ Enabled")
 	} else {
 		fmt.Println("  Metrics:          ❌ Disabled")
@@ -201,7 +201,7 @@ func printConfig(config rete.BetaChainConfig, scenario string) {
 	fmt.Println()
 }
 
-func runWithConfig(scenario string, config rete.BetaChainConfig) *Results {
+func runWithConfig(scenario string, config *rete.ChainPerformanceConfig) *Results {
 	storage := rete.NewMemoryStorage()
 	network := rete.NewReteNetworkWithConfig(storage, config)
 
