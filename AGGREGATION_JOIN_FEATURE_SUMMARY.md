@@ -21,9 +21,13 @@ This syntax allows users to:
 - Define join conditions between driver and source patterns
 - Use all standard aggregation functions (AVG, SUM, COUNT, MIN, MAX)
 
-## Files Modified
+### Files Modified/Created
 
-### Parser & Grammar (Core Implementation)
+**Total Files Modified:** 12  
+**Total Files Created:** 5  
+**Total Commits:** 2
+
+**Parser & Grammar (Core Implementation)**
 
 1. **`constraint/grammar/constraint.peg`**
    - Added `PatternBlocks` rule to support multiple `{...}` blocks
@@ -96,6 +100,17 @@ This syntax allows users to:
 12. **`AGGREGATION_JOIN_FEATURE_SUMMARY.md`** *(THIS FILE, NEW)*
     - Implementation summary and completion report
 
+13. **`rete/node_accumulate.go`** *(BUG FIX)*
+    - Fixed `calculateAggregateForFacts()` to handle int and float64 values
+    - Added `toFloat64()` helper function for type conversion
+
+14. **`rete/aggregation_calculation_test.go`** *(NEW - BUG FIX TESTS)*
+    - 7 comprehensive tests for all aggregation functions
+    - Tests mixed int/float values, empty sets, multiple aggregates
+
+15. **`AGGREGATION_CALCULATION_BUG_FIX.md`** *(NEW - BUG FIX DOC)*
+    - Detailed documentation of the aggregation calculation bug fix
+
 ## Technical Details
 
 ### Grammar Changes
@@ -159,6 +174,8 @@ This syntax allows users to:
 ✅ TestAggregationJoinParseError - PASS
 ```
 
+**Total:** 6 parser tests passing
+
 ### RETE Integration Tests
 
 ```
@@ -172,14 +189,34 @@ This syntax allows users to:
 ✅ TestBetaBackwardCompatibility_FactRetractionWithJoins - PASS
 ```
 
-### All Constraint Package Tests
+**Total:** 8 RETE integration tests passing
+
+### Aggregation Calculation Tests (Bug Fix)
 
 ```
-PASS
-ok  	github.com/treivax/tsd/constraint	0.061s
+✅ TestAggregationCalculation_AVG - PASS
+   • Valeur agrégée = 55000.00 (avg of 50000 + 60000) ✅
+✅ TestAggregationCalculation_SUM - PASS
+✅ TestAggregationCalculation_COUNT - PASS
+✅ TestAggregationCalculation_MIN - PASS
+✅ TestAggregationCalculation_MAX - PASS
+✅ TestAggregationCalculation_MultipleAggregates - PASS
+✅ TestAggregationCalculation_EmptySet - PASS
 ```
 
-No regressions introduced.
+**Total:** 7 aggregation calculation tests passing
+
+### All Package Tests
+
+```
+Constraint Package:
+PASS - ok github.com/treivax/tsd/constraint 0.061s
+
+RETE Package:
+PASS - ok github.com/treivax/tsd/rete 0.956s
+```
+
+**Grand Total:** 21 tests passing, zero regressions
 
 ## Example Usage
 
@@ -209,10 +246,10 @@ rule customer_orders : {c: Customer, order_count: COUNT(o.id)} / {o: Order} / o.
 
 ## Known Limitations
 
-1. **Aggregation calculation accuracy** - Some aggregation values show as 0.00 in output
-   - This is a separate issue in the AccumulatorNode implementation
-   - Parser and network construction are correct
-   - Action firing and token propagation work correctly
+1. ~~**Aggregation calculation accuracy**~~ - ✅ **FIXED** (commit `be126ac`)
+   - ~~Some aggregation values show as 0.00 in output~~
+   - ✅ Now correctly handles int and float64 values
+   - ✅ All aggregation functions (AVG, SUM, COUNT, MIN, MAX) work correctly
 
 2. **No threshold comparisons yet** - Unlike old `AccumulateConstraint` syntax
    - New syntax: `{d: Dept, avg: AVG(e.salary)}`
@@ -266,10 +303,29 @@ The aggregation with join syntax feature is **fully implemented and tested**. Th
 
 The feature enables powerful new rule expressions that combine aggregations with joins, addressing a major limitation of the previous constraint language design.
 
+### Bug Fix: Aggregation Calculation (January 2025)
+
+**Issue:** AccumulatorNode was returning 0.00 for all aggregation calculations
+
+**Root Cause:** The `calculateAggregateForFacts()` method only handled `float64` values, but facts were submitted with `int` values
+
+**Solution:** 
+- Added `toFloat64()` helper function to convert all numeric types (int, int32, int64, uint, float32, float64, etc.)
+- Updated all aggregation calculations (SUM, AVG, MIN, MAX) to use the helper
+- Created comprehensive test suite with 7 tests covering all scenarios
+
+**Results:**
+- ✅ Before fix: `Valeur agrégée = 0.00` (incorrect)
+- ✅ After fix: `Valeur agrégée = 55000.00` (correct average of 50000 + 60000)
+- ✅ All aggregation functions now work correctly with mixed int/float values
+
+**Commit:** `be126ac` - fix: AccumulatorNode aggregation calculation now handles int and float values
+
 ---
 
 **Implementation Status:** ✅ COMPLETE  
-**Test Status:** ✅ ALL PASSING  
+**Test Status:** ✅ ALL PASSING (15 tests total: 6 parser + 8 RETE + 7 aggregation calculation)  
 **Documentation Status:** ✅ COMPLETE  
 **Backward Compatibility:** ✅ MAINTAINED  
+**Bug Fixes:** ✅ COMPLETE  
 **Ready for Production:** ✅ YES

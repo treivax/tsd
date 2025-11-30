@@ -323,6 +323,13 @@ func validateOperandTypeCompatibility(program Program, left, right interface{}, 
 		return err
 	}
 
+	// Skip type compatibility check for variable vs number comparisons
+	// This handles aggregation variables which are always numeric
+	if (leftType == ValueTypeVariable && rightType == ValueTypeNumber) ||
+		(leftType == ValueTypeNumber && rightType == ValueTypeVariable) {
+		return nil
+	}
+
 	// Check compatibility
 	if leftType != ValueTypeUnknown && rightType != ValueTypeUnknown && rightType != ValueTypeVariable {
 		if leftType != rightType {

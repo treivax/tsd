@@ -133,27 +133,86 @@ func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[st
 		}
 	}
 
-	// Extract join condition from constraints
+	// Extract join condition and threshold from constraints
 	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
 		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
 			aggInfo.JoinCondition = constraintMap
 
-			// Extract join fields from comparison
-			if constraintMap["type"] == "comparison" {
-				// Left side
-				if leftData, ok := constraintMap["left"].(map[string]interface{}); ok {
-					if leftData["type"] == "fieldAccess" {
-						if joinField, ok := leftData["field"].(string); ok {
-							aggInfo.JoinField = joinField
+			// Get list of aggregation variable names from first pattern
+			aggVarNames := cp.getAggregationVariableNames(exprMap)
+
+			// Separate join conditions and threshold conditions
+			joinConditions, thresholdConditions := cp.separateAggregationConstraints(constraintMap, aggVarNames)
+
+			// Extract join fields from join conditions
+			if joinConditions != nil {
+				if joinConditions["type"] == "comparison" {
+					// Left side
+					if leftData, ok := joinConditions["left"].(map[string]interface{}); ok {
+						if leftData["type"] == "fieldAccess" {
+							if joinField, ok := leftData["field"].(string); ok {
+								aggInfo.JoinField = joinField
+							}
+						}
+					}
+
+					// Right side
+					if rightData, ok := joinConditions["right"].(map[string]interface{}); ok {
+						if rightData["type"] == "fieldAccess" {
+							if mainField, ok := rightData["field"].(string); ok {
+								aggInfo.MainField = mainField
+							}
 						}
 					}
 				}
+			}
 
-				// Right side
-				if rightData, ok := constraintMap["right"].(map[string]interface{}); ok {
-					if rightData["type"] == "fieldAccess" {
-						if mainField, ok := rightData["field"].(string); ok {
-							aggInfo.MainField = mainField
+			// Extract threshold from threshold conditions
+			if len(thresholdConditions) > 0 {
+				// Use the first threshold condition found
+				threshold := thresholdConditions[0]
+				if operator, ok := threshold["operator"].(string); ok {
+					aggInfo.Operator = operator
+				}
+				if rightData, ok := threshold["right"].(map[string]interface{}); ok {
+					if value, ok := rightData["value"].(float64); ok {
+						aggInfo.Threshold = value
+					}
+				}
+			} else {
+				// No threshold - always fire (use >= 0 as default)
+				aggInfo.Operator = ">="
+				aggInfo.Threshold = 0
+			}
+		}
+	} else {
+		// No constraints - set default threshold
+		aggInfo.Operator = ">="
+		aggInfo.Threshold = 0
+	}
+
+	return aggInfo, nil
+}
+
+// getAggregationVariableNames extracts the names of all aggregation variables from patterns
+func (cp *ConstraintPipeline) getAggregationVariableNames(exprMap map[string]interface{}) map[string]bool {
+	aggVarNames := make(map[string]bool)
+
+	if patternsData, hasPatterns := exprMap["patterns"]; hasPatterns {
+		if patternsList, ok := patternsData.([]interface{}); ok {
+			for _, patternInterface := range patternsList {
+				if patternMap, ok := patternInterface.(map[string]interface{}); ok {
+					if varsData, hasVars := patternMap["variables"]; hasVars {
+						if varsList, ok := varsData.([]interface{}); ok {
+							for _, varInterface := range varsList {
+								if varMap, ok := varInterface.(map[string]interface{}); ok {
+									if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
+										if name, ok := varMap["name"].(string); ok {
+											aggVarNames[name] = true
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -161,12 +220,91 @@ func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[st
 		}
 	}
 
-	// For aggregation with join syntax, we don't have a threshold comparison
-	// Set default values
-	aggInfo.Operator = ">="
-	aggInfo.Threshold = 0
+	return aggVarNames
+}
 
-	return aggInfo, nil
+// separateAggregationConstraints separates join conditions from threshold conditions
+// Returns (joinConditions, thresholdConditions)
+func (cp *ConstraintPipeline) separateAggregationConstraints(constraints map[string]interface{}, aggVarNames map[string]bool) (map[string]interface{}, []map[string]interface{}) {
+	var joinConditions map[string]interface{}
+	var thresholdConditions []map[string]interface{}
+
+	constraintType, _ := constraints["type"].(string)
+
+	if constraintType == "comparison" {
+		// Single comparison - check if it's a threshold or join
+		if cp.isThresholdCondition(constraints, aggVarNames) {
+			thresholdConditions = append(thresholdConditions, constraints)
+		} else {
+			joinConditions = constraints
+		}
+	} else if constraintType == "logicalExpr" {
+		// Logical expression (AND/OR) - separate conditions
+		leftData, _ := constraints["left"]
+
+		// Handle operations field - it might be []interface{} or []map[string]interface{}
+		var operations []interface{}
+		if ops, ok := constraints["operations"].([]interface{}); ok {
+			operations = ops
+		} else if ops, ok := constraints["operations"].([]map[string]interface{}); ok {
+			// Convert to []interface{}
+			for _, op := range ops {
+				operations = append(operations, op)
+			}
+		}
+
+		// Check left condition
+		if leftMap, ok := leftData.(map[string]interface{}); ok {
+			if cp.isThresholdCondition(leftMap, aggVarNames) {
+				thresholdConditions = append(thresholdConditions, leftMap)
+			} else {
+				joinConditions = leftMap
+			}
+		}
+
+		// Check operations
+		for _, opInterface := range operations {
+			if opMap, ok := opInterface.(map[string]interface{}); ok {
+				if rightData, ok := opMap["right"].(map[string]interface{}); ok {
+					if cp.isThresholdCondition(rightData, aggVarNames) {
+						thresholdConditions = append(thresholdConditions, rightData)
+					} else if joinConditions == nil {
+						joinConditions = rightData
+					}
+				}
+			}
+		}
+	}
+
+	return joinConditions, thresholdConditions
+}
+
+// isThresholdCondition checks if a comparison references an aggregation variable
+func (cp *ConstraintPipeline) isThresholdCondition(condition map[string]interface{}, aggVarNames map[string]bool) bool {
+	condType, _ := condition["type"].(string)
+	if condType != "comparison" {
+		return false
+	}
+
+	// Check if left side is an aggregation variable
+	if leftData, ok := condition["left"].(map[string]interface{}); ok {
+		if leftData["type"] == "variable" {
+			if varName, ok := leftData["name"].(string); ok {
+				return aggVarNames[varName]
+			}
+		}
+	}
+
+	// Check if right side is an aggregation variable
+	if rightData, ok := condition["right"].(map[string]interface{}); ok {
+		if rightData["type"] == "variable" {
+			if varName, ok := rightData["name"].(string); ok {
+				return aggVarNames[varName]
+			}
+		}
+	}
+
+	return false
 }
 
 // extractAggregationInfo extrait les informations d'agrégation d'une contrainte
