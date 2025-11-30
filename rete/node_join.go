@@ -379,8 +379,10 @@ func (jn *JoinNode) evaluateSimpleJoinConditions(bindings map[string]*Fact) bool
 		leftFact := bindings[joinCondition.LeftVar]
 		rightFact := bindings[joinCondition.RightVar]
 
+		// Skip conditions that reference variables not available at this join level
+		// (This happens in cascade joins where later variables aren't joined yet)
 		if leftFact == nil || rightFact == nil {
-			return false // Une variable manque
+			continue // Skip this condition - variables not available at this level
 		}
 
 		// Récupérer les valeurs des champs
