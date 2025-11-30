@@ -11,9 +11,7 @@ import (
 
 // TestBetaBackwardCompatibility_SimpleJoins vérifie que les jointures simples
 // fonctionnent toujours correctement avec Beta Sharing
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_SimpleJoins(t *testing.T) {
-	t.Skip("Join token binding needs investigation - variables being bound to wrong fact types")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "simple_joins.tsd")
 
@@ -92,9 +90,7 @@ rule person_order : {p: Person, o: Order} / p.id == o.personId AND o.amount > 10
 
 // TestBetaBackwardCompatibility_ExistingBehavior vérifie que le comportement
 // des jointures existantes n'a pas changé avec Beta Sharing
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_ExistingBehavior(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "existing_behavior.tsd")
 
@@ -192,9 +188,7 @@ rule emp_in_dept : {e: Employee, d: Department} / e.deptId == d.id ==> print("Em
 
 // TestBetaNoRegression_AllPreviousTests exécute plusieurs scénarios
 // de jointures pour détecter toute régression
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaNoRegression_AllPreviousTests(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tests := []struct {
 		name        string
 		content     string
@@ -302,9 +296,7 @@ rule join_xy : {x: X, y: Y} / x.id == y.xId ==> print("Join")`,
 
 // TestBetaBackwardCompatibility_JoinNodeSharing vérifie que le partage
 // des JoinNodes fonctionne correctement avec Beta Sharing
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_JoinNodeSharing(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "join_sharing.tsd")
 
@@ -395,9 +387,7 @@ rule very_large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount
 
 // TestBetaBackwardCompatibility_PerformanceCharacteristics vérifie que
 // les caractéristiques de performance sont maintenues ou améliorées
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_PerformanceCharacteristics(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "perf.tsd")
 
@@ -494,9 +484,7 @@ rule full_purchase : {u: User, pr: Product, pu: Purchase} / u.id == pu.userId AN
 
 // TestBetaBackwardCompatibility_ComplexJointures vérifie que les jointures
 // complexes avec plusieurs patterns fonctionnent toujours
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_ComplexJointures(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "complex_joins.tsd")
 
@@ -589,9 +577,7 @@ rule complex : {c: Customer, o: Order, p: Product, oi: OrderItem} /
 
 // TestBetaBackwardCompatibility_AggregationsWithJoins vérifie que les
 // agrégations avec jointures fonctionnent toujours
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_AggregationsWithJoins(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "agg_joins.tsd")
 
@@ -663,9 +649,7 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 
 // TestBetaBackwardCompatibility_RuleRemovalWithJoins vérifie que la
 // suppression de règles avec jointures fonctionne correctement
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_RuleRemovalWithJoins(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "removal_joins.tsd")
 
@@ -744,9 +728,7 @@ rule person_in_ny : {p: Person, a: Address} / p.id == a.personId AND a.city == '
 
 // TestBetaBackwardCompatibility_FactRetractionWithJoins vérifie que la
 // rétractation de faits fonctionne correctement avec les jointures
-// NOTE: Currently skipped pending investigation of join token binding issue
 func TestBetaBackwardCompatibility_FactRetractionWithJoins(t *testing.T) {
-	t.Skip("Join token binding needs investigation - see TestBetaBackwardCompatibility_SimpleJoins")
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "retraction_joins.tsd")
 
