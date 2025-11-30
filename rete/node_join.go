@@ -320,9 +320,21 @@ func (jn *JoinNode) extractAlphaConditions(condition map[string]interface{}) []m
 	}
 
 	// Vérifier les opérations
-	if operations, ok := condition["operations"].([]interface{}); ok {
-		for _, op := range operations {
-			if opMap, ok := op.(map[string]interface{}); ok {
+	if operationsRaw, exists := condition["operations"]; exists {
+		// Try to convert to []interface{}
+		if operations, ok := operationsRaw.([]interface{}); ok {
+			for _, op := range operations {
+				if opMap, ok := op.(map[string]interface{}); ok {
+					if right, ok := opMap["right"].(map[string]interface{}); ok {
+						if isAlphaCondition(right) {
+							alphaConditions = append(alphaConditions, right)
+						}
+					}
+				}
+			}
+		} else if operations, ok := operationsRaw.([]map[string]interface{}); ok {
+			// Try []map[string]interface{} type
+			for _, opMap := range operations {
 				if right, ok := opMap["right"].(map[string]interface{}); ok {
 					if isAlphaCondition(right) {
 						alphaConditions = append(alphaConditions, right)
