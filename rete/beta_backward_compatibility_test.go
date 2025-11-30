@@ -654,8 +654,6 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 // TestBetaBackwardCompatibility_RuleRemovalWithJoins vérifie que la
 // suppression de règles fonctionne correctement avec les jointures
 func TestBetaBackwardCompatibility_RuleRemovalWithJoins(t *testing.T) {
-	t.Skip("TODO: Rule removal with joins requires lifecycle manager integration. RemoveRule does not track join node mappings yet.")
-
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "removal_joins.tsd")
 

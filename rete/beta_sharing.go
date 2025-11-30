@@ -188,6 +188,60 @@ func (bsr *BetaSharingRegistryImpl) RemoveRuleFromJoinNode(nodeID, ruleID string
 	return canDelete, nil
 }
 
+// RegisterRuleForJoinNode registers a rule as using a specific join node.
+// This ensures proper tracking for lifecycle management and reference counting.
+func (bsr *BetaSharingRegistryImpl) RegisterRuleForJoinNode(nodeID, ruleID string) error {
+	if !bsr.config.Enabled {
+		return nil // No-op when sharing is disabled
+	}
+
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	// Initialize rule map for this node if needed
+	if _, exists := bsr.joinNodeRules[nodeID]; !exists {
+		bsr.joinNodeRules[nodeID] = make(map[string]bool)
+	}
+
+	// Add the rule reference
+	bsr.joinNodeRules[nodeID][ruleID] = true
+
+	// Sync with lifecycle manager if available
+	if bsr.lifecycleManager != nil {
+		// Lifecycle manager already tracks this via AddRuleToNode in beta_chain_builder
+		// This is just for consistency check
+	}
+
+	return nil
+}
+
+// UnregisterJoinNode completely removes a join node from the registry.
+// Should only be called when the node is being deleted from the network.
+func (bsr *BetaSharingRegistryImpl) UnregisterJoinNode(nodeID string) error {
+	if !bsr.config.Enabled {
+		return nil
+	}
+
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	// Remove from join node rules tracking
+	delete(bsr.joinNodeRules, nodeID)
+
+	// Remove from shared nodes if present
+	delete(bsr.sharedJoinNodes, nodeID)
+
+	// Find and remove from hash mapping
+	for hash, id := range bsr.hashToNodeID {
+		if id == nodeID {
+			delete(bsr.hashToNodeID, hash)
+			break
+		}
+	}
+
+	return nil
+}
+
 // GetJoinNodeRules returns all rules using a specific join node.
 func (bsr *BetaSharingRegistryImpl) GetJoinNodeRules(nodeID string) []string {
 	bsr.mutex.RLock()

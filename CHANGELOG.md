@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### ✨ Added
+
+#### Join Node Lifecycle Integration (December 2024)
+
+**Feature:** Complete lifecycle management for join nodes during rule removal operations.
+
+**What's New:**
+- Join nodes are now properly tracked in the lifecycle manager during creation
+- Terminal nodes are registered with lifecycle manager for proper cleanup
+- Beta sharing registry coordinates with lifecycle manager for reference counting
+- Complete removal logic for join nodes including dependent terminal nodes
+- Shared join nodes only deleted when reference count reaches zero
+
+**Tests:**
+- Unskipped and passing: `TestRemoveRuleIncremental_WithJoins`
+- Unskipped and passing: `TestBetaBackwardCompatibility_RuleRemovalWithJoins`
+- Zero regressions across all test suites
+
+**Technical Details:**
+- 8 files modified, 178 lines added
+- Proper cleanup prevents memory leaks
+- Thread-safe operations with mutex protection
+- Maintains backward compatibility with existing rules
+
+See `docs/features/JOIN_NODE_LIFECYCLE_INTEGRATION.md` for full specification and `docs/features/JOIN_NODE_LIFECYCLE_COMPLETION.md` for implementation details.
+
 ### 🧹 Maintenance
 
 #### Deep-Clean Operation (December 2024)

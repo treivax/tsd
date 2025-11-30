@@ -381,10 +381,10 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	chain.FinalNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
-	// Enregistrer le TerminalNode dans le LifecycleManager
+	// Register terminal node with lifecycle manager
 	if network.LifecycleManager != nil {
-		lifecycle := network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
-		lifecycle.AddRuleReference(ruleID, ruleID)
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 	}
 
 	fmt.Printf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne\n", terminalNode.ID, chain.FinalNode.ID)
@@ -448,10 +448,10 @@ func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
 	alphaNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
-	// Enregistrer le TerminalNode dans le LifecycleManager
+	// Register terminal node with lifecycle manager
 	if network.LifecycleManager != nil {
-		lifecycle := network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
-		lifecycle.AddRuleReference(ruleID, ruleID)
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 	}
 
 	if conditionMap["type"] == "negation" {

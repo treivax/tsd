@@ -68,6 +68,14 @@ type BetaSharingRegistry interface {
 	// Returns error if the hash is not found.
 	GetSharedJoinNodeDetails(hash string) (*JoinNodeDetails, error)
 
+	// RegisterRuleForJoinNode registers a rule as using a specific join node.
+	// This ensures proper tracking for lifecycle management and reference counting.
+	RegisterRuleForJoinNode(nodeID, ruleID string) error
+
+	// UnregisterJoinNode completely removes a join node from the registry.
+	// Should only be called when the node is being deleted from the network.
+	UnregisterJoinNode(nodeID string) error
+
 	// AddRuleToJoinNode associates a rule with a join node.
 	// Used for tracking which rules reference which join nodes.
 	AddRuleToJoinNode(nodeID, ruleID string) error

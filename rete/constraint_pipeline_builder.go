@@ -421,6 +421,13 @@ func (cp *ConstraintPipeline) createMultiSourceAccumulatorRule(
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	// Register terminal node with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
+	}
+
+	// Determine which accumulator type to use
 	// Connect the accumulator to the terminal
 	accumulatorNode.AddChild(terminalNode)
 	fmt.Printf("   ✓ MultiSourceAccumulatorNode -> TerminalNode[%s]\n", terminalNode.ID)
@@ -470,6 +477,12 @@ func (cp *ConstraintPipeline) createJoinRule(
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	// Register terminal node with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
+	}
+
 	// Déléguer à la fonction appropriée selon le nombre de variables
 	if len(variableNames) > 2 {
 		return cp.createCascadeJoinRule(network, ruleID, variableNames, variableTypes, condition, terminalNode, storage)
@@ -490,6 +503,12 @@ func (cp *ConstraintPipeline) createExistsRule(
 	// Créer le nœud terminal pour cette règle
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
+
+	// Register terminal node with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
+	}
 
 	// Extraire les variables
 	mainVariable, existsVariable, mainVarType, existsVarType, err := cp.extractExistsVariables(exprMap)
@@ -650,6 +669,13 @@ func (cp *ConstraintPipeline) createAccumulatorRule(
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	// Register terminal node with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
+	}
+
+	// Extract variable name and type
 	// Créer la condition de comparaison
 	condition := map[string]interface{}{
 		"type":     ConditionTypeComparison,

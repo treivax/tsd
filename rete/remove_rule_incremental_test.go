@@ -161,8 +161,6 @@ Person(id:p3, name:Charlie, age:15)
 
 // TestRemoveRuleIncremental_WithJoins teste la suppression de règles avec jointures
 func TestRemoveRuleIncremental_WithJoins(t *testing.T) {
-	t.Skip("TODO: Beta rule removal with joins requires full lifecycle integration - see beta_backward_compatibility_test.go")
-
 	t.Log("🧪 TEST REMOVE RULE - AVEC JOINTURES")
 	t.Log("=====================================")
 

@@ -849,23 +849,52 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 	return nil
 }
 
-// removeJoinNodeFromNetwork removes a join node from the network
+// removeJoinNodeFromNetwork removes a join node and all its dependent nodes from the network.
+// This should only be called when the join node has no remaining rule references.
 func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
+	// Get the join node
 	joinNode, exists := rn.BetaNodes[nodeID]
 	if !exists {
 		return fmt.Errorf("join node %s not found in network", nodeID)
 	}
 
-	// Convert to Node interface
+	fmt.Printf("   🗑️  Removing join node %s from network\n", nodeID)
+
+	// Convert join node to proper type first
 	var node Node
-	if jn, ok := joinNode.(*JoinNode); ok {
-		node = jn
-	} else {
+	var jn *JoinNode
+	var ok bool
+	if jn, ok = joinNode.(*JoinNode); !ok {
 		return fmt.Errorf("beta node %s is not a JoinNode", nodeID)
 	}
+	node = jn
 
-	// Find and disconnect from all parent nodes that reference this join node
-	// Check all alpha nodes
+	// Step 1: Find and remove all terminal nodes that depend on this join node
+	// Check if any terminal nodes are children of this join node
+	for terminalID := range rn.TerminalNodes {
+		// Check if this terminal is in the join node's children list
+		isChild := false
+		for _, child := range jn.GetChildren() {
+			if child.GetID() == terminalID {
+				isChild = true
+				break
+			}
+		}
+
+		if isChild {
+			delete(rn.TerminalNodes, terminalID)
+			fmt.Printf("   🗑️  Removed terminal node %s (child of join node)\n", terminalID)
+
+			// Remove from lifecycle manager
+			if rn.LifecycleManager != nil {
+				rn.LifecycleManager.RemoveNode(terminalID)
+			}
+		}
+	}
+
+	// Step 2: Disconnect from parent nodes using the disconnectChild helper
+
+	// Join nodes can have alpha nodes as parents
 	for _, alphaNode := range rn.AlphaNodes {
 		rn.disconnectChild(alphaNode, node)
 	}
@@ -879,24 +908,29 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 		}
 	}
 
-	// Check type nodes
+	// Also check type nodes (join nodes can connect directly to type nodes)
 	for _, typeNode := range rn.TypeNodes {
 		rn.disconnectChild(typeNode, node)
 	}
 
-	// Remove from network
+	// Step 3: Remove from beta nodes map
 	delete(rn.BetaNodes, nodeID)
 
-	// Remove from lifecycle manager
+	// Step 4: Remove from lifecycle manager
 	if rn.LifecycleManager != nil {
-		rn.LifecycleManager.RemoveNode(nodeID)
+		if err := rn.LifecycleManager.RemoveNode(nodeID); err != nil {
+			fmt.Printf("   ⚠️  Warning: failed to remove join node %s from lifecycle manager: %v\n", nodeID, err)
+		}
 	}
 
-	// Remove from beta sharing registry
+	// Step 5: Remove from beta sharing registry
 	if rn.BetaSharingRegistry != nil {
-		rn.BetaSharingRegistry.ReleaseJoinNodeByID(nodeID)
+		if err := rn.BetaSharingRegistry.UnregisterJoinNode(nodeID); err != nil {
+			fmt.Printf("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v\n", nodeID, err)
+		}
 	}
 
+	fmt.Printf("   ✅ Join node %s successfully removed from network\n", nodeID)
 	return nil
 }
 

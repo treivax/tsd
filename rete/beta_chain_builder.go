@@ -433,6 +433,24 @@ func (bcb *BetaChainBuilder) BuildChain(
 			reused = false
 		}
 
+		// Register join node with lifecycle manager
+		if bcb.network != nil && bcb.network.LifecycleManager != nil {
+			// Register the node if not already registered (for new nodes)
+			if _, exists := bcb.network.LifecycleManager.GetNodeLifecycle(hash); !exists {
+				bcb.network.LifecycleManager.RegisterNode(hash, "join")
+			}
+			// Add this rule's reference to the join node
+			bcb.network.LifecycleManager.AddRuleToNode(hash, ruleID, ruleID)
+		}
+
+		// Register rule with beta sharing registry for join node tracking
+		if bcb.betaSharingRegistry != nil {
+			if err := bcb.betaSharingRegistry.RegisterRuleForJoinNode(hash, ruleID); err != nil {
+				log.Printf("⚠️  [BetaChainBuilder] Warning: failed to register rule %s for join node %s: %v",
+					ruleID, hash, err)
+			}
+		}
+
 		// Ajouter le nœud et son hash à la chaîne
 		chain.Nodes = append(chain.Nodes, joinNode)
 		chain.Hashes = append(chain.Hashes, hash)
