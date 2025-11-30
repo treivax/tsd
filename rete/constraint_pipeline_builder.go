@@ -159,7 +159,7 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	var hasAggregation bool
 
 	if hasConstraints {
-		// Détecter si c'est une agrégation
+		// Détecter si c'est une agrégation (from constraints)
 		hasAggregation = cp.detectAggregation(constraintsData)
 
 		// Construire la condition appropriée
@@ -176,6 +176,11 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 	// Étape 3: Extraire les variables
 	variables, variableNames, variableTypes := cp.extractVariablesFromExpression(exprMap)
 
+	// Also check if any variables are aggregation variables (new syntax)
+	if !hasAggregation {
+		hasAggregation = cp.hasAggregationVariables(exprMap)
+	}
+
 	// Étape 4: Déterminer le type de règle et la créer
 	ruleType := cp.determineRuleType(exprMap, len(variables), hasAggregation)
 	cp.logRuleCreation(ruleType, ruleID, variableNames)
@@ -185,7 +190,17 @@ func (cp *ConstraintPipeline) createSingleRule(network *ReteNetwork, ruleID stri
 		return cp.createExistsRule(network, ruleID, exprMap, condition, action, storage)
 
 	case "accumulator":
-		aggInfo, err := cp.extractAggregationInfo(constraintsData)
+		var aggInfo *AggregationInfo
+		var err error
+
+		// Check if this is the new multi-pattern aggregation syntax
+		if _, hasPatterns := exprMap["patterns"]; hasPatterns {
+			aggInfo, err = cp.extractAggregationInfoFromVariables(exprMap)
+		} else {
+			// Old AccumulateConstraint syntax
+			aggInfo, err = cp.extractAggregationInfo(constraintsData)
+		}
+
 		if err != nil {
 			fmt.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
 			return cp.createJoinRule(network, ruleID, variables, variableNames, variableTypes, condition, action, storage)

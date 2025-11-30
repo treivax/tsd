@@ -32,11 +32,12 @@ type Field struct {
 // It defines variables, constraints on those variables, and actions to execute when matched.
 // Each expression must have a unique identifier for management purposes (e.g., deletion).
 type Expression struct {
-	Type        string      `json:"type"`             // Always "expression"
-	RuleId      string      `json:"ruleId"`           // Unique identifier for the rule
-	Set         Set         `json:"set"`              // Set of variables used in the expression
-	Constraints interface{} `json:"constraints"`      // Constraints to evaluate
-	Action      *Action     `json:"action,omitempty"` // Action to execute when constraints match
+	Type        string      `json:"type"`               // Always "expression"
+	RuleId      string      `json:"ruleId"`             // Unique identifier for the rule
+	Set         Set         `json:"set,omitempty"`      // Set of variables (single pattern, backward compatibility)
+	Patterns    []Set       `json:"patterns,omitempty"` // Multiple pattern blocks (aggregation with joins)
+	Constraints interface{} `json:"constraints"`        // Constraints to evaluate
+	Action      *Action     `json:"action,omitempty"`   // Action to execute when constraints match
 }
 
 // Set represents a collection of typed variables used in an expression.

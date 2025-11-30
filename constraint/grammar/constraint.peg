@@ -99,14 +99,37 @@ AtomicType <- "string" { return "string", nil } /
               "number" { return "number", nil } /
               "bool"   { return "bool", nil }
 
-Expression <- "rule" _ ruleId:IdentName _ ":" _ set:Set _ "/" _ constraints:Constraints _ "==>" _ action:Action {
+Expression <- "rule" _ ruleId:IdentName _ ":" _ patterns:PatternBlocks _ "/" _ constraints:Constraints _ "==>" _ action:Action {
+    // If only one pattern block, use old structure for backward compatibility
+    patternList := patterns.([]interface{})
+    if len(patternList) == 1 {
+        return map[string]interface{}{
+            "type": "expression",
+            "ruleId": ruleId,
+            "set": patternList[0],
+            "constraints": constraints,
+            "action": action,
+        }, nil
+    }
+
+    // Multiple pattern blocks (aggregation with joins)
     return map[string]interface{}{
         "type": "expression",
         "ruleId": ruleId,
-        "set": set,
+        "patterns": patterns,
         "constraints": constraints,
         "action": action,
     }, nil
+}
+
+PatternBlocks <- first:Set rest:(_ "/" _ Set)* {
+    blocks := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            blocks = append(blocks, item.([]interface{})[3])
+        }
+    }
+    return blocks, nil
 }
 
 Set <- "{" _ variables:TypedVariableList _ "}" {
@@ -126,11 +149,22 @@ TypedVariableList <- first:TypedVariable rest:(_ "," _ TypedVariable)* {
     return variables, nil
 }
 
-TypedVariable <- name:IdentName _ ":" _ dataType:IdentName {
+TypedVariable <- AggregationVariable / SimpleTypedVariable
+
+SimpleTypedVariable <- name:IdentName _ ":" _ dataType:IdentName {
     return map[string]interface{}{
         "type": "typedVariable",
         "name": name,
         "dataType": dataType,
+    }, nil
+}
+
+AggregationVariable <- name:IdentName _ ":" _ aggFunc:AccumulateFunction _ "(" _ fieldAccess:FieldAccess _ ")" {
+    return map[string]interface{}{
+        "type": "aggregationVariable",
+        "name": name,
+        "function": aggFunc,
+        "field": fieldAccess,
     }, nil
 }
 

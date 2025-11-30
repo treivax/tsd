@@ -60,6 +60,115 @@ func (cp *ConstraintPipeline) analyzeConstraints(constraints interface{}) (bool,
 	return false, constraints, nil
 }
 
+// extractAggregationInfoFromVariables extracts aggregation info from the new multi-pattern syntax
+// where aggregation variables are declared in the first pattern block
+func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[string]interface{}) (*AggregationInfo, error) {
+	aggInfo := &AggregationInfo{}
+
+	// Check for multi-pattern syntax
+	patternsData, hasPatterns := exprMap["patterns"]
+	if !hasPatterns {
+		return nil, fmt.Errorf("no patterns field found")
+	}
+
+	patternsList, ok := patternsData.([]interface{})
+	if !ok || len(patternsList) < 2 {
+		return nil, fmt.Errorf("expected at least 2 pattern blocks for aggregation with join")
+	}
+
+	// First pattern block should contain the aggregation variable(s)
+	firstPattern, ok := patternsList[0].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("first pattern is not a map")
+	}
+
+	varsData, hasVars := firstPattern["variables"]
+	if !hasVars {
+		return nil, fmt.Errorf("no variables in first pattern")
+	}
+
+	varsList, ok := varsData.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("variables is not a list")
+	}
+
+	// Find the aggregation variable
+	for _, varInterface := range varsList {
+		varMap, ok := varInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		varType, _ := varMap["type"].(string)
+		if varType == "aggregationVariable" {
+			// Extract aggregation function
+			if function, ok := varMap["function"].(string); ok {
+				aggInfo.Function = function
+			}
+
+			// Extract field being aggregated
+			if fieldData, ok := varMap["field"].(map[string]interface{}); ok {
+				if fieldObj, ok := fieldData["object"].(string); ok {
+					aggInfo.AggVariable = fieldObj
+				}
+				if fieldName, ok := fieldData["field"].(string); ok {
+					aggInfo.Field = fieldName
+				}
+			}
+			break
+		}
+	}
+
+	// Second pattern block contains the source type
+	secondPattern, ok := patternsList[1].(map[string]interface{})
+	if ok {
+		if varsData2, hasVars2 := secondPattern["variables"]; hasVars2 {
+			if varsList2, ok := varsData2.([]interface{}); ok && len(varsList2) > 0 {
+				if varMap2, ok := varsList2[0].(map[string]interface{}); ok {
+					if aggType, ok := varMap2["dataType"].(string); ok {
+						aggInfo.AggType = aggType
+					}
+				}
+			}
+		}
+	}
+
+	// Extract join condition from constraints
+	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
+		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
+			aggInfo.JoinCondition = constraintMap
+
+			// Extract join fields from comparison
+			if constraintMap["type"] == "comparison" {
+				// Left side
+				if leftData, ok := constraintMap["left"].(map[string]interface{}); ok {
+					if leftData["type"] == "fieldAccess" {
+						if joinField, ok := leftData["field"].(string); ok {
+							aggInfo.JoinField = joinField
+						}
+					}
+				}
+
+				// Right side
+				if rightData, ok := constraintMap["right"].(map[string]interface{}); ok {
+					if rightData["type"] == "fieldAccess" {
+						if mainField, ok := rightData["field"].(string); ok {
+							aggInfo.MainField = mainField
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// For aggregation with join syntax, we don't have a threshold comparison
+	// Set default values
+	aggInfo.Operator = ">="
+	aggInfo.Threshold = 0
+
+	return aggInfo, nil
+}
+
 // extractAggregationInfo extrait les informations d'agrégation d'une contrainte
 func (cp *ConstraintPipeline) extractAggregationInfo(constraintsData interface{}) (*AggregationInfo, error) {
 	constraintMap, ok := constraintsData.(map[string]interface{})
@@ -152,6 +261,46 @@ func (cp *ConstraintPipeline) extractVariablesFromExpression(exprMap map[string]
 	variableNames := []string{}
 	variableTypes := []string{}
 
+	// Check for multi-pattern aggregation syntax (new format with "patterns" field)
+	if patternsData, hasPatterns := exprMap["patterns"]; hasPatterns {
+		if patternsList, ok := patternsData.([]interface{}); ok {
+			// Process all pattern blocks
+			for _, patternInterface := range patternsList {
+				if patternMap, ok := patternInterface.(map[string]interface{}); ok {
+					if varsData, hasVars := patternMap["variables"]; hasVars {
+						if varsList, ok := varsData.([]interface{}); ok {
+							for _, varInterface := range varsList {
+								if varMap, ok := varInterface.(map[string]interface{}); ok {
+									variables = append(variables, varMap)
+
+									if name, ok := varMap["name"].(string); ok {
+										variableNames = append(variableNames, name)
+									}
+
+									// Extract variable type - handle both regular and aggregation variables
+									var varType string
+									varTypeStr := varMap["type"].(string)
+									if varTypeStr == "aggregationVariable" {
+										// For aggregation variables, use a placeholder type
+										// The actual aggregation result type will be determined at runtime
+										varType = "AggregationResult"
+									} else if dataType, ok := varMap["dataType"].(string); ok {
+										varType = dataType
+									} else if typeField, ok := varMap["type"].(string); ok {
+										varType = typeField
+									}
+									variableTypes = append(variableTypes, varType)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return variables, variableNames, variableTypes
+	}
+
+	// Original single-pattern syntax (backward compatibility)
 	if setData, hasSet := exprMap["set"]; hasSet {
 		if setMap, ok := setData.(map[string]interface{}); ok {
 			if varsData, hasVars := setMap["variables"]; hasVars {
@@ -193,6 +342,49 @@ func (cp *ConstraintPipeline) detectAggregation(constraintsData interface{}) boo
 			strings.Contains(constraintStr, "MAX") ||
 			strings.Contains(constraintStr, "ACCUMULATE")
 	}
+	return false
+}
+
+// hasAggregationVariables checks if any variables in the expression are aggregation variables
+func (cp *ConstraintPipeline) hasAggregationVariables(exprMap map[string]interface{}) bool {
+	// Check new multi-pattern syntax
+	if patternsData, hasPatterns := exprMap["patterns"]; hasPatterns {
+		if patternsList, ok := patternsData.([]interface{}); ok {
+			for _, patternInterface := range patternsList {
+				if patternMap, ok := patternInterface.(map[string]interface{}); ok {
+					if varsData, hasVars := patternMap["variables"]; hasVars {
+						if varsList, ok := varsData.([]interface{}); ok {
+							for _, varInterface := range varsList {
+								if varMap, ok := varInterface.(map[string]interface{}); ok {
+									if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
+										return true
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Check old single-pattern syntax for backward compatibility
+	if setData, hasSet := exprMap["set"]; hasSet {
+		if setMap, ok := setData.(map[string]interface{}); ok {
+			if varsData, hasVars := setMap["variables"]; hasVars {
+				if varsList, ok := varsData.([]interface{}); ok {
+					for _, varInterface := range varsList {
+						if varMap, ok := varInterface.(map[string]interface{}); ok {
+							if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
+								return true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return false
 }
 

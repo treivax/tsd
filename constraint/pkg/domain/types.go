@@ -42,8 +42,9 @@ type Field struct {
 // Chaque expression doit avoir un identifiant unique pour la gestion (ex: suppression)
 type Expression struct {
 	Type        string      `json:"type"`
-	RuleId      string      `json:"ruleId"` // Identifiant unique de la règle
-	Set         Set         `json:"set"`
+	RuleId      string      `json:"ruleId"`             // Identifiant unique de la règle
+	Set         Set         `json:"set,omitempty"`      // Set of variables (single pattern, backward compatibility)
+	Patterns    []Set       `json:"patterns,omitempty"` // Multiple pattern blocks (aggregation with joins)
 	Constraints interface{} `json:"constraints"`
 	Action      *Action     `json:"action,omitempty"`
 }

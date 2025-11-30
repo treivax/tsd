@@ -580,8 +580,6 @@ rule complex : {c: Customer, o: Order, p: Product, oi: OrderItem} /
 // TestBetaBackwardCompatibility_AggregationsWithJoins vérifie que les
 // agrégations fonctionnent correctement avec les jointures
 func TestBetaBackwardCompatibility_AggregationsWithJoins(t *testing.T) {
-	t.Skip("TODO: Parser does not support aggregation syntax with nested pattern blocks. Requires parser enhancement.")
-
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "agg_joins.tsd")
 

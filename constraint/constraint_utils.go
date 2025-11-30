@@ -71,12 +71,31 @@ func ValidateFieldAccess(program Program, fieldAccess FieldAccess, expressionInd
 		return fmt.Errorf("index d'expression invalide: %d", expressionIndex)
 	}
 
+	expr := program.Expressions[expressionIndex]
+
 	// Trouver le type de l'objet dans l'expression spécifiée
 	var objectType string
-	for _, variable := range program.Expressions[expressionIndex].Set.Variables {
-		if variable.Name == fieldAccess.Object {
-			objectType = variable.DataType
-			break
+
+	// Check new multi-pattern syntax first
+	if len(expr.Patterns) > 0 {
+		for _, pattern := range expr.Patterns {
+			for _, variable := range pattern.Variables {
+				if variable.Name == fieldAccess.Object {
+					objectType = variable.DataType
+					break
+				}
+			}
+			if objectType != "" {
+				break
+			}
+		}
+	} else {
+		// Old single-pattern syntax (backward compatibility)
+		for _, variable := range expr.Set.Variables {
+			if variable.Name == fieldAccess.Object {
+				objectType = variable.DataType
+				break
+			}
 		}
 	}
 
@@ -164,12 +183,31 @@ func GetFieldType(program Program, object string, field string, expressionIndex 
 		return "", fmt.Errorf("index d'expression invalide: %d", expressionIndex)
 	}
 
+	expr := program.Expressions[expressionIndex]
+
 	// Trouver le type de l'objet
 	var objectType string
-	for _, variable := range program.Expressions[expressionIndex].Set.Variables {
-		if variable.Name == object {
-			objectType = variable.DataType
-			break
+
+	// Check new multi-pattern syntax first
+	if len(expr.Patterns) > 0 {
+		for _, pattern := range expr.Patterns {
+			for _, variable := range pattern.Variables {
+				if variable.Name == object {
+					objectType = variable.DataType
+					break
+				}
+			}
+			if objectType != "" {
+				break
+			}
+		}
+	} else {
+		// Old single-pattern syntax (backward compatibility)
+		for _, variable := range expr.Set.Variables {
+			if variable.Name == object {
+				objectType = variable.DataType
+				break
+			}
 		}
 	}
 

@@ -268,10 +268,24 @@ func (ps *ProgramState) mergeFacts(newFacts []Fact, filename string) error {
 
 // validateRule validates a rule against existing type definitions
 func (ps *ProgramState) validateRule(rule *Expression, filename string) error {
-	// Extract variables from the set
+	// Extract variables from either Set (old syntax) or Patterns (new multi-pattern syntax)
 	variables := make(map[string]string)
-	for _, variable := range rule.Set.Variables {
-		variables[variable.Name] = variable.DataType
+
+	// New multi-pattern syntax (aggregation with joins)
+	if len(rule.Patterns) > 0 {
+		for _, pattern := range rule.Patterns {
+			for _, variable := range pattern.Variables {
+				// Skip aggregation variables (they don't have a dataType in the traditional sense)
+				if variable.DataType != "" {
+					variables[variable.Name] = variable.DataType
+				}
+			}
+		}
+	} else {
+		// Old single-pattern syntax (backward compatibility)
+		for _, variable := range rule.Set.Variables {
+			variables[variable.Name] = variable.DataType
+		}
 	}
 
 	// Validate each variable type exists
