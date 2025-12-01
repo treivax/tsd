@@ -131,7 +131,7 @@ func TestAlphaRuleBuilder_createAlphaNodeWithTerminal(t *testing.T) {
 
 		action := &Action{
 			Type: "print",
-			Job: &JobCall{Name: "print", Args: []interface{}{"Adult person found"}},
+			Job:  &JobCall{Name: "print", Args: []interface{}{"Adult person found"}},
 		}
 
 		err := arb.createAlphaNodeWithTerminal(
@@ -147,10 +147,16 @@ func TestAlphaRuleBuilder_createAlphaNodeWithTerminal(t *testing.T) {
 			t.Fatalf("createAlphaNodeWithTerminal failed: %v", err)
 		}
 
-		// Verify AlphaNode was created
-		alphaNode := network.AlphaNodes["test_rule_alpha"]
-		if alphaNode == nil {
-			t.Fatal("AlphaNode not created")
+		// Verify AlphaNode was created (now with hash-based ID via AlphaSharingManager)
+		if len(network.AlphaNodes) != 1 {
+			t.Fatalf("Expected 1 AlphaNode, got %d", len(network.AlphaNodes))
+		}
+
+		// Get the alpha node (hash-based ID)
+		var alphaNode *AlphaNode
+		for _, node := range network.AlphaNodes {
+			alphaNode = node
+			break
 		}
 
 		if alphaNode.VariableName != "p" {
@@ -247,7 +253,7 @@ func TestAlphaRuleBuilder_CreateAlphaRule(t *testing.T) {
 
 		action := &Action{
 			Type: "print",
-			Job: &JobCall{Name: "print", Args: []interface{}{"Legal adult"}},
+			Job:  &JobCall{Name: "print", Args: []interface{}{"Legal adult"}},
 		}
 
 		err := arb.CreateAlphaRule(
@@ -264,10 +270,16 @@ func TestAlphaRuleBuilder_CreateAlphaRule(t *testing.T) {
 			t.Fatalf("CreateAlphaRule failed: %v", err)
 		}
 
-		// Verify the rule structure
-		alphaNode := network.AlphaNodes["adult_rule_alpha"]
-		if alphaNode == nil {
-			t.Fatal("AlphaNode not created")
+		// Verify the rule structure (hash-based IDs)
+		if len(network.AlphaNodes) != 1 {
+			t.Fatalf("Expected 1 AlphaNode, got %d", len(network.AlphaNodes))
+		}
+
+		// Get the alpha node
+		var alphaNode *AlphaNode
+		for _, node := range network.AlphaNodes {
+			alphaNode = node
+			break
 		}
 
 		// Verify graph connectivity: TypeNode -> AlphaNode -> TerminalNode
@@ -310,9 +322,14 @@ func TestAlphaRuleBuilder_CreateAlphaRule(t *testing.T) {
 			&Action{Type: "noop"},
 		)
 
-		// Should not error, but TypeNode lookup will fail for empty type
-		if err == nil {
-			t.Error("Expected error for empty variable type")
+		// Empty conditions are valid with the new sharing-based architecture
+		if err != nil {
+			t.Errorf("CreateAlphaRule failed: %v", err)
+		}
+
+		// Verify an AlphaNode was created even for empty conditions
+		if len(network.AlphaNodes) != 1 {
+			t.Errorf("Expected 1 AlphaNode, got %d", len(network.AlphaNodes))
 		}
 	})
 
@@ -350,9 +367,15 @@ func TestAlphaRuleBuilder_CreateAlphaRule(t *testing.T) {
 		}
 
 		// Should use first variable (Person)
-		alphaNode := network.AlphaNodes["multi_var_rule_alpha"]
-		if alphaNode == nil {
-			t.Fatal("AlphaNode not created")
+		if len(network.AlphaNodes) != 1 {
+			t.Fatalf("Expected 1 AlphaNode, got %d", len(network.AlphaNodes))
+		}
+
+		// Get the alpha node
+		var alphaNode *AlphaNode
+		for _, node := range network.AlphaNodes {
+			alphaNode = node
+			break
 		}
 
 		if alphaNode.VariableName != "p" {
