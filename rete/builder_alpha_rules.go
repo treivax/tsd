@@ -6,7 +6,6 @@ package rete
 
 import (
 	"fmt"
-
 )
 
 // AlphaRuleBuilder handles the creation of alpha rules
@@ -65,7 +64,7 @@ func (arb *AlphaRuleBuilder) getVariableInfo(
 	return variableName, variableType
 }
 
-// createAlphaNodeWithTerminal creates an AlphaNode with a terminal node
+// createAlphaNodeWithTerminal creates an AlphaNode with a terminal node using AlphaSharingManager
 func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 	network *ReteNetwork,
 	ruleID string,
@@ -74,8 +73,10 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 	variableType string,
 	action *Action,
 ) error {
-	// Create the terminal node
-	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)
+	// Verify AlphaSharingManager is initialized
+	if network.AlphaSharingManager == nil {
+		return fmt.Errorf("AlphaSharingManager non initialisé dans le réseau")
+	}
 
 	// Get the TypeNode
 	typeNode, exists := network.TypeNodes[variableType]
@@ -83,16 +84,47 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 		return fmt.Errorf("TypeNode pour %s non trouvé", variableType)
 	}
 
-	// Create the AlphaNode
-	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, variableName, arb.utils.storage)
+	// Use AlphaSharingManager to get or create the AlphaNode (for sharing)
+	alphaNode, alphaHash, wasShared, err := network.AlphaSharingManager.GetOrCreateAlphaNode(
+		condition,
+		variableName,
+		arb.utils.storage,
+	)
+	if err != nil {
+		return fmt.Errorf("erreur création AlphaNode partagé: %w", err)
+	}
+
+	if wasShared {
+		fmt.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+	} else {
+		fmt.Printf("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+
+		// Connect TypeNode -> AlphaNode (only for new nodes)
+		typeNode.AddChild(alphaNode)
+
+		// Store the AlphaNode in the network's global registry
+		network.AlphaNodes[alphaNode.ID] = alphaNode
+	}
+
+	// Register or update the AlphaNode in LifecycleManager
+	if network.LifecycleManager != nil {
+		lifecycle := network.LifecycleManager.RegisterNode(alphaNode.ID, "alpha")
+		lifecycle.AddRuleReference(ruleID, ruleID)
+	}
+
+	// Create the terminal node (always rule-specific)
+	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)
+
+	// Connect AlphaNode -> TerminalNode
 	alphaNode.AddChild(terminalNode)
 
-	// Connect TypeNode -> AlphaNode
-	typeNode.AddChild(alphaNode)
+	// Register terminal node with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
+	}
 
-	// Store the AlphaNode in the network
-	network.AlphaNodes[alphaNode.ID] = alphaNode
-
+	fmt.Printf("   ✓ Règle alpha simple créée pour: %s\n", ruleID)
 	fmt.Printf("   ✓ %s -> AlphaNode[%s] -> TerminalNode[%s]\n",
 		variableType, alphaNode.ID, terminalNode.ID)
 
