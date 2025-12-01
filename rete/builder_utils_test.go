@@ -346,7 +346,7 @@ func TestBuilderUtils_CreateTerminalNode(t *testing.T) {
 		Type: "action",
 		Job: &JobCall{
 			Name: "print",
-			Args: []interface{}{"Test message"},
+			Job: &JobCall{Name: "print", Args: []interface{}{"Test message"}},
 		},
 	}
 
