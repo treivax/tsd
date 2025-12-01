@@ -179,9 +179,9 @@ rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)
 
 	// Soumettre des faits
 	facts := []*Fact{
-		{ID: "P001", Type: "Person", Fields: map[string]interface{}{"age": float64(25)}}, // > 18
-		{ID: "P002", Type: "Person", Fields: map[string]interface{}{"age": float64(15)}}, // < 18
-		{ID: "P003", Type: "Person", Fields: map[string]interface{}{"age": float64(30)}}, // > 18
+		{ID: "P001", Type: "Person", Fields: map[string]interface{}{"id": "P001", "age": float64(25)}}, // > 18
+		{ID: "P002", Type: "Person", Fields: map[string]interface{}{"id": "P002", "age": float64(15)}}, // < 18
+		{ID: "P003", Type: "Person", Fields: map[string]interface{}{"id": "P003", "age": float64(30)}}, // > 18
 	}
 
 	for _, fact := range facts {

@@ -64,7 +64,7 @@ func TestRemoveChain_AllNodesUnique_DeletesAll(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -204,8 +204,8 @@ func TestRemoveChain_PartialSharing_DeletesOnlyUnused(t *testing.T) {
 		}
 	}
 
-	action1 := &Action{Type: "print", Job: JobCall{Name: "action1", Args: []interface{}{}}}
-	action2 := &Action{Type: "print", Job: JobCall{Name: "action2", Args: []interface{}{}}}
+	action1 := &Action{Type: "print", Job: &JobCall{Name: "action1", Args: []interface{}{}}}
+	action2 := &Action{Type: "print", Job: &JobCall{Name: "action2", Args: []interface{}{}}}
 
 	cp := &ConstraintPipeline{}
 
@@ -323,8 +323,8 @@ func TestRemoveChain_CompleteSharing_DeletesNone(t *testing.T) {
 		}
 	}
 
-	action1 := &Action{Type: "print", Job: JobCall{Name: "action1", Args: []interface{}{}}}
-	action2 := &Action{Type: "print", Job: JobCall{Name: "action2", Args: []interface{}{}}}
+	action1 := &Action{Type: "print", Job: &JobCall{Name: "action1", Args: []interface{}{}}}
+	action2 := &Action{Type: "print", Job: &JobCall{Name: "action2", Args: []interface{}{}}}
 
 	cp := &ConstraintPipeline{}
 
@@ -461,7 +461,7 @@ func TestRemoveRule_WithChain_CorrectCleanup(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -604,8 +604,8 @@ func TestRemoveRule_MultipleChains_IndependentCleanup(t *testing.T) {
 		},
 	}
 
-	action1 := &Action{Type: "print", Job: JobCall{Name: "action1", Args: []interface{}{}}}
-	action2 := &Action{Type: "print", Job: JobCall{Name: "action2", Args: []interface{}{}}}
+	action1 := &Action{Type: "print", Job: &JobCall{Name: "action1", Args: []interface{}{}}}
+	action2 := &Action{Type: "print", Job: &JobCall{Name: "action2", Args: []interface{}{}}}
 
 	cp := &ConstraintPipeline{}
 
@@ -725,7 +725,7 @@ func TestRemoveRule_SimpleCondition_BackwardCompatibility(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},

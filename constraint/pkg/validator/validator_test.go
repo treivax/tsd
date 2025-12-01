@@ -248,7 +248,7 @@ func TestConstraintValidator_ValidateExpression(t *testing.T) {
 				},
 				Action: &domain.Action{
 					Type: "action",
-					Job: domain.JobCall{
+					Job: &domain.JobCall{
 						Type: "jobCall",
 						Name: "notify",
 						Args: []interface{}{"message"},
@@ -267,7 +267,7 @@ func TestConstraintValidator_ValidateExpression(t *testing.T) {
 				},
 				Action: &domain.Action{
 					Type: "action",
-					Job:  domain.JobCall{Type: "jobCall", Name: "test"},
+					Job:  &domain.JobCall{Type: "jobCall", Name: "test"},
 				},
 			},
 			wantErr:     true,
@@ -285,7 +285,7 @@ func TestConstraintValidator_ValidateExpression(t *testing.T) {
 				},
 				Action: &domain.Action{
 					Type: "action",
-					Job:  domain.JobCall{Type: "jobCall", Name: "test"},
+					Job:  &domain.JobCall{Type: "jobCall", Name: "test"},
 				},
 			},
 			wantErr:     true,
@@ -304,7 +304,7 @@ func TestConstraintValidator_ValidateExpression(t *testing.T) {
 				},
 				Action: &domain.Action{
 					Type: "action",
-					Job:  domain.JobCall{Type: "jobCall", Name: "test"},
+					Job:  &domain.JobCall{Type: "jobCall", Name: "test"},
 				},
 			},
 			wantErr: false,
@@ -374,7 +374,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 						},
 						Action: &domain.Action{
 							Type: "action",
-							Job: domain.JobCall{
+							Job: &domain.JobCall{
 								Type: "jobCall",
 								Name: "notify",
 								Args: []interface{}{"test"},
@@ -453,7 +453,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 						},
 						Action: &domain.Action{
 							Type: "action",
-							Job:  domain.JobCall{Type: "jobCall", Name: "test"},
+							Job:  &domain.JobCall{Type: "jobCall", Name: "test"},
 						},
 					},
 				},
@@ -492,7 +492,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 						},
 						Action: &domain.Action{
 							Type: "action",
-							Job:  domain.JobCall{Type: "jobCall", Name: "action1"},
+							Job:  &domain.JobCall{Type: "jobCall", Name: "action1"},
 						},
 					},
 					{
@@ -505,7 +505,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 						},
 						Action: &domain.Action{
 							Type: "action",
-							Job:  domain.JobCall{Type: "jobCall", Name: "action2"},
+							Job:  &domain.JobCall{Type: "jobCall", Name: "action2"},
 						},
 					},
 				},
@@ -527,7 +527,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 						},
 						Action: &domain.Action{
 							Type: "action",
-							Job:  domain.JobCall{Type: "jobCall", Name: "test"},
+							Job:  &domain.JobCall{Type: "jobCall", Name: "test"},
 						},
 					},
 				},
@@ -626,7 +626,7 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 			name: "valid action with job name",
 			action: &domain.Action{
 				Type: "action",
-				Job: domain.JobCall{
+				Job: &domain.JobCall{
 					Type: "jobCall",
 					Name: "notify",
 				},
@@ -637,7 +637,7 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 			name: "valid action with job and args",
 			action: &domain.Action{
 				Type: "action",
-				Job: domain.JobCall{
+				Job: &domain.JobCall{
 					Type: "jobCall",
 					Name: "sendEmail",
 					Args: []interface{}{"user@example.com", "Subject"},
@@ -655,7 +655,7 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 			name: "action with empty job name",
 			action: &domain.Action{
 				Type: "action",
-				Job: domain.JobCall{
+				Job: &domain.JobCall{
 					Type: "jobCall",
 					Name: "",
 				},
@@ -667,7 +667,7 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 			name: "action with whitespace job name",
 			action: &domain.Action{
 				Type: "action",
-				Job: domain.JobCall{
+				Job: &domain.JobCall{
 					Type: "jobCall",
 					Name: "   ",
 				},
@@ -699,13 +699,13 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		jobCall     domain.JobCall
+		jobCall     *domain.JobCall
 		wantErr     bool
 		errContains string
 	}{
 		{
 			name: "valid job without args",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "processData",
 				Args: []interface{}{},
@@ -714,7 +714,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "valid job with string args",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "sendNotification",
 				Args: []interface{}{"message", "recipient"},
@@ -723,7 +723,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "valid job with mixed args",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "updateRecord",
 				Args: []interface{}{"id123", 42, true},
@@ -732,7 +732,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "valid job with complex object args",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "processObject",
 				Args: []interface{}{
@@ -743,7 +743,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "empty job name",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "",
 			},
@@ -752,7 +752,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "whitespace job name",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "  \t\n  ",
 			},
@@ -761,7 +761,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "job with empty string arg",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "test",
 				Args: []interface{}{""},
@@ -771,7 +771,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "job with nil arg",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "test",
 				Args: []interface{}{nil},
@@ -781,7 +781,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "job with whitespace string arg",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "test",
 				Args: []interface{}{"valid", "   "},
@@ -791,7 +791,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 		},
 		{
 			name: "job with multiple valid args",
-			jobCall: domain.JobCall{
+			jobCall: &domain.JobCall{
 				Type: "jobCall",
 				Name: "complexJob",
 				Args: []interface{}{
@@ -840,7 +840,7 @@ func TestActionValidator_ErrorTypes(t *testing.T) {
 	}
 
 	// Test avec job name vide
-	err = validator.ValidateJobCall(domain.JobCall{Name: ""})
+	err = validator.ValidateJobCall(&domain.JobCall{Name: ""})
 	if err == nil {
 		t.Fatal("Expected error for empty job name")
 	}

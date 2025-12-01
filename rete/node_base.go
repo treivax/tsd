@@ -15,6 +15,7 @@ type BaseNode struct {
 	Memory   *WorkingMemory `json:"memory"`
 	Children []Node         `json:"children"`
 	Storage  Storage        `json:"-"`
+	network  *ReteNetwork   `json:"-"` // Référence au réseau RETE parent
 	mutex    sync.RWMutex   `json:"-"`
 }
 
@@ -33,6 +34,20 @@ func (bn *BaseNode) GetMemory() *WorkingMemory {
 	bn.mutex.RLock()
 	defer bn.mutex.RUnlock()
 	return bn.Memory
+}
+
+// SetNetwork définit la référence au réseau RETE parent
+func (bn *BaseNode) SetNetwork(network *ReteNetwork) {
+	bn.mutex.Lock()
+	defer bn.mutex.Unlock()
+	bn.network = network
+}
+
+// GetNetwork retourne la référence au réseau RETE parent
+func (bn *BaseNode) GetNetwork() *ReteNetwork {
+	bn.mutex.RLock()
+	defer bn.mutex.RUnlock()
+	return bn.network
 }
 
 // AddChild ajoute un nœud enfant

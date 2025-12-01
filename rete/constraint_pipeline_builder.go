@@ -419,6 +419,7 @@ func (cp *ConstraintPipeline) createMultiSourceAccumulatorRule(
 
 	// Create terminal node for action
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
 	// Register terminal node with lifecycle manager
@@ -475,6 +476,7 @@ func (cp *ConstraintPipeline) createJoinRule(
 ) error {
 	// Créer le nœud terminal pour cette règle
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
 	// Register terminal node with lifecycle manager
@@ -502,6 +504,7 @@ func (cp *ConstraintPipeline) createExistsRule(
 ) error {
 	// Créer le nœud terminal pour cette règle
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
 	// Register terminal node with lifecycle manager
@@ -667,6 +670,7 @@ func (cp *ConstraintPipeline) createAccumulatorRule(
 
 	// Créer le nœud terminal
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
 	// Register terminal node with lifecycle manager

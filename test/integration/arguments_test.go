@@ -33,12 +33,18 @@ func TestVariableArguments(t *testing.T) {
 	foundVariableArg := false
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Action != nil {
-			for _, arg := range terminal.Action.Job.Args {
-				if argMap, ok := arg.(map[string]interface{}); ok {
-					if argType, hasType := argMap["type"]; hasType && argType == "variable" {
-						foundVariableArg = true
-						break
+			jobs := terminal.Action.GetJobs()
+			for _, job := range jobs {
+				for _, arg := range job.Args {
+					if argMap, ok := arg.(map[string]interface{}); ok {
+						if argType, hasType := argMap["type"]; hasType && argType == "variable" {
+							foundVariableArg = true
+							break
+						}
 					}
+				}
+				if foundVariableArg {
+					break
 				}
 			}
 		}
@@ -66,14 +72,17 @@ func TestComprehensiveMixedArguments(t *testing.T) {
 
 	for _, terminal := range network.TerminalNodes {
 		if terminal.Action != nil {
-			for _, arg := range terminal.Action.Job.Args {
-				if argMap, ok := arg.(map[string]interface{}); ok {
-					if argType, hasType := argMap["type"]; hasType {
-						switch argType {
-						case "variable":
-							foundVariableArg = true
-						case "fieldAccess":
-							foundFieldArg = true
+			jobs := terminal.Action.GetJobs()
+			for _, job := range jobs {
+				for _, arg := range job.Args {
+					if argMap, ok := arg.(map[string]interface{}); ok {
+						if argType, hasType := argMap["type"]; hasType {
+							switch argType {
+							case "variable":
+								foundVariableArg = true
+							case "fieldAccess":
+								foundFieldArg = true
+							}
 						}
 					}
 				}

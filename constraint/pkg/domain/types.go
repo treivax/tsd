@@ -70,10 +70,25 @@ type Constraint struct {
 	Right    interface{} `json:"right,omitempty"`
 }
 
-// Action représente une action à exécuter quand les conditions sont remplies
+// Action représente une action à exécuter quand les conditions sont remplies.
+// Supporte à la fois une action unique (Job, pour rétrocompatibilité) et
+// plusieurs actions (Jobs, nouveau format).
 type Action struct {
-	Type string  `json:"type"`
-	Job  JobCall `json:"job"`
+	Type string    `json:"type"`
+	Job  *JobCall  `json:"job,omitempty"`  // Action unique (rétrocompatibilité)
+	Jobs []JobCall `json:"jobs,omitempty"` // Actions multiples (nouveau format)
+}
+
+// GetJobs retourne la liste des jobs à exécuter.
+// Gère à la fois l'ancien format (Job unique) et le nouveau format (Jobs multiples).
+func (a *Action) GetJobs() []JobCall {
+	if len(a.Jobs) > 0 {
+		return a.Jobs
+	}
+	if a.Job != nil {
+		return []JobCall{*a.Job}
+	}
+	return []JobCall{}
 }
 
 // JobCall représente l'appel d'une fonction/job
@@ -191,7 +206,7 @@ func NewFieldAccess(object, field string) *FieldAccess {
 func NewAction(jobName string, args ...interface{}) *Action {
 	return &Action{
 		Type: "action",
-		Job: JobCall{
+		Job: &JobCall{
 			Type: "jobCall",
 			Name: jobName,
 			Args: args,

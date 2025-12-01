@@ -1254,7 +1254,7 @@ Order(id:O002, customer_id:P002, amount:200)
 			args:         []string{"-file", tsdFile, "-facts", factsFile},
 			wantExitCode: 0,
 			wantOutputContains: []string{
-				"ACTIONS DISPONIBLES",
+				"Programme valide",
 			},
 		},
 		{

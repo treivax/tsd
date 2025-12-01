@@ -107,13 +107,39 @@ func (ac *ASTConverter) convertTypedVariables(constraintVars []constraint.TypedV
 
 // convertAction convertit une action
 func (ac *ASTConverter) convertAction(constraintAction constraint.Action) (*Action, error) {
-	action := &Action{
-		Type: constraintAction.Type,
-		Job: JobCall{
-			Type: constraintAction.Job.Type,
-			Name: constraintAction.Job.Name,
-			Args: constraintAction.Job.Args,
-		},
+	// Obtenir tous les jobs (supporte ancien et nouveau format)
+	jobs := constraintAction.GetJobs()
+
+	// Si on a plusieurs jobs, utiliser le nouveau format
+	if len(jobs) > 1 {
+		reteJobs := make([]JobCall, len(jobs))
+		for i, job := range jobs {
+			reteJobs[i] = JobCall{
+				Type: job.Type,
+				Name: job.Name,
+				Args: job.Args,
+			}
+		}
+		return &Action{
+			Type: constraintAction.Type,
+			Jobs: reteJobs,
+		}, nil
 	}
-	return action, nil
+
+	// Si on a un seul job, utiliser l'ancien format pour rétrocompatibilité
+	if len(jobs) == 1 {
+		return &Action{
+			Type: constraintAction.Type,
+			Job: &JobCall{
+				Type: jobs[0].Type,
+				Name: jobs[0].Name,
+				Args: jobs[0].Args,
+			},
+		}, nil
+	}
+
+	// Pas de jobs
+	return &Action{
+		Type: constraintAction.Type,
+	}, nil
 }

@@ -770,7 +770,7 @@ func TestIntegration_NestedOR_SingleAlphaNode(t *testing.T) {
 
 	action := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log",
 			Args: []interface{}{"Match detected"},
 		},
@@ -887,8 +887,8 @@ func TestIntegration_NestedOR_Sharing(t *testing.T) {
 		},
 	}
 
-	action1 := &Action{Type: "log", Job: JobCall{Name: "log", Args: []interface{}{"Rule1"}}}
-	action2 := &Action{Type: "log", Job: JobCall{Name: "log", Args: []interface{}{"Rule2"}}}
+	action1 := &Action{Type: "log", Job: &JobCall{Name: "log", Args: []interface{}{"Rule1"}}}
+	action2 := &Action{Type: "log", Job: &JobCall{Name: "log", Args: []interface{}{"Rule2"}}}
 
 	cp := &ConstraintPipeline{}
 

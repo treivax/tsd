@@ -1097,7 +1097,7 @@ func TestValidateAction(t *testing.T) {
 
 	t.Run("valid action with string args", func(t *testing.T) {
 		action := Action{
-			Job: JobCall{
+			Job: &JobCall{
 				Name: "process",
 				Args: []interface{}{"p", "o"},
 			},
@@ -1110,7 +1110,7 @@ func TestValidateAction(t *testing.T) {
 
 	t.Run("invalid expression index", func(t *testing.T) {
 		action := Action{
-			Job: JobCall{
+			Job: &JobCall{
 				Name: "process",
 				Args: []interface{}{"p"},
 			},
@@ -1123,7 +1123,7 @@ func TestValidateAction(t *testing.T) {
 
 	t.Run("action with undefined variable", func(t *testing.T) {
 		action := Action{
-			Job: JobCall{
+			Job: &JobCall{
 				Name: "process",
 				Args: []interface{}{"unknown"},
 			},
@@ -1136,7 +1136,7 @@ func TestValidateAction(t *testing.T) {
 
 	t.Run("action with field access", func(t *testing.T) {
 		action := Action{
-			Job: JobCall{
+			Job: &JobCall{
 				Name: "process",
 				Args: []interface{}{
 					map[string]interface{}{

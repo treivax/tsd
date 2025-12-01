@@ -12,13 +12,55 @@ import (
 func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Action {
 	actionType := getStringField(actionMap, "type", "print")
 
-	// Extraire le job depuis l'action
+	// Nouveau format: plusieurs jobs
+	if jobsData, hasJobs := actionMap["jobs"]; hasJobs {
+		if jobsList, ok := jobsData.([]interface{}); ok && len(jobsList) > 0 {
+			// Convertir chaque job
+			jobs := make([]JobCall, 0, len(jobsList))
+			for _, jobData := range jobsList {
+				if jobMap, ok := jobData.(map[string]interface{}); ok {
+					jobName := getStringField(jobMap, "name", actionType)
+					jobArgs := []interface{}{}
+					if argsData, hasArgs := jobMap["args"]; hasArgs {
+						if argsList, ok := argsData.([]interface{}); ok {
+							jobArgs = argsList
+						}
+					}
+					jobs = append(jobs, JobCall{
+						Type: "jobCall",
+						Name: jobName,
+						Args: jobArgs,
+					})
+				}
+			}
+
+			// Si un seul job, utiliser l'ancien format pour rétrocompatibilité
+			if len(jobs) == 1 {
+				return &Action{
+					Type: actionType,
+					Job: &JobCall{
+						Type: jobs[0].Type,
+						Name: jobs[0].Name,
+						Args: jobs[0].Args,
+					},
+				}
+			}
+
+			// Plusieurs jobs: utiliser le nouveau format
+			return &Action{
+				Type: actionType,
+				Jobs: jobs,
+			}
+		}
+	}
+
+	// Ancien format: un seul job (rétrocompatibilité)
 	jobData, hasJob := actionMap["job"]
 	if !hasJob {
-		// Fallback: action simple sans job (ne devrait pas arriver avec le nouveau parser)
+		// Fallback: action simple sans job
 		return &Action{
 			Type: actionType,
-			Job: JobCall{
+			Job: &JobCall{
 				Name: actionType,
 				Args: []interface{}{},
 			},
@@ -29,7 +71,7 @@ func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Ac
 	if !ok {
 		return &Action{
 			Type: actionType,
-			Job: JobCall{
+			Job: &JobCall{
 				Name: actionType,
 				Args: []interface{}{},
 			},
@@ -41,13 +83,13 @@ func (cp *ConstraintPipeline) createAction(actionMap map[string]interface{}) *Ac
 
 	action := &Action{
 		Type: actionType,
-		Job: JobCall{
+		Job: &JobCall{
 			Name: jobName,
 			Args: []interface{}{},
 		},
 	}
 
-	// Extraire les arguments du job (pas de l'action)
+	// Extraire les arguments du job
 	if argsData, hasArgs := jobMap["args"]; hasArgs {
 		if argsList, ok := argsData.([]interface{}); ok {
 			action.Job.Args = argsList
@@ -378,6 +420,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 
 	// Créer et attacher le terminal au dernier nœud de la chaîne
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	chain.FinalNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
@@ -445,6 +488,7 @@ func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
 
 	// Créer le terminal (toujours spécifique à la règle)
 	terminalNode := NewTerminalNode(ruleID+"_terminal", action, storage)
+	terminalNode.SetNetwork(network)
 	alphaNode.AddChild(terminalNode)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 

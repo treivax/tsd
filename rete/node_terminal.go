@@ -86,7 +86,12 @@ func (tn *TerminalNode) ActivateRight(fact *Fact) error {
 	return fmt.Errorf("les nœuds terminaux ne reçoivent pas de faits directement")
 }
 
-// executeAction affiche l'action déclenchée avec les faits déclencheurs (version tuple-space)
+// SetNetwork définit la référence au réseau RETE
+func (tn *TerminalNode) SetNetwork(network *ReteNetwork) {
+	tn.BaseNode.SetNetwork(network)
+}
+
+// executeAction exécute l'action avec le contexte du token
 func (tn *TerminalNode) executeAction(token *Token) error {
 	// Les actions sont maintenant obligatoires dans la grammaire
 	// Mais nous gardons cette vérification par sécurité
@@ -94,11 +99,13 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		return fmt.Errorf("aucune action définie pour le nœud %s", tn.ID)
 	}
 
-	// === VERSION TUPLE-SPACE ===
-	// Au lieu d'exécuter l'action, on l'affiche avec les faits déclencheurs
-	// Les agents du tuple-space viendront "prendre" ces tuples plus tard
+	// Afficher aussi dans tuple-space pour compatibilité
+	actionName := "action"
+	jobs := tn.Action.GetJobs()
+	if len(jobs) > 0 {
+		actionName = jobs[0].Name
+	}
 
-	actionName := tn.Action.Job.Name
 	fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
 
 	// Afficher les faits déclencheurs entre parenthèses
@@ -123,6 +130,12 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		fmt.Print(")")
 	}
 	fmt.Println()
+
+	// Exécuter réellement l'action avec l'ActionExecutor
+	network := tn.BaseNode.GetNetwork()
+	if network != nil && network.ActionExecutor != nil {
+		return network.ActionExecutor.ExecuteAction(tn.Action, token)
+	}
 
 	return nil
 }

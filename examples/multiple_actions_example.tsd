@@ -1,0 +1,33 @@
+// Exemple de démonstration des actions multiples dans les règles RETE
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+
+// Définition des types
+type Person : <id: string, name: string, age: number, salary: number>
+type Department : <id: string, name: string, budget: number>
+type Employee : <id: string, personId: string, deptId: string>
+
+// Règle avec deux actions
+rule adult_check : {p: Person} / p.age >= 18 ==> mark_adult(p.id), log("Adult detected")
+
+// Règle avec trois actions
+rule high_earner : {p: Person} / p.salary > 50000 ==> flag_high_earner(p.id), update_stats(p.salary), notify_manager("High earner found")
+
+// Règle avec actions multiples et agrégation
+rule dept_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee, p: Person} / e.deptId == d.id AND e.personId == p.id ==> print_avg(d.name, avg_sal), update_dashboard(d.id, avg_sal), alert_hr(d.id)
+
+// Règle avec actions multiples utilisant des champs
+rule employee_bonus : {e: Employee, p: Person} / e.personId == p.id AND p.salary < 40000 ==> calculate_bonus(p.id, p.salary), notify_payroll(p.id), log_bonus_calculation(p.name, p.salary)
+
+// Faits de test
+Person(id:"p1", name:"Alice", age:25, salary:55000)
+Person(id:"p2", name:"Bob", age:30, salary:45000)
+Person(id:"p3", name:"Charlie", age:16, salary:20000)
+Person(id:"p4", name:"Diana", age:28, salary:35000)
+
+Department(id:"d1", name:"Engineering", budget:500000)
+Department(id:"d2", name:"Sales", budget:300000)
+
+Employee(id:"e1", personId:"p1", deptId:"d1")
+Employee(id:"e2", personId:"p2", deptId:"d1")
+Employee(id:"e4", personId:"p4", deptId:"d2")

@@ -331,7 +331,7 @@ func TestAlphaNode_ActivateRetract(t *testing.T) {
 func TestTerminalNode_ActivateRetract(t *testing.T) {
 	storage := NewMemoryStorage()
 	action := &Action{
-		Job: JobCall{Name: "alert", Args: []interface{}{}},
+		Job: &JobCall{Name: "alert", Args: []interface{}{}},
 	}
 
 	terminal := NewTerminalNode("term_1", action, storage)

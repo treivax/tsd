@@ -68,7 +68,7 @@ func TestOR_SingleNode_NotDecomposed(t *testing.T) {
 	// Créer une règle avec cette expression OR
 	action := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log",
 			Args: []interface{}{"VIP or Adult detected"},
 		},
@@ -301,7 +301,7 @@ func TestMixedAND_OR_SingleNode(t *testing.T) {
 
 	action := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log",
 			Args: []interface{}{"Mixed condition matched"},
 		},
@@ -402,7 +402,7 @@ func TestOR_FactPropagation_Correct(t *testing.T) {
 
 	action := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log_to_file",
 			Args: []interface{}{tmpFile.Name(), "Match detected"},
 		},
@@ -604,7 +604,7 @@ func TestOR_SharingBetweenRules(t *testing.T) {
 
 	action1 := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log",
 			Args: []interface{}{"Rule 1 matched"},
 		},
@@ -612,7 +612,7 @@ func TestOR_SharingBetweenRules(t *testing.T) {
 
 	action2 := &Action{
 		Type: "log",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "log",
 			Args: []interface{}{"Rule 2 matched"},
 		},

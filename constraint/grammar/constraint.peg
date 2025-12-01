@@ -356,10 +356,16 @@ FunctionArgList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     return args, nil
 }
 
-Action <- job:JobCall {
+Action <- first:JobCall rest:(_ "," _ JobCall)* {
+    jobs := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            jobs = append(jobs, item.([]interface{})[3])
+        }
+    }
     return map[string]interface{}{
         "type": "action",
-        "job": job,
+        "jobs": jobs,
     }, nil
 }
 

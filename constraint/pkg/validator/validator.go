@@ -232,11 +232,27 @@ func (av *ActionValidator) ValidateAction(action *domain.Action) error {
 		)
 	}
 
-	return av.ValidateJobCall(action.Job)
+	// Obtenir tous les jobs (supporte ancien et nouveau format)
+	jobs := action.GetJobs()
+
+	// Valider chaque job
+	for _, job := range jobs {
+		if err := av.ValidateJobCall(&job); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ValidateJobCall valide un appel de fonction/job
-func (av *ActionValidator) ValidateJobCall(jobCall domain.JobCall) error {
+func (av *ActionValidator) ValidateJobCall(jobCall *domain.JobCall) error {
+	if jobCall == nil {
+		return domain.NewActionError(
+			"jobCall cannot be nil",
+			domain.Context{},
+		)
+	}
 	if strings.TrimSpace(jobCall.Name) == "" {
 		return domain.NewActionError(
 			"job name cannot be empty",

@@ -43,7 +43,7 @@ func TestPipeline_SimpleCondition_NoChange(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -131,7 +131,7 @@ func TestPipeline_AND_CreatesChain(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -232,7 +232,7 @@ func TestPipeline_OR_SingleNode(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -322,7 +322,7 @@ func TestPipeline_TwoRules_ShareChain(t *testing.T) {
 
 	action1 := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{"rule1"},
 		},
@@ -330,7 +330,7 @@ func TestPipeline_TwoRules_ShareChain(t *testing.T) {
 
 	action2 := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{"rule2"},
 		},
@@ -425,7 +425,7 @@ func TestPipeline_ErrorHandling_FallbackToSimple(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -520,7 +520,7 @@ func TestPipeline_ComplexAND_ThreeConditions(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},
@@ -595,7 +595,7 @@ func TestPipeline_Arithmetic_NoChain(t *testing.T) {
 
 	action := &Action{
 		Type: "print",
-		Job: JobCall{
+		Job: &JobCall{
 			Name: "print",
 			Args: []interface{}{},
 		},

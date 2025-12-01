@@ -4,6 +4,104 @@
 
 ### ✨ Added
 
+#### Action Execution System (January 2025)
+
+**Feature:** Implémentation complète de l'exécution des actions avec logging systématique et validation des types.
+
+**What's New:**
+- Exécution réelle des actions déclenchées par les règles RETE
+- Logging automatique de toutes les actions avec nom et arguments
+- Support de 5 types d'arguments :
+  - Valeurs littérales (strings, numbers, booleans)
+  - Faits complets (variables)
+  - Attributs de faits (variable.attribut)
+  - Expressions arithmétiques (+, -, *, /)
+  - Arguments mixtes dans une même action
+- Validation complète de cohérence :
+  - Variables utilisées doivent être définies dans la règle
+  - Attributs doivent exister dans la définition de type
+  - Valeurs doivent correspondre aux types définis
+- Contexte d'exécution avec cache de variables
+- Logger personnalisable
+
+**Architecture:**
+- Nouveau composant `ActionExecutor` pour gérer l'exécution
+- `ExecutionContext` pour le contexte d'exécution avec accès aux faits
+- Référence `network` dans `BaseNode` pour accès au réseau RETE
+- Méthode `GetTypeDefinition()` dans `ReteNetwork`
+- Intégration dans `TerminalNode.executeAction()`
+
+**API:**
+```go
+executor := NewActionExecutor(network, logger)
+executor.SetLogging(true)
+err := executor.ExecuteAction(action, token)
+```
+
+**Output Example:**
+```
+📋 ACTION: notify(p.name)
+🎯 ACTION EXÉCUTÉE: notify("Alice")
+📋 ACTION: calculate_bonus(p.id, p.salary * 1.1)
+🎯 ACTION EXÉCUTÉE: calculate_bonus("p1", 38500)
+```
+
+**Tests:**
+- 8 nouveaux tests pour ActionExecutor
+- Tests de validation d'erreurs (variables, champs, arithmétique)
+- Tests de logging et logger personnalisé
+- Tests avec arguments multiples et expressions
+- Correction de tests existants pour cohérence des faits
+
+**Technical Details:**
+- 490 lignes dans `action_executor.go`
+- Support des tokens avec `Bindings` pour variables
+- Validation de types lors de l'évaluation
+- Gestion d'erreurs détaillée avec messages explicites
+- Documentation complète (508 lignes) dans `docs/action_execution.md`
+
+See `docs/action_execution.md` for full specification and `examples/action_execution_example.tsd` for complete examples.
+
+---
+
+#### Multiple Actions in Rules (January 2025)
+
+**Feature:** Support for multiple actions in RETE rule definitions, separated by commas.
+
+**What's New:**
+- Rules can now specify multiple actions to be executed when conditions are met
+- Actions are executed in sequence from left to right
+- Full backward compatibility with single-action rules
+- Syntax: `rule name : {patterns} / constraints ==> action1(...), action2(...), action3(...)`
+
+**Examples:**
+```
+rule adult_check : {p: Person} / p.age >= 18 ==> mark_adult(p.id), log("Adult detected")
+rule high_earner : {p: Person} / p.salary > 50000 ==> flag_high_earner(p.id), update_stats(p.salary), notify_manager("High earner found")
+```
+
+**API Changes:**
+- `Action` type now supports both `Job` (single, backward compatible) and `Jobs` (multiple, new format)
+- New `GetJobs()` method automatically handles both formats
+- Updated parser to generate `jobs` array in JSON output
+- Enhanced validation to support actions with multiple patterns (aggregations)
+
+**Tests:**
+- 11 new test cases covering multiple actions scenarios
+- All existing tests pass without modification
+- Tests for backward compatibility with single actions
+- Tests for error detection and validation
+
+**Technical Details:**
+- Grammar updated: `Action <- first:JobCall rest:(_ "," _ JobCall)*`
+- 8 files modified across constraint, rete, and test packages
+- Zero regressions, full backward compatibility maintained
+- Comprehensive documentation added in `docs/multiple_actions.md`
+
+See `docs/multiple_actions.md` for full specification and examples.
+
+---
+
 #### Join Node Lifecycle Integration (December 2024)
 
 **Feature:** Complete lifecycle management for join nodes during rule removal operations.

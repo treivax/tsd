@@ -6,6 +6,7 @@ package rete
 
 import (
 	"fmt"
+	"log"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -24,6 +25,7 @@ type ReteNetwork struct {
 	BetaChainBuilder    *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
 	ChainMetrics        *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
 	Config              *ChainPerformanceConfig  `json:"-"` // Configuration de performance
+	ActionExecutor      *ActionExecutor          `json:"-"` // Exécuteur d'actions
 }
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
@@ -73,6 +75,9 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		ChainMetrics:        metrics,
 		Config:              config,
 	}
+
+	// Initialize action executor
+	network.ActionExecutor = NewActionExecutor(network, log.Default())
 
 	// Initialize BetaChainBuilder if Beta sharing is enabled
 	if betaSharingRegistry != nil {
@@ -952,4 +957,14 @@ func (rn *ReteNetwork) disconnectChild(parent Node, child Node) {
 	if baseNode, ok := parent.(interface{ SetChildren([]Node) }); ok {
 		baseNode.SetChildren(newChildren)
 	}
+}
+
+// GetTypeDefinition retourne la définition d'un type par son nom
+func (rn *ReteNetwork) GetTypeDefinition(typeName string) *TypeDefinition {
+	for i := range rn.Types {
+		if rn.Types[i].Name == typeName {
+			return &rn.Types[i]
+		}
+	}
+	return nil
 }

@@ -380,9 +380,9 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
 
 	// Soumettre les faits manuellement
 	facts := []*Fact{
-		{ID: "P001", Type: "Person", Fields: map[string]interface{}{"age": float64(25), "name": "Alice"}},
-		{ID: "P002", Type: "Person", Fields: map[string]interface{}{"age": float64(70), "name": "Bob"}},
-		{ID: "P003", Type: "Person", Fields: map[string]interface{}{"age": float64(15), "name": "Charlie"}},
+		{ID: "P001", Type: "Person", Fields: map[string]interface{}{"id": "P001", "age": float64(25), "name": "Alice"}},
+		{ID: "P002", Type: "Person", Fields: map[string]interface{}{"id": "P002", "age": float64(70), "name": "Bob"}},
+		{ID: "P003", Type: "Person", Fields: map[string]interface{}{"id": "P003", "age": float64(15), "name": "Charlie"}},
 	}
 
 	for _, fact := range facts {

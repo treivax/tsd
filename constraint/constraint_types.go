@@ -165,10 +165,25 @@ type ArrayLiteral struct {
 }
 
 // Action represents an action to execute when constraints are satisfied.
-// It defines what job should be performed and with what parameters.
+// It defines what job(s) should be performed and with what parameters.
+// Supports both single action (Job field, for backward compatibility) and
+// multiple actions (Jobs field, new format).
 type Action struct {
-	Type string  `json:"type"` // Always "action"
-	Job  JobCall `json:"job"`  // Job to execute
+	Type string    `json:"type"`           // Always "action"
+	Job  *JobCall  `json:"job,omitempty"`  // Single job (backward compatibility)
+	Jobs []JobCall `json:"jobs,omitempty"` // Multiple jobs (new format)
+}
+
+// GetJobs returns the list of jobs to execute.
+// It handles both the old format (single Job) and new format (multiple Jobs).
+func (a *Action) GetJobs() []JobCall {
+	if len(a.Jobs) > 0 {
+		return a.Jobs
+	}
+	if a.Job != nil {
+		return []JobCall{*a.Job}
+	}
+	return []JobCall{}
 }
 
 // JobCall represents a specific job/function call within an action.

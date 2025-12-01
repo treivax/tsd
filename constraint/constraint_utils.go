@@ -128,17 +128,31 @@ func ValidateAction(program Program, action Action, expressionIndex int) error {
 
 	// Créer une map des variables disponibles dans l'expression
 	availableVars := make(map[string]bool)
+
+	// Ajouter les variables du Set principal (ancien format, rétrocompatibilité)
 	for _, variable := range expression.Set.Variables {
 		availableVars[variable.Name] = true
 	}
 
-	// Vérifier que tous les arguments de l'action référencent des variables valides
-	for _, arg := range action.Job.Args {
-		// Extraire les variables utilisées dans l'argument
-		vars := extractVariablesFromArg(arg)
-		for _, varName := range vars {
-			if !availableVars[varName] {
-				return fmt.Errorf("action %s: argument contient la variable '%s' qui ne correspond à aucune variable de l'expression", action.Job.Name, varName)
+	// Ajouter les variables des Patterns multiples (nouveau format avec agrégation)
+	for _, pattern := range expression.Patterns {
+		for _, variable := range pattern.Variables {
+			availableVars[variable.Name] = true
+		}
+	}
+
+	// Obtenir tous les jobs (supporte ancien et nouveau format)
+	jobs := action.GetJobs()
+
+	// Vérifier que tous les arguments de chaque job référencent des variables valides
+	for _, job := range jobs {
+		for _, arg := range job.Args {
+			// Extraire les variables utilisées dans l'argument
+			vars := extractVariablesFromArg(arg)
+			for _, varName := range vars {
+				if !availableVars[varName] {
+					return fmt.Errorf("action %s: argument contient la variable '%s' qui ne correspond à aucune variable de l'expression", job.Name, varName)
+				}
 			}
 		}
 	}

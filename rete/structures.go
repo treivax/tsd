@@ -22,8 +22,21 @@ type JobCall struct {
 }
 
 type Action struct {
-	Type string  `json:"type"`
-	Job  JobCall `json:"job"`
+	Type string    `json:"type"`
+	Job  *JobCall  `json:"job,omitempty"`  // Single job (backward compatibility)
+	Jobs []JobCall `json:"jobs,omitempty"` // Multiple jobs (new format)
+}
+
+// GetJobs returns the list of jobs to execute.
+// It handles both the old format (single Job) and new format (multiple Jobs).
+func (a *Action) GetJobs() []JobCall {
+	if len(a.Jobs) > 0 {
+		return a.Jobs
+	}
+	if a.Job != nil {
+		return []JobCall{*a.Job}
+	}
+	return []JobCall{}
 }
 
 type TypedVariable struct {
