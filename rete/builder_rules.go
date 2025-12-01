@@ -2,12 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // RuleBuilder orchestrates the creation of all types of rules
@@ -36,7 +35,7 @@ func NewRuleBuilder(utils *BuilderUtils, pipeline interface{}) *RuleBuilder {
 }
 
 // CreateRuleNodes creates rule nodes (Alpha, Beta, Terminal) from expressions
-func (rb *RuleBuilder) CreateRuleNodes(network *rete.ReteNetwork, expressions []interface{}) error {
+func (rb *RuleBuilder) CreateRuleNodes(network *ReteNetwork, expressions []interface{}) error {
 	for i, exprInterface := range expressions {
 		exprMap, ok := exprInterface.(map[string]interface{})
 		if !ok {
@@ -64,20 +63,20 @@ func (rb *RuleBuilder) CreateRuleNodes(network *rete.ReteNetwork, expressions []
 }
 
 // CreateSingleRule creates a single rule (refactored into small functions)
-func (rb *RuleBuilder) CreateSingleRule(network *rete.ReteNetwork, ruleID string, exprMap map[string]interface{}) error {
+func (rb *RuleBuilder) CreateSingleRule(network *ReteNetwork, ruleID string, exprMap map[string]interface{}) error {
 	// Step 1: Extract the action
 	// Type assertion to access pipeline methods
 	type pipelineHelper interface {
-		extractActionFromExpression(map[string]interface{}, string) (*rete.Action, error)
+		extractActionFromExpression(map[string]interface{}, string) (*Action, error)
 		detectAggregation(interface{}) bool
 		buildConditionFromConstraints(interface{}) (map[string]interface{}, error)
 		extractVariablesFromExpression(map[string]interface{}) ([]map[string]interface{}, []string, []string)
 		hasAggregationVariables(map[string]interface{}) bool
 		determineRuleType(map[string]interface{}, int, bool) string
 		logRuleCreation(string, string, []string)
-		extractAggregationInfo(interface{}) (*rete.AggregationInfo, error)
-		extractAggregationInfoFromVariables(map[string]interface{}) (*rete.AggregationInfo, error)
-		extractMultiSourceAggregationInfo(map[string]interface{}) (*rete.AggregationInfo, error)
+		extractAggregationInfo(interface{}) (*AggregationInfo, error)
+		extractAggregationInfoFromVariables(map[string]interface{}) (*AggregationInfo, error)
+		extractMultiSourceAggregationInfo(map[string]interface{}) (*AggregationInfo, error)
 	}
 
 	pipeline, ok := rb.pipeline.(pipelineHelper)
@@ -129,12 +128,12 @@ func (rb *RuleBuilder) CreateSingleRule(network *rete.ReteNetwork, ruleID string
 
 // createRuleByType delegates rule creation to the appropriate builder based on type
 func (rb *RuleBuilder) createRuleByType(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	ruleType string,
 	exprMap map[string]interface{},
 	condition map[string]interface{},
-	action *rete.Action,
+	action *Action,
 	variables []map[string]interface{},
 	variableNames []string,
 	variableTypes []string,
@@ -162,11 +161,11 @@ func (rb *RuleBuilder) createRuleByType(
 
 // createAccumulatorRuleWithInfo handles accumulator rule creation with aggregation info extraction
 func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	exprMap map[string]interface{},
 	condition map[string]interface{},
-	action *rete.Action,
+	action *Action,
 	variables []map[string]interface{},
 	variableNames []string,
 	variableTypes []string,
@@ -175,9 +174,9 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 ) error {
 	// Type assertion for pipeline methods
 	type pipelineHelper interface {
-		extractAggregationInfo(interface{}) (*rete.AggregationInfo, error)
-		extractAggregationInfoFromVariables(map[string]interface{}) (*rete.AggregationInfo, error)
-		extractMultiSourceAggregationInfo(map[string]interface{}) (*rete.AggregationInfo, error)
+		extractAggregationInfo(interface{}) (*AggregationInfo, error)
+		extractAggregationInfoFromVariables(map[string]interface{}) (*AggregationInfo, error)
+		extractMultiSourceAggregationInfo(map[string]interface{}) (*AggregationInfo, error)
 	}
 
 	pipeline, ok := rb.pipeline.(pipelineHelper)
@@ -185,7 +184,7 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 		return fmt.Errorf("pipeline does not implement required methods")
 	}
 
-	var aggInfo *rete.AggregationInfo
+	var aggInfo *AggregationInfo
 	var err error
 
 	// Check if this is the new multi-pattern aggregation syntax

@@ -2,12 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // AlphaRuleBuilder handles the creation of alpha rules
@@ -24,13 +23,13 @@ func NewAlphaRuleBuilder(utils *BuilderUtils) *AlphaRuleBuilder {
 
 // CreateAlphaRule creates a simple alpha rule with a single variable
 func (arb *AlphaRuleBuilder) CreateAlphaRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variables []map[string]interface{},
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	action *rete.Action,
+	action *Action,
 ) error {
 	// Extract variable information
 	variableName, variableType := arb.getVariableInfo(variables, variableTypes)
@@ -68,12 +67,12 @@ func (arb *AlphaRuleBuilder) getVariableInfo(
 
 // createAlphaNodeWithTerminal creates an AlphaNode with a terminal node
 func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	condition map[string]interface{},
 	variableName string,
 	variableType string,
-	action *rete.Action,
+	action *Action,
 ) error {
 	// Create the terminal node
 	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)
@@ -85,7 +84,7 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 	}
 
 	// Create the AlphaNode
-	alphaNode := rete.NewAlphaNode(ruleID+"_alpha", condition, variableName, arb.utils.storage)
+	alphaNode := NewAlphaNode(ruleID+"_alpha", condition, variableName, arb.utils.storage)
 	alphaNode.AddChild(terminalNode)
 
 	// Connect TypeNode -> AlphaNode

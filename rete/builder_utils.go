@@ -2,13 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // Node condition type constants
@@ -27,34 +26,34 @@ const (
 
 // BuilderUtils provides common utility functions for all builders
 type BuilderUtils struct {
-	storage rete.Storage
+	storage Storage
 }
 
 // NewBuilderUtils creates a new BuilderUtils instance
-func NewBuilderUtils(storage rete.Storage) *BuilderUtils {
+func NewBuilderUtils(storage Storage) *BuilderUtils {
 	return &BuilderUtils{
 		storage: storage,
 	}
 }
 
 // CreatePassthroughAlphaNode creates a passthrough AlphaNode with optional side specification
-func (bu *BuilderUtils) CreatePassthroughAlphaNode(ruleID, varName, side string) *rete.AlphaNode {
+func (bu *BuilderUtils) CreatePassthroughAlphaNode(ruleID, varName, side string) *AlphaNode {
 	passCondition := map[string]interface{}{
 		"type": ConditionTypePassthrough,
 	}
 	if side != "" {
 		passCondition["side"] = side
 	}
-	return rete.NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, bu.storage)
+	return NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, bu.storage)
 }
 
 // ConnectTypeNodeToBetaNode connects a TypeNode to a BetaNode via a passthrough AlphaNode
 func (bu *BuilderUtils) ConnectTypeNodeToBetaNode(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	varName string,
 	varType string,
-	betaNode rete.Node,
+	betaNode Node,
 	side string,
 ) {
 	if typeNode, exists := network.TypeNodes[varType]; exists {
@@ -125,11 +124,11 @@ func GetListField(m map[string]interface{}, key string) ([]interface{}, bool) {
 
 // CreateTerminalNode creates a terminal node and registers it with the network
 func (bu *BuilderUtils) CreateTerminalNode(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	action *rete.Action,
-) *rete.TerminalNode {
-	terminalNode := rete.NewTerminalNode(ruleID+"_terminal", action, bu.storage)
+	action *Action,
+) *TerminalNode {
+	terminalNode := NewTerminalNode(ruleID+"_terminal", action, bu.storage)
 	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 

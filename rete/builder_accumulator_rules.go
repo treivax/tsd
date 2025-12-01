@@ -2,12 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // AccumulatorRuleBuilder handles the creation of accumulator rules
@@ -24,13 +23,13 @@ func NewAccumulatorRuleBuilder(utils *BuilderUtils) *AccumulatorRuleBuilder {
 
 // CreateAccumulatorRule creates a rule with AccumulatorNode
 func (arb *AccumulatorRuleBuilder) CreateAccumulatorRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variables []map[string]interface{},
 	variableNames []string,
 	variableTypes []string,
-	aggInfo *rete.AggregationInfo,
-	action *rete.Action,
+	aggInfo *AggregationInfo,
+	action *Action,
 ) error {
 	// Extract the main variable and its type from variables
 	if len(variables) == 0 || len(variableTypes) == 0 {
@@ -55,7 +54,7 @@ func (arb *AccumulatorRuleBuilder) CreateAccumulatorRule(
 	}
 
 	// Create the AccumulatorNode with all parameters
-	accumNode := rete.NewAccumulatorNode(
+	accumNode := NewAccumulatorNode(
 		ruleID+"_accum",
 		aggInfo.MainVariable, // "e"
 		aggInfo.MainType,     // "Employee"
@@ -136,10 +135,10 @@ func (arb *AccumulatorRuleBuilder) IsMultiSourceAggregation(exprMap map[string]i
 // CreateMultiSourceAccumulatorRule creates a rule with multiple aggregation sources
 // This is the refactored version - broken down into smaller, more manageable functions
 func (arb *AccumulatorRuleBuilder) CreateMultiSourceAccumulatorRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	aggInfo *rete.AggregationInfo,
-	action *rete.Action,
+	aggInfo *AggregationInfo,
+	action *Action,
 ) error {
 	fmt.Printf("   🔗 Création règle multi-source avec %d sources et %d agrégations\n",
 		len(aggInfo.SourcePatterns), len(aggInfo.AggregationVars))
@@ -165,10 +164,10 @@ func (arb *AccumulatorRuleBuilder) CreateMultiSourceAccumulatorRule(
 
 // createJoinChainForSources creates a chain of join nodes for all source patterns
 func (arb *AccumulatorRuleBuilder) createJoinChainForSources(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	aggInfo *rete.AggregationInfo,
-) (rete.Node, error) {
+	aggInfo *AggregationInfo,
+) (Node, error) {
 	// Validate that the main type exists
 	mainTypeNode, exists := network.TypeNodes[aggInfo.MainType]
 	if !exists {
@@ -176,7 +175,7 @@ func (arb *AccumulatorRuleBuilder) createJoinChainForSources(
 	}
 	_ = mainTypeNode // Used for validation
 
-	var lastJoinNode rete.Node
+	var lastJoinNode Node
 
 	// Create a join node for each source pattern
 	for i, sourcePattern := range aggInfo.SourcePatterns {
@@ -204,20 +203,20 @@ func (arb *AccumulatorRuleBuilder) createJoinChainForSources(
 
 // createSourceJoinNode creates a single join node for a source pattern
 func (arb *AccumulatorRuleBuilder) createSourceJoinNode(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	aggInfo *rete.AggregationInfo,
-	sourcePattern rete.SourcePattern,
+	aggInfo *AggregationInfo,
+	sourcePattern SourcePattern,
 	index int,
-	lastJoinNode rete.Node,
-) (*rete.JoinNode, error) {
+	lastJoinNode Node,
+) (*JoinNode, error) {
 	// Build condition map and variable lists
 	joinConditionMap := make(map[string]interface{})
 	var leftVars, rightVars []string
 	varTypes := make(map[string]string)
 
 	// Find the join condition for this source
-	var joinCondition *rete.JoinCondition
+	var joinCondition *JoinCondition
 	for j := range aggInfo.JoinConditions {
 		cond := &aggInfo.JoinConditions[j]
 		if cond.LeftVar == sourcePattern.Variable || cond.RightVar == sourcePattern.Variable {
@@ -267,7 +266,7 @@ func (arb *AccumulatorRuleBuilder) createSourceJoinNode(
 
 	// Create the join node
 	joinNodeID := fmt.Sprintf("%s_join_%d", ruleID, index)
-	joinNode := rete.NewJoinNode(joinNodeID, joinConditionMap, leftVars, rightVars, varTypes, arb.utils.storage)
+	joinNode := NewJoinNode(joinNodeID, joinConditionMap, leftVars, rightVars, varTypes, arb.utils.storage)
 	network.BetaNodes[joinNodeID] = joinNode
 
 	return joinNode, nil
@@ -275,13 +274,13 @@ func (arb *AccumulatorRuleBuilder) createSourceJoinNode(
 
 // connectSourceJoinNode connects a source join node to the network
 func (arb *AccumulatorRuleBuilder) connectSourceJoinNode(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	aggInfo *rete.AggregationInfo,
-	sourcePattern rete.SourcePattern,
-	joinNode *rete.JoinNode,
+	aggInfo *AggregationInfo,
+	sourcePattern SourcePattern,
+	joinNode *JoinNode,
 	index int,
-	lastJoinNode rete.Node,
+	lastJoinNode Node,
 ) {
 	if index == 0 {
 		// First join: main type -> join node (left)
@@ -300,12 +299,12 @@ func (arb *AccumulatorRuleBuilder) connectSourceJoinNode(
 
 // createMultiSourceAccumulatorNode creates the accumulator node for multiple sources
 func (arb *AccumulatorRuleBuilder) createMultiSourceAccumulatorNode(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	aggInfo *rete.AggregationInfo,
-) *rete.MultiSourceAccumulatorNode {
+	aggInfo *AggregationInfo,
+) *MultiSourceAccumulatorNode {
 	// Create MultiSourceAccumulatorNode to compute aggregations
-	accumulatorNode := rete.NewMultiSourceAccumulatorNode(
+	accumulatorNode := NewMultiSourceAccumulatorNode(
 		ruleID+"_msaccum",
 		aggInfo.MainVariable,
 		aggInfo.MainType,
@@ -331,11 +330,11 @@ func (arb *AccumulatorRuleBuilder) createMultiSourceAccumulatorNode(
 
 // connectAccumulatorToTerminal creates and connects the terminal node to the accumulator
 func (arb *AccumulatorRuleBuilder) connectAccumulatorToTerminal(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	accumulatorNode *rete.MultiSourceAccumulatorNode,
-	aggInfo *rete.AggregationInfo,
-	action *rete.Action,
+	accumulatorNode *MultiSourceAccumulatorNode,
+	aggInfo *AggregationInfo,
+	action *Action,
 ) error {
 	// Create terminal node for action
 	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)

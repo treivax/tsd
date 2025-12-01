@@ -2,12 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // ExistsRuleBuilder handles the creation of EXISTS rules
@@ -24,11 +23,11 @@ func NewExistsRuleBuilder(utils *BuilderUtils) *ExistsRuleBuilder {
 
 // CreateExistsRule creates an EXISTS rule with ExistsNode
 func (erb *ExistsRuleBuilder) CreateExistsRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	exprMap map[string]interface{},
 	condition map[string]interface{},
-	action *rete.Action,
+	action *Action,
 ) error {
 	// Create the terminal node for this rule
 	terminalNode := erb.utils.CreateTerminalNode(network, ruleID, action)
@@ -57,7 +56,7 @@ func (erb *ExistsRuleBuilder) CreateExistsRule(
 	varTypes[existsVariable] = existsVarType
 
 	// Create the ExistsNode with the actual conditions
-	existsNode := rete.NewExistsNode(ruleID+"_exists", existsConditionObj, mainVariable, existsVariable, varTypes, erb.utils.storage)
+	existsNode := NewExistsNode(ruleID+"_exists", existsConditionObj, mainVariable, existsVariable, varTypes, erb.utils.storage)
 	existsNode.AddChild(terminalNode)
 
 	// Store the ExistsNode in the network's BetaNodes
@@ -148,9 +147,9 @@ func (erb *ExistsRuleBuilder) ExtractExistsConditions(exprMap map[string]interfa
 
 // ConnectExistsNodeToTypeNodes connects an ExistsNode to the appropriate TypeNodes
 func (erb *ExistsRuleBuilder) ConnectExistsNodeToTypeNodes(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	existsNode *rete.ExistsNode,
+	existsNode *ExistsNode,
 	mainVariable string,
 	mainVarType string,
 	existsVariable string,

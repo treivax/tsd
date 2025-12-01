@@ -2,13 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // JoinRuleBuilder handles the creation of join rules
@@ -25,12 +24,12 @@ func NewJoinRuleBuilder(utils *BuilderUtils) *JoinRuleBuilder {
 
 // CreateJoinRule creates a join rule with JoinNode
 func (jrb *JoinRuleBuilder) CreateJoinRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	action *rete.Action,
+	action *Action,
 ) error {
 	// Create the terminal node for this rule
 	terminalNode := jrb.utils.CreateTerminalNode(network, ruleID, action)
@@ -45,12 +44,12 @@ func (jrb *JoinRuleBuilder) CreateJoinRule(
 
 // createBinaryJoinRule creates a simple binary join rule (2 variables)
 func (jrb *JoinRuleBuilder) createBinaryJoinRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	terminalNode *rete.TerminalNode,
+	terminalNode *TerminalNode,
 ) error {
 	leftVars := []string{variableNames[0]}
 	rightVars := []string{variableNames[1]}
@@ -58,7 +57,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 	// Create the variable -> type mapping
 	varTypes := BuildVarTypesMap(variableNames, variableTypes)
 
-	var joinNode *rete.JoinNode
+	var joinNode *JoinNode
 	var wasShared bool
 
 	// Try to use BetaSharingRegistry if available and enabled
@@ -75,7 +74,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		if err != nil {
 			// Fallback to direct creation on error
 			fmt.Printf("   ⚠️ Beta sharing failed: %v, falling back to direct creation\n", err)
-			joinNode = rete.NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, jrb.utils.storage)
+			joinNode = NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, jrb.utils.storage)
 		} else {
 			joinNode = node
 			wasShared = shared
@@ -91,7 +90,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		}
 	} else {
 		// Legacy mode: direct creation
-		joinNode = rete.NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, jrb.utils.storage)
+		joinNode = NewJoinNode(ruleID+"_join", condition, leftVars, rightVars, varTypes, jrb.utils.storage)
 	}
 
 	joinNode.AddChild(terminalNode)
@@ -123,12 +122,12 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 
 // createCascadeJoinRule creates a cascade of join nodes for multi-variable rules (3+ variables)
 func (jrb *JoinRuleBuilder) createCascadeJoinRule(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	terminalNode *rete.TerminalNode,
+	terminalNode *TerminalNode,
 ) error {
 	fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
 
@@ -143,12 +142,12 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRule(
 
 // createCascadeJoinRuleLegacy creates a cascade without BetaChainBuilder
 func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	terminalNode *rete.TerminalNode,
+	terminalNode *TerminalNode,
 ) error {
 	fmt.Printf("   🔧 Construction d'architecture en cascade de JoinNodes (legacy mode)\n")
 
@@ -160,7 +159,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 		variableNames[1]: variableTypes[1],
 	}
 
-	currentJoinNode := rete.NewJoinNode(
+	currentJoinNode := NewJoinNode(
 		fmt.Sprintf("%s_join_%d_%d", ruleID, 0, 1),
 		condition,
 		leftVars,
@@ -198,7 +197,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 		accumulatedVarTypes[nextVarName] = nextVarType
 
 		// Create the next JoinNode
-		nextJoinNode := rete.NewJoinNode(
+		nextJoinNode := NewJoinNode(
 			fmt.Sprintf("%s_join_%d", ruleID, i),
 			condition,
 			accumulatedVars,
@@ -229,12 +228,12 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 
 // createCascadeJoinRuleWithBuilder creates a cascade using BetaChainBuilder with sharing support
 func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-	terminalNode *rete.TerminalNode,
+	terminalNode *TerminalNode,
 ) error {
 	fmt.Printf("   🔧 Construction avec BetaChainBuilder (sharing enabled)\n")
 
@@ -256,14 +255,14 @@ func (jrb *JoinRuleBuilder) buildJoinPatterns(
 	variableNames []string,
 	variableTypes []string,
 	condition map[string]interface{},
-) []rete.JoinPattern {
+) []JoinPattern {
 	// Create the variable -> type mapping
 	varTypes := BuildVarTypesMap(variableNames, variableTypes)
 
-	patterns := make([]rete.JoinPattern, 0, len(variableNames)-1)
+	patterns := make([]JoinPattern, 0, len(variableNames)-1)
 
 	// Pattern 1: First two variables
-	patterns = append(patterns, rete.JoinPattern{
+	patterns = append(patterns, JoinPattern{
 		LeftVars:    []string{variableNames[0]},
 		RightVars:   []string{variableNames[1]},
 		AllVars:     []string{variableNames[0], variableNames[1]},
@@ -280,7 +279,7 @@ func (jrb *JoinRuleBuilder) buildJoinPatterns(
 		allVars := make([]string, i+1)
 		copy(allVars, variableNames[0:i+1])
 
-		patterns = append(patterns, rete.JoinPattern{
+		patterns = append(patterns, JoinPattern{
 			LeftVars:    accumulatedVars,
 			RightVars:   []string{variableNames[i]},
 			AllVars:     allVars,
@@ -295,10 +294,10 @@ func (jrb *JoinRuleBuilder) buildJoinPatterns(
 
 // buildChainWithBuilder builds the beta chain using the BetaChainBuilder
 func (jrb *JoinRuleBuilder) buildChainWithBuilder(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	patterns []rete.JoinPattern,
-) (*rete.BetaChain, error) {
+	patterns []JoinPattern,
+) (*BetaChain, error) {
 	chain, err := network.BetaChainBuilder.BuildChain(patterns, ruleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build beta chain: %w", err)
@@ -314,12 +313,12 @@ func (jrb *JoinRuleBuilder) buildChainWithBuilder(
 
 // connectChainToNetwork connects the beta chain to the network's type nodes and terminal
 func (jrb *JoinRuleBuilder) connectChainToNetwork(
-	network *rete.ReteNetwork,
+	network *ReteNetwork,
 	ruleID string,
-	chain *rete.BetaChain,
+	chain *BetaChain,
 	variableNames []string,
 	variableTypes []string,
-	terminalNode *rete.TerminalNode,
+	terminalNode *TerminalNode,
 ) error {
 	// Connect type nodes to the first join node (for first two variables)
 	if len(chain.Nodes) > 0 {

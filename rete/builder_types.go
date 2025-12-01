@@ -2,12 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 
-package builders
+package rete
 
 import (
 	"fmt"
 
-	"github.com/treivax/tsd/rete"
 )
 
 // TypeBuilder handles the creation of TypeNodes and type definitions
@@ -23,7 +22,7 @@ func NewTypeBuilder(utils *BuilderUtils) *TypeBuilder {
 }
 
 // CreateTypeNodes creates TypeNodes from type definitions
-func (tb *TypeBuilder) CreateTypeNodes(network *rete.ReteNetwork, types []interface{}, storage rete.Storage) error {
+func (tb *TypeBuilder) CreateTypeNodes(network *ReteNetwork, types []interface{}, storage Storage) error {
 	for _, typeInterface := range types {
 		typeMap, ok := typeInterface.(map[string]interface{})
 		if !ok {
@@ -40,7 +39,7 @@ func (tb *TypeBuilder) CreateTypeNodes(network *rete.ReteNetwork, types []interf
 		typeDef := tb.CreateTypeDefinition(typeName, typeMap)
 
 		// Create the TypeNode
-		typeNode := rete.NewTypeNode(typeName, typeDef, storage)
+		typeNode := NewTypeNode(typeName, typeDef, storage)
 		network.TypeNodes[typeName] = typeNode
 
 		// Register the TypeNode in the LifecycleManager
@@ -58,11 +57,11 @@ func (tb *TypeBuilder) CreateTypeNodes(network *rete.ReteNetwork, types []interf
 }
 
 // CreateTypeDefinition creates a type definition from a map
-func (tb *TypeBuilder) CreateTypeDefinition(typeName string, typeMap map[string]interface{}) rete.TypeDefinition {
-	typeDef := rete.TypeDefinition{
+func (tb *TypeBuilder) CreateTypeDefinition(typeName string, typeMap map[string]interface{}) TypeDefinition {
+	typeDef := TypeDefinition{
 		Type:   "type",
 		Name:   typeName,
-		Fields: []rete.Field{},
+		Fields: []Field{},
 	}
 
 	// Extract the fields
@@ -86,7 +85,7 @@ func (tb *TypeBuilder) CreateTypeDefinition(typeName string, typeMap map[string]
 		fieldType := GetStringField(fieldMap, "type", "")
 
 		if fieldName != "" && fieldType != "" {
-			typeDef.Fields = append(typeDef.Fields, rete.Field{
+			typeDef.Fields = append(typeDef.Fields, Field{
 				Name: fieldName,
 				Type: fieldType,
 			})
