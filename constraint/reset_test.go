@@ -41,7 +41,7 @@ func TestResetInstruction(t *testing.T) {
 	// Test 2: Reset in a program with types
 	t.Run("ResetInCompleteProgram", func(t *testing.T) {
 		input := []byte(`
-type User : <name: string, age: number>
+type User(name: string, age:number)
 
 reset
 `)
@@ -69,11 +69,11 @@ reset
 	// Test 3: Multiple reset instructions
 	t.Run("MultipleResets", func(t *testing.T) {
 		input := []byte(`
-type User : <name: string>
+type User(name:string)
 
 reset
 
-type Order : <id: number>
+type Order(id:number)
 
 reset
 `)
@@ -231,7 +231,7 @@ func TestIterativeParserReset(t *testing.T) {
 
 		// Parse some content
 		content := `
-type User : <name: string, age: number>
+type User(name: string, age:number)
 `
 		err := parser.ParseContent(content, "test.tsd")
 		if err != nil {
@@ -267,7 +267,7 @@ type User : <name: string, age: number>
 		parser := NewIterativeParser()
 
 		// Parse, reset, parse again
-		content1 := `type User : <name: string>`
+		content1 := `type User(name:string)`
 		err := parser.ParseContent(content1, "test1.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing initial: %v", err)
@@ -275,7 +275,7 @@ type User : <name: string, age: number>
 
 		parser.Reset()
 
-		content2 := `type Order : <id: number>`
+		content2 := `type Order(id:number)`
 		err = parser.ParseContent(content2, "test2.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing après reset: %v", err)

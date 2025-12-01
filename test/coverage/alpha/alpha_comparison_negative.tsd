@@ -1,5 +1,5 @@
 // Test comparaison numérique négative
-type Product : <id: string, price: number, category: string>
+type Product(id: string, price: number, category: string)
 
 rule r1 : {prod: Product} / NOT(prod.price > 100) ==> affordable_product(prod.id, prod.price)
 

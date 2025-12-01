@@ -1,5 +1,5 @@
 // Test opérateur == (égalité) - négation
-type Customer : <id: string, tier: string, points: number>
+type Customer(id: string, tier: string, points: number)
 
 rule r1 : {c: Customer} / NOT(c.tier == "gold") ==> non_gold_customer_found(c.id, c.tier)
 

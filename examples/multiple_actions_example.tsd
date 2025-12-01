@@ -3,9 +3,9 @@
 // Licensed under the MIT License
 
 // Définition des types
-type Person : <id: string, name: string, age: number, salary: number>
-type Department : <id: string, name: string, budget: number>
-type Employee : <id: string, personId: string, deptId: string>
+type Person(id: string, name: string, age: number, salary: number)
+type Department(id: string, name: string, budget: number)
+type Employee(id: string, personId: string, deptId: string)
 
 // Règle avec deux actions
 rule adult_check : {p: Person} / p.age >= 18 ==> mark_adult(p.id), log("Adult detected")

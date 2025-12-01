@@ -43,7 +43,9 @@ func TestBuildNetworkFromConstraintFile(t *testing.T) {
 
 	// Create a valid constraint file with a rule
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte(`type Person : <id: string, name: string>
+	constraintContent := []byte(`type Person(id: string, name:string)
+
+action process_person(id: string, name: string)
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
@@ -83,7 +85,9 @@ func TestBuildNetworkFromConstraintFileWithFacts(t *testing.T) {
 
 	// Create a single TSD file with both types/rules and facts
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	tsdContent := []byte(`type Person : <id: string, name: string, age: number>
+	tsdContent := []byte(`type Person(id: string, name: string, age:number)
+
+action adult(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 
@@ -378,7 +382,9 @@ func TestSubmitFactsAndAnalyze(t *testing.T) {
 
 	// Create constraint file with a rule
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte(`type Person : <id: string, name: string, age: number>
+	constraintContent := []byte(`type Person(id: string, name: string, age:number)
+
+action adult(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
@@ -428,7 +434,9 @@ func TestSubmitFactsAndAnalyzeEmptyFacts(t *testing.T) {
 
 	// Create simple constraint file with a rule
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte(`type Person : <id: string>
+	constraintContent := []byte(`type Person(id:string)
+
+action process_person(id: string)
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
@@ -453,7 +461,9 @@ func TestSubmitFactsAndAnalyzeInvalidFact(t *testing.T) {
 
 	// Create constraint file with a rule
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte(`type Person : <id: string, name: string>
+	constraintContent := []byte(`type Person(id: string, name:string)
+
+action process_person(id: string, name: string)
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id, p.name)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
@@ -489,8 +499,10 @@ func TestMultipleFactTypes(t *testing.T) {
 
 	// Create constraint with multiple types
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte(`type Person : <id: string, name: string>
-type Order : <id: string, customer_id: string>
+	constraintContent := []byte(`type Person(id: string, name:string)
+type Order(id: string, customer_id:string)
+
+action match(id: string)
 
 rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> match(p.id)`)
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
@@ -573,7 +585,9 @@ func TestHelperPipelineIntegration(t *testing.T) {
 	// Verify pipeline is usable
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	content := []byte(`type Test : <id: string>
+	content := []byte(`type Test(id:string)
+
+action process_test(id: string)
 
 rule r1 : {t: Test} / t.id != "" ==> process_test(t.id)`)
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
@@ -609,7 +623,9 @@ func TestBuildNetworkErrorHandling(t *testing.T) {
 	// Instead, test with valid inputs to ensure no panic
 	tempDir2 := t.TempDir()
 	constraintFile := filepath.Join(tempDir2, "valid.tsd")
-	content := []byte(`type Person : <id: string>
+	content := []byte(`type Person(id:string)
+
+action process_person(id: string)
 
 rule r1 : {p: Person} / p.id != "" ==> process_person(p.id)`)
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {

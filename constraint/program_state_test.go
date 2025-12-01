@@ -23,8 +23,8 @@ func TestProgramStateIterativeParsing(t *testing.T) {
 	// 1. Type definitions file
 	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `// Type definitions
-type Person : <id: string, name: string, age: number>
-type Company : <id: string, name: string, employees: number>`
+type Person(id: string, name: string, age:number)
+type Company(id: string, name: string, employees:number)`
 
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
@@ -130,7 +130,7 @@ func TestProgramStateTypeValidation(t *testing.T) {
 
 	// Create types file
 	typesFile := filepath.Join(tempDir, "types.tsd")
-	typesContent := `type Person : <id: string, name: string>`
+	typesContent := `type Person(id: string, name:string)`
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write types file: %v", err)

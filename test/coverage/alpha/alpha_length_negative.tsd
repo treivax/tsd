@@ -1,5 +1,5 @@
 // Test fonction LENGTH() - négation
-type Password : <id: string, value: string, secure: bool>
+type Password(id: string, value: string, secure: bool)
 
 rule r1 : {p: Password} / NOT(LENGTH(p.value) >= 8) ==> weak_password_found(p.id, p.value)
 

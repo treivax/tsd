@@ -1,7 +1,7 @@
 // Test Beta PatternNode - Motifs et patterns complexes 
-type Transaction : <id: string, account_id: string, amount: number, type: string, timestamp: string>
-type Account : <id: string, customer_id: string, balance: number, type: string, status: string>
-type Customer : <id: string, name: string, risk_level: string, country: string>
+type Transaction(id: string, account_id: string, amount: number, type: string, timestamp: string)
+type Account(id: string, customer_id: string, balance: number, type: string, status: string)
+type Customer(id: string, name: string, risk_level: string, country: string)
 
 rule r1 : {c: Customer, a: Account} / c.id == a.customer_id AND a.type == "savings" AND a.balance > 50000 AND c.risk_level == "low" ==> high_value_safe_customer(c.id)
 rule r2 : {a: Account, t: Transaction} / a.id == t.account_id AND t.type == "withdrawal" AND t.amount > a.balance * 0.5 AND a.status == "active" ==> large_withdrawal_alert(a.id, t.id)

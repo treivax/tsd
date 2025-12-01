@@ -23,7 +23,7 @@ func TestRuleIdUniqueness(t *testing.T) {
 
 	// Create first file with a rule
 	file1 := filepath.Join(tempDir, "rules1.tsd")
-	content1 := `type Person : <id: string, age: number>
+	content1 := `type Person(id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
@@ -115,7 +115,7 @@ func TestRuleIdUniquenessWithReset(t *testing.T) {
 
 	// Create first file with rules
 	file1 := filepath.Join(tempDir, "rules1.tsd")
-	content1 := `type Person : <id: string, age: number>
+	content1 := `type Person(id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
@@ -129,7 +129,7 @@ rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 	file2 := filepath.Join(tempDir, "rules2.tsd")
 	content2 := `reset
 
-type Product : <id: string, price: number>
+type Product(id: string, price:number)
 
 rule r1 : {prod: Product} / prod.price > 100 ==> expensive(prod.id)
 rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
@@ -212,7 +212,7 @@ func TestRuleIdUniquenessInSameFile(t *testing.T) {
 
 	// Create file with duplicate rule IDs
 	file := filepath.Join(tempDir, "duplicate_rules.tsd")
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)
@@ -322,7 +322,7 @@ func TestRuleIdMultipleFiles(t *testing.T) {
 
 	// Create three files
 	file1 := filepath.Join(tempDir, "file1.tsd")
-	content1 := `type Person : <id: string, age: number>
+	content1 := `type Person(id: string, age:number)
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 
 	file2 := filepath.Join(tempDir, "file2.tsd")

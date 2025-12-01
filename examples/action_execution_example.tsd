@@ -6,10 +6,10 @@
 // DÉFINITIONS DE TYPES
 // ===================================================================
 
-type Person : <id: string, name: string, age: number, salary: number, status: string>
-type Department : <id: string, name: string, budget: number>
-type Employee : <id: string, personId: string, deptId: string, position: string>
-type AuditLog : <id: string, action: string, timestamp: number, details: string>
+type Person(id: string, name: string, age: number, salary: number, status: string)
+type Department(id: string, name: string, budget: number)
+type Employee(id: string, personId: string, deptId: string, position: string)
+type AuditLog(id: string, action: string, timestamp: number, details: string)
 
 // ===================================================================
 // RÈGLES AVEC DIFFÉRENTS TYPES D'ARGUMENTS

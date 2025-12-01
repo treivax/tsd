@@ -65,7 +65,7 @@ func TestRunWithValidFile(t *testing.T) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	content := "type Person : <id: string, name: string>"
+	content := "type Person(id: string, name:string)"
 	if _, err := tmpfile.Write([]byte(content)); err != nil {
 		t.Fatalf("Failed to write to temp file: %v", err)
 	}
@@ -127,12 +127,12 @@ func TestParseFile(t *testing.T) {
 	}{
 		{
 			name:        "valid type definition",
-			content:     "type Person : <id: string, name: string>",
+			content:     "type Person(id: string, name:string)",
 			expectError: false,
 		},
 		{
 			name:        "valid type with multiple fields",
-			content:     "type Employee : <id: string, name: string, age: number, salary: number>",
+			content:     "type Employee(id: string, name: string, age: number, salary:number)",
 			expectError: false,
 		},
 		{
@@ -301,8 +301,8 @@ func TestRunWithComplexConstraintFile(t *testing.T) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	content := `type Person : <id: string, name: string, age: number>
-type Company : <id: string, name: string, employees: number>`
+	content := `type Person(id: string, name: string, age:number)
+type Company(id: string, name: string, employees:number)`
 	if _, err := tmpfile.Write([]byte(content)); err != nil {
 		t.Fatalf("Failed to write to temp file: %v", err)
 	}
@@ -334,7 +334,7 @@ func TestParseFileWithRelativePath(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	tmpfile := filepath.Join(tmpDir, "test.tsd")
-	content := "type Person : <id: string>"
+	content := "type Person(id:string)"
 	if err := os.WriteFile(tmpfile, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}

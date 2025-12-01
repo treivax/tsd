@@ -801,7 +801,7 @@ func TestExtractVariablesFromArg(t *testing.T) {
 func TestParseAndMergeContentValidInput(t *testing.T) {
 	ps := NewProgramState()
 
-	content := "type Person : <id: string, name: string>"
+	content := "type Person(id: string, name:string)"
 	err := ps.ParseAndMergeContent(content, "test.tsd")
 	if err != nil {
 		t.Errorf("Expected no error for valid content, got %v", err)

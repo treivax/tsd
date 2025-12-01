@@ -2,8 +2,8 @@
 # This file contains intentionally invalid types, facts, and rules for testing validation
 
 # Valid type definitions
-type Person : <id: string, name: string, age: number>
-type Product : <id: string, name: string, price: number, category: string>
+type Person(id: string, name: string, age: number)
+type Product(id: string, name: string, price: number, category: string)
 
 # Valid facts
 Person(id: "P001", name: "Alice", age: 30)

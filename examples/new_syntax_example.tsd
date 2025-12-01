@@ -1,0 +1,187 @@
+// Exemple complet de la nouvelle syntaxe TSD
+// Cet exemple démontre:
+// - Définition de types avec la nouvelle syntaxe
+// - Définition d'actions avec paramètres optionnels et valeurs par défaut
+// - Validation des types lors du parsing
+// - Utilisation d'actions dans les règles
+
+// ========================================
+// DÉFINITION DES TYPES
+// ========================================
+
+// Type pour représenter un utilisateur
+type User(id: number, name: string, email: string, age: number, vip: bool)
+
+// Type pour représenter un produit
+type Product(id: number, name: string, price: number, stock: number, category: string)
+
+// Type pour représenter une commande
+type Order(orderId: number, userId: number, total: number, paid: bool, itemCount: number)
+
+// Type pour représenter un événement système
+type SystemEvent(eventId: number, eventType: string, timestamp: number, severity: string)
+
+// ========================================
+// DÉFINITION DES ACTIONS
+// ========================================
+
+// Action simple avec un seul paramètre
+action log(message: string)
+
+// Action avec plusieurs paramètres primitifs
+action sendEmail(recipient: string, subject: string, body: string)
+
+// Action avec valeur par défaut
+action notify(recipient: string, message: string, priority: number = 1)
+
+// Action acceptant un type personnalisé
+action saveUser(user: User)
+
+// Action avec paramètre optionnel
+action updateProduct(product: Product, discount: number?)
+
+// Action avec mix de types et options
+action processOrder(order: Order, applyDiscount: bool = false, notifyUser: bool = true)
+
+// Action avec plusieurs types personnalisés
+action linkOrderToUser(order: Order, user: User)
+
+// Action pour créer un événement
+action createEvent(eventType: string, severity: string, message: string)
+
+// Action système sans paramètres
+action triggerBackup()
+
+// Action avec tous les types de paramètres
+action complexAction(
+    user: User,
+    message: string,
+    priority: number = 1,
+    urgent: bool?,
+    retries: number = 3
+)
+
+// ========================================
+// RÈGLES MÉTIER
+// ========================================
+
+// Règle 1: Utilisateurs majeurs
+rule adultUsers : {u: User} / u.age >= 18 AND u.vip == false
+    ==> log(u.name), notify(u.email, "Welcome adult user")
+
+// Règle 2: Utilisateurs VIP
+rule vipUsers : {u: User} / u.vip == true
+    ==> notify(u.email, "VIP benefits available", 5),
+        saveUser(u)
+
+// Règle 3: Produits en rupture de stock
+rule lowStock : {p: Product} / p.stock < 10
+    ==> log(p.name),
+        createEvent("LOW_STOCK", "WARNING", p.name)
+
+// Règle 4: Produits chers
+rule expensiveProducts : {p: Product} / p.price > 1000
+    ==> updateProduct(p, 10),
+        log(p.name)
+
+// Règle 5: Commandes non payées
+rule unpaidOrders : {o: Order} / o.paid == false AND o.total > 100
+    ==> processOrder(o, true, true),
+        createEvent("UNPAID_ORDER", "WARNING", "Unpaid order detected")
+
+// Règle 6: Grandes commandes
+rule largeOrders : {o: Order} / o.itemCount > 10
+    ==> processOrder(o),
+        createEvent("LARGE_ORDER", "INFO", "Large order received")
+
+// Règle 7: Commandes VIP (jointure)
+rule vipOrders : {u: User, o: Order} / u.id == o.userId AND u.vip == true
+    ==> linkOrderToUser(o, u),
+        notify(u.email, "Thank you for your VIP order", 5)
+
+// Règle 8: Seniors avec grandes commandes
+rule seniorLargeOrders : {u: User, o: Order} / u.age > 65 AND u.id == o.userId AND o.total > 500
+    ==> processOrder(o, true, true),
+        notify(u.email, "Senior discount applied"),
+        log(u.name)
+
+// Règle 9: Produits électroniques en promotion
+rule electronicsPromo : {p: Product} / p.category == "electronics" AND p.price > 500
+    ==> updateProduct(p, 15),
+        createEvent("PROMO", "INFO", p.name)
+
+// Règle 10: Événements critiques
+rule criticalEvents : {e: SystemEvent} / e.severity == "CRITICAL"
+    ==> log(e.eventType),
+        notify("admin@example.com", "Critical event occurred", 10),
+        triggerBackup()
+
+// Règle 11: Utilisateurs avec commandes importantes
+rule importantCustomers : {u: User, o: Order} /
+    u.id == o.userId AND o.total > 1000 AND u.vip == false
+    ==> saveUser(u),
+        processOrder(o, true),
+        notify(u.email, "Thank you for your order")
+
+// Règle 12: Actions multiples complexes
+rule complexRule : {u: User, p: Product, o: Order} /
+    u.id == o.userId AND
+    u.age > 18 AND
+    o.total > 100 AND
+    p.stock > 0
+    ==> linkOrderToUser(o, u),
+        updateProduct(p),
+        notify(u.email, "Order confirmed"),
+        log(u.name),
+        createEvent("ORDER_PROCESSED", "INFO", "Order processed successfully")
+
+// ========================================
+// DONNÉES DE TEST (FAITS)
+// ========================================
+
+// Utilisateurs
+User(id: 1, name: "Alice", email: "alice@example.com", age: 30, vip: true)
+User(id: 2, name: "Bob", email: "bob@example.com", age: 70, vip: false)
+User(id: 3, name: "Charlie", email: "charlie@example.com", age: 25, vip: false)
+User(id: 4, name: "Diana", email: "diana@example.com", age: 45, vip: true)
+
+// Produits
+Product(id: 101, name: "Laptop Pro", price: 1500, stock: 5, category: "electronics")
+Product(id: 102, name: "Mouse", price: 25, stock: 100, category: "accessories")
+Product(id: 103, name: "Monitor 4K", price: 800, stock: 8, category: "electronics")
+Product(id: 104, name: "Keyboard", price: 120, stock: 50, category: "accessories")
+
+// Commandes
+Order(orderId: 2001, userId: 1, total: 1500, paid: false, itemCount: 2)
+Order(orderId: 2002, userId: 2, total: 600, paid: true, itemCount: 5)
+Order(orderId: 2003, userId: 3, total: 50, paid: false, itemCount: 1)
+Order(orderId: 2004, userId: 4, total: 2500, paid: false, itemCount: 15)
+
+// Événements système
+SystemEvent(eventId: 3001, eventType: "USER_LOGIN", timestamp: 1640000000, severity: "INFO")
+SystemEvent(eventId: 3002, eventType: "SYSTEM_ERROR", timestamp: 1640000100, severity: "CRITICAL")
+SystemEvent(eventId: 3003, eventType: "DATA_BACKUP", timestamp: 1640000200, severity: "INFO")
+
+// ========================================
+// NOTES SUR LA NOUVELLE SYNTAXE
+// ========================================
+
+// 1. Types: Utilise des parenthèses au lieu de <>
+//    Ancienne: type User : <name: string, age: number>
+//    Nouvelle: type User(name: string, age: number)
+
+// 2. Actions: Doivent être définies explicitement
+//    - Types primitifs: string, number, bool
+//    - Types personnalisés: définis avec 'type'
+//    - Optionnels: marqués avec '?'
+//    - Valeurs par défaut: avec '= valeur'
+
+// 3. Validation: Se fait au parsing
+//    - Les types des arguments sont vérifiés
+//    - Les actions non définies sont détectées
+//    - Les erreurs de type sont signalées
+
+// 4. Compatibilité:
+//    - Les règles existantes fonctionnent toujours
+//    - Les actions multiples sont supportées (séparées par des virgules)
+//    - Les agrégations et jointures fonctionnent comme avant

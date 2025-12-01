@@ -2,8 +2,8 @@
 // Ce fichier démontre comment supprimer dynamiquement des faits et des règles
 
 // Définition des types
-type Person : <id: string, name: string, age: number>
-type Order : <id: string, customer_id: string, amount: number>
+type Person(id: string, name: string, age: number)
+type Order(id: string, customer_id: string, amount: number)
 
 // Définition des règles
 rule adult_check : {p: Person} / p.age >= 18 ==> notify_adult(p.id)

@@ -1,6 +1,6 @@
 // Test opérateur AND dans jointures beta
-type Person : <id: string, name: string, age: number, status: string>
-type Order : <id: string, customer_id: string, amount: number, status: string>
+type Person(id: string, name: string, age: number, status: string)
+type Order(id: string, customer_id: string, amount: number, status: string)
 
 rule r1 : {p: Person, o: Order} / p.id == o.customer_id AND o.amount > 100 AND p.status == "active" ==> high_value_order(p.id, o.id)
 rule r2 : {p: Person, o: Order} / p.id == o.customer_id AND p.age >= 18 AND o.status == "confirmed" AND p.status == "active" ==> adult_confirmed_order(p.id, o.id)

@@ -33,14 +33,26 @@ func ParseConstraint(filename string, input []byte) (interface{}, error) {
 
 // ValidateConstraintProgram validates a parsed constraint program AST.
 // It performs semantic validation including type checking, variable resolution,
-// and constraint consistency checks.
+// constraint consistency checks, and action signature validation.
 //
 // Example:
 //
 //	ast, _ := ParseConstraint("rules.constraint", content)
 //	err := ValidateConstraintProgram(ast)
 func ValidateConstraintProgram(result interface{}) error {
-	return ValidateProgram(result)
+	// First perform standard validation
+	if err := ValidateProgram(result); err != nil {
+		return err
+	}
+
+	// Convert to Program for action validation
+	program, err := ConvertResultToProgram(result)
+	if err != nil {
+		return fmt.Errorf("failed to convert result to program: %v", err)
+	}
+
+	// Validate action definitions and calls
+	return ValidateActionCalls(program)
 }
 
 // ParseConstraintFile parses a constraint file from the filesystem.
@@ -82,6 +94,51 @@ func ExtractFactsFromProgram(result interface{}) ([]map[string]interface{}, erro
 	// Convertir les faits au format RETE
 	reteFacts := ConvertFactsToReteFormat(program)
 	return reteFacts, nil
+}
+
+// ValidateActionCalls validates all action calls in a program against their definitions.
+func ValidateActionCalls(program *Program) error {
+	// Create validator with action and type definitions
+	validator := NewActionValidator(program.Actions, program.Types)
+
+	// First, validate action definitions themselves
+	if errs := validator.ValidateActionDefinitions(); len(errs) > 0 {
+		// Return first error
+		return errs[0]
+	}
+
+	// Validate action calls in each rule
+	for _, expr := range program.Expressions {
+		// Build map of rule variables to their types
+		ruleVariables := make(map[string]string)
+
+		// Extract variables from Set (single pattern, backward compatibility)
+		if len(expr.Set.Variables) > 0 {
+			for _, v := range expr.Set.Variables {
+				ruleVariables[v.Name] = v.DataType
+			}
+		}
+
+		// Extract variables from Patterns (multiple patterns)
+		if expr.Patterns != nil {
+			for _, pattern := range expr.Patterns {
+				for _, v := range pattern.Variables {
+					ruleVariables[v.Name] = v.DataType
+				}
+			}
+		}
+
+		// Validate each action call
+		if expr.Action != nil {
+			for _, job := range expr.Action.GetJobs() {
+				if err := validator.ValidateActionCall(&job, ruleVariables); err != nil {
+					return fmt.Errorf("rule '%s': %v", expr.RuleId, err)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // ConvertResultToProgram convertit le résultat du parser en structure Program

@@ -10,8 +10,8 @@ import (
 
 // TestAggregationWithJoinSyntax tests the new parser support for aggregation with join patterns
 func TestAggregationWithJoinSyntax(t *testing.T) {
-	input := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
+	input := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
 
 rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Avg salary")
 `
@@ -140,8 +140,8 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 
 // TestAggregationWithMultipleAggregates tests multiple aggregation variables
 func TestAggregationWithMultipleAggregates(t *testing.T) {
-	input := `type Department : <id: string>
-type Employee : <id: string, deptId: string, salary: number>
+	input := `type Department(id:string)
+type Employee(id: string, deptId: string, salary:number)
 
 rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Stats")
 `
@@ -179,7 +179,7 @@ rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary)
 
 // TestBackwardCompatibilitySinglePattern ensures old syntax still works
 func TestBackwardCompatibilitySinglePattern(t *testing.T) {
-	input := `type Person : <id: string, age: number>
+	input := `type Person(id: string, age:number)
 
 rule adults : {p: Person} / p.age >= 18 ==> print("Adult")
 `
@@ -242,8 +242,8 @@ func TestAggregationVariableSyntaxVariants(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fullInput := `type Dept : <id: string>
-type Emp : <id: string, deptId: string, salary: number>
+			fullInput := `type Dept(id:string)
+type Emp(id: string, deptId: string, salary:number)
 
 ` + tt.input
 
@@ -273,8 +273,8 @@ type Emp : <id: string, deptId: string, salary: number>
 // TestParseError ensures invalid syntax is rejected
 func TestAggregationJoinParseError(t *testing.T) {
 	// Missing closing paren in aggregation
-	input := `type Dept : <id: string>
-type Emp : <id: string, salary: number>
+	input := `type Dept(id:string)
+type Emp(id: string, salary:number)
 
 rule bad : {d: Dept, avg: AVG(e.salary} / {e: Emp} / e.deptId == d.id ==> print("x")
 `

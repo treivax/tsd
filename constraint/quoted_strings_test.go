@@ -17,61 +17,61 @@ func TestQuotedStringsInFacts(t *testing.T) {
 	}{
 		{
 			name: "simple quoted string in fact",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 Person(id:"p1", name:"Alice")`,
 			wantErr: false,
 		},
 		{
 			name: "quoted string with spaces",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 Person(id:"p1", name:"Alice Smith")`,
 			wantErr: false,
 		},
 		{
 			name: "mixed quoted and unquoted",
-			input: `type Person : <id: string, name: string, age: number>
+			input: `type Person(id: string, name: string, age:number)
 Person(id:p1, name:"Alice", age:30)`,
 			wantErr: false,
 		},
 		{
 			name: "single quotes",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 Person(id:'p1', name:'Alice')`,
 			wantErr: false,
 		},
 		{
 			name: "single quotes with spaces",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 Person(id:'p1', name:'Alice Smith')`,
 			wantErr: false,
 		},
 		{
 			name: "unquoted string (should work)",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 Person(id:p1, name:Alice)`,
 			wantErr: false,
 		},
 		{
 			name: "quoted string in rule condition",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 rule r1 : {p: Person} / p.name == "Alice" ==> match(p.id)`,
 			wantErr: false,
 		},
 		{
 			name: "quoted string with special characters",
-			input: `type Message : <id: string, text: string>
+			input: `type Message(id: string, text:string)
 Message(id:"m1", text:"Hello, World!")`,
 			wantErr: false,
 		},
 		{
 			name: "escaped quotes in string",
-			input: `type Message : <id: string, text: string>
+			input: `type Message(id: string, text:string)
 Message(id:"m1", text:"She said \"Hello\"")`,
 			wantErr: false,
 		},
 		{
 			name: "complete program with quoted strings",
-			input: `type Person : <id: string, name: string, city: string>
+			input: `type Person(id: string, name: string, city:string)
 
 Person(id:"p1", name:"Alice Smith", city:"New York")
 Person(id:"p2", name:"Bob Jones", city:"Los Angeles")
@@ -136,31 +136,31 @@ func TestQuotedStringsInRules(t *testing.T) {
 	}{
 		{
 			name: "string equality with double quotes",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 rule r1 : {p: Person} / p.name == "Alice" ==> match(p.id)`,
 			wantErr: false,
 		},
 		{
 			name: "string equality with single quotes",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 rule r1 : {p: Person} / p.name == 'Alice' ==> match(p.id)`,
 			wantErr: false,
 		},
 		{
 			name: "string with spaces in condition",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 rule r1 : {p: Person} / p.name == "Alice Smith" ==> match(p.id)`,
 			wantErr: false,
 		},
 		{
 			name: "multiple string conditions",
-			input: `type Person : <id: string, name: string, city: string>
+			input: `type Person(id: string, name: string, city:string)
 rule r1 : {p: Person} / p.name == "Alice" AND p.city == "New York" ==> match(p.id)`,
 			wantErr: false,
 		},
 		{
 			name: "string in action parameters",
-			input: `type Person : <id: string, name: string>
+			input: `type Person(id: string, name:string)
 rule r1 : {p: Person} / p.name == "Alice" ==> match(p.id, "found")`,
 			wantErr: false,
 		},

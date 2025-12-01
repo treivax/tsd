@@ -20,8 +20,8 @@ func TestComprehensiveNonBlockingValidation(t *testing.T) {
 
 	// Fichier 1: Définitions de types
 	typesFile := filepath.Join(tempDir, "types.tsd")
-	typesContent := `type Person : <id: string, name: string, age: number>
-type Company : <id: string, name: string, employees: number>`
+	typesContent := `type Person(id: string, name: string, age:number)
+type Company(id: string, name: string, employees:number)`
 
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {

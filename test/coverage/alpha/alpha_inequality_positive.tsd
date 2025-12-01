@@ -1,5 +1,5 @@
 // Test inégalité positive
-type Order : <id: string, total: number, status: string>
+type Order(id: string, total: number, status: string)
 
 rule r1 : {o: Order} / o.status != "cancelled" ==> valid_order_found(o.id, o.total)
 

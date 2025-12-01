@@ -23,8 +23,8 @@ func TestIterativeParsingWithReteNetwork(t *testing.T) {
 	// Données de test avec types, règles et faits répartis
 	typeContent := `
 		// Types de test
-		type Person : <name: string, age: number>
-		type Company : <name: string, sector: string>
+		type Person(name: string, age:number)
+		type Company(name: string, sector:string)
 	`
 
 	ruleContent := `
@@ -108,7 +108,7 @@ func TestMultiFileParsing(t *testing.T) {
 
 	// Contenu des fichiers
 	contents := []string{
-		`type Person : <name: string, age: number>`,
+		`type Person(name: string, age:number)`,
 		`rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)`,
 		`Person(name:John, age:30)
 Person(name:Jane, age:16)`,

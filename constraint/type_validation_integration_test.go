@@ -15,7 +15,7 @@ func TestRuleValidation_UndefinedType(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string,age:number)
 
 rule r1 : {u: UnknownType} / u.name == "test" ==> log(u.id)
 `
@@ -64,7 +64,7 @@ func TestRuleValidation_InvalidFieldAccess(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string,age:number)
 
 rule r2 : {p: Person} / p.salary > 1000 ==> high_earner(p.id)
 `
@@ -103,7 +103,7 @@ func TestRuleValidation_ValidRule(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string,age:number)
 
 rule r3 : {p: Person} / p.age > 18 ==> adult(p.id, p.name)
 `
@@ -128,9 +128,9 @@ func TestFactValidation_UndefinedType(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age: number)
 
-UnknownType(id: "U001", value: "test")
+UnknownType(id: "X001", data: "test")
 `
 
 	err := ps.ParseAndMergeContent(content, "test.tsd")
@@ -173,7 +173,7 @@ func TestFactValidation_InvalidField(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age: number)
 
 Person(id: "P001", name: "Alice", salary: 50000)
 `
@@ -213,7 +213,7 @@ func TestFactValidation_WrongFieldType(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age: number)
 
 Person(id: "P001", name: "Alice", age: "twenty-five")
 `
@@ -252,7 +252,7 @@ func TestFactValidation_ValidFact(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age: number)
 
 Person(id: "P001", name: "Alice", age: 25)
 `
@@ -277,8 +277,8 @@ func TestMixedValidation_PartialSuccess(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
-type Product : <id: string, name: string, price: number>
+type Person(id: string, name: string,age:number)
+type Product(id: string, name: string,price:number)
 
 Person(id: "P001", name: "Alice", age: 25)
 Person(id: "P002", name: "Bob", invalidField: "test")
@@ -325,7 +325,7 @@ func TestMultipleFiles_ValidationAcrossFiles(t *testing.T) {
 
 	// File 1: Define types
 	content1 := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age: number)
 `
 	err := ps.ParseAndMergeContent(content1, "types.tsd")
 	if err != nil {
@@ -400,7 +400,7 @@ func TestValidation_ComplexFieldAccess(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string,age:number)
 
 rule r1 : {p: Person} / p.age > 18 AND p.name == "Alice" ==> process(p.id)
 rule r2 : {p: Person} / p.age > 18 AND p.salary > 1000 ==> high_earner(p.id)
@@ -432,7 +432,7 @@ func TestValidation_ActionFieldAccess(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string,age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> process(p.id, p.name)
 rule r2 : {p: Person} / p.age > 18 ==> process(p.id, p.address)

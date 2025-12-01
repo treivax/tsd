@@ -4,17 +4,18 @@
 
 package constraint
 
-// Program represents the complete AST of a constraint program including types, expressions, facts and resets.
+// Program represents the complete AST of a constraint program including types, actions, expressions, facts and resets.
 // It serves as the root structure for parsed constraint files.
 type Program struct {
-	Types       []TypeDefinition `json:"types"`       // Type definitions declared in the program
-	Expressions []Expression     `json:"expressions"` // Constraint expressions/rules
-	Facts       []Fact           `json:"facts"`       // Facts parsed from the program
-	Resets      []Reset          `json:"resets"`      // Reset instructions to clear the system
+	Types       []TypeDefinition   `json:"types"`       // Type definitions declared in the program
+	Actions     []ActionDefinition `json:"actions"`     // Action definitions with their signatures
+	Expressions []Expression       `json:"expressions"` // Constraint expressions/rules
+	Facts       []Fact             `json:"facts"`       // Facts parsed from the program
+	Resets      []Reset            `json:"resets"`      // Reset instructions to clear the system
 }
 
 // TypeDefinition represents a user-defined type with its fields.
-// Example: type Person : <id: string, name: string, age: number>
+// Example: type Person(id: string, name: string, age: number)
 type TypeDefinition struct {
 	Type   string  `json:"type"`   // Always "typeDefinition"
 	Name   string  `json:"name"`   // The type name (e.g., "Person")
@@ -26,6 +27,23 @@ type TypeDefinition struct {
 type Field struct {
 	Name string `json:"name"` // Field name (e.g., "id", "name")
 	Type string `json:"type"` // Field type (e.g., "string", "number", "bool")
+}
+
+// ActionDefinition represents a user-defined action with its signature.
+// Example: action notify(recipient: string, message: string, priority: number = 1)
+type ActionDefinition struct {
+	Type       string      `json:"type"`       // Always "actionDefinition"
+	Name       string      `json:"name"`       // The action name (e.g., "notify")
+	Parameters []Parameter `json:"parameters"` // List of parameters for the action
+}
+
+// Parameter represents a single parameter within an action definition.
+// It contains the parameter name, type, whether it's optional, and an optional default value.
+type Parameter struct {
+	Name         string      `json:"name"`                   // Parameter name (e.g., "recipient", "priority")
+	Type         string      `json:"type"`                   // Parameter type (e.g., "string", "number", "bool", or a user-defined type like "Person")
+	Optional     bool        `json:"optional"`               // Whether the parameter is optional (marked with ?)
+	DefaultValue interface{} `json:"defaultValue,omitempty"` // Default value if provided
 }
 
 // Expression represents a constraint expression or rule in the system.

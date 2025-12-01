@@ -1,8 +1,8 @@
 # Tests des opérateurs arithmétiques de base : +, -, *, /
 # Ce fichier teste l'utilisation des 4 opérateurs dans les contraintes et actions
 
-type Product : <id:string, price:number, quantity:number, discount:number>
-type Order : <id:string, subtotal:number, tax_rate:number, shipping:number>
+type Product(id:string, price:number, quantity:number, discount:number)
+type Order(id:string, subtotal:number, tax_rate:number, shipping:number)
 
 # Test 1: Addition dans contrainte
 # Un produit avec price + discount >= 150 déclenche high_value

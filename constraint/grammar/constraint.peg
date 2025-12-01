@@ -14,8 +14,9 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types, expressions, faits, retractions, ruleRemovals et reset
+    // Séparer types, actions, expressions, faits, retractions, ruleRemovals et reset
     types := []interface{}{}
+    actions := []interface{}{}
     expressions := []interface{}{}
     facts := []interface{}{}
     retractions := []interface{}{}
@@ -27,6 +28,8 @@ Start <- _ statements:StatementList _ EOF {
             if stmtMap, ok := stmt.(map[string]interface{}); ok {
                 if stmtMap["type"] == "typeDefinition" {
                     types = append(types, stmt)
+                } else if stmtMap["type"] == "actionDefinition" {
+                    actions = append(actions, stmt)
                 } else if stmtMap["type"] == "expression" {
                     expressions = append(expressions, stmt)
                 } else if stmtMap["type"] == "fact" {
@@ -44,6 +47,7 @@ Start <- _ statements:StatementList _ EOF {
 
     return map[string]interface{}{
         "types": types,
+        "actions": actions,
         "expressions": expressions,
         "facts": facts,
         "retractions": retractions,
@@ -62,7 +66,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / Expression / RemoveRule / RemoveFact / Fact / Reset
+Statement <- TypeDefinition / ActionDefinition / Expression / RemoveRule / RemoveFact / Fact / Reset
 
 Reset <- "reset" {
     return map[string]interface{}{
@@ -70,7 +74,7 @@ Reset <- "reset" {
     }, nil
 }
 
-TypeDefinition <- "type" _ name:IdentName _ ":" _ "<" _ fields:FieldList _ ">" {
+TypeDefinition <- "type" _ name:IdentName _ "(" _ fields:FieldList _ ")" {
     return map[string]interface{}{
         "type": "typeDefinition",
         "name": name,
@@ -88,16 +92,53 @@ FieldList <- first:Field rest:(_ "," _ Field)* {
     return fields, nil
 }
 
-Field <- name:IdentName _ ":" _ fieldType:AtomicType {
+Field <- name:IdentName _ ":" _ fieldType:FieldType {
     return map[string]interface{}{
         "name": name,
         "type": fieldType,
     }, nil
 }
 
-AtomicType <- "string" { return "string", nil } /
-              "number" { return "number", nil } /
-              "bool"   { return "bool", nil }
+FieldType <- "string" { return "string", nil } /
+             "number" { return "number", nil } /
+             "bool"   { return "bool", nil }
+
+ActionDefinition <- "action" _ name:IdentName _ "(" _ params:ParameterList? _ ")" {
+    if params == nil {
+        params = []interface{}{}
+    }
+    return map[string]interface{}{
+        "type": "actionDefinition",
+        "name": name,
+        "parameters": params,
+    }, nil
+}
+
+ParameterList <- first:Parameter rest:(_ "," _ Parameter)* {
+    parameters := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            parameters = append(parameters, item.([]interface{})[3])
+        }
+    }
+    return parameters, nil
+}
+
+Parameter <- name:IdentName _ ":" _ paramType:ParameterType optional:"?"? _ defaultValue:(_ "=" _ ParameterDefaultValue)? {
+    result := map[string]interface{}{
+        "name": name,
+        "type": paramType,
+        "optional": optional != nil,
+    }
+    if defaultValue != nil {
+        result["defaultValue"] = defaultValue.([]interface{})[3]
+    }
+    return result, nil
+}
+
+ParameterType <- IdentName { return string(c.text), nil }
+
+ParameterDefaultValue <- Number / StringLiteral / BooleanLiteral
 
 Expression <- "rule" _ ruleId:IdentName _ ":" _ patterns:PatternBlocks _ "/" _ constraints:Constraints _ "==>" _ action:Action {
     // If only one pattern block, use old structure for backward compatibility
