@@ -199,6 +199,8 @@ rule adult : {p: Person} / p.age >= 18 ==> print("Adult")`,
 		{
 			name: "Multiple conditions AND",
 			content: `type Person(id: string, age: number, name:string)
+action print(message: string)
+
 rule specific : {p: Person} / p.age > 18 AND p.name == 'Alice' ==> print("Found")`,
 			factCount:   2,
 			activations: 1,
@@ -206,6 +208,8 @@ rule specific : {p: Person} / p.age > 18 AND p.name == 'Alice' ==> print("Found"
 		{
 			name: "Multiple conditions OR",
 			content: `type Person(id: string, age:number)
+action print(message: string)
+
 rule young_or_old : {p: Person} / p.age < 18 OR p.age > 65 ==> print("Young or old")`,
 			factCount:   3,
 			activations: 2,
@@ -213,6 +217,8 @@ rule young_or_old : {p: Person} / p.age < 18 OR p.age > 65 ==> print("Young or o
 		{
 			name: "Numeric comparisons",
 			content: `type Product(id: string, price:number)
+action print(message: string)
+
 rule expensive : {p: Product} / p.price > 100 ==> print("Expensive")
 rule cheap : {p: Product} / p.price <= 50 ==> print("Cheap")`,
 			factCount:   3,
@@ -221,6 +227,8 @@ rule cheap : {p: Product} / p.price <= 50 ==> print("Cheap")`,
 		{
 			name: "String equality",
 			content: `type User(id: string, role:string)
+action print(message: string)
+
 rule admin : {u: User} / u.role == 'admin' ==> print("Admin user")`,
 			factCount:   2,
 			activations: 1,
@@ -228,6 +236,8 @@ rule admin : {u: User} / u.role == 'admin' ==> print("Admin user")`,
 		{
 			name: "Boolean conditions",
 			content: `type Account(id: string, active:number)
+action print(message: string)
+
 rule active_account : {a: Account} / a.active == 1 ==> print("Active")`,
 			factCount:   2,
 			activations: 1,

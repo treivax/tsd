@@ -205,6 +205,8 @@ func TestBetaNoRegression_AllPreviousTests(t *testing.T) {
 			name: "Two pattern join",
 			content: `type A(id: string, x:number)
 type B(id: string, y: number, aId:string)
+action print(message: string)
+
 rule join_ab : {a: A, b: B} / a.id == b.aId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "A1", Type: "A", Fields: map[string]interface{}{"id": "a1", "x": 10}},
@@ -217,6 +219,8 @@ rule join_ab : {a: A, b: B} / a.id == b.aId ==> print("Join")`,
 			content: `type A(id: string, x:number)
 type B(id: string, aId:string)
 type C(id: string, bId:string)
+action print(message: string)
+
 rule join_abc : {a: A, b: B, c: C} / a.id == b.aId AND b.id == c.bId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "A1", Type: "A", Fields: map[string]interface{}{"id": "a1", "x": 10}},
@@ -229,6 +233,8 @@ rule join_abc : {a: A, b: B, c: C} / a.id == b.aId AND b.id == c.bId ==> print("
 			name: "Join with additional constraints",
 			content: `type Person(id: string, age: number, name:string)
 type Account(id: string, ownerId: string, balance:number)
+action print(message: string)
+
 rule rich_adult : {p: Person, a: Account} / p.id == a.ownerId AND p.age >= 18 AND a.balance > 10000 ==> print("Rich adult")`,
 			facts: []Fact{
 				{ID: "P1", Type: "Person", Fields: map[string]interface{}{"id": "p1", "age": 25, "name": "Alice"}},
@@ -240,6 +246,8 @@ rule rich_adult : {p: Person, a: Account} / p.id == a.ownerId AND p.age >= 18 AN
 			name: "Multiple matching joins",
 			content: `type User(id: string, name:string)
 type Post(id: string, userId: string, title:string)
+action print(message: string)
+
 rule user_posts : {u: User, p: Post} / u.id == p.userId ==> print("Post")`,
 			facts: []Fact{
 				{ID: "U1", Type: "User", Fields: map[string]interface{}{"id": "u1", "name": "Alice"}},
@@ -252,6 +260,8 @@ rule user_posts : {u: User, p: Post} / u.id == p.userId ==> print("Post")`,
 			name: "Join with no matches",
 			content: `type X(id: string, val:number)
 type Y(id: string, xId:string)
+action print(message: string)
+
 rule join_xy : {x: X, y: Y} / x.id == y.xId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "X1", Type: "X", Fields: map[string]interface{}{"id": "x1", "val": 10}},
