@@ -438,8 +438,9 @@ func BenchmarkBetaSharing_WithSharing(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		network := NewReteNetwork(storage)
-		network.Config = &ReteConfig{BetaSharingEnabled: true}
-		network.BetaSharingRegistry = NewBetaSharingRegistry()
+		config := BetaSharingConfig{Enabled: true, HashCacheSize: 1000, MaxSharedNodes: 10000}
+		lifecycle := NewLifecycleManager()
+		network.BetaSharingRegistry = NewBetaSharingRegistry(config, lifecycle)
 
 		personNode := NewTypeNode("Person", TypeDefinition{Name: "Person"}, storage)
 		network.TypeNodes["Person"] = personNode

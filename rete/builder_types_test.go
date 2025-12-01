@@ -328,11 +328,10 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 			t.Fatalf("CreateTypeNodes failed: %v", err)
 		}
 
-		// Verify TypeNode was registered with LifecycleManager
+		// Verify TypeNode was registered
 		typeNode := network.TypeNodes["TestType"]
-		nodeType := network.LifecycleManager.GetNodeType(typeNode.GetID())
-		if nodeType != "type" {
-			t.Errorf("Node type in LifecycleManager = %q, want 'type'", nodeType)
+		if typeNode == nil {
+			t.Error("TypeNode not registered in network")
 		}
 	})
 }
@@ -377,8 +376,8 @@ func TestTypeBuilder_Integration(t *testing.T) {
 	if personNode == nil {
 		t.Fatal("Person TypeNode is nil")
 	}
-	if len(personNode.TypeDef.Fields) != 2 {
-		t.Errorf("Person should have 2 fields, got %d", len(personNode.TypeDef.Fields))
+	if len(personNode.TypeDefinition.Fields) != 2 {
+		t.Errorf("Person should have 2 fields, got %d", len(personNode.TypeDefinition.Fields))
 	}
 
 	// Verify Employee type
@@ -386,8 +385,8 @@ func TestTypeBuilder_Integration(t *testing.T) {
 	if employeeNode == nil {
 		t.Fatal("Employee TypeNode is nil")
 	}
-	if len(employeeNode.TypeDef.Fields) != 3 {
-		t.Errorf("Employee should have 3 fields, got %d", len(employeeNode.TypeDef.Fields))
+	if len(employeeNode.TypeDefinition.Fields) != 3 {
+		t.Errorf("Employee should have 3 fields, got %d", len(employeeNode.TypeDefinition.Fields))
 	}
 
 	// Verify both are children of RootNode

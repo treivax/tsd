@@ -60,3 +60,9 @@ Thumbs.db
 /build/
 /dist/
 *.tmp
+benchmarks_all.txt
+benchmark_summary.txt
+full_test_output.txt
+test_results.txt
+coverage.out
+coverage.html

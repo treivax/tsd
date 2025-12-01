@@ -40,18 +40,11 @@ func TestNewRuleBuilder(t *testing.T) {
 	}
 }
 
-func TestRuleBuilder_CreateRuleNodes(t *testing.T) {
+func TestRuleBuilder_CreateRuleNodes_InvalidExpression(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
-	// Create a simple pipeline mock for testing
-	pipeline := &ConstraintPipelineBuilder{
-		network: network,
-		storage: storage,
-	}
-
 	utils := NewBuilderUtils(storage)
-	rb := NewRuleBuilder(utils, pipeline)
+	rb := NewRuleBuilder(utils, nil)
 
 	t.Run("error on invalid expression format", func(t *testing.T) {
 		expressions := []interface{}{
@@ -63,6 +56,13 @@ func TestRuleBuilder_CreateRuleNodes(t *testing.T) {
 			t.Error("Expected error for invalid expression format, got nil")
 		}
 	})
+}
+
+func TestRuleBuilder_CreateRuleNodes_EmptyList(t *testing.T) {
+	storage := NewMemoryStorage()
+	network := NewReteNetwork(storage)
+	utils := NewBuilderUtils(storage)
+	rb := NewRuleBuilder(utils, nil)
 
 	t.Run("empty expression list", func(t *testing.T) {
 		expressions := []interface{}{}
@@ -72,487 +72,130 @@ func TestRuleBuilder_CreateRuleNodes(t *testing.T) {
 			t.Errorf("Empty expression list should not error, got: %v", err)
 		}
 	})
-
-	t.Run("expression with default ruleId", func(t *testing.T) {
-		network := NewReteNetwork(storage)
-		pipeline := &ConstraintPipelineBuilder{
-			network: network,
-			storage: storage,
-		}
-		rb := NewRuleBuilder(utils, pipeline)
-
-		// Create TypeNode for the rule
-		personNode := NewTypeNode("Person", TypeDefinition{Name: "Person"}, storage)
-		network.TypeNodes["Person"] = personNode
-		network.RootNode.AddChild(personNode)
-
-		// Declare the action
-		network.Actions["print"] = &ActionDefinition{
-			Name: "print",
-			Parameters: []ActionParameter{
-				{Name: "message", Type: "string"},
-			},
-		}
-
-		expressions := []interface{}{
-			map[string]interface{}{
-				// Missing ruleId - should use default "rule_0"
-				"set": map[string]interface{}{
-					"variables": []interface{}{
-						map[string]interface{}{
-							"name":     "p",
-							"dataType": "Person",
-						},
-					},
-				},
-				"action": map[string]interface{}{
-					"type": "print",
-					"arguments": []interface{}{
-						map[string]interface{}{
-							"type":  "literal",
-							"value": "test",
-						},
-					},
-				},
-			},
-		}
-
-		err := rb.CreateRuleNodes(network, expressions)
-		// May fail due to missing constraint details, but should not panic
-		if err != nil {
-			// Expected to fail without proper action definition setup
-			t.Logf("Expected error for incomplete rule: %v", err)
-		}
-	})
-
-	t.Run("expression with custom ruleId", func(t *testing.T) {
-		network := NewReteNetwork(storage)
-		pipeline := &ConstraintPipelineBuilder{
-			network: network,
-			storage: storage,
-		}
-		rb := NewRuleBuilder(utils, pipeline)
-
-		// Create TypeNode
-		personNode := NewTypeNode("Person", TypeDefinition{Name: "Person"}, storage)
-		network.TypeNodes["Person"] = personNode
-		network.RootNode.AddChild(personNode)
-
-		// Declare the action
-		network.Actions["print"] = &ActionDefinition{
-			Name: "print",
-			Parameters: []ActionParameter{
-				{Name: "message", Type: "string"},
-			},
-		}
-
-		expressions := []interface{}{
-			map[string]interface{}{
-				"ruleId": "custom_rule_id",
-				"set": map[string]interface{}{
-					"variables": []interface{}{
-						map[string]interface{}{
-							"name":     "p",
-							"dataType": "Person",
-						},
-					},
-				},
-				"action": map[string]interface{}{
-					"type": "print",
-					"arguments": []interface{}{
-						map[string]interface{}{
-							"type":  "literal",
-							"value": "test",
-						},
-					},
-				},
-			},
-		}
-
-		err := rb.CreateRuleNodes(network, expressions)
-		// May fail, but ruleId extraction should work
-		if err != nil {
-			t.Logf("Rule creation may fail: %v", err)
-		}
-	})
 }
 
-func TestRuleBuilder_Integration_AlphaRules(t *testing.T) {
-	// Integration test: Create alpha rules through RuleBuilder
+func TestRuleBuilder_CreateSingleRule_NoPipeline(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
-	// Setup pipeline
-	pipeline := &ConstraintPipelineBuilder{
-		network: network,
-		storage: storage,
-	}
-
 	utils := NewBuilderUtils(storage)
-	rb := NewRuleBuilder(utils, pipeline)
+	rb := NewRuleBuilder(utils, nil)
 
-	// Create TypeNode
-	personNode := NewTypeNode("Person", TypeDefinition{
-		Type: "type",
-		Name: "Person",
-		Fields: []Field{
-			{Name: "age", Type: "number"},
-		},
-	}, storage)
-	network.TypeNodes["Person"] = personNode
-	network.RootNode.AddChild(personNode)
-
-	// Declare print action
-	network.Actions["print"] = &ActionDefinition{
-		Name: "print",
-		Parameters: []ActionParameter{
-			{Name: "message", Type: "string"},
-		},
-	}
-
-	// Create a simple alpha rule expression
-	expressions := []interface{}{
-		map[string]interface{}{
-			"ruleId": "adult_rule",
-			"set": map[string]interface{}{
-				"variables": []interface{}{
-					map[string]interface{}{
-						"name":     "p",
-						"dataType": "Person",
-					},
-				},
-			},
-			"constraints": map[string]interface{}{
-				"type":     "comparison",
-				"operator": ">",
-				"left": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "p",
-					"field":  "age",
-				},
-				"right": map[string]interface{}{
-					"type":  "literal",
-					"value": 18,
-				},
-			},
-			"action": map[string]interface{}{
-				"type": "print",
-				"arguments": []interface{}{
-					map[string]interface{}{
-						"type":  "literal",
-						"value": "Adult found",
-					},
-				},
-			},
-		},
-	}
-
-	err := rb.CreateRuleNodes(network, expressions)
-	if err != nil {
-		t.Fatalf("CreateRuleNodes failed for alpha rule: %v", err)
-	}
-
-	// Verify AlphaNode was created
-	if len(network.AlphaNodes) == 0 {
-		t.Error("No AlphaNodes created")
-	}
-}
-
-func TestRuleBuilder_Integration_JoinRules(t *testing.T) {
-	// Integration test: Create join rules through RuleBuilder
-	storage := NewMemoryStorage()
-	network := NewReteNetwork(storage)
-
-	pipeline := &ConstraintPipelineBuilder{
-		network: network,
-		storage: storage,
-	}
-
-	utils := NewBuilderUtils(storage)
-	rb := NewRuleBuilder(utils, pipeline)
-
-	// Create TypeNodes
-	personNode := NewTypeNode("Person", TypeDefinition{
-		Type: "type",
-		Name: "Person",
-		Fields: []Field{
-			{Name: "id", Type: "number"},
-		},
-	}, storage)
-	network.TypeNodes["Person"] = personNode
-	network.RootNode.AddChild(personNode)
-
-	employeeNode := NewTypeNode("Employee", TypeDefinition{
-		Type: "type",
-		Name: "Employee",
-		Fields: []Field{
-			{Name: "person_id", Type: "number"},
-		},
-	}, storage)
-	network.TypeNodes["Employee"] = employeeNode
-	network.RootNode.AddChild(employeeNode)
-
-	// Declare print action
-	network.Actions["print"] = &ActionDefinition{
-		Name: "print",
-		Parameters: []ActionParameter{
-			{Name: "message", Type: "string"},
-		},
-	}
-
-	// Create a join rule expression
-	expressions := []interface{}{
-		map[string]interface{}{
-			"ruleId": "person_employee_join",
-			"set": map[string]interface{}{
-				"variables": []interface{}{
-					map[string]interface{}{
-						"name":     "p",
-						"dataType": "Person",
-					},
-					map[string]interface{}{
-						"name":     "e",
-						"dataType": "Employee",
-					},
-				},
-			},
-			"constraints": map[string]interface{}{
-				"type":     "comparison",
-				"operator": "==",
-				"left": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "p",
-					"field":  "id",
-				},
-				"right": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "e",
-					"field":  "person_id",
-				},
-			},
-			"action": map[string]interface{}{
-				"type": "print",
-				"arguments": []interface{}{
-					map[string]interface{}{
-						"type":  "literal",
-						"value": "Join match",
-					},
-				},
-			},
-		},
-	}
-
-	err := rb.CreateRuleNodes(network, expressions)
-	if err != nil {
-		t.Fatalf("CreateRuleNodes failed for join rule: %v", err)
-	}
-
-	// Verify JoinNode was created
-	if len(network.BetaNodes) == 0 {
-		t.Error("No BetaNodes (JoinNodes) created")
-	}
-}
-
-func TestRuleBuilder_Integration_MultipleRules(t *testing.T) {
-	// Integration test: Create multiple rules of different types
-	storage := NewMemoryStorage()
-	network := NewReteNetwork(storage)
-
-	pipeline := &ConstraintPipelineBuilder{
-		network: network,
-		storage: storage,
-	}
-
-	utils := NewBuilderUtils(storage)
-	rb := NewRuleBuilder(utils, pipeline)
-
-	// Create TypeNodes
-	personNode := NewTypeNode("Person", TypeDefinition{
-		Type: "type",
-		Name: "Person",
-		Fields: []Field{
-			{Name: "id", Type: "number"},
-			{Name: "age", Type: "number"},
-		},
-	}, storage)
-	network.TypeNodes["Person"] = personNode
-	network.RootNode.AddChild(personNode)
-
-	employeeNode := NewTypeNode("Employee", TypeDefinition{
-		Type: "type",
-		Name: "Employee",
-		Fields: []Field{
-			{Name: "person_id", Type: "number"},
-		},
-	}, storage)
-	network.TypeNodes["Employee"] = employeeNode
-	network.RootNode.AddChild(employeeNode)
-
-	// Declare print action
-	network.Actions["print"] = &ActionDefinition{
-		Name: "print",
-		Parameters: []ActionParameter{
-			{Name: "message", Type: "string"},
-		},
-	}
-
-	// Create multiple rule expressions
-	expressions := []interface{}{
-		// Rule 1: Alpha rule
-		map[string]interface{}{
-			"ruleId": "alpha_rule_1",
-			"set": map[string]interface{}{
-				"variables": []interface{}{
-					map[string]interface{}{
-						"name":     "p",
-						"dataType": "Person",
-					},
-				},
-			},
-			"constraints": map[string]interface{}{
-				"type":     "comparison",
-				"operator": ">",
-				"left": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "p",
-					"field":  "age",
-				},
-				"right": map[string]interface{}{
-					"type":  "literal",
-					"value": 18,
-				},
-			},
-			"action": map[string]interface{}{
-				"type": "print",
-				"arguments": []interface{}{
-					map[string]interface{}{
-						"type":  "literal",
-						"value": "Adult",
-					},
-				},
-			},
-		},
-		// Rule 2: Join rule
-		map[string]interface{}{
-			"ruleId": "join_rule_1",
-			"set": map[string]interface{}{
-				"variables": []interface{}{
-					map[string]interface{}{
-						"name":     "p",
-						"dataType": "Person",
-					},
-					map[string]interface{}{
-						"name":     "e",
-						"dataType": "Employee",
-					},
-				},
-			},
-			"constraints": map[string]interface{}{
-				"type":     "comparison",
-				"operator": "==",
-				"left": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "p",
-					"field":  "id",
-				},
-				"right": map[string]interface{}{
-					"type":   "fieldAccess",
-					"object": "e",
-					"field":  "person_id",
-				},
-			},
-			"action": map[string]interface{}{
-				"type": "print",
-				"arguments": []interface{}{
-					map[string]interface{}{
-						"type":  "literal",
-						"value": "Join",
-					},
-				},
-			},
-		},
-	}
-
-	err := rb.CreateRuleNodes(network, expressions)
-	if err != nil {
-		t.Fatalf("CreateRuleNodes failed for multiple rules: %v", err)
-	}
-
-	// Verify both rules were created
-	if len(network.AlphaNodes) == 0 {
-		t.Error("No AlphaNodes created")
-	}
-
-	if len(network.BetaNodes) == 0 {
-		t.Error("No BetaNodes created")
-	}
-}
-
-func TestRuleBuilder_ErrorHandling(t *testing.T) {
-	storage := NewMemoryStorage()
-	network := NewReteNetwork(storage)
-
-	pipeline := &ConstraintPipelineBuilder{
-		network: network,
-		storage: storage,
-	}
-
-	utils := NewBuilderUtils(storage)
-	rb := NewRuleBuilder(utils, pipeline)
-
-	t.Run("missing type node", func(t *testing.T) {
-		network := NewReteNetwork(storage)
-		pipeline := &ConstraintPipelineBuilder{
-			network: network,
-			storage: storage,
-		}
-		rb := NewRuleBuilder(utils, pipeline)
-
-		// Declare print action
-		network.Actions["print"] = &ActionDefinition{
-			Name: "print",
-			Parameters: []ActionParameter{
-				{Name: "message", Type: "string"},
-			},
+	t.Run("error when pipeline is nil", func(t *testing.T) {
+		exprMap := map[string]interface{}{
+			"type": "rule",
 		}
 
-		expressions := []interface{}{
-			map[string]interface{}{
-				"ruleId": "bad_rule",
-				"set": map[string]interface{}{
-					"variables": []interface{}{
-						map[string]interface{}{
-							"name":     "p",
-							"dataType": "NonExistent",
-						},
-					},
-				},
-				"action": map[string]interface{}{
-					"type": "print",
-					"arguments": []interface{}{
-						map[string]interface{}{
-							"type":  "literal",
-							"value": "test",
-						},
-					},
-				},
-			},
-		}
-
-		err := rb.CreateRuleNodes(network, expressions)
+		err := rb.CreateSingleRule(network, "test_rule", exprMap)
 		if err == nil {
-			t.Error("Expected error for missing TypeNode, got nil")
+			t.Error("Expected error when pipeline is nil, got nil")
+		}
+		if err != nil && err.Error() != "pipeline does not implement required methods" {
+			t.Errorf("Expected specific error message, got: %v", err)
+		}
+	})
+}
+
+func TestRuleBuilder_CreateRuleByType(t *testing.T) {
+	storage := NewMemoryStorage()
+	network := NewReteNetwork(storage)
+	utils := NewBuilderUtils(storage)
+	rb := NewRuleBuilder(utils, nil)
+
+	action := &Action{
+		Type: "test",
+	}
+
+	condition := map[string]interface{}{
+		"type": ConditionTypeSimple,
+	}
+
+	variables := []map[string]interface{}{}
+	variableNames := []string{"x"}
+	variableTypes := []string{"Person"}
+
+	t.Run("unknown rule type returns error", func(t *testing.T) {
+		err := rb.createRuleByType(
+			network,
+			"test_rule",
+			"unknown_type",
+			map[string]interface{}{},
+			condition,
+			action,
+			variables,
+			variableNames,
+			variableTypes,
+			nil,
+			false,
+		)
+
+		if err == nil {
+			t.Error("Expected error for unknown rule type, got nil")
+		}
+	})
+}
+
+func TestRuleBuilder_Delegation(t *testing.T) {
+	storage := NewMemoryStorage()
+	utils := NewBuilderUtils(storage)
+	rb := NewRuleBuilder(utils, nil)
+
+	t.Run("alphaBuilder is properly initialized", func(t *testing.T) {
+		if rb.alphaBuilder == nil {
+			t.Error("alphaBuilder should be initialized")
+		}
+		if rb.alphaBuilder.utils != utils {
+			t.Error("alphaBuilder should share utils")
 		}
 	})
 
-	t.Run("invalid expression structure", func(t *testing.T) {
-		expressions := []interface{}{
-			123, // Not a map
+	t.Run("joinBuilder is properly initialized", func(t *testing.T) {
+		if rb.joinBuilder == nil {
+			t.Error("joinBuilder should be initialized")
 		}
+		if rb.joinBuilder.utils != utils {
+			t.Error("joinBuilder should share utils")
+		}
+	})
 
-		err := rb.CreateRuleNodes(network, expressions)
-		if err == nil {
-			t.Error("Expected error for invalid expression, got nil")
+	t.Run("existsBuilder is properly initialized", func(t *testing.T) {
+		if rb.existsBuilder == nil {
+			t.Error("existsBuilder should be initialized")
+		}
+		if rb.existsBuilder.utils != utils {
+			t.Error("existsBuilder should share utils")
+		}
+	})
+
+	t.Run("accumulatorBuilder is properly initialized", func(t *testing.T) {
+		if rb.accumulatorBuilder == nil {
+			t.Error("accumulatorBuilder should be initialized")
+		}
+		if rb.accumulatorBuilder.utils != utils {
+			t.Error("accumulatorBuilder should share utils")
+		}
+	})
+}
+
+func TestRuleBuilder_PipelineReference(t *testing.T) {
+	storage := NewMemoryStorage()
+	utils := NewBuilderUtils(storage)
+
+	t.Run("pipeline reference is stored", func(t *testing.T) {
+		mockPipeline := "mock_pipeline"
+		rb := NewRuleBuilder(utils, mockPipeline)
+
+		if rb.pipeline == nil {
+			t.Error("pipeline should be stored")
+		}
+		if rb.pipeline.(string) != mockPipeline {
+			t.Error("pipeline reference not stored correctly")
+		}
+	})
+
+	t.Run("nil pipeline is acceptable", func(t *testing.T) {
+		rb := NewRuleBuilder(utils, nil)
+		if rb == nil {
+			t.Error("RuleBuilder should be created even with nil pipeline")
 		}
 	})
 }

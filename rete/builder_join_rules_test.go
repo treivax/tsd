@@ -97,12 +97,12 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 		}
 
 		// Verify JoinNode configuration
-		if len(joinNodeTyped.LeftVars) != 1 || joinNodeTyped.LeftVars[0] != "p" {
-			t.Errorf("LeftVars = %v, want ['p']", joinNodeTyped.LeftVars)
+		if len(joinNodeTyped.LeftVariables) != 1 || joinNodeTyped.LeftVariables[0] != "p" {
+			t.Errorf("LeftVariables = %v, want ['p']", joinNodeTyped.LeftVariables)
 		}
 
-		if len(joinNodeTyped.RightVars) != 1 || joinNodeTyped.RightVars[0] != "e" {
-			t.Errorf("RightVars = %v, want ['e']", joinNodeTyped.RightVars)
+		if len(joinNodeTyped.RightVariables) != 1 || joinNodeTyped.RightVariables[0] != "e" {
+			t.Errorf("RightVariables = %v, want ['e']", joinNodeTyped.RightVariables)
 		}
 
 		// Verify TerminalNode connection
@@ -126,8 +126,9 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 
 	t.Run("with beta sharing enabled", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-		network.Config = &ReteConfig{BetaSharingEnabled: true}
-		network.BetaSharingRegistry = NewBetaSharingRegistry()
+		config := BetaSharingConfig{Enabled: true, HashCacheSize: 1000, MaxSharedNodes: 10000}
+		lifecycle := NewLifecycleManager()
+		network.BetaSharingRegistry = NewBetaSharingRegistry(config, lifecycle)
 
 		personNode := NewTypeNode("Person", TypeDefinition{Name: "Person"}, storage)
 		network.TypeNodes["Person"] = personNode
@@ -350,11 +351,6 @@ func TestJoinRuleBuilder_buildJoinPatterns(t *testing.T) {
 
 		// Verify progressive accumulation
 		for i, pattern := range patterns {
-			expectedLeftSize := i + 1
-			if i == 0 {
-				expectedLeftSize = 1
-			}
-
 			if len(pattern.RightVars) != 1 {
 				t.Errorf("Pattern[%d].RightVars length = %d, want 1", i, len(pattern.RightVars))
 			}
@@ -430,9 +426,10 @@ func TestJoinRuleBuilder_CreateJoinRule(t *testing.T) {
 
 	t.Run("with BetaChainBuilder enabled", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-		network.Config = &ReteConfig{BetaSharingEnabled: true}
-		network.BetaSharingRegistry = NewBetaSharingRegistry()
-		network.BetaChainBuilder = NewBetaChainBuilder(network.BetaSharingRegistry, storage)
+		config := BetaSharingConfig{Enabled: true, HashCacheSize: 1000, MaxSharedNodes: 10000}
+		lifecycle := NewLifecycleManager()
+		network.BetaSharingRegistry = NewBetaSharingRegistry(config, lifecycle)
+		network.BetaChainBuilder = NewBetaChainBuilderWithRegistry(network, storage, network.BetaSharingRegistry)
 
 		types := []string{"T1", "T2", "T3"}
 		for _, typeName := range types {
