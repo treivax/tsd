@@ -29,6 +29,12 @@ RAPPORT_UNIFIE*.md
 *.bak
 *.old
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
 # Debug files
 *_debug
 temp_*
@@ -39,6 +45,7 @@ debug_*
 .idea/
 *.swp
 *.swo
+*~
 
 # OS generated
 .DS_Store
