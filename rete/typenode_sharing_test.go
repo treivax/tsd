@@ -18,7 +18,10 @@ func TestTypeNodeSharing_TwoSimpleRulesSameType(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, name: string>
+	content := `type Person(id: string, age: number, name:string)
+
+action adult_detected(id: string, name: string)
+action not_retired(id: string, name: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id, p.name)
 rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
@@ -104,7 +107,11 @@ func TestTypeNodeSharing_ThreeRulesSameType(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Employee : <id: string, salary: number, name: string>
+	content := `type Employee(id: string, salary: number, name:string)
+
+action high_earner(id: string)
+action low_earner(id: string)
+action mid_earner(id: string)
 
 rule r1 : {e: Employee} / e.salary > 50000 ==> high_earner(e.id)
 rule r2 : {e: Employee} / e.salary < 30000 ==> low_earner(e.id)
@@ -153,8 +160,11 @@ func TestTypeNodeSharing_TwoDifferentTypes(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
-type Company : <id: string, revenue: number>
+	content := `type Person(id: string, age:number)
+type Company(id: string, revenue:number)
+
+action adult_detected(id: string)
+action big_company(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id)
 rule r2 : {c: Company} / c.revenue > 1000000 ==> big_company(c.id)
@@ -211,8 +221,12 @@ func TestTypeNodeSharing_MixedRules(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, company_id: string>
-type Company : <id: string, name: string>
+	content := `type Person(id: string, age: number, company_id:string)
+type Company(id: string, name:string)
+
+action adult_detected(id: string)
+action employee_match(personId: string, companyId: string)
+action not_retired(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id)
 rule r2 : {p: Person, c: Company} / p.company_id == c.id ==> employee_match(p.id, c.id)
@@ -269,11 +283,13 @@ func TestTypeNodeSharing_VisualizeNetwork(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, name: string>
+	content := `type Person(id: string, age: number, name:string)
 
-rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id, p.name)
-rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
-rule r3 : {p: Person} / p.name == "Alice" ==> alice_found(p.id)
+action adult_detected(id: string)
+action not_retired(id: string)
+
+rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id)
+rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 `
 
 	err := os.WriteFile(constraintFile, []byte(content), 0644)
@@ -335,7 +351,7 @@ rule r3 : {p: Person} / p.name == "Alice" ==> alice_found(p.id)
 	}
 
 	t.Log("\n" + strings.Repeat("=", 60))
-	t.Log("✅ CONFIRMATION: Un seul TypeNode 'Person' partagé par 3 règles")
+	t.Log("✅ CONFIRMATION: Un seul TypeNode 'Person' partagé par 2 règles")
 	t.Log(strings.Repeat("=", 60))
 
 	// Vérifications
@@ -349,8 +365,8 @@ rule r3 : {p: Person} / p.name == "Alice" ==> alice_found(p.id)
 	}
 
 	children := personTypeNode.GetChildren()
-	if len(children) != 3 {
-		t.Errorf("Le TypeNode Person devrait avoir 3 enfants, obtenu %d", len(children))
+	if len(children) != 2 {
+		t.Errorf("Le TypeNode Person devrait avoir 2 enfants, obtenu %d", len(children))
 	}
 }
 
@@ -360,10 +376,15 @@ func TestTypeNodeSharing_WithFactSubmission(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, name: string>
+	content := `type Person(id: string, age: number, name:string)
 
-rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id, p.name)
-rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
+action adult_detected(id: string)
+action not_retired(id: string)
+action middle_aged(id: string)
+
+rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id)
+rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
+rule r3 : {p: Person} / p.age > 30 AND p.age < 50 ==> middle_aged(p.id)
 `
 
 	err := os.WriteFile(constraintFile, []byte(content), 0644)
@@ -402,10 +423,10 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
 		t.Fatal("TypeNode 'Person' non trouvé")
 	}
 
-	// VÉRIFICATION 2: Le TypeNode a 2 AlphaNodes enfants
+	// VÉRIFICATION 2: Le TypeNode a 3 AlphaNodes enfants (une par règle)
 	children := personTypeNode.GetChildren()
-	if len(children) != 2 {
-		t.Errorf("Le TypeNode Person devrait avoir 2 enfants, obtenu %d", len(children))
+	if len(children) != 3 {
+		t.Errorf("Le TypeNode Person devrait avoir 3 enfants, obtenu %d", len(children))
 	}
 
 	// VÉRIFICATION 3: Les faits ont été propagés à travers le TypeNode unique
@@ -437,7 +458,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
 	}
 
 	t.Logf("\n📊 Résumé:")
-	t.Logf("   • 1 TypeNode partagé par 2 règles")
+	t.Logf("   • 1 TypeNode partagé par 3 règles")
 	t.Logf("   • 3 faits soumis")
 	t.Logf("   • %d TerminalNode(s) activé(s)", activatedTerminals)
 

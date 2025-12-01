@@ -16,8 +16,11 @@ func TestBetaBackwardCompatibility_SimpleJoins(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "simple_joins.tsd")
 
 	// Règle avec une jointure simple entre deux patterns
-	content := `type Person : <id: string, age: number, name: string>
-type Order : <id: string, personId: string, amount: number>
+	content := `type Person(id: string, age: number, name:string)
+type Order(id: string, personId: string, amount:number)
+
+
+action print(message: string)
 
 rule person_order : {p: Person, o: Order} / p.id == o.personId AND o.amount > 100 ==> print("Large order")
 `
@@ -94,8 +97,11 @@ func TestBetaBackwardCompatibility_ExistingBehavior(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "existing_behavior.tsd")
 
-	content := `type Employee : <id: string, name: string, deptId: string>
-type Department : <id: string, name: string, budget: number>
+	content := `type Employee(id: string, name: string, deptId:string)
+type Department(id: string, name: string, budget:number)
+
+
+action print(message: string)
 
 rule emp_in_dept : {e: Employee, d: Department} / e.deptId == d.id ==> print("Employee in dept")
 `
@@ -197,8 +203,8 @@ func TestBetaNoRegression_AllPreviousTests(t *testing.T) {
 	}{
 		{
 			name: "Two pattern join",
-			content: `type A : <id: string, x: number>
-type B : <id: string, y: number, aId: string>
+			content: `type A(id: string, x:number)
+type B(id: string, y: number, aId:string)
 rule join_ab : {a: A, b: B} / a.id == b.aId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "A1", Type: "A", Fields: map[string]interface{}{"id": "a1", "x": 10}},
@@ -208,9 +214,9 @@ rule join_ab : {a: A, b: B} / a.id == b.aId ==> print("Join")`,
 		},
 		{
 			name: "Three pattern join",
-			content: `type A : <id: string, x: number>
-type B : <id: string, aId: string>
-type C : <id: string, bId: string>
+			content: `type A(id: string, x:number)
+type B(id: string, aId:string)
+type C(id: string, bId:string)
 rule join_abc : {a: A, b: B, c: C} / a.id == b.aId AND b.id == c.bId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "A1", Type: "A", Fields: map[string]interface{}{"id": "a1", "x": 10}},
@@ -221,8 +227,8 @@ rule join_abc : {a: A, b: B, c: C} / a.id == b.aId AND b.id == c.bId ==> print("
 		},
 		{
 			name: "Join with additional constraints",
-			content: `type Person : <id: string, age: number, name: string>
-type Account : <id: string, ownerId: string, balance: number>
+			content: `type Person(id: string, age: number, name:string)
+type Account(id: string, ownerId: string, balance:number)
 rule rich_adult : {p: Person, a: Account} / p.id == a.ownerId AND p.age >= 18 AND a.balance > 10000 ==> print("Rich adult")`,
 			facts: []Fact{
 				{ID: "P1", Type: "Person", Fields: map[string]interface{}{"id": "p1", "age": 25, "name": "Alice"}},
@@ -232,8 +238,8 @@ rule rich_adult : {p: Person, a: Account} / p.id == a.ownerId AND p.age >= 18 AN
 		},
 		{
 			name: "Multiple matching joins",
-			content: `type User : <id: string, name: string>
-type Post : <id: string, userId: string, title: string>
+			content: `type User(id: string, name:string)
+type Post(id: string, userId: string, title:string)
 rule user_posts : {u: User, p: Post} / u.id == p.userId ==> print("Post")`,
 			facts: []Fact{
 				{ID: "U1", Type: "User", Fields: map[string]interface{}{"id": "u1", "name": "Alice"}},
@@ -244,8 +250,8 @@ rule user_posts : {u: User, p: Post} / u.id == p.userId ==> print("Post")`,
 		},
 		{
 			name: "Join with no matches",
-			content: `type X : <id: string, val: number>
-type Y : <id: string, xId: string>
+			content: `type X(id: string, val:number)
+type Y(id: string, xId:string)
 rule join_xy : {x: X, y: Y} / x.id == y.xId ==> print("Join")`,
 			facts: []Fact{
 				{ID: "X1", Type: "X", Fields: map[string]interface{}{"id": "x1", "val": 10}},
@@ -303,8 +309,11 @@ func TestBetaBackwardCompatibility_JoinNodeSharing(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "join_sharing.tsd")
 
 	// Deux règles avec la même jointure de base (devraient partager le JoinNode)
-	content := `type Person : <id: string, age: number, name: string>
-type Order : <id: string, personId: string, amount: number>
+	content := `type Person(id: string, age: number, name:string)
+type Order(id: string, personId: string, amount:number)
+
+
+action print(message: string)
 
 rule large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount > 100 ==> print("Large")
 rule very_large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount > 500 ==> print("Very large")
@@ -394,9 +403,12 @@ func TestBetaBackwardCompatibility_PerformanceCharacteristics(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "perf.tsd")
 
 	// Plusieurs règles avec des jointures similaires
-	content := `type User : <id: string, name: string, age: number>
-type Product : <id: string, name: string, price: number>
-type Purchase : <id: string, userId: string, productId: string, quantity: number>
+	content := `type User(id: string, name: string, age:number)
+type Product(id: string, name: string, price:number)
+type Purchase(id: string, userId: string, productId: string, quantity:number)
+
+
+action print(message: string)
 
 rule user_purchase : {u: User, pu: Purchase} / u.id == pu.userId ==> print("User purchase")
 rule adult_purchase : {u: User, pu: Purchase} / u.id == pu.userId AND u.age >= 18 ==> print("Adult purchase")
@@ -491,10 +503,13 @@ func TestBetaBackwardCompatibility_ComplexJointures(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "complex_joins.tsd")
 
 	// Règle avec 4 patterns et plusieurs jointures
-	content := `type Customer : <id: string, name: string, country: string>
-type Order : <id: string, customerId: string, total: number>
-type Product : <id: string, name: string, category: string>
-type OrderItem : <id: string, orderId: string, productId: string, quantity: number>
+	content := `type Customer(id: string, name: string, country:string)
+type Order(id: string, customerId: string, total:number)
+type Product(id: string, name: string, category:string)
+type OrderItem(id: string, orderId: string, productId: string, quantity:number)
+
+
+action print(message: string)
 
 rule complex : {c: Customer, o: Order, p: Product, oi: OrderItem} /
     c.id == o.customerId AND
@@ -586,8 +601,11 @@ func TestBetaBackwardCompatibility_AggregationsWithJoins(t *testing.T) {
 	// Règle avec agrégation et jointure
 	// NOTE: This syntax is not currently supported by the TSD parser
 	// The parser fails at "/ {e: Employee}" - aggregations with join syntax needs parser work
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+
+
+action print(message: string)
 
 rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Avg salary")
 `
@@ -657,8 +675,11 @@ func TestBetaBackwardCompatibility_RuleRemovalWithJoins(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "removal_joins.tsd")
 
-	content := `type Person : <id: string, name: string>
-type Address : <id: string, personId: string, city: string>
+	content := `type Person(id: string, name:string)
+type Address(id: string, personId: string, city:string)
+
+
+action print(message: string)
 
 rule person_address : {p: Person, a: Address} / p.id == a.personId ==> print("Person address")
 rule person_in_ny : {p: Person, a: Address} / p.id == a.personId AND a.city == 'New York' ==> print("NY resident")
@@ -736,8 +757,11 @@ func TestBetaBackwardCompatibility_FactRetractionWithJoins(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "retraction_joins.tsd")
 
-	content := `type Author : <id: string, name: string>
-type Book : <id: string, authorId: string, title: string>
+	content := `type Author(id: string, name:string)
+type Book(id: string, authorId: string, title:string)
+
+
+action print(message: string)
 
 rule author_book : {a: Author, b: Book} / a.id == b.authorId ==> print("Author book")
 `

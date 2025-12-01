@@ -17,7 +17,10 @@ func TestAlphaSharingIntegration_TwoRulesSameCondition(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Deux règles avec la même condition: p.age > 18
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action print(message: string)
 
 rule adult_check : {p: Person} / p.age > 18 ==> print("Adult")
 rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
@@ -82,7 +85,10 @@ func TestAlphaSharingIntegration_ThreeRulesMixedConditions(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Trois règles: deux avec p.age > 18, une avec p.age > 21
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action print(message: string)
 
 rule adult_check : {p: Person} / p.age > 18 ==> print("Adult")
 rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
@@ -144,7 +150,10 @@ func TestAlphaSharingIntegration_FactPropagation(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action print(message: string)
 
 rule adult_check : {p: Person} / p.age > 18 ==> print("Adult")
 rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
@@ -221,7 +230,10 @@ func TestAlphaSharingIntegration_RuleRemoval(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action print(message: string)
 
 rule adult_check : {p: Person} / p.age > 18 ==> print("Adult")
 rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
@@ -292,8 +304,11 @@ func TestAlphaSharingIntegration_DifferentTypes(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Même attribut et opérateur, mais types et variables différents
-	content := `type Person : <id: string, age: number>
-type Animal : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+type Animal(id: string, age:number)
+
+
+action print(message: string)
 
 rule person_adult : {p: Person} / p.age > 18 ==> print("Adult person")
 rule animal_old : {a: Animal} / a.age > 18 ==> print("Old animal")
@@ -332,7 +347,10 @@ func TestAlphaSharingIntegration_NetworkReset(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action print(message: string)
 
 rule adult_check : {p: Person} / p.age > 18 ==> print("Adult")
 rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
@@ -384,7 +402,11 @@ func TestAlphaSharingIntegration_ComplexConditions(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Conditions identiques mais actions différentes
-	content := `type Person : <id: string, age: number, salary: number>
+	content := `type Person(id: string, age: number, salary:number)
+
+
+action alert(arg: string)
+action print(message: string)
 
 rule high_earner1 : {p: Person} / p.salary > 100000 ==> print("High earner")
 rule high_earner2 : {p: Person} / p.salary > 100000 ==> alert("Very high salary")

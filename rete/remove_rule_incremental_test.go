@@ -24,7 +24,7 @@ func TestRemoveRuleIncremental_FullPipeline(t *testing.T) {
 
 	// ÉTAPE 1: Fichier initial avec types, règles et faits
 	t.Log("\n📝 ÉTAPE 1: Création du fichier initial avec 3 règles")
-	initialContent := `type Person : <id: string, name: string, age: number>
+	initialContent := `type Person(id: string, name: string, age:number)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id)
 rule senior_check : {p: Person} / p.age >= 65 ==> senior(p.id)
@@ -168,8 +168,12 @@ func TestRemoveRuleIncremental_WithJoins(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "joins.tsd")
 
 	// Fichier avec des règles de jointure
-	content := `type Person : <id: string, name: string>
-type Order : <id: string, customer_id: string, amount: number>
+	content := `type Person(id: string, name:string)
+type Order(id: string, customer_id: string, amount:number)
+
+
+action process_order(id: string)
+action vip_order(arg: string)
 
 rule person_order : {p: Person, o: Order} / p.id == o.customer_id ==> process_order(p.id, o.id)
 rule high_value : {p: Person, o: Order} / p.id == o.customer_id AND o.amount > 100 ==> vip_order(p.id)
@@ -250,7 +254,14 @@ func TestRemoveRuleIncremental_MultipleRemovals(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "multiple.tsd")
 
 	// Fichier initial avec 5 règles
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action action1(arg: string)
+action action2(arg: string)
+action action3(arg: string)
+action action4(arg: string)
+action action5(arg: string)
 
 rule r1 : {p: Person} / p.age > 10 ==> action1(p.id)
 rule r2 : {p: Person} / p.age > 20 ==> action2(p.id)

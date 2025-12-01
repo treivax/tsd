@@ -17,7 +17,11 @@ func TestAlphaSharing_SameCondition(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Deux règles avec la MÊME condition: p.age > 18
-	content := `type Person : <id: string, age: number, name: string>
+	content := `type Person(id: string, age: number, name:string)
+
+
+action rule1_action(arg: string)
+action rule2_action(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> rule1_action(p.id)
 rule r2 : {p: Person} / p.age > 18 ==> rule2_action(p.id)
@@ -80,7 +84,11 @@ func TestAlphaSharing_DifferentConditions(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Deux règles avec des conditions DIFFÉRENTES
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action adult(arg: string)
+action young(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
@@ -115,7 +123,12 @@ func TestAlphaSharing_ThreeRulesSameCondition(t *testing.T) {
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
 	// Trois règles avec la MÊME condition
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action action1(arg: string)
+action action2(arg: string)
+action action3(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> action1(p.id)
 rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)
@@ -159,7 +172,11 @@ func TestAlphaSharing_WithFacts(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action action1(arg: string)
+action action2(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> action1(p.id)
 rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)
@@ -228,7 +245,11 @@ func TestAlphaSharing_StructureVisualization(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action action1(arg: string)
+action action2(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> action1(p.id)
 rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)

@@ -170,6 +170,8 @@ type Address(street: string, city:string)`,
 			name: "type with constraint",
 			constraintText: `type Person(id: string, age:number)
 
+action adult(id: string)
+
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`,
 			expectedInJSON: []string{
 				"Person",

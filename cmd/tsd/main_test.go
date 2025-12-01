@@ -40,9 +40,9 @@ func TestParseFlags(t *testing.T) {
 		},
 		{
 			name: "text flag",
-			args: []string{"-text", "type Person : <id: string>"},
+			args: []string{"-text", "type Person(id:string)"},
 			expected: &Config{
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 			},
 		},
 		{
@@ -151,7 +151,7 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name: "valid text input",
 			config: &Config{
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 			},
 			wantError: false,
 		},
@@ -172,7 +172,7 @@ func TestValidateConfig(t *testing.T) {
 			name: "multiple input sources - file and text",
 			config: &Config{
 				File:           "test.tsd",
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 			},
 			wantError: true,
 			errorMsg:  "une seule source",
@@ -189,7 +189,7 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name: "multiple input sources - text and stdin",
 			config: &Config{
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 				UseStdin:       true,
 			},
 			wantError: true,
@@ -199,7 +199,7 @@ func TestValidateConfig(t *testing.T) {
 			name: "all three input sources",
 			config: &Config{
 				File:           "test.tsd",
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 				UseStdin:       true,
 			},
 			wantError: true,
@@ -252,7 +252,7 @@ func TestParseFromText(t *testing.T) {
 		{
 			name: "valid constraint text",
 			config: &Config{
-				ConstraintText: "type Person : <id: string, name: string>",
+				ConstraintText: "type Person(id: string,name:string)",
 			},
 			wantError: false,
 		},
@@ -273,7 +273,7 @@ func TestParseFromText(t *testing.T) {
 		{
 			name: "verbose mode",
 			config: &Config{
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 				Verbose:        true,
 			},
 			wantError: false,
@@ -318,7 +318,7 @@ func TestParseFromFile(t *testing.T) {
 
 	// Create a valid constraint file
 	validFile := filepath.Join(tempDir, "valid.tsd")
-	validContent := []byte("type Person : <id: string, name: string>")
+	validContent := []byte("type Person(id: string,name:string)")
 	if err := os.WriteFile(validFile, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -546,7 +546,7 @@ func TestConfig(t *testing.T) {
 	config := &Config{
 		File:           "test.tsd",
 		ConstraintFile: "test.tsd",
-		ConstraintText: "type Person : <id: string>",
+		ConstraintText: "type Person(id:string)",
 		UseStdin:       true,
 		FactsFile:      "test.tsd",
 		Verbose:        true,
@@ -560,8 +560,8 @@ func TestConfig(t *testing.T) {
 	if config.ConstraintFile != "test.tsd" {
 		t.Errorf("Config.ConstraintFile = %v, want test.tsd", config.ConstraintFile)
 	}
-	if config.ConstraintText != "type Person : <id: string>" {
-		t.Errorf("Config.ConstraintText = %v, want 'type Person : <id: string>'", config.ConstraintText)
+	if config.ConstraintText != "type Person(id:string)" {
+		t.Errorf("Config.ConstraintText = %v, want 'type Person(id:string)'", config.ConstraintText)
 	}
 	if !config.UseStdin {
 		t.Error("Config.UseStdin = false, want true")
@@ -586,7 +586,7 @@ func TestParseConstraintSource(t *testing.T) {
 
 	// Create a valid constraint file
 	validFile := filepath.Join(tempDir, "valid.tsd")
-	validContent := []byte("type Person : <id: string>")
+	validContent := []byte("type Person(id:string)")
 	if err := os.WriteFile(validFile, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -609,7 +609,7 @@ func TestParseConstraintSource(t *testing.T) {
 		{
 			name: "route to text",
 			config: &Config{
-				ConstraintText: "type Person : <id: string>",
+				ConstraintText: "type Person(id:string)",
 			},
 			wantError:      false,
 			wantSourceName: "<text>",
@@ -621,7 +621,7 @@ func TestParseConstraintSource(t *testing.T) {
 			},
 			wantError:      false,
 			wantSourceName: "<stdin>",
-			stdinContent:   "type Person : <id: string>",
+			stdinContent:   "type Person(id:string)",
 		},
 	}
 
@@ -685,7 +685,7 @@ func TestParseFromStdin(t *testing.T) {
 			config: &Config{
 				UseStdin: true,
 			},
-			stdinContent: "type Person : <id: string, name: string>",
+			stdinContent: "type Person(id: string,name:string)",
 			wantError:    false,
 		},
 		{
@@ -710,7 +710,7 @@ func TestParseFromStdin(t *testing.T) {
 				UseStdin: true,
 				Verbose:  true,
 			},
-			stdinContent: "type Person : <id: string>",
+			stdinContent: "type Person(id:string)",
 			wantError:    false,
 		},
 		{
@@ -718,7 +718,7 @@ func TestParseFromStdin(t *testing.T) {
 			config: &Config{
 				UseStdin: true,
 			},
-			stdinContent: "type Person : <id: string, name: string, age: number>",
+			stdinContent: "type Person(id: string, name: string,age:number)",
 			wantError:    false,
 		},
 	}
@@ -1050,7 +1050,7 @@ func TestMainIntegration(t *testing.T) {
 
 	// Create test TSD file
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	tsdContent := []byte("type Person : <id: string, name: string>")
+	tsdContent := []byte("type Person(id: string,name:string)")
 	if err := os.WriteFile(tsdFile, tsdContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -1109,7 +1109,7 @@ func TestMainIntegration(t *testing.T) {
 		},
 		{
 			name:         "text input",
-			args:         []string{"-text", "type Person : <id: string>"},
+			args:         []string{"-text", "type Person(id:string)"},
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"Contraintes validées avec succès",
@@ -1118,7 +1118,7 @@ func TestMainIntegration(t *testing.T) {
 		{
 			name:         "stdin input",
 			args:         []string{"-stdin"},
-			stdin:        "type Person : <id: string>",
+			stdin:        "type Person(id:string)",
 			wantExitCode: 0,
 			wantOutputContains: []string{
 				"Contraintes validées avec succès",
@@ -1135,7 +1135,7 @@ func TestMainIntegration(t *testing.T) {
 		},
 		{
 			name:         "multiple input sources error",
-			args:         []string{"-file", tsdFile, "-text", "type X : <a: string>"},
+			args:         []string{"-file", tsdFile, "-text", "type X(a:string)"},
 			wantExitCode: 1,
 			wantErrorContains: []string{
 				"Erreur",
@@ -1223,8 +1223,10 @@ func TestMainWithFactsIntegration(t *testing.T) {
 
 	// Create a simple TSD file
 	tsdFile := filepath.Join(tempDir, "rules.tsd")
-	tsdContent := []byte(`type Person : <id: string, name: string, age: number>
-type Order : <id: string, customer_id: string, amount: number>
+	tsdContent := []byte(`type Person(id: string, name: string,age:number)
+type Order(id: string, customer_id: string,amount:number)
+
+action customer_order(personId: string, orderId: string)
 
 rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> customer_order(p.id, o.id)
 `)
@@ -1379,7 +1381,9 @@ func TestRunWithFacts(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	tsdFile := filepath.Join(tmpDir, "test.tsd")
-	tsdContent := `type Person : <id: string, name: string, age: number>
+	tsdContent := `type Person(id: string, name: string,age:number)
+
+action adult(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 
@@ -1482,7 +1486,9 @@ func TestExecutePipeline(t *testing.T) {
 
 	// Create valid test file with types, rules and facts
 	tsdFile := filepath.Join(tmpDir, "test.tsd")
-	tsdContent := `type Person : <id: string, name: string, age: number>
+	tsdContent := `type Person(id: string, name: string,age:number)
+
+action adult(id: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 
@@ -1699,7 +1705,7 @@ func TestRun(t *testing.T) {
 
 	// Create test constraint file
 	constraintFile := filepath.Join(tmpDir, "test.tsd")
-	constraintContent := "type Person : <id: string, name: string>"
+	constraintContent := "type Person(id: string,name:string)"
 	if err := os.WriteFile(constraintFile, []byte(constraintContent), 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -1743,7 +1749,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:         "valid text input",
-			args:         []string{"-text", "type Person : <id: string>"},
+			args:         []string{"-text", "type Person(id:string)"},
 			wantExitCode: 0,
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stdout, "validées avec succès") {

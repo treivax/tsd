@@ -15,7 +15,11 @@ func TestNetworkLifecycle_RemoveSimpleRule(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, name: string>
+	content := `type Person(id: string, age: number, name:string)
+
+
+action adult_detected(id: string)
+action not_retired(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult_detected(p.id)
 rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
@@ -74,7 +78,11 @@ func TestNetworkLifecycle_RemoveAllRulesForType(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action adult(arg: string)
+action young(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
@@ -120,7 +128,11 @@ func TestNetworkLifecycle_SharedNodeNotRemoved(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action adult(arg: string)
+action young(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
@@ -169,7 +181,10 @@ func TestNetworkLifecycle_GetRuleInfo(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action adult(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 `
@@ -209,8 +224,12 @@ func TestNetworkLifecycle_GetNetworkStats(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
-type Company : <id: string, revenue: number>
+	content := `type Person(id: string, age:number)
+type Company(id: string, revenue:number)
+
+
+action adult(arg: string)
+action big_company(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {c: Company} / c.revenue > 1000000 ==> big_company(c.id)
@@ -271,7 +290,10 @@ func TestNetworkLifecycle_ResetClearsLifecycle(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number>
+	content := `type Person(id: string, age:number)
+
+
+action adult(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 `
@@ -313,7 +335,12 @@ func TestNetworkLifecycle_MultipleRulesOnSameType(t *testing.T) {
 	tempDir := t.TempDir()
 	constraintFile := filepath.Join(tempDir, "test.constraint")
 
-	content := `type Person : <id: string, age: number, salary: number>
+	content := `type Person(id: string, age: number, salary:number)
+
+
+action adult(arg: string)
+action high_earner(arg: string)
+action young(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 65 ==> young(p.id)

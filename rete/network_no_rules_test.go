@@ -22,8 +22,8 @@ func TestRETENetwork_TypesAndFactsOnly(t *testing.T) {
 	// Create file with types and facts only (no rules)
 	tsdFile := filepath.Join(tempDir, "data.tsd")
 	content := `
-type Person : <id: string, name: string, age: number>
-type Product : <id: string, name: string, price: number>
+type Person(id: string, name: string, age:number)
+type Product(id: string, name: string, price:number)
 
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
@@ -69,9 +69,9 @@ func TestRETENetwork_OnlyTypes(t *testing.T) {
 	// Create file with types only
 	tsdFile := filepath.Join(tempDir, "types.tsd")
 	content := `
-type Customer : <id: string, name: string, email: string>
-type Order : <id: string, customer_id: string, total: number>
-type Product : <id: string, name: string, price: number>
+type Customer(id: string, name: string, email:string)
+type Order(id: string, customer_id: string, total:number)
+type Product(id: string, name: string, price:number)
 `
 	err = os.WriteFile(tsdFile, []byte(content), 0644)
 	if err != nil {
@@ -107,8 +107,8 @@ func TestRETENetwork_IncrementalTypesAndFacts(t *testing.T) {
 	// File 1: Types
 	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `
-type Person : <id: string, name: string, age: number>
-type Company : <id: string, name: string, employees: number>
+type Person(id: string, name: string, age:number)
+type Company(id: string, name: string, employees:number)
 `
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
@@ -211,7 +211,7 @@ func TestRETENetwork_TypesAndFactsSeparateFiles(t *testing.T) {
 	// File 1: Only types
 	typesFile := filepath.Join(tempDir, "schema.tsd")
 	typesContent := `
-type User : <id: string, username: string, email: string>
+type User(id: string, username: string, email:string)
 `
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {

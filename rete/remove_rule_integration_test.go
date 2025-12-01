@@ -16,7 +16,11 @@ func TestRemoveRuleCommand_ParseAndExecute(t *testing.T) {
 
 	// Créer un fichier .tsd temporaire avec une règle et sa suppression
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age:number)
+
+
+action notify(message: string)
+action notify_senior(message: string)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 rule senior_check : {p: Person} / p.age >= 65 ==> notify_senior(p.id)
@@ -94,7 +98,12 @@ func TestRemoveRuleCommand_MultipleRules(t *testing.T) {
 	t.Log("=============================")
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age:number)
+
+
+action action1(arg: string)
+action action2(arg: string)
+action action3(arg: string)
 
 rule rule1 : {p: Person} / p.age > 18 ==> action1(p.id)
 rule rule2 : {p: Person} / p.age > 30 ==> action2(p.id)
@@ -154,7 +163,11 @@ func TestRemoveRuleCommand_WithSharedAlphaNodes(t *testing.T) {
 	t.Log("===========================================")
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age:number)
+
+
+action action_adult(arg: string)
+action action_voting(arg: string)
 
 rule adult_rule : {p: Person} / p.age >= 18 ==> action_adult(p.id)
 rule voting_rule : {p: Person} / p.age >= 18 ==> action_voting(p.id)
@@ -215,7 +228,10 @@ func TestRemoveRuleCommand_NonExistentRule(t *testing.T) {
 	t.Log("=================================")
 
 	content := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age:number)
+
+
+action action(arg: string)
 
 rule existing_rule : {p: Person} / p.age > 18 ==> action(p.id)
 
@@ -262,7 +278,7 @@ func TestRemoveRuleCommand_AfterFactSubmission(t *testing.T) {
 
 	// Étape 1: Créer le réseau avec une règle
 	content1 := `
-type Person : <id: string, name: string, age: number>
+type Person(id: string, name: string, age:number)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 `

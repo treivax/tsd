@@ -508,13 +508,13 @@ func benchmarkMultiSourceAggregationMemory(b *testing.B, config BenchmarkConfig)
 // =============================================================================
 
 func generateTSDContent(config BenchmarkConfig, withThreshold bool) string {
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
-type Performance : <id: string, employeeId: string, score: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+type Performance(id: string, employeeId: string, score:number)
 `
 
 	if config.NumSources >= 3 {
-		content += `type Training : <id: string, employeeId: string, hours: number>
+		content += `type Training(id: string, employeeId: string, hours:number)
 `
 	}
 

@@ -15,9 +15,12 @@ func TestMultiSourceAggregation_TwoSources(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "multi_source_test.tsd")
 
 	// Rule aggregates data from both Employee and Performance tables
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
-type Performance : <id: string, employeeId: string, score: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+type Performance(id: string, employeeId: string, score:number)
+
+
+action print(message: string)
 
 rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score)} / {e: Employee} / {p: Performance} / e.deptId == d.id AND p.employeeId == e.id ==> print("Combined metrics")
 `
@@ -114,10 +117,13 @@ func TestMultiSourceAggregation_ThreeSources(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "three_source_test.tsd")
 
 	// Rule aggregates data from Employee, Performance, and Training tables
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
-type Performance : <id: string, employeeId: string, score: number>
-type Training : <id: string, employeeId: string, hours: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+type Performance(id: string, employeeId: string, score:number)
+type Training(id: string, employeeId: string, hours:number)
+
+
+action print(message: string)
 
 rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score), total_hours: SUM(t.hours)} / {e: Employee} / {p: Performance} / {t: Training} / e.deptId == d.id AND p.employeeId == e.id AND t.employeeId == e.id ==> print("Full metrics")
 `
@@ -203,9 +209,12 @@ func TestMultiSourceAggregation_WithThreshold(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "threshold_test.tsd")
 
 	// Rule only fires when both average salary > 50000 and average score > 80
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
-type Performance : <id: string, employeeId: string, score: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+type Performance(id: string, employeeId: string, score:number)
+
+
+action print(message: string)
 
 rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score)} / {e: Employee} / {p: Performance} / e.deptId == d.id AND p.employeeId == e.id AND avg_sal > 50000 AND avg_score > 80 ==> print("High performing department")
 `
@@ -323,9 +332,12 @@ func TestMultiSourceAggregation_DifferentFunctions(t *testing.T) {
 	tsdFile := filepath.Join(tempDir, "functions_test.tsd")
 
 	// Rule uses different aggregation functions: AVG, SUM, COUNT, MIN, MAX
-	content := `type Department : <id: string, name: string>
-type Employee : <id: string, deptId: string, salary: number>
-type Performance : <id: string, employeeId: string, score: number>
+	content := `type Department(id: string, name:string)
+type Employee(id: string, deptId: string, salary:number)
+type Performance(id: string, employeeId: string, score:number)
+
+
+action print(message: string)
 
 rule dept_comprehensive_stats : {d: Department, avg_sal: AVG(e.salary), total_sal: SUM(e.salary), emp_count: COUNT(e.id), min_score: MIN(p.score), max_score: MAX(p.score)} / {e: Employee} / {p: Performance} / e.deptId == d.id AND p.employeeId == e.id ==> print("Comprehensive stats")
 `
