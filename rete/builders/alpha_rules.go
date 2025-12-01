@@ -7,7 +7,7 @@ package builders
 import (
 	"fmt"
 
-	"tsd/rete"
+	"github.com/treivax/tsd/rete"
 )
 
 // AlphaRuleBuilder handles the creation of alpha rules

@@ -7,7 +7,7 @@ package builders
 import (
 	"fmt"
 
-	"tsd/rete"
+	"github.com/treivax/tsd/rete"
 )
 
 // TypeBuilder handles the creation of TypeNodes and type definitions

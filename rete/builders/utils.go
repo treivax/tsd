@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"tsd/rete"
+	"github.com/treivax/tsd/rete"
 )
 
 // Node condition type constants
