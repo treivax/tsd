@@ -1,0 +1,303 @@
+// ================================================================================
+// DÉMONSTRATION COMPLÈTE DE LA NOUVELLE SYNTAXE TSD
+// ================================================================================
+// Ce fichier démontre toutes les fonctionnalités de la nouvelle syntaxe :
+// - Définition de types avec parenthèses
+// - Définition d'actions avec signatures complètes
+// - Paramètres optionnels (?)
+// - Valeurs par défaut (= valeur)
+// - Types personnalisés dans les actions
+// - Validation des types au parsing
+// - Actions multiples dans les règles
+// ================================================================================
+
+// ================================================================================
+// SECTION 1: DÉFINITION DES TYPES
+// ================================================================================
+
+// Types de base pour un système de gestion de commandes e-commerce
+type Customer(id: string, name: string, email: string, vip: bool, creditScore: number)
+type Product(id: string, name: string, category: string, price: number, stock: number)
+type Order(orderId: string, customerId: string, totalAmount: number, status: string, itemCount: number)
+type Payment(paymentId: string, orderId: string, amount: number, method: string, processed: bool)
+type Shipment(shipmentId: string, orderId: string, address: string, status: string, priority: number)
+
+// Types pour le système de notifications
+type Notification(id: string, recipient: string, message: string, priority: number, sent: bool)
+type Alert(id: string, type: string, severity: string, message: string, timestamp: number)
+
+// ================================================================================
+// SECTION 2: DÉFINITION DES ACTIONS
+// ================================================================================
+
+// -----------------------------------------------
+// Actions simples avec types primitifs
+// -----------------------------------------------
+action logMessage(message: string)
+action debugInfo(context: string, value: string)
+
+// -----------------------------------------------
+// Actions avec types personnalisés
+// -----------------------------------------------
+action processCustomer(customer: Customer)
+action validateOrder(order: Order)
+action shipOrder(order: Order, shipment: Shipment)
+
+// -----------------------------------------------
+// Actions avec paramètres optionnels (?)
+// -----------------------------------------------
+action sendEmail(recipient: string, subject: string, body: string, priority: number?)
+action updateInventory(product: Product, quantity: number, reason: string?)
+
+// -----------------------------------------------
+// Actions avec valeurs par défaut (= valeur)
+// -----------------------------------------------
+action createNotification(recipient: string, message: string, priority: number = 1)
+action applyDiscount(order: Order, percentage: number = 10, reason: string = "standard")
+action scheduleShipment(shipment: Shipment, priority: number = 3, express: bool = false)
+
+// -----------------------------------------------
+// Actions complexes (mix de tout)
+// -----------------------------------------------
+action processPayment(payment: Payment, order: Order, sendReceipt: bool = true, notifyCustomer: bool?)
+action handleVIPOrder(customer: Customer, order: Order, discount: number = 15, priority: number = 1)
+action escalateIssue(alert: Alert, severity: string, assignee: string = "support", urgent: bool = false)
+
+// -----------------------------------------------
+// Actions système
+// -----------------------------------------------
+action triggerInventoryCheck()
+action generateDailyReport()
+action cleanupExpiredSessions()
+
+// ================================================================================
+// SECTION 3: RÈGLES MÉTIER AVEC VALIDATION DE TYPES
+// ================================================================================
+
+// -----------------------------------------------
+// Règles pour les clients
+// -----------------------------------------------
+
+// R1: Clients VIP avec score élevé
+rule vipHighScore : {c: Customer} / c.vip == true AND c.creditScore > 750
+    ==> processCustomer(c),
+        logMessage(c.name),
+        createNotification(c.email, "VIP benefits active", 5)
+
+// R2: Clients avec score faible (besoin d'attention)
+rule lowCreditScore : {c: Customer} / c.creditScore < 500
+    ==> createNotification(c.email, "Credit review needed"),
+        debugInfo("Customer", c.id)
+
+// -----------------------------------------------
+// Règles pour les commandes
+// -----------------------------------------------
+
+// R3: Commandes importantes de clients VIP
+rule vipLargeOrder : {c: Customer, o: Order} /
+    c.id == o.customerId AND
+    c.vip == true AND
+    o.totalAmount > 1000
+    ==> validateOrder(o),
+        handleVIPOrder(c, o, 20, 1),
+        sendEmail(c.email, "VIP Order Confirmed", "Thank you for your order", 5)
+
+// R4: Commandes avec beaucoup d'articles
+rule bulkOrder : {o: Order} / o.itemCount > 10 AND o.status == "pending"
+    ==> validateOrder(o),
+        applyDiscount(o, 5),
+        logMessage(o.orderId)
+
+// R5: Petites commandes (standard)
+rule smallOrder : {o: Order} / o.totalAmount < 100 AND o.status == "pending"
+    ==> validateOrder(o),
+        applyDiscount(o)
+
+// -----------------------------------------------
+// Règles pour les produits
+// -----------------------------------------------
+
+// R6: Stock faible - alerte
+rule lowStock : {p: Product} / p.stock < 10 AND p.category == "electronics"
+    ==> updateInventory(p, 0, "Low stock alert"),
+        logMessage(p.name),
+        triggerInventoryCheck()
+
+// R7: Produits chers en stock
+rule expensiveInStock : {p: Product} / p.price > 500 AND p.stock > 0
+    ==> logMessage(p.name)
+
+// R8: Produits en rupture
+rule outOfStock : {p: Product} / p.stock == 0
+    ==> updateInventory(p, 0),
+        createNotification("inventory@example.com", "Product out of stock")
+
+// -----------------------------------------------
+// Règles pour les paiements
+// -----------------------------------------------
+
+// R9: Paiements importants non traités
+rule largeUnprocessedPayment : {p: Payment} / p.amount > 1000 AND p.processed == false
+    ==> logMessage(p.paymentId),
+        createNotification("finance@example.com", "Large payment pending", 5)
+
+// R10: Paiements avec commandes
+rule paymentWithOrder : {p: Payment, o: Order} /
+    p.orderId == o.orderId AND
+    p.processed == true AND
+    o.status == "pending"
+    ==> processPayment(p, o),
+        validateOrder(o)
+
+// R11: Paiements par carte de crédit
+rule creditCardPayment : {p: Payment, o: Order} /
+    p.orderId == o.orderId AND
+    p.method == "credit_card" AND
+    p.amount > 500
+    ==> processPayment(p, o, true, true)
+
+// -----------------------------------------------
+// Règles pour les expéditions
+// -----------------------------------------------
+
+// R12: Expéditions prioritaires
+rule priorityShipment : {s: Shipment} / s.priority > 7 AND s.status == "ready"
+    ==> scheduleShipment(s, 10, true),
+        logMessage(s.shipmentId)
+
+// R13: Expéditions avec commandes VIP
+rule vipShipment : {c: Customer, o: Order, s: Shipment} /
+    c.id == o.customerId AND
+    o.orderId == s.orderId AND
+    c.vip == true
+    ==> shipOrder(o, s),
+        scheduleShipment(s, 9, true),
+        sendEmail(c.email, "VIP Shipment", "Your order is being shipped", 5)
+
+// R14: Expéditions standard
+rule standardShipment : {s: Shipment} / s.status == "ready" AND s.priority <= 5
+    ==> scheduleShipment(s),
+        logMessage(s.shipmentId)
+
+// -----------------------------------------------
+// Règles pour les alertes
+// -----------------------------------------------
+
+// R15: Alertes critiques
+rule criticalAlert : {a: Alert} / a.severity == "critical"
+    ==> escalateIssue(a, "critical", "manager", true),
+        createNotification("admin@example.com", a.message, 10)
+
+// R16: Alertes d'avertissement
+rule warningAlert : {a: Alert} / a.severity == "warning"
+    ==> escalateIssue(a, "warning"),
+        logMessage(a.message)
+
+// -----------------------------------------------
+// Règles complexes multi-types
+// -----------------------------------------------
+
+// R17: Orchestration complète d'une commande VIP
+rule vipOrderOrchestration : {c: Customer, o: Order, p: Payment, s: Shipment} /
+    c.id == o.customerId AND
+    o.orderId == p.orderId AND
+    o.orderId == s.orderId AND
+    c.vip == true AND
+    p.processed == true AND
+    o.status == "confirmed"
+    ==> handleVIPOrder(c, o),
+        processPayment(p, o, true, true),
+        shipOrder(o, s),
+        scheduleShipment(s, 10, true),
+        sendEmail(c.email, "Complete VIP Service", "Your order is being processed", 5)
+
+// ================================================================================
+// SECTION 4: DONNÉES DE TEST (FAITS)
+// ================================================================================
+
+// -----------------------------------------------
+// Clients
+// -----------------------------------------------
+Customer(id: "C001", name: "Alice Johnson", email: "alice@example.com", vip: true, creditScore: 800)
+Customer(id: "C002", name: "Bob Smith", email: "bob@example.com", vip: false, creditScore: 650)
+Customer(id: "C003", name: "Charlie Brown", email: "charlie@example.com", vip: true, creditScore: 780)
+Customer(id: "C004", name: "Diana Prince", email: "diana@example.com", vip: false, creditScore: 450)
+Customer(id: "C005", name: "Eve White", email: "eve@example.com", vip: true, creditScore: 820)
+
+// -----------------------------------------------
+// Produits
+// -----------------------------------------------
+Product(id: "P001", name: "Laptop Pro 15", category: "electronics", price: 1500, stock: 5)
+Product(id: "P002", name: "Wireless Mouse", category: "electronics", price: 25, stock: 100)
+Product(id: "P003", name: "USB-C Cable", category: "accessories", price: 15, stock: 8)
+Product(id: "P004", name: "External SSD 1TB", category: "electronics", price: 120, stock: 0)
+Product(id: "P005", name: "Mechanical Keyboard", category: "electronics", price: 150, stock: 50)
+
+// -----------------------------------------------
+// Commandes
+// -----------------------------------------------
+Order(orderId: "O001", customerId: "C001", totalAmount: 1500, status: "pending", itemCount: 2)
+Order(orderId: "O002", customerId: "C002", totalAmount: 75, status: "pending", itemCount: 3)
+Order(orderId: "O003", customerId: "C003", totalAmount: 2500, status: "confirmed", itemCount: 15)
+Order(orderId: "O004", customerId: "C004", totalAmount: 50, status: "pending", itemCount: 1)
+Order(orderId: "O005", customerId: "C005", totalAmount: 3000, status: "confirmed", itemCount: 20)
+
+// -----------------------------------------------
+// Paiements
+// -----------------------------------------------
+Payment(paymentId: "PAY001", orderId: "O001", amount: 1500, method: "credit_card", processed: false)
+Payment(paymentId: "PAY002", orderId: "O002", amount: 75, method: "paypal", processed: true)
+Payment(paymentId: "PAY003", orderId: "O003", amount: 2500, method: "credit_card", processed: true)
+Payment(paymentId: "PAY004", orderId: "O005", amount: 3000, method: "wire_transfer", processed: true)
+
+// -----------------------------------------------
+// Expéditions
+// -----------------------------------------------
+Shipment(shipmentId: "S001", orderId: "O001", address: "123 Main St", status: "ready", priority: 8)
+Shipment(shipmentId: "S002", orderId: "O002", address: "456 Oak Ave", status: "ready", priority: 3)
+Shipment(shipmentId: "S003", orderId: "O003", address: "789 Pine Rd", status: "ready", priority: 9)
+Shipment(shipmentId: "S004", orderId: "O005", address: "321 Elm St", status: "ready", priority: 10)
+
+// -----------------------------------------------
+// Alertes
+// -----------------------------------------------
+Alert(id: "A001", type: "inventory", severity: "critical", message: "Critical stock levels", timestamp: 1640000000)
+Alert(id: "A002", type: "payment", severity: "warning", message: "Payment gateway slow", timestamp: 1640000100)
+Alert(id: "A003", type: "system", severity: "critical", message: "Database connection lost", timestamp: 1640000200)
+
+// ================================================================================
+// NOTES SUR LA VALIDATION
+// ================================================================================
+//
+// Ce fichier démontre la validation complète au parsing :
+//
+// 1. TYPES VÉRIFIÉS:
+//    - Tous les types de variables dans les règles doivent être définis
+//    - Exemple: {c: Customer} nécessite que Customer soit défini
+//
+// 2. ACTIONS VÉRIFIÉES:
+//    - Toutes les actions appelées doivent être définies
+//    - Le nombre d'arguments doit correspondre (en tenant compte des optionnels)
+//    - Les types des arguments doivent correspondre aux paramètres
+//
+// 3. EXEMPLES DE VALIDATION:
+//    - processCustomer(c) : OK car c est de type Customer et l'action attend Customer
+//    - applyDiscount(o) : OK car priority a une valeur par défaut
+//    - sendEmail(c.email, "Subject", "Body", 5) : OK, tous les types correspondent
+//    - sendEmail(c.email, "Subject", "Body") : OK, priority est optionnel
+//
+// 4. ERREURS DÉTECTÉES:
+//    - Action non définie : "undefinedAction(x)" → Erreur
+//    - Type incorrect : "logMessage(123)" → Erreur (attendu string, reçu number)
+//    - Nombre d'arguments : "sendEmail(email)" → Erreur (manque subject et body)
+//    - Variable inconnue : "==> action(unknownVar)" → Erreur
+//
+// 5. AVANTAGES:
+//    - Détection précoce des erreurs (au parsing, pas à l'exécution)
+//    - Documentation explicite des signatures d'actions
+//    - Auto-complétion possible dans les IDEs
+//    - Refactoring plus sûr
+//
+// ================================================================================
+// FIN DE LA DÉMONSTRATION
+// ================================================================================
