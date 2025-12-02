@@ -745,9 +745,18 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	// - Règles 1 et 3 ont les mêmes conditions => partagent le même JoinNode
 	// - Règle 2 a une condition différente => son propre JoinNode
 	// Total : 2 JoinNodes (au lieu de 3 sans partage)
+	// Note: network.BetaNodes peut contenir des entrées dupliquées (hash + legacy key)
+	// On compte les JoinNodes uniques par ID
+	uniqueJoinNodes := make(map[string]bool)
+	for _, node := range network.BetaNodes {
+		if joinNode, ok := node.(*JoinNode); ok {
+			uniqueJoinNodes[joinNode.ID] = true
+		}
+	}
 	expectedBetaNodes := 2
-	if len(network.BetaNodes) != expectedBetaNodes {
-		t.Errorf("❌ Devrait avoir %d JoinNodes avec partage beta, got %d", expectedBetaNodes, len(network.BetaNodes))
+	actualUniqueJoinNodes := len(uniqueJoinNodes)
+	if actualUniqueJoinNodes != expectedBetaNodes {
+		t.Errorf("❌ Devrait avoir %d JoinNodes avec partage beta, got %d", expectedBetaNodes, actualUniqueJoinNodes)
 	} else {
 		fmt.Printf("   ✅ Structure réseau: %d JoinNodes avec partage (règles 1 et 3 partagent 1 JoinNode)\n", expectedBetaNodes)
 	}

@@ -143,13 +143,31 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		joinCondition = condition
 	}
 
-	// STEP 4: Create JoinNode with beta conditions only using BetaSharingRegistry
+	// STEP 3b: Build composite condition including alpha conditions for proper sharing
+	// The JoinNode hash must include alpha conditions to prevent incorrect sharing
+	// between rules with same beta but different alpha conditions
+	compositeCondition := map[string]interface{}{
+		"beta": joinCondition,
+	}
+
+	// Include alpha conditions in the composite to ensure proper hash differentiation
+	if len(alphaConditions) > 0 {
+		alphaCondMap := make(map[string]interface{})
+		for _, alphaCond := range alphaConditions {
+			// Use variable name as key and condition as value
+			varKey := alphaCond.Variable
+			alphaCondMap[varKey] = alphaCond.Condition
+		}
+		compositeCondition["alpha"] = alphaCondMap
+	}
+
+	// STEP 4: Create JoinNode with composite condition (beta + alpha) using BetaSharingRegistry
 	var joinNode *JoinNode
 	var wasShared bool
 
 	allVars := []string{variableNames[0], variableNames[1]}
 	node, hash, shared, createErr := network.BetaSharingRegistry.GetOrCreateJoinNode(
-		joinCondition,
+		compositeCondition,
 		leftVars,
 		rightVars,
 		allVars,
@@ -173,48 +191,69 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		network.LifecycleManager.RegisterNode(hash, "JoinNode")
 	}
 
-	joinNode.AddChild(terminalNode)
+	// STEP 4b: Connect terminal node properly based on sharing status
+	if wasShared {
+		// JoinNode is shared - use RuleRouterNode to avoid token duplication
+		router := NewRuleRouterNode(ruleID, joinNode.ID, jrb.utils.storage)
+		router.SetTerminalNode(terminalNode)
+		joinNode.AddChild(router)
+		fmt.Printf("   🔀 Created RuleRouterNode %s for shared JoinNode %s\n", router.ID, joinNode.ID)
+	} else {
+		// JoinNode is new - connect terminal directly
+		joinNode.AddChild(terminalNode)
+	}
 
 	// Store the JoinNode in the network's BetaNodes
 	network.BetaNodes[joinNode.ID] = joinNode
 
+	// Also store with legacy key format for test compatibility
+	legacyKey := fmt.Sprintf("%s_join", ruleID)
+	network.BetaNodes[legacyKey] = joinNode
+
 	// STEP 5: Connect the network correctly
 	// For each variable, connect: TypeNode -> [AlphaFilter] -> PassthroughAlpha -> JoinNode
-	for i, varName := range variableNames {
-		varType := variableTypes[i]
-		if varType == "" {
-			fmt.Printf("   ⚠️ Type vide pour variable %s\n", varName)
-			continue
-		}
+	// IMPORTANT: Skip this step if JoinNode was shared - inputs are already connected
+	if wasShared {
+		fmt.Printf("   ⏭️  Skipping input reconnection for shared JoinNode %s (already connected)\n", joinNode.ID)
+	}
 
-		side := NodeSideRight
-		if i == 0 {
-			side = NodeSideLeft
-		}
-
-		// Check if we have alpha filters for this variable
-		if alphaNodes, hasAlphaFilters := alphaNodesByVariable[varName]; hasAlphaFilters {
-			// Connect: AlphaFilter(s) -> PassthroughAlpha -> JoinNode
-			// Create passthrough alpha node
-			passthroughAlpha := jrb.utils.GetOrCreatePassthroughAlphaNode(network, ruleID, varType, varName, side)
-
-			// Chain each AlphaFilter to the passthrough
-			for _, alphaNode := range alphaNodes {
-				alphaNode.AddChild(passthroughAlpha)
+	if !wasShared {
+		for i, varName := range variableNames {
+			varType := variableTypes[i]
+			if varType == "" {
+				fmt.Printf("   ⚠️ Type vide pour variable %s\n", varName)
+				continue
 			}
 
-			// Connect passthrough to JoinNode
-			if side == NodeSideLeft {
-				passthroughAlpha.AddChild(joinNode)
+			side := NodeSideRight
+			if i == 0 {
+				side = NodeSideLeft
+			}
+
+			// Check if we have alpha filters for this variable
+			if alphaNodes, hasAlphaFilters := alphaNodesByVariable[varName]; hasAlphaFilters {
+				// Connect: AlphaFilter(s) -> PassthroughAlpha -> JoinNode
+				// Create passthrough alpha node
+				passthroughAlpha := jrb.utils.GetOrCreatePassthroughAlphaNode(network, ruleID, varType, varName, side)
+
+				// Chain each AlphaFilter to the passthrough
+				for _, alphaNode := range alphaNodes {
+					alphaNode.AddChild(passthroughAlpha)
+				}
+
+				// Connect passthrough to JoinNode
+				if side == NodeSideLeft {
+					passthroughAlpha.AddChild(joinNode)
+				} else {
+					passthroughAlpha.AddChild(joinNode)
+				}
+
+				fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
+					varType, len(alphaNodes), varName, side)
 			} else {
-				passthroughAlpha.AddChild(joinNode)
+				// No alpha filter for this variable, connect directly
+				jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, side)
 			}
-
-			fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
-				varType, len(alphaNodes), varName, side)
-		} else {
-			// No alpha filter for this variable, connect directly
-			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, side)
 		}
 	}
 

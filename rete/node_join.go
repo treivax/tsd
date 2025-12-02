@@ -38,6 +38,15 @@ type JoinCondition struct {
 func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []string, rightVars []string, varTypes map[string]string, storage Storage) *JoinNode {
 	allVars := append(leftVars, rightVars...)
 
+	// Extract beta condition from composite condition if present
+	// Composite conditions are in format: {"beta": ..., "alpha": ...}
+	conditionForExtraction := condition
+	if betaCond, hasBeta := condition["beta"]; hasBeta {
+		if betaMap, ok := betaCond.(map[string]interface{}); ok {
+			conditionForExtraction = betaMap
+		}
+	}
+
 	return &JoinNode{
 		BaseNode: BaseNode{
 			ID:       nodeID,
@@ -51,7 +60,7 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 		RightVariables: rightVars,
 		AllVariables:   allVars,
 		VariableTypes:  varTypes,
-		JoinConditions: extractJoinConditions(condition),
+		JoinConditions: extractJoinConditions(conditionForExtraction),
 		// Initialiser les mémoires séparées
 		LeftMemory:   &WorkingMemory{NodeID: nodeID + "_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
 		RightMemory:  &WorkingMemory{NodeID: nodeID + "_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
@@ -258,10 +267,19 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 	// Étape 2: Si on a une condition complète avec des contraintes alpha additionnelles,
 	// l'évaluer pour vérifier les conditions non-join (ex: o.amount > 100)
 	if jn.Condition != nil {
-		// Unwrap the constraint wrapper if present
+		// Unwrap composite condition (beta + alpha) if present
 		actualCondition := jn.Condition
-		if condType, exists := jn.Condition["type"].(string); exists && condType == "constraint" {
-			if constraint, ok := jn.Condition["constraint"].(map[string]interface{}); ok {
+		if betaCond, isBeta := jn.Condition["beta"]; isBeta {
+			// This is a composite condition from beta sharing with alpha conditions
+			// Extract only the beta part for join evaluation
+			if betaMap, ok := betaCond.(map[string]interface{}); ok {
+				actualCondition = betaMap
+			}
+		}
+
+		// Unwrap the constraint wrapper if present
+		if condType, exists := actualCondition["type"].(string); exists && condType == "constraint" {
+			if constraint, ok := actualCondition["constraint"].(map[string]interface{}); ok {
 				actualCondition = constraint
 			}
 		}

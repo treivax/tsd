@@ -156,9 +156,16 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 		}
 
 		// Should still have only 1 JoinNode in registry (shared)
-		// But 2 entries in BetaNodes (rule1_join and rule2_join)
-		if len(network.BetaNodes) != 2 {
-			t.Errorf("Expected 2 BetaNode entries, got %d", len(network.BetaNodes))
+		// But 3 entries in BetaNodes (hash + rule1_join + rule2_join for legacy compatibility)
+		// Count unique JoinNodes by ID to verify sharing
+		uniqueJoinNodes := make(map[string]bool)
+		for _, node := range network.BetaNodes {
+			if joinNode, ok := node.(*JoinNode); ok {
+				uniqueJoinNodes[joinNode.ID] = true
+			}
+		}
+		if len(uniqueJoinNodes) != 1 {
+			t.Errorf("Expected 1 unique JoinNode (shared), got %d", len(uniqueJoinNodes))
 		}
 	})
 
@@ -177,9 +184,9 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 			t.Errorf("Should not error on missing TypeNode, got: %v", err)
 		}
 
-		// JoinNode should still be created
-		if len(network.BetaNodes) != 1 {
-			t.Errorf("Expected 1 BetaNode, got %d", len(network.BetaNodes))
+		// JoinNode should still be created (2 entries: hash + legacy key)
+		if len(network.BetaNodes) != 2 {
+			t.Errorf("Expected 2 BetaNode entries (hash + legacy key), got %d", len(network.BetaNodes))
 		}
 	})
 }
