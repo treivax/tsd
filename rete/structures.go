@@ -61,3 +61,37 @@ type Program struct {
 	Types       []TypeDefinition `json:"types"`
 	Expressions []Expression     `json:"expressions"`
 }
+
+
+// Clone crée une copie profonde de TypeDefinition
+func (td TypeDefinition) Clone() TypeDefinition {
+	clone := TypeDefinition{
+		Type:   td.Type,
+		Name:   td.Name,
+		Fields: make([]Field, len(td.Fields)),
+	}
+	
+	// Copier les champs
+	copy(clone.Fields, td.Fields)
+	
+	return clone
+}
+
+// Clone crée une copie profonde d Action
+func (a *Action) Clone() *Action {
+	clone := &Action{
+		Type: a.Type,
+		Jobs: make([]JobCall, len(a.Jobs)),
+	}
+	
+	// Copier les jobs
+	copy(clone.Jobs, a.Jobs)
+	
+	// Copier le job unique si présent
+	if a.Job != nil {
+		jobCopy := *a.Job
+		clone.Job = &jobCopy
+	}
+	
+	return clone
+}

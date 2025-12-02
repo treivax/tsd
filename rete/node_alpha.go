@@ -35,9 +35,10 @@ func NewAlphaNode(nodeID string, condition interface{}, variableName string, sto
 	}
 }
 
-// ActivateLeft (non utilisé pour les nœuds alpha)
+// ActivateLeft (non utilisé pour les nœuds alpha sauf pour propagation rétroactive)
 func (an *AlphaNode) ActivateLeft(token *Token) error {
-	return fmt.Errorf("les nœuds alpha ne reçoivent pas de tokens")
+	// Silently ignore - used during retroactive propagation
+	return nil
 }
 
 // ActivateRetract retire le fait de la mémoire alpha et propage aux enfants
@@ -304,4 +305,30 @@ func isComparisonCondition(condition interface{}) bool {
 		}
 	}
 	return false
+}
+
+// Clone crée une copie profonde de l'AlphaNode
+func (an *AlphaNode) Clone() *AlphaNode {
+	clone := &AlphaNode{
+		BaseNode: BaseNode{
+			ID:       an.ID,
+			Type:     an.Type,
+			Memory:   an.Memory.Clone(),
+			Children: make([]Node, len(an.Children)),
+			Storage:  an.Storage,
+		},
+		Condition:    an.Condition,
+		VariableName: an.VariableName,
+		ResultName:   an.ResultName,
+		IsAtomic:     an.IsAtomic,
+		Dependencies: make([]string, len(an.Dependencies)),
+	}
+
+	// Copier les enfants
+	copy(clone.Children, an.Children)
+
+	// Copier les dépendances
+	copy(clone.Dependencies, an.Dependencies)
+
+	return clone
 }

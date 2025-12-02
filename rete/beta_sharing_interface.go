@@ -98,6 +98,9 @@ type BetaSharingRegistry interface {
 	// Used for testing or when normalization rules change.
 	ClearCache()
 
+	// Clear vide tous les caches et nodes partagés
+	Clear()
+
 	// Shutdown performs cleanup and releases all resources.
 	Shutdown() error
 }
@@ -535,4 +538,18 @@ func CalculateCacheHitRate(metrics *BetaBuildMetrics) float64 {
 		return 0.0
 	}
 	return float64(hits) / float64(total)
+}
+
+// Clear vide tous les caches et nodes partagés du BetaSharingRegistry
+func (bsr *BetaSharingRegistryImpl) Clear() {
+	bsr.mutex.Lock()
+	defer bsr.mutex.Unlock()
+
+	bsr.sharedJoinNodes = make(map[string]*JoinNode)
+	bsr.hashToNodeID = make(map[string]string)
+	bsr.joinNodeRules = make(map[string]map[string]bool)
+
+	if bsr.hashCache != nil {
+		bsr.hashCache.Clear()
+	}
 }

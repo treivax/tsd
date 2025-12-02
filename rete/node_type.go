@@ -150,3 +150,23 @@ func (tn *TypeNode) isValidType(value interface{}, expectedType string) bool {
 		return false
 	}
 }
+
+// Clone crée une copie profonde du TypeNode
+func (tn *TypeNode) Clone() *TypeNode {
+	clone := &TypeNode{
+		BaseNode: BaseNode{
+			ID:       tn.ID,
+			Type:     tn.Type,
+			Memory:   tn.Memory.Clone(),
+			Children: make([]Node, len(tn.Children)),
+			Storage:  tn.Storage,
+		},
+		TypeName:       tn.TypeName,
+		TypeDefinition: tn.TypeDefinition.Clone(),
+	}
+
+	// Copier les enfants
+	copy(clone.Children, tn.Children)
+
+	return clone
+}

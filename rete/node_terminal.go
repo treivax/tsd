@@ -139,3 +139,23 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 
 	return nil
 }
+
+
+// Clone crée une copie profonde du TerminalNode
+func (tn *TerminalNode) Clone() *TerminalNode {
+	clone := &TerminalNode{
+		BaseNode: BaseNode{
+			ID:       tn.ID,
+			Type:     tn.Type,
+			Memory:   tn.Memory.Clone(),
+			Children: make([]Node, len(tn.Children)),
+			Storage:  tn.Storage,
+		},
+		Action: tn.Action.Clone(),
+	}
+
+	// Copier les enfants
+	copy(clone.Children, tn.Children)
+
+	return clone
+}

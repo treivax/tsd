@@ -88,3 +88,92 @@ func (ms *MemoryStorage) ListNodes() ([]string, error) {
 	}
 	return nodes, nil
 }
+
+// Clear vide tous les faits du storage
+func (ms *MemoryStorage) Clear() error {
+	ms.mutex.Lock()
+	defer ms.mutex.Unlock()
+
+	// Vider toutes les mémoires
+	for nodeID := range ms.memories {
+		delete(ms.memories, nodeID)
+	}
+	ms.memories = make(map[string]*WorkingMemory)
+
+	return nil
+}
+
+// AddFact ajoute un fait au storage (dans une mémoire globale)
+func (ms *MemoryStorage) AddFact(fact *Fact) error {
+	ms.mutex.Lock()
+	defer ms.mutex.Unlock()
+
+	// Utiliser une mémoire globale pour les faits
+	const globalNodeID = "__global_facts__"
+
+	memory, exists := ms.memories[globalNodeID]
+	if !exists {
+		memory = &WorkingMemory{
+			NodeID: globalNodeID,
+			Facts:  make(map[string]*Fact),
+			Tokens: make(map[string]*Token),
+		}
+		ms.memories[globalNodeID] = memory
+	}
+
+	return memory.AddFact(fact)
+}
+
+// GetAllFacts récupère tous les faits du storage
+func (ms *MemoryStorage) GetAllFacts() []*Fact {
+	ms.mutex.RLock()
+	defer ms.mutex.RUnlock()
+
+	facts := make([]*Fact, 0)
+
+	// Collecter les faits de toutes les mémoires
+	for _, memory := range ms.memories {
+		if memory != nil && memory.Facts != nil {
+			for _, fact := range memory.Facts {
+				facts = append(facts, fact)
+			}
+		}
+	}
+
+	return facts
+}
+
+// RemoveFact supprime un fait du storage par son ID interne
+func (ms *MemoryStorage) RemoveFact(factID string) error {
+	ms.mutex.Lock()
+	defer ms.mutex.Unlock()
+
+	// Chercher dans toutes les mémoires
+	for _, memory := range ms.memories {
+		if memory != nil && memory.Facts != nil {
+			if _, exists := memory.Facts[factID]; exists {
+				delete(memory.Facts, factID)
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("fact %s not found", factID)
+}
+
+// GetFact récupère un fait par son ID interne
+func (ms *MemoryStorage) GetFact(factID string) *Fact {
+	ms.mutex.RLock()
+	defer ms.mutex.RUnlock()
+
+	// Chercher dans toutes les mémoires
+	for _, memory := range ms.memories {
+		if memory != nil && memory.Facts != nil {
+			if fact, exists := memory.Facts[factID]; exists {
+				return fact
+			}
+		}
+	}
+
+	return nil
+}

@@ -7,6 +7,7 @@ package rete
 import (
 	"fmt"
 	"log"
+	"sync"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -29,6 +30,8 @@ type ReteNetwork struct {
 	Config                *ChainPerformanceConfig  `json:"-"` // Configuration de performance
 	ActionExecutor        *ActionExecutor          `json:"-"` // Exécuteur d'actions
 	ArithmeticResultCache *ArithmeticResultCache   `json:"-"` // Cache global des résultats arithmétiques intermédiaires
+	currentTx             *Transaction             `json:"-"` // Transaction courante (si en cours)
+	txMutex               sync.RWMutex             `json:"-"` // Mutex pour accès concurrent à la transaction
 }
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
@@ -97,6 +100,90 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 	return network
 }
 
+// GarbageCollect nettoie et libère les ressources du réseau
+func (network *ReteNetwork) GarbageCollect() {
+	// 1. Vider les caches
+	if network.ArithmeticResultCache != nil {
+		network.ArithmeticResultCache.Clear()
+	}
+
+	if network.BetaSharingRegistry != nil {
+		network.BetaSharingRegistry.Clear()
+	}
+
+	if network.AlphaSharingManager != nil {
+		network.AlphaSharingManager.Clear()
+	}
+
+	// 2. Nettoyer les nœuds et supprimer les références
+	// TypeNodes
+	for _, node := range network.TypeNodes {
+		if node != nil && node.Memory != nil {
+			node.Memory.Facts = make(map[string]*Fact)
+			node.Memory.Tokens = make(map[string]*Token)
+		}
+		if node != nil {
+			node.Children = nil
+		}
+	}
+	network.TypeNodes = make(map[string]*TypeNode)
+
+	// AlphaNodes
+	for _, node := range network.AlphaNodes {
+		if node != nil && node.Memory != nil {
+			node.Memory.Facts = make(map[string]*Fact)
+			node.Memory.Tokens = make(map[string]*Token)
+		}
+		if node != nil {
+			node.Children = nil
+		}
+	}
+	network.AlphaNodes = make(map[string]*AlphaNode)
+
+	// BetaNodes
+	network.BetaNodes = make(map[string]interface{})
+
+	// TerminalNodes
+	for _, node := range network.TerminalNodes {
+		if node != nil && node.Memory != nil {
+			node.Memory.Facts = make(map[string]*Fact)
+			node.Memory.Tokens = make(map[string]*Token)
+		}
+		if node != nil {
+			node.Children = nil
+		}
+	}
+	network.TerminalNodes = make(map[string]*TerminalNode)
+
+	// 3. Vider les types
+	network.Types = make([]TypeDefinition, 0)
+
+	// 4. Vider le PassthroughRegistry
+	network.PassthroughRegistry = make(map[string]*AlphaNode)
+
+	// 5. Nettoyer le LifecycleManager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.Cleanup()
+	}
+
+	// 6. Nettoyer l'ActionExecutor
+	if network.ActionExecutor != nil {
+		// ActionExecutor n'a pas de méthode Cleanup pour l'instant
+		// mais on pourrait en ajouter une si nécessaire
+	}
+
+	// 7. Nettoyer le Storage
+	if network.Storage != nil {
+		network.Storage.Clear()
+	}
+
+	// 8. Réinitialiser le RootNode
+	if network.RootNode != nil && network.RootNode.Memory != nil {
+		network.RootNode.Memory.Facts = make(map[string]*Fact)
+		network.RootNode.Memory.Tokens = make(map[string]*Token)
+	}
+}
+
 // GetChainMetrics retourne les métriques de performance pour la construction des chaînes alpha
 func (rn *ReteNetwork) GetChainMetrics() *ChainBuildMetrics {
 	if rn.ChainMetrics == nil {
@@ -139,12 +226,76 @@ func (rn *ReteNetwork) ResetChainMetrics() {
 	}
 }
 
-// SubmitFact soumet un nouveau fait au réseau
+// SubmitFact soumet un nouveau fait au réseau RETE
+// Si une transaction est active, la commande est enregistrée pour rollback
 func (rn *ReteNetwork) SubmitFact(fact *Fact) error {
 	fmt.Printf("🔥 Soumission d'un nouveau fait au réseau RETE: %s\n", fact.String())
 
-	// Propager le fait depuis le nœud racine
+	// Vérifier si une transaction est active
+	tx := rn.GetTransaction()
+	if tx != nil && tx.IsActive {
+		// Mode transactionnel : enregistrer la commande
+		cmd := NewAddFactCommand(rn.Storage, fact)
+		if err := tx.RecordAndExecute(cmd); err != nil {
+			return err
+		}
+		// Propager le fait dans le réseau
+		return rn.RootNode.ActivateRight(fact)
+	}
+
+	// Mode normal : exécution directe
+	if err := rn.Storage.AddFact(fact); err != nil {
+		return err
+	}
 	return rn.RootNode.ActivateRight(fact)
+}
+
+// SetTransaction active une transaction pour toutes les opérations suivantes
+func (rn *ReteNetwork) SetTransaction(tx *Transaction) {
+	rn.txMutex.Lock()
+	defer rn.txMutex.Unlock()
+	rn.currentTx = tx
+}
+
+// GetTransaction retourne la transaction courante (ou nil)
+func (rn *ReteNetwork) GetTransaction() *Transaction {
+	rn.txMutex.RLock()
+	defer rn.txMutex.RUnlock()
+	return rn.currentTx
+}
+
+// RemoveFact supprime un fait du réseau
+// Si une transaction est active, la commande est enregistrée pour rollback
+func (rn *ReteNetwork) RemoveFact(factID string) error {
+	tx := rn.GetTransaction()
+	if tx != nil && tx.IsActive {
+		cmd := NewRemoveFactCommand(rn.Storage, factID)
+		return tx.RecordAndExecute(cmd)
+	}
+
+	return rn.Storage.RemoveFact(factID)
+}
+
+// RepropagateExistingFact propage un fait déjà existant dans le réseau vers les nouveaux nœuds
+// Cette fonction est utilisée en mode incrémental pour propager les faits existants
+// vers les nouvelles règles qui viennent d'être ajoutées au réseau
+func (rn *ReteNetwork) RepropagateExistingFact(fact *Fact) error {
+	// Ne pas ajouter le fait au RootNode ou TypeNode (il y est déjà)
+	// Propager directement aux enfants du TypeNode (AlphaNodes, etc.)
+	typeNode, exists := rn.TypeNodes[fact.Type]
+	if !exists {
+		return fmt.Errorf("type %s non trouvé dans le réseau", fact.Type)
+	}
+
+	// Créer un token pour ce fait
+	token := &Token{
+		ID:     fmt.Sprintf("token_%s_%s", fact.Type, fact.ID),
+		NodeID: typeNode.GetID(),
+		Facts:  []*Fact{fact},
+	}
+
+	// Propager directement aux enfants du TypeNode sans ajouter à sa mémoire
+	return typeNode.PropagateToChildren(fact, token)
 }
 
 // SubmitFactsFromGrammar soumet plusieurs faits depuis la grammaire au réseau

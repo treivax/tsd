@@ -21,4 +21,9 @@ type Storage interface {
 	LoadMemory(nodeID string) (*WorkingMemory, error)
 	DeleteMemory(nodeID string) error
 	ListNodes() ([]string, error)
+	Clear() error                   // Vider tous les faits du storage
+	AddFact(fact *Fact) error       // Ajouter un fait au storage
+	RemoveFact(factID string) error // Supprimer un fait du storage par son ID interne
+	GetFact(factID string) *Fact    // Récupérer un fait par son ID interne
+	GetAllFacts() []*Fact           // Récupérer tous les faits du storage
 }

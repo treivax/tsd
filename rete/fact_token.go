@@ -150,3 +150,67 @@ func (wm *WorkingMemory) GetTokensByVariable(variables []string) []*Token {
 	// Pour l'instant, retourne tous les tokens (implémentation simplifiée)
 	return wm.GetTokens()
 }
+
+
+// Clone crée une copie profonde d un fait
+func (f *Fact) Clone() *Fact {
+	clone := &Fact{
+		ID:        f.ID,
+		Type:      f.Type,
+		Fields:    make(map[string]interface{}),
+		Timestamp: f.Timestamp,
+	}
+	
+	// Copier les champs
+	for k, v := range f.Fields {
+		clone.Fields[k] = v
+	}
+	
+	return clone
+}
+
+// Clone crée une copie profonde de WorkingMemory
+func (wm *WorkingMemory) Clone() *WorkingMemory {
+	clone := &WorkingMemory{
+		NodeID: wm.NodeID,
+		Facts:  make(map[string]*Fact),
+		Tokens: make(map[string]*Token),
+	}
+	
+	// Copier les faits
+	for id, fact := range wm.Facts {
+		clone.Facts[id] = fact.Clone()
+	}
+	
+	// Copier les tokens
+	for id, token := range wm.Tokens {
+		clone.Tokens[id] = token.Clone()
+	}
+	
+	return clone
+}
+
+// Clone crée une copie profonde d un token
+func (t *Token) Clone() *Token {
+	clone := &Token{
+		ID:           t.ID,
+		Facts:        make([]*Fact, len(t.Facts)),
+		NodeID:       t.NodeID,
+		Bindings:     make(map[string]*Fact),
+		IsJoinResult: t.IsJoinResult,
+	}
+	
+	// Copier les faits
+	for i, fact := range t.Facts {
+		clone.Facts[i] = fact.Clone()
+	}
+	
+	// Copier les bindings
+	for k, v := range t.Bindings {
+		clone.Bindings[k] = v.Clone()
+	}
+	
+	// Note: Parent n est pas cloné pour éviter récursion infinie
+	
+	return clone
+}
