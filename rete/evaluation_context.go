@@ -32,6 +32,9 @@ type EvaluationContext struct {
 	// Metadata stores arbitrary debugging or profiling information
 	Metadata map[string]interface{}
 
+	// Cache is an optional reference to the global arithmetic result cache
+	Cache *ArithmeticResultCache
+
 	// mutex protects concurrent access to maps and slices
 	mutex sync.RWMutex
 }
@@ -45,7 +48,15 @@ func NewEvaluationContext(fact *Fact) *EvaluationContext {
 		EvaluationPath:      make([]string, 0),
 		Timestamp:           time.Now(),
 		Metadata:            make(map[string]interface{}),
+		Cache:               nil, // Will be set by TypeNode if available
 	}
+}
+
+// NewEvaluationContextWithCache creates a new evaluation context with a cache reference.
+func NewEvaluationContextWithCache(fact *Fact, cache *ArithmeticResultCache) *EvaluationContext {
+	ctx := NewEvaluationContext(fact)
+	ctx.Cache = cache
+	return ctx
 }
 
 // SetIntermediateResult stores a computed value with the given key.
@@ -98,6 +109,7 @@ func (ec *EvaluationContext) Clone() *EvaluationContext {
 		EvaluationPath:      make([]string, len(ec.EvaluationPath)),
 		Timestamp:           ec.Timestamp,
 		Metadata:            make(map[string]interface{}, len(ec.Metadata)),
+		Cache:               ec.Cache, // Share the same cache reference
 	}
 
 	// Deep copy intermediate results

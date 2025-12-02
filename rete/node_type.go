@@ -80,8 +80,13 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 		if alphaNode, ok := child.(*AlphaNode); ok {
 			// Check if this AlphaNode is part of a decomposed chain
 			if alphaNode.IsAtomic || len(alphaNode.Dependencies) > 0 {
-				// Create evaluation context for decomposed chain
-				ctx := NewEvaluationContext(fact)
+				// Create evaluation context for decomposed chain with cache if available
+				var ctx *EvaluationContext
+				if tn.network != nil && tn.network.ArithmeticResultCache != nil {
+					ctx = NewEvaluationContextWithCache(fact, tn.network.ArithmeticResultCache)
+				} else {
+					ctx = NewEvaluationContext(fact)
+				}
 				if err := alphaNode.ActivateWithContext(fact, ctx); err != nil {
 					return fmt.Errorf("error activating decomposed alpha chain: %w", err)
 				}

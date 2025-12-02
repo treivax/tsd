@@ -11,23 +11,24 @@ import (
 
 // ReteNetwork représente le réseau RETE complet
 type ReteNetwork struct {
-	RootNode            *RootNode                `json:"root_node"`
-	TypeNodes           map[string]*TypeNode     `json:"type_nodes"`
-	AlphaNodes          map[string]*AlphaNode    `json:"alpha_nodes"`
-	BetaNodes           map[string]interface{}   `json:"beta_nodes"` // Nœuds Beta pour les jointures multi-faits
-	TerminalNodes       map[string]*TerminalNode `json:"terminal_nodes"`
-	Storage             Storage                  `json:"-"`
-	Types               []TypeDefinition         `json:"types"`
-	BetaBuilder         interface{}              `json:"-"` // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
-	LifecycleManager    *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
-	AlphaSharingManager *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
-	AlphaChainBuilder   *AlphaChainBuilder       `json:"-"` // Constructeur de chaînes alpha avec décomposition
-	PassthroughRegistry map[string]*AlphaNode    `json:"-"` // Registre de partage des AlphaNodes passthrough
-	BetaSharingRegistry BetaSharingRegistry      `json:"-"` // Gestionnaire du partage des JoinNodes
-	BetaChainBuilder    *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
-	ChainMetrics        *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
-	Config              *ChainPerformanceConfig  `json:"-"` // Configuration de performance
-	ActionExecutor      *ActionExecutor          `json:"-"` // Exécuteur d'actions
+	RootNode              *RootNode                `json:"root_node"`
+	TypeNodes             map[string]*TypeNode     `json:"type_nodes"`
+	AlphaNodes            map[string]*AlphaNode    `json:"alpha_nodes"`
+	BetaNodes             map[string]interface{}   `json:"beta_nodes"` // Nœuds Beta pour les jointures multi-faits
+	TerminalNodes         map[string]*TerminalNode `json:"terminal_nodes"`
+	Storage               Storage                  `json:"-"`
+	Types                 []TypeDefinition         `json:"types"`
+	BetaBuilder           interface{}              `json:"-"` // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
+	LifecycleManager      *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
+	AlphaSharingManager   *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
+	AlphaChainBuilder     *AlphaChainBuilder       `json:"-"` // Constructeur de chaînes alpha avec décomposition
+	PassthroughRegistry   map[string]*AlphaNode    `json:"-"` // Registre de partage des AlphaNodes passthrough
+	BetaSharingRegistry   BetaSharingRegistry      `json:"-"` // Gestionnaire du partage des JoinNodes
+	BetaChainBuilder      *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
+	ChainMetrics          *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
+	Config                *ChainPerformanceConfig  `json:"-"` // Configuration de performance
+	ActionExecutor        *ActionExecutor          `json:"-"` // Exécuteur d'actions
+	ArithmeticResultCache *ArithmeticResultCache   `json:"-"` // Cache global des résultats arithmétiques intermédiaires
 }
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
@@ -61,22 +62,27 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		betaSharingRegistry = NewBetaSharingRegistry(betaSharingConfig, lifecycleManager)
 	}
 
+	// Initialize arithmetic result cache with default config
+	arithmeticCacheConfig := DefaultCacheConfig()
+	arithmeticCache := NewArithmeticResultCache(arithmeticCacheConfig)
+
 	network := &ReteNetwork{
-		RootNode:            rootNode,
-		TypeNodes:           make(map[string]*TypeNode),
-		AlphaNodes:          make(map[string]*AlphaNode),
-		BetaNodes:           make(map[string]interface{}),
-		TerminalNodes:       make(map[string]*TerminalNode),
-		Storage:             storage,
-		Types:               make([]TypeDefinition, 0),
-		BetaBuilder:         nil, // Deprecated field, kept for backward compatibility
-		LifecycleManager:    lifecycleManager,
-		AlphaSharingManager: NewAlphaSharingRegistryWithConfig(config, metrics),
-		PassthroughRegistry: make(map[string]*AlphaNode),
-		BetaSharingRegistry: betaSharingRegistry,
-		BetaChainBuilder:    betaChainBuilder, // Will be initialized lazily if needed
-		ChainMetrics:        metrics,
-		Config:              config,
+		RootNode:              rootNode,
+		TypeNodes:             make(map[string]*TypeNode),
+		AlphaNodes:            make(map[string]*AlphaNode),
+		BetaNodes:             make(map[string]interface{}),
+		TerminalNodes:         make(map[string]*TerminalNode),
+		Storage:               storage,
+		Types:                 make([]TypeDefinition, 0),
+		BetaBuilder:           nil, // Deprecated field, kept for backward compatibility
+		LifecycleManager:      lifecycleManager,
+		AlphaSharingManager:   NewAlphaSharingRegistryWithConfig(config, metrics),
+		PassthroughRegistry:   make(map[string]*AlphaNode),
+		BetaSharingRegistry:   betaSharingRegistry,
+		BetaChainBuilder:      betaChainBuilder, // Will be initialized lazily if needed
+		ChainMetrics:          metrics,
+		Config:                config,
+		ArithmeticResultCache: arithmeticCache,
 	}
 
 	// Initialize action executor

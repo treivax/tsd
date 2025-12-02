@@ -171,11 +171,43 @@ func (an *AlphaNode) ActivateWithContext(fact *Fact, context *EvaluationContext)
 	var err error
 
 	if an.IsAtomic && an.Condition != nil {
-		// Use ConditionEvaluator for context-aware evaluation
-		evaluator := NewConditionEvaluator(an.Storage)
-		result, err = evaluator.EvaluateWithContext(an.Condition, fact, context)
-		if err != nil {
-			return fmt.Errorf("error evaluating condition with context in node %s: %w", an.ID, err)
+		// Try cache first if ResultName is set
+		var fromCache bool
+		if an.ResultName != "" && context.Cache != nil {
+			// Build dependencies map from context
+			dependencies := make(map[string]interface{})
+			for _, dep := range an.Dependencies {
+				if val, exists := context.GetIntermediateResult(dep); exists {
+					dependencies[dep] = val
+				}
+			}
+
+			// Try to get from cache
+			if cachedResult, found := context.Cache.GetWithDependencies(an.ResultName, dependencies); found {
+				result = cachedResult
+				fromCache = true
+			}
+		}
+
+		// If not from cache, evaluate
+		if !fromCache {
+			// Use ConditionEvaluator for context-aware evaluation
+			evaluator := NewConditionEvaluator(an.Storage)
+			result, err = evaluator.EvaluateWithContext(an.Condition, fact, context)
+			if err != nil {
+				return fmt.Errorf("error evaluating condition with context in node %s: %w", an.ID, err)
+			}
+
+			// Store in cache if ResultName is set
+			if an.ResultName != "" && context.Cache != nil {
+				dependencies := make(map[string]interface{})
+				for _, dep := range an.Dependencies {
+					if val, exists := context.GetIntermediateResult(dep); exists {
+						dependencies[dep] = val
+					}
+				}
+				context.Cache.SetWithDependencies(an.ResultName, dependencies, result)
+			}
 		}
 
 		// Store intermediate result if this node produces one
