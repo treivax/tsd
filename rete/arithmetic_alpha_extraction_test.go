@@ -33,7 +33,7 @@ rule expensive : {c: Commande} / c.price * 1.2 > 1000
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -111,7 +111,7 @@ rule complex_calc : {o: Order} / (o.quantity * o.price - o.discount) / 2 > 50
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -181,7 +181,7 @@ rule discount_calc : {p: Product, c: Customer, o: Order}
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -260,7 +260,7 @@ rule valuable_heavy : {i: Item}
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -388,7 +388,7 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 
 			storage := NewMemoryStorage()
 			pipeline := NewConstraintPipeline()
-			network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+			network, err := pipeline.IngestFile(tsdFile, nil, storage)
 			if err != nil {
 				t.Fatalf("Failed to build network: %v", err)
 			}
@@ -442,7 +442,7 @@ rule expensive : {o: Order} / o.qty * o.price > 500 ==> process("Expensive")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}

@@ -39,7 +39,7 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Expected to fail - networks without rules are not allowed
 	if err == nil {
@@ -82,7 +82,7 @@ type Product(id: string, name: string, price:number)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	_, err = pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	_, err = pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Expected to fail - networks with only types (no rules) are not allowed
 	if err == nil {
@@ -127,18 +127,19 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 		t.Fatalf("Failed to write facts file: %v", err)
 	}
 
-	// Build network from multiple files
-	// Note: BuildNetworkFromMultipleFiles behaves differently - it creates the network
-	// and injects facts even without rules, skipping the terminal node validation
+	// Build network from multiple files using IngestFile
+	// IngestFile creates the network and injects facts even without rules
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
+	// Ingest files sequentially
+	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
-	network, err := pipeline.BuildNetworkFromMultipleFiles(files, storage)
-
-	// This succeeds because BuildNetworkFromMultipleFiles injects facts
-	if err != nil {
-		t.Fatalf("Failed to build network from multiple files: %v", err)
+	for _, file := range files {
+		network, err = pipeline.IngestFile(file, network, storage)
+		if err != nil {
+			t.Fatalf("Failed to ingest file %s: %v", file, err)
+		}
 	}
 
 	if network == nil {
@@ -162,7 +163,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 		t.Error("Company TypeNode not found")
 	}
 
-	t.Logf("✅ BuildNetworkFromMultipleFiles succeeds with types and facts (injects facts)")
+	t.Logf("✅ IngestFile succeeds with types and facts (injects facts)")
 	t.Logf("   - Files parsed: %d", len(files))
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 }
@@ -186,7 +187,7 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	_, err = pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	_, err = pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Expected to fail - empty file means no types and no rules
 	if err == nil {
@@ -234,12 +235,14 @@ User(id: "U003", username: "charlie", email: "charlie@example.com")
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
+	// Ingest files sequentially
+	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
-	network, err := pipeline.BuildNetworkFromMultipleFiles(files, storage)
-
-	// BuildNetworkFromMultipleFiles succeeds and injects facts
-	if err != nil {
-		t.Fatalf("Failed to build network: %v", err)
+	for _, file := range files {
+		network, err = pipeline.IngestFile(file, network, storage)
+		if err != nil {
+			t.Fatalf("Failed to ingest file %s: %v", file, err)
+		}
 	}
 
 	if network == nil {
@@ -260,6 +263,6 @@ User(id: "U003", username: "charlie", email: "charlie@example.com")
 		t.Errorf("Expected TypeNode name 'User', got '%s'", userNode.TypeName)
 	}
 
-	t.Logf("✅ BuildNetworkFromMultipleFiles succeeds with separate type and fact files")
+	t.Logf("✅ IngestFile succeeds with separate type and fact files")
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 }

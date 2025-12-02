@@ -33,7 +33,7 @@ rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -136,7 +136,7 @@ rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -227,7 +227,7 @@ rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -350,7 +350,7 @@ rule dept_comprehensive_stats : {d: Department, avg_sal: AVG(e.salary), total_sa
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}

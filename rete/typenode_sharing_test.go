@@ -35,7 +35,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
 	// Construire le réseau RETE
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -125,7 +125,7 @@ rule r3 : {e: Employee} / e.salary >= 30000 AND e.salary <= 50000 ==> mid_earner
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -177,7 +177,7 @@ rule r2 : {c: Company} / c.revenue > 1000000 ==> big_company(c.id)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -240,7 +240,7 @@ rule r3 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -299,7 +299,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -394,7 +394,7 @@ rule r3 : {p: Person} / p.age > 30 AND p.age < 50 ==> middle_aged(p.id)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}

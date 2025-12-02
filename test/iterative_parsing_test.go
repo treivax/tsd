@@ -127,9 +127,13 @@ Person(name:Jane, age:16)`,
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
-	network, err := pipeline.BuildNetworkFromMultipleFiles(files, storage)
-	if err != nil {
-		t.Fatalf("Erreur parsing multi-fichiers: %v", err)
+	// Ingest files sequentially
+	var network *rete.ReteNetwork
+	for _, file := range files {
+		network, err = pipeline.IngestFile(file, network, storage)
+		if err != nil {
+			t.Fatalf("Erreur ingestion fichier %s: %v", file, err)
+		}
 	}
 
 	// Vérifications

@@ -49,7 +49,7 @@ Person(id:p3, name:Charlie, age:15)
 	t.Log("\n🔧 ÉTAPE 2: Construction du réseau RETE initial")
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	initialNetwork, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	initialNetwork, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -75,7 +75,7 @@ Person(id:p3, name:Charlie, age:15)
 	// ÉTAPE 4: Re-parser et reconstruire le réseau
 	t.Log("\n🔄 ÉTAPE 4: Reconstruction du réseau avec suppression")
 	storage = NewMemoryStorage() // Nouveau storage pour reconstruction propre
-	updatedNetwork, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	updatedNetwork, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur reconstruction réseau: %v", err)
 	}
@@ -127,7 +127,7 @@ Person(id:p3, name:Charlie, age:15)
 	}
 
 	storage = NewMemoryStorage()
-	finalNetwork, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	finalNetwork, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur reconstruction finale: %v", err)
 	}
@@ -198,7 +198,7 @@ Order(id:o2, customer_id:p2, amount:50)
 	t.Log("\n🔧 Construction du réseau initial avec jointures")
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction: %v", err)
 	}
@@ -223,7 +223,7 @@ Order(id:o2, customer_id:p2, amount:50)
 	// Reconstruire
 	t.Log("\n🔄 Reconstruction après suppression")
 	storage = NewMemoryStorage()
-	updatedNetwork, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	updatedNetwork, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur reconstruction: %v", err)
 	}
@@ -286,7 +286,7 @@ Person(id:p1, age:55)
 
 	// Construction initiale
 	t.Log("\n🔧 Construction initiale avec 5 règles")
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction: %v", err)
 	}
@@ -307,7 +307,7 @@ Person(id:p1, age:55)
 	}
 
 	storage = NewMemoryStorage()
-	network, err = pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err = pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur reconstruction: %v", err)
 	}
@@ -336,7 +336,7 @@ Person(id:p1, age:55)
 	}
 
 	storage = NewMemoryStorage()
-	network, err = pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err = pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur reconstruction: %v", err)
 	}

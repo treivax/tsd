@@ -48,7 +48,7 @@ remove rule adult_check
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tmpFile.Name(), storage)
+	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -129,7 +129,7 @@ remove rule rule3
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tmpFile.Name(), storage)
+	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -191,7 +191,7 @@ remove rule adult_rule
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tmpFile.Name(), storage)
+	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -253,7 +253,7 @@ remove rule non_existent_rule
 	pipeline := NewConstraintPipeline()
 
 	// La construction devrait réussir mais loguer un warning
-	network, err := pipeline.BuildNetworkFromConstraintFile(tmpFile.Name(), storage)
+	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		// L'erreur est acceptable si elle mentionne que la règle n'existe pas
 		t.Logf("⚠️ Erreur attendue pour règle inexistante: %v", err)
@@ -299,7 +299,7 @@ rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.BuildNetworkFromConstraintFile(tmpFile1.Name(), storage)
+	network, err := pipeline.IngestFile(tmpFile1.Name(), nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction: %v", err)
 	}

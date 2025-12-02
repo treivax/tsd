@@ -38,7 +38,7 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Customer B")
 
 	// Build network programmatically with config
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -216,7 +216,7 @@ rule r3 : {p: Person, o: Order, pr: Product} / p.id == o.customer_id AND o.id ==
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -332,7 +332,7 @@ rule complex_supply_chain : {
 	pipeline := NewConstraintPipeline()
 
 	startTime := time.Now()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	buildDuration := time.Since(startTime)
 
 	if err != nil {
@@ -378,7 +378,7 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 2")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -497,7 +497,7 @@ rule discount : {p: Person, o: Order} / p.id == o.customer_id ==> print("Match f
 	// Build network (Beta Sharing may or may not be active depending on default config)
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -617,7 +617,7 @@ rule detailed : {c: Customer, o: Order, i: Item} / c.id == o.customer_id AND o.i
 	// Build and test network
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -677,7 +677,7 @@ rule r5 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 5")
 	pipeline := NewConstraintPipeline()
 
 	start := time.Now()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -726,7 +726,7 @@ rule rule2 : {pr: Product, i: Inventory} / pr.id == i.product_id ==> print("Rule
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -762,7 +762,7 @@ rule high_value : {p: Person, o: Order} / p.id == o.customer_id ==> print("High 
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.BuildNetworkFromConstraintFile(tsdFile, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
