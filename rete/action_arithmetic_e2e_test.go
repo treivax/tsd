@@ -134,6 +134,12 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Printf("   - PassthroughRegistry: %d\n\n", len(network.PassthroughRegistry))
 
 	// ========================================
+	// DIAGRAMME DÉTAILLÉ DU RÉSEAU
+	// ========================================
+	diagram := NewNetworkDiagram(network)
+	diagram.PrintDetailedDiagram()
+
+	// ========================================
 	// SECTION 1: MAPPING RÈGLES TSD → NŒUDS RETE
 	// ========================================
 	fmt.Println(strings.Repeat("=", 100))
