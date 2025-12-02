@@ -6,7 +6,6 @@ package rete
 
 import (
 	"fmt"
-
 )
 
 // ExistsRuleBuilder handles the creation of EXISTS rules

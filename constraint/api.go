@@ -169,7 +169,9 @@ func ConvertToReteProgram(program *Program) interface{} {
 			continue
 		}
 		var typeMap map[string]interface{}
-		json.Unmarshal(jsonData, &typeMap)
+		if err := json.Unmarshal(jsonData, &typeMap); err != nil {
+			continue
+		}
 		typesInterface[i] = typeMap
 	}
 
@@ -182,7 +184,9 @@ func ConvertToReteProgram(program *Program) interface{} {
 			continue
 		}
 		var exprMap map[string]interface{}
-		json.Unmarshal(jsonData, &exprMap)
+		if err := json.Unmarshal(jsonData, &exprMap); err != nil {
+			continue
+		}
 		expressionsInterface[i] = exprMap
 	}
 
@@ -196,7 +200,9 @@ func ConvertToReteProgram(program *Program) interface{} {
 				continue
 			}
 			var removalMap map[string]interface{}
-			json.Unmarshal(jsonData, &removalMap)
+			if err := json.Unmarshal(jsonData, &removalMap); err != nil {
+				continue
+			}
 			ruleRemovalsInterface[i] = removalMap
 		}
 	}

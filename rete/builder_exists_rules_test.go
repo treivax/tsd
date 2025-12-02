@@ -348,7 +348,7 @@ func TestExistsRuleBuilder_CreateExistsRule(t *testing.T) {
 
 		action := &Action{
 			Type: "print",
-			Job: &JobCall{Name: "print", Args: []interface{}{"Person with employee record exists"}},
+			Job:  &JobCall{Name: "print", Args: []interface{}{"Person with employee record exists"}},
 		}
 
 		err := erb.CreateExistsRule(network, "exists_rule", exprMap, condition, action)

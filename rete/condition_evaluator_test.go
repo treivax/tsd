@@ -34,10 +34,10 @@ func TestConditionEvaluator_BinaryOp(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			condition := map[string]interface{}{
-				"type": "binaryOp",
+				"type":     "binaryOp",
 				"operator": tt.op,
-				"left":  map[string]interface{}{"type": "number", "value": tt.left},
-				"right": map[string]interface{}{"type": "number", "value": tt.right},
+				"left":     map[string]interface{}{"type": "number", "value": tt.left},
+				"right":    map[string]interface{}{"type": "number", "value": tt.right},
 			}
 
 			result, err := evaluator.EvaluateWithContext(condition, fact, ctx)
@@ -205,8 +205,8 @@ func TestConditionEvaluator_NestedExpression(t *testing.T) {
 // TestConditionEvaluator_FieldAccess tests field value extraction
 func TestConditionEvaluator_FieldAccess(t *testing.T) {
 	fact := &Fact{
-		ID:     "test1",
-		Type:   "TestType",
+		ID:   "test1",
+		Type: "TestType",
 		Fields: map[string]interface{}{
 			"qte":    10,
 			"price":  42.5,

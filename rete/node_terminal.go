@@ -140,7 +140,6 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 	return nil
 }
 
-
 // Clone crée une copie profonde du TerminalNode
 func (tn *TerminalNode) Clone() *TerminalNode {
 	clone := &TerminalNode{

@@ -6,7 +6,6 @@ package rete
 
 import (
 	"fmt"
-
 )
 
 // RuleBuilder orchestrates the creation of all types of rules

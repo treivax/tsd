@@ -151,7 +151,6 @@ func (wm *WorkingMemory) GetTokensByVariable(variables []string) []*Token {
 	return wm.GetTokens()
 }
 
-
 // Clone crée une copie profonde d un fait
 func (f *Fact) Clone() *Fact {
 	clone := &Fact{
@@ -160,12 +159,12 @@ func (f *Fact) Clone() *Fact {
 		Fields:    make(map[string]interface{}),
 		Timestamp: f.Timestamp,
 	}
-	
+
 	// Copier les champs
 	for k, v := range f.Fields {
 		clone.Fields[k] = v
 	}
-	
+
 	return clone
 }
 
@@ -176,17 +175,17 @@ func (wm *WorkingMemory) Clone() *WorkingMemory {
 		Facts:  make(map[string]*Fact),
 		Tokens: make(map[string]*Token),
 	}
-	
+
 	// Copier les faits
 	for id, fact := range wm.Facts {
 		clone.Facts[id] = fact.Clone()
 	}
-	
+
 	// Copier les tokens
 	for id, token := range wm.Tokens {
 		clone.Tokens[id] = token.Clone()
 	}
-	
+
 	return clone
 }
 
@@ -199,18 +198,18 @@ func (t *Token) Clone() *Token {
 		Bindings:     make(map[string]*Fact),
 		IsJoinResult: t.IsJoinResult,
 	}
-	
+
 	// Copier les faits
 	for i, fact := range t.Facts {
 		clone.Facts[i] = fact.Clone()
 	}
-	
+
 	// Copier les bindings
 	for k, v := range t.Bindings {
 		clone.Bindings[k] = v.Clone()
 	}
-	
+
 	// Note: Parent n est pas cloné pour éviter récursion infinie
-	
+
 	return clone
 }

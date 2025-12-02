@@ -516,15 +516,14 @@ func (asr *AlphaSharingRegistry) GetSharedAlphaNodeDetails(hash string) map[stri
 	}
 }
 
-
 // Clear vide tous les caches et nodes partagés
 func (asr *AlphaSharingRegistry) Clear() {
 	asr.mutex.Lock()
 	defer asr.mutex.Unlock()
-	
+
 	asr.sharedAlphaNodes = make(map[string]*AlphaNode)
 	asr.hashCache = make(map[string]string)
-	
+
 	if asr.lruHashCache != nil {
 		asr.lruHashCache.Clear()
 	}

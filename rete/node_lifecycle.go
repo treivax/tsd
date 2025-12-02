@@ -277,12 +277,11 @@ func (lm *LifecycleManager) GetRuleInfo(ruleID string) *RuleInfo {
 	return info
 }
 
-
 // Cleanup nettoie toutes les ressources du LifecycleManager
 func (lm *LifecycleManager) Cleanup() {
 	lm.mutex.Lock()
 	defer lm.mutex.Unlock()
-	
+
 	// Vider toutes les nodes
 	lm.Nodes = make(map[string]*NodeLifecycle)
 }

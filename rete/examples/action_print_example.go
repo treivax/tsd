@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Exemple d'utilisation de l'action print ===\n")
+	fmt.Println("=== Exemple d'utilisation de l'action print ===")
 
 	// Créer un réseau RETE
 	storage := rete.NewMemoryStorage()
@@ -31,7 +31,7 @@ func main() {
 	}
 	network.Types = append(network.Types, personType)
 
-	fmt.Println("✅ Type Person défini\n")
+	fmt.Println("✅ Type Person défini")
 
 	// Créer quelques faits
 	facts := []*rete.Fact{

@@ -6,7 +6,6 @@ package rete
 
 import (
 	"fmt"
-
 )
 
 // AccumulatorRuleBuilder handles the creation of accumulator rules
