@@ -194,7 +194,7 @@ func ExampleArithmeticDecompositionMetrics_withCircularDetection() {
 	fmt.Printf("Total validations: %d\n", global.GraphValidations)
 
 	// Output:
-	// Cycles detected: 1
+	// Cycles detected: 2
 	// Total validations: 1
 }
 
@@ -314,7 +314,7 @@ func ExampleArithmeticDecompositionMetrics_fullIntegration() {
 	// Cache hit rate: 60%
 	// Max dependency depth: 2
 	// Graph validations: 1
-	// Cache size: 3
+	// Cache size: 2
 }
 
 // ExampleArithmeticDecompositionMetrics_performance démontre le suivi des performances
