@@ -51,10 +51,12 @@ Cette phase se concentre sur l'optimisation des performances de la décompositio
 
 | Fichier | Description | Statut |
 |---------|-------------|--------|
-| `arithmetic_result_cache.go` | Cache LRU des résultats intermédiaires | 🔲 À créer |
-| `arithmetic_result_cache_test.go` | Tests du cache | 🔲 À créer |
+| `arithmetic_result_cache.go` | Cache LRU des résultats intermédiaires | ✅ Créé |
+| `arithmetic_result_cache_test.go` | Tests du cache | ✅ Créé |
 | `common_subexpression_detector.go` | Détection sous-expressions communes | 🔲 À créer |
-| `circular_dependency_detector.go` | Détection cycles de dépendances | 🔲 À créer |
+| `circular_dependency_detector.go` | Détection cycles de dépendances | ✅ Créé |
+| `circular_dependency_detector_test.go` | Tests unitaires détecteur | ✅ Créé |
+| `circular_dependency_integration_test.go` | Tests intégration détecteur | ✅ Créé |
 
 ### Métriques et Observabilité
 
@@ -275,6 +277,8 @@ A: Impact minimal (< 1%) grâce à la collecte asynchrone et au sampling.
 | Date | Événement | Description |
 |------|-----------|-------------|
 | 2025-01-XX | Phase 4 démarrée | Création du plan et de l'infrastructure |
+| 2025-01-XX | Jours 1-2 complétés | Cache persistant implémenté et testé (90% hit rate) |
+| 2025-01-XX | Jour 3 complété | Détecteur de cycles avec DFS (27 tests PASS) |
 
 ---
 
@@ -282,8 +286,8 @@ A: Impact minimal (< 1%) grâce à la collecte asynchrone et au sampling.
 
 ### Infrastructure
 - [x] Plan détaillé créé
-- [ ] Cache persistant implémenté
-- [ ] Détection cycles implémentée
+- [x] Cache persistant implémenté ✅
+- [x] Détection cycles implémentée ✅
 - [ ] Métriques internes collectées
 - [ ] Logs structurés en place
 
@@ -321,4 +325,4 @@ A: Impact minimal (< 1%) grâce à la collecte asynchrone et au sampling.
 
 **Dernière mise à jour** : 2025-01-XX  
 **Responsable** : Équipe RETE Core  
-**Statut global** : 🚧 En cours (Week 1, Day 1)
+**Statut global** : 🚧 En cours (Week 1, Day 3 - Détection cycles complétée ✅)
