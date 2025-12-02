@@ -46,9 +46,13 @@ func (th *TestHelper) BuildNetworkFromConstraintFileWithMassiveFacts(t *testing.
 		t.Fatalf("❌ Erreur pipeline constraint → RETE: %v", err)
 	}
 
-	network, err = th.pipeline.IngestFile(factsFile, network, storage)
-	if err != nil {
-		t.Fatalf("❌ Erreur pipeline facts → RETE: %v", err)
+	// Only ingest facts file if it's different from constraint file
+	// (avoids duplicate ingestion when constraints and facts are in the same file)
+	if factsFile != constraintFile {
+		network, err = th.pipeline.IngestFile(factsFile, network, storage)
+		if err != nil {
+			t.Fatalf("❌ Erreur pipeline facts → RETE: %v", err)
+		}
 	}
 
 	// Collect facts from storage

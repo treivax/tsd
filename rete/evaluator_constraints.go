@@ -55,22 +55,24 @@ func (e *AlphaConditionEvaluator) evaluateConstraintMap(expr map[string]interfac
 // evaluateConstraintMapInternal évalue une map de contrainte
 func (e *AlphaConditionEvaluator) evaluateConstraintMapInternal(actualConstraint map[string]interface{}) (bool, error) {
 
+	// Vérifier d'abord le type de contrainte avant de chercher l'opérateur
+	if condType, hasType := actualConstraint["type"].(string); hasType {
+		switch condType {
+		case "simple", "passthrough", "exists":
+			return true, nil // Conditions spéciales toujours vraies
+		case "logicalExpr", "logicalExpression":
+			return e.evaluateLogicalExpressionMap(actualConstraint)
+		case "existsConstraint":
+			return e.evaluateExistsConstraint(actualConstraint)
+		case "notConstraint":
+			return e.evaluateNotConstraint(actualConstraint)
+		case "negation":
+			return e.evaluateNegationConstraint(actualConstraint)
+		}
+	}
+
 	operator, ok := actualConstraint["operator"].(string)
 	if !ok {
-		// Si pas d'opérateur, vérifier si c'est une condition spéciale
-		if condType, hasType := actualConstraint["type"].(string); hasType {
-			if condType == "simple" || condType == "passthrough" || condType == "exists" {
-				return true, nil // Conditions spéciales toujours vraies
-			}
-			// Gérer les expressions logiques sans opérateur direct
-			if condType == "logicalExpr" {
-				return e.evaluateLogicalExpressionMap(actualConstraint)
-			}
-			// Gérer les contraintes exists
-			if condType == "existsConstraint" {
-				return e.evaluateExistsConstraint(actualConstraint)
-			}
-		}
 		return false, fmt.Errorf("opérateur manquant pour condition: %v", actualConstraint)
 	}
 

@@ -1,0 +1,210 @@
+// TESTS EXHAUSTIFS DES NŒUDS ALPHA - COUVERTURE COMPLÈTE
+// Tous opérateurs, types, succès/échecs, combinaisons logiques
+
+// Types étendus pour tests exhaustifs
+type TestPerson(id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string)
+type TestProduct(id: string, name: string, price: number, category: string, available: bool, rating: number, keywords: string, brand: string)
+
+// ===============================================================
+// PARTIE 1 : TESTS DE COMPARAISON BASIQUE (SUCCESS + FAILURE)
+// ===============================================================
+
+// === ÉGALITÉ - SUCCESS ===
+
+// Actions auto-générées
+action all_fields_exact_match_success(arg1: string)
+action complex_qualified_enabled_success(arg1: string)
+action complex_working_age_good_profile_success(arg1: string)
+action edge_case_empty_string_success(arg1: string)
+action edge_case_negative_salary_success(arg1: string)
+action edge_case_zero_age_success(arg1: string)
+action edge_case_zero_score_success(arg1: string)
+action equality_boolean_failure(arg1: string)
+action equality_boolean_success(arg1: string)
+action equality_decimal_failure(arg1: string)
+action equality_decimal_success(arg1: string)
+action equality_number_failure(arg1: string)
+action equality_number_success(arg1: string)
+action equality_string_failure(arg1: string)
+action equality_string_success(arg1: string)
+action greater_equal_failure(arg1: string)
+action greater_equal_success(arg1: string)
+action greater_than_failure(arg1: string)
+action greater_than_success(arg1: string)
+action inequality_boolean_failure(arg1: string)
+action inequality_boolean_success(arg1: string)
+action inequality_decimal_failure(arg1: string)
+action inequality_decimal_success(arg1: string)
+action inequality_number_failure(arg1: string)
+action inequality_number_success(arg1: string)
+action inequality_string_failure(arg1: string)
+action inequality_string_success(arg1: string)
+action less_equal_failure(arg1: string)
+action less_equal_success(arg1: string)
+action less_than_failure(arg1: string)
+action less_than_success(arg1: string)
+action logical_and_adult_active_success(arg1: string)
+action logical_and_exact_match_success(arg1: string)
+action logical_and_lowsal_hiscore_failure(arg1: string)
+action logical_and_salary_score_success(arg1: string)
+action logical_and_senior_active_failure(arg1: string)
+action logical_not_active_failure(arg1: string)
+action logical_not_adult_failure(arg1: string)
+action logical_not_inactive_success(arg1: string)
+action logical_not_minor_success(arg1: string)
+action logical_not_rich_success(arg1: string)
+action logical_or_extreme_values_failure(arg1: string)
+action logical_or_minor_senior_failure(arg1: string)
+action logical_or_minor_senior_success(arg1: string)
+action logical_or_rich_expert_success(arg1: string)
+action logical_or_specific_names_success(arg1: string)
+action pattern_contains_success(arg1: string)
+action pattern_in_success(arg1: string)
+action pattern_like_success(arg1: string)
+action precision_decimal_exact_success(arg1: string)
+action precision_pi_exact_success(arg1: string)
+action product_affordable_available_success(arg1: string)
+action product_main_categories_success(arg1: string)
+action product_not_expensive_success(arg1: string)
+action product_sweet_spot_success(arg1: string)
+action product_tech_tools_expensive_success(arg1: string)
+action profile_junior_senior_expert_success(arg1: string)
+action profile_prime_worker_success(arg1: string)
+action profile_underperformer_success(arg1: string)
+action string_comparison_greater_failure(arg1: string)
+action string_comparison_less_success(arg1: string)
+
+rule r1 : {p: TestPerson} / p.name == "Alice" ==> equality_string_success(p.name)
+rule r2 : {p: TestPerson} / p.age == 25 ==> equality_number_success(p.name)
+rule r3 : {p: TestPerson} / p.active == true ==> equality_boolean_success(p.name)
+rule r4 : {p: TestPerson} / p.score == 87.5 ==> equality_decimal_success(p.name)
+
+// === ÉGALITÉ - FAILURE (inverse des valeurs précédentes) ===
+rule r5 : {p: TestPerson} / p.name == "INVALID" ==> equality_string_failure(p.name)
+rule r6 : {p: TestPerson} / p.age == 999 ==> equality_number_failure(p.name)
+rule r7 : {p: TestPerson} / p.active == false ==> equality_boolean_failure(p.name)
+rule r8 : {p: TestPerson} / p.score == 999.99 ==> equality_decimal_failure(p.name)
+
+// === INÉGALITÉ - SUCCESS ===
+rule r9 : {p: TestPerson} / p.name != "INVALID" ==> inequality_string_success(p.name)
+rule r10 : {p: TestPerson} / p.age != 999 ==> inequality_number_success(p.name)
+rule r11 : {p: TestPerson} / p.active != false ==> inequality_boolean_success(p.name)
+rule r12 : {p: TestPerson} / p.score != 999.99 ==> inequality_decimal_success(p.name)
+
+// === INÉGALITÉ - FAILURE ===
+rule r13 : {p: TestPerson} / p.name != "Alice" ==> inequality_string_failure(p.name)
+rule r14 : {p: TestPerson} / p.age != 25 ==> inequality_number_failure(p.name)
+rule r15 : {p: TestPerson} / p.active != true ==> inequality_boolean_failure(p.name)
+rule r16 : {p: TestPerson} / p.score != 87.5 ==> inequality_decimal_failure(p.name)
+
+// === COMPARAISONS NUMÉRIQUES - SUCCESS ===
+rule r17 : {p: TestPerson} / p.age > 20 ==> greater_than_success(p.name)
+rule r18 : {p: TestPerson} / p.age >= 25 ==> greater_equal_success(p.name)
+rule r19 : {p: TestPerson} / p.age < 30 ==> less_than_success(p.name)
+rule r20 : {p: TestPerson} / p.age <= 25 ==> less_equal_success(p.name)
+
+// === COMPARAISONS NUMÉRIQUES - FAILURE ===
+rule r21 : {p: TestPerson} / p.age > 30 ==> greater_than_failure(p.name)
+rule r22 : {p: TestPerson} / p.age >= 30 ==> greater_equal_failure(p.name)
+rule r23 : {p: TestPerson} / p.age < 20 ==> less_than_failure(p.name)
+rule r24 : {p: TestPerson} / p.age <= 20 ==> less_equal_failure(p.name)
+
+// ===============================================================
+// PARTIE 2 : OPÉRATEURS DE PATTERN (si supportés par l'évaluateur)
+// ===============================================================
+
+// === PATTERN MATCHING ===
+// Note: Ces tests échoueront probablement car l'évaluateur ne supporte pas IN/LIKE/etc
+// Mais ils permettent de tester la robustesse du système
+
+// Test IN
+rule r25 : {p: TestPerson} / p.status IN ["ACTIVE", "PENDING"] ==> pattern_in_success(p.name)
+
+// Test CONTAINS (si supporté)
+rule r26 : {p: TestPerson} / p.tags CONTAINS "admin" ==> pattern_contains_success(p.name)
+
+// Test LIKE (si supporté)
+rule r27 : {p: TestPerson} / p.name LIKE "A%" ==> pattern_like_success(p.name)
+
+// ===============================================================
+// PARTIE 3 : COMBINAISONS LOGIQUES ALPHA COMPLEXES
+// ===============================================================
+
+// === TESTS AND SIMPLES ===
+rule r28 : {p: TestPerson} / p.age >= 18 AND p.active == true ==> logical_and_adult_active_success(p.name)
+rule r29 : {p: TestPerson} / p.salary > 40000 AND p.score > 80.0 ==> logical_and_salary_score_success(p.name)
+rule r30 : {p: TestPerson} / p.name == "Alice" AND p.age == 25 ==> logical_and_exact_match_success(p.name)
+
+// === TESTS AND FAILURE ===
+rule r31 : {p: TestPerson} / p.age >= 65 AND p.active == true ==> logical_and_senior_active_failure(p.name)
+rule r32 : {p: TestPerson} / p.salary < 30000 AND p.score > 90.0 ==> logical_and_lowsal_hiscore_failure(p.name)
+
+// === TESTS OR ===
+rule r33 : {p: TestPerson} / p.age < 18 OR p.age > 65 ==> logical_or_minor_senior_success(p.name)
+rule r34 : {p: TestPerson} / p.salary > 100000 OR p.score > 95.0 ==> logical_or_rich_expert_success(p.name)
+rule r35 : {p: TestPerson} / p.name == "Alice" OR p.name == "Bob" ==> logical_or_specific_names_success(p.name)
+
+// === TESTS OR FAILURE ===
+rule r36 : {p: TestPerson} / p.age < 18 OR p.age > 65 ==> logical_or_minor_senior_failure(p.name)
+rule r37 : {p: TestPerson} / p.salary > 200000 OR p.score > 99.0 ==> logical_or_extreme_values_failure(p.name)
+
+// === TESTS NOT ===
+rule r38 : {p: TestPerson} / NOT (p.age < 18) ==> logical_not_minor_success(p.name)
+rule r39 : {p: TestPerson} / NOT (p.active == false) ==> logical_not_inactive_success(p.name)
+rule r40 : {p: TestPerson} / NOT (p.salary > 100000) ==> logical_not_rich_success(p.name)
+
+// === TESTS NOT FAILURE ===
+rule r41 : {p: TestPerson} / NOT (p.age >= 18) ==> logical_not_adult_failure(p.name)
+rule r42 : {p: TestPerson} / NOT (p.active == true) ==> logical_not_active_failure(p.name)
+
+// === COMBINAISONS COMPLEXES ===
+rule r43 : {p: TestPerson} / (p.age >= 18 AND p.age <= 65) AND (p.active == true OR p.score > 90.0) ==> complex_working_age_good_profile_success(p.name)
+rule r44 : {p: TestPerson} / (p.salary > 50000 OR p.score > 85.0) AND NOT (p.status == "DISABLED") ==> complex_qualified_enabled_success(p.name)
+
+// ===============================================================
+// PARTIE 4 : CAS LIMITES ET VALEURS SPÉCIALES
+// ===============================================================
+
+// === VALEURS LIMITES ===
+rule r45 : {p: TestPerson} / p.age == 0 ==> edge_case_zero_age_success(p.name)
+rule r46 : {p: TestPerson} / p.salary == -1000 ==> edge_case_negative_salary_success(p.name)
+rule r47 : {p: TestPerson} / p.name == "" ==> edge_case_empty_string_success(p.name)
+rule r48 : {p: TestPerson} / p.score == 0.0 ==> edge_case_zero_score_success(p.name)
+
+// === PRÉCISION DÉCIMALE ===
+rule r49 : {p: TestPerson} / p.score == 87.50000 ==> precision_decimal_exact_success(p.name)
+rule r50 : {prod: TestProduct} / prod.rating == 3.14159265 ==> precision_pi_exact_success(prod.name)
+
+// === COMPARAISONS STRING AVANCÉES ===
+rule r51 : {p: TestPerson} / p.name < "B" ==> string_comparison_less_success(p.name)
+rule r52 : {p: TestPerson} / p.name > "Z" ==> string_comparison_greater_failure(p.name)
+
+// === TESTS PRODUIT POUR DIVERSITÉ ===
+rule r53 : {prod: TestProduct} / prod.available == true AND prod.price < 100.0 ==> product_affordable_available_success(prod.name)
+rule r54 : {prod: TestProduct} / prod.category == "Electronics" OR prod.category == "Books" ==> product_main_categories_success(prod.name)
+rule r55 : {prod: TestProduct} / NOT (prod.price > 1000.0) ==> product_not_expensive_success(prod.name)
+
+// ===============================================================
+// PARTIE 5 : STRESS TESTS AVEC MULTIPLES CHAMPS
+// ===============================================================
+
+// === TOUS LES CHAMPS ===
+rule r56 : {p: TestPerson} / p.name == "Alice" AND p.age == 25 AND p.salary == 45000 AND p.active == true AND p.score == 87.5 ==> all_fields_exact_match_success(p.name)
+
+// === PROFILS MÉTIER ===
+rule r57 : {p: TestPerson} / p.age >= 25 AND p.age <= 45 AND p.salary >= 50000 AND p.active == true ==> profile_prime_worker_success(p.name)
+rule r58 : {p: TestPerson} / (p.age < 25 OR p.age > 60) AND p.score > 85.0 ==> profile_junior_senior_expert_success(p.name)
+rule r59 : {p: TestPerson} / p.salary < 40000 AND p.score < 70.0 AND p.active == false ==> profile_underperformer_success(p.name)
+
+// === PRODUITS COMPLEXES ===
+rule r60 : {prod: TestProduct} / prod.price >= 50.0 AND prod.price <= 200.0 AND prod.rating >= 4.0 AND prod.available == true ==> product_sweet_spot_success(prod.name)
+rule r61 : {prod: TestProduct} / (prod.category == "Electronics" OR prod.category == "Tools") AND prod.price > 100.0 ==> product_tech_tools_expensive_success(prod.name)
+
+// Simplified test data for alpha exhaustive coverage
+
+TestPerson(id:"P100", name:"Alice", age:25, salary:45000, active:true, score:87.5, tags:"admin", status:"ACTIVE")
+TestPerson(id:"P101", name:"Bob", age:30, salary:55000, active:true, score:92.0, tags:"user", status:"ACTIVE")
+TestPerson(id:"P102", name:"Charlie", age:0, salary:-1000, active:false, score:0.0, tags:"", status:"DISABLED")
+
+TestProduct(id:"PROD100", name:"Laptop", price:899.99, category:"Electronics", available:true, rating:4.5, keywords:"computer", brand:"TechCorp")
+TestProduct(id:"PROD101", name:"Book", price:15.99, category:"Books", available:true, rating:4.8, keywords:"reading", brand:"Publisher")
