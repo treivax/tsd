@@ -234,15 +234,20 @@ func ExecutePipeline(constraintSource, factsFile string) (*Result, error) {
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
-	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-		constraintSource,
-		factsFile,
-		storage,
-	)
-
+	// Ingest constraint file
+	network, err := pipeline.IngestFile(constraintSource, nil, storage)
 	if err != nil {
 		return nil, err
 	}
+
+	// Ingest facts file
+	network, err = pipeline.IngestFile(factsFile, network, storage)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect facts from storage
+	facts := storage.GetAllFacts()
 
 	activations := CountActivations(network)
 

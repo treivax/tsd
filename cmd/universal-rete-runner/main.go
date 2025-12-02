@@ -181,11 +181,36 @@ func ExecuteTest(testFile TestFile, expectError bool) TestResult {
 		outputChan <- buf.String()
 	}()
 
-	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-		testFile.Constraint,
-		testFile.Facts,
-		storage,
-	)
+	// Ingest constraint file
+	network, err := pipeline.IngestFile(testFile.Constraint, nil, storage)
+	if err != nil {
+		// Restore stdout
+		w.Close()
+		os.Stdout = oldStdout
+
+		// Read captured output
+		output := <-outputChan
+		result.Output = output
+		result.Errors = append(result.Errors, fmt.Sprintf("Failed to ingest constraint file: %v", err))
+		return result
+	}
+
+	// Ingest facts file
+	network, err = pipeline.IngestFile(testFile.Facts, network, storage)
+	if err != nil {
+		// Restore stdout
+		w.Close()
+		os.Stdout = oldStdout
+
+		// Read captured output
+		output := <-outputChan
+		result.Output = output
+		result.Errors = append(result.Errors, fmt.Sprintf("Failed to ingest facts file: %v", err))
+		return result
+	}
+
+	// Collect facts from storage
+	facts := storage.GetAllFacts()
 
 	// Restore stdout
 	w.Close()
