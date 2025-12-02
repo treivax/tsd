@@ -104,6 +104,17 @@ func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[st
 			// Extract aggregation function
 			if function, ok := varMap["function"].(string); ok {
 				aggInfo.Function = function
+			} else {
+				// Try alternative extraction: check if value contains the function
+				if valueData, ok := varMap["value"].(map[string]interface{}); ok {
+					if fnType, ok := valueData["type"].(string); ok {
+						if fnType == "functionCall" || fnType == "aggregationCall" {
+							if fnName, ok := valueData["function"].(string); ok {
+								aggInfo.Function = fnName
+							}
+						}
+					}
+				}
 			}
 
 			// Extract field being aggregated
@@ -113,6 +124,20 @@ func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[st
 				}
 				if fieldName, ok := fieldData["field"].(string); ok {
 					aggInfo.Field = fieldName
+				}
+			} else if valueData, ok := varMap["value"].(map[string]interface{}); ok {
+				// Alternative: extract from value structure
+				if argsData, ok := valueData["arguments"].([]interface{}); ok && len(argsData) > 0 {
+					if argMap, ok := argsData[0].(map[string]interface{}); ok {
+						if argMap["type"] == "fieldAccess" {
+							if objName, ok := argMap["object"].(string); ok {
+								aggInfo.AggVariable = objName
+							}
+							if fieldName, ok := argMap["field"].(string); ok {
+								aggInfo.Field = fieldName
+							}
+						}
+					}
 				}
 			}
 			break

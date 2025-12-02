@@ -13,11 +13,5 @@ action incremental_propagation_match(arg1: string, arg2: string, arg3: string)
 rule r1 : {u: User, o: Order, p: Product} / u.id == o.user_id AND o.product_id == p.id AND u.age >= 18 ==> incremental_propagation_match(u.id, o.id, p.id)
 
 # Faits de test pour la propagation incrémentale
-# Ces faits seront ajoutés séquentiellement pour tester la propagation
-
-User(id:U1, age:25)
-Order(id:O1, user_id:U1, product_id:P1)
-Product(id:P1, name:TestProduct)
-
-# Fait qui ne doit PAS matcher (user_id incorrect)
-Order(id:O2, user_id:U999, product_id:P1)
+# Ces faits seront ajoutés séquentiellement par le test lui-même
+# (pas d'inline facts ici pour éviter les duplications)

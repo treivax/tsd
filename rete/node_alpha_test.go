@@ -57,14 +57,10 @@ func TestAlphaNodeActivateLeft(t *testing.T) {
 		Facts: []*Fact{},
 	}
 
+	// ActivateLeft now silently ignores tokens (used during retroactive propagation)
 	err := node.ActivateLeft(token)
-	if err == nil {
-		t.Error("Expected error when calling ActivateLeft on AlphaNode")
-	}
-
-	expectedMsg := "les nœuds alpha ne reçoivent pas de tokens"
-	if err.Error() != expectedMsg {
-		t.Errorf("Expected error message '%s', got '%s'", expectedMsg, err.Error())
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
 	}
 }
 

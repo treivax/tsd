@@ -7,11 +7,10 @@ package rete
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
-// TestRETENetwork_TypesAndFactsOnly tests that creating a RETE network with only types and facts (no rules) fails as expected
+// TestRETENetwork_TypesAndFactsOnly tests that creating a RETE network with only types and facts (no rules) is now allowed
 func TestRETENetwork_TypesAndFactsOnly(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_no_rules_test")
 	if err != nil {
@@ -41,24 +40,38 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 
 	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 
-	// Expected to fail - networks without rules are not allowed
-	if err == nil {
-		t.Fatal("Expected error when building network without rules, got nil")
+	// Should succeed - networks without rules are now allowed
+	if err != nil {
+		t.Fatalf("Expected success when building network without rules, got error: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "aucun nœud terminal") {
-		t.Errorf("Expected error about terminal nodes, got: %v", err)
+	if network == nil {
+		t.Fatal("Expected non-nil network")
 	}
 
-	// Network should be nil or incomplete when error occurs
-	if network != nil && len(network.TypeNodes) > 0 {
-		t.Logf("Note: Network partially created with %d TypeNodes before validation failed", len(network.TypeNodes))
+	// Verify types were created
+	if len(network.TypeNodes) != 2 {
+		t.Errorf("Expected 2 TypeNodes, got %d", len(network.TypeNodes))
 	}
 
-	t.Logf("✅ Correctly rejected network creation without rules")
+	// Verify no terminal nodes (since no rules)
+	if len(network.TerminalNodes) != 0 {
+		t.Errorf("Expected 0 TerminalNodes, got %d", len(network.TerminalNodes))
+	}
+
+	// Verify facts were added
+	totalFacts := 0
+	for _, typeNode := range network.TypeNodes {
+		totalFacts += len(typeNode.GetMemory().Facts)
+	}
+	if totalFacts != 4 {
+		t.Errorf("Expected 4 facts in network, got %d", totalFacts)
+	}
+
+	t.Logf("✅ Successfully created network with types and facts but no rules")
 }
 
-// TestRETENetwork_OnlyTypes tests that creating a network with only type definitions fails as expected
+// TestRETENetwork_OnlyTypes tests that creating a network with only type definitions is now allowed
 func TestRETENetwork_OnlyTypes(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_types_only_test")
 	if err != nil {
@@ -69,9 +82,8 @@ func TestRETENetwork_OnlyTypes(t *testing.T) {
 	// Create file with types only
 	tsdFile := filepath.Join(tempDir, "types.tsd")
 	content := `
-type Customer(id: string, name: string, email:string)
-type Order(id: string, customer_id: string, total:number)
-type Product(id: string, name: string, price:number)
+type Person(id: string, name: string, age:number)
+type Order(id: string, personId: string, total:number)
 `
 	err = os.WriteFile(tsdFile, []byte(content), 0644)
 	if err != nil {
@@ -82,18 +94,28 @@ type Product(id: string, name: string, price:number)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	_, err = pipeline.IngestFile(tsdFile, nil, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 
-	// Expected to fail - networks with only types (no rules) are not allowed
-	if err == nil {
-		t.Fatal("Expected error when building network with only types, got nil")
+	// Should succeed - networks without rules are now allowed
+	if err != nil {
+		t.Fatalf("Expected success when building network with only types, got error: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "aucun nœud terminal") {
-		t.Errorf("Expected error about terminal nodes, got: %v", err)
+	if network == nil {
+		t.Fatal("Expected non-nil network")
 	}
 
-	t.Logf("✅ Correctly rejected network creation with only types (no rules)")
+	// Verify types were created
+	if len(network.TypeNodes) != 2 {
+		t.Errorf("Expected 2 TypeNodes, got %d", len(network.TypeNodes))
+	}
+
+	// Verify no terminal nodes (since no rules)
+	if len(network.TerminalNodes) != 0 {
+		t.Errorf("Expected 0 TerminalNodes, got %d", len(network.TerminalNodes))
+	}
+
+	t.Logf("✅ Successfully created network with only type definitions")
 }
 
 // TestRETENetwork_IncrementalTypesAndFacts tests incremental loading of types and facts without rules
@@ -169,6 +191,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 }
 
 // TestRETENetwork_EmptyFile tests creating a network from an empty file
+// TestRETENetwork_EmptyFile tests that ingesting an empty file succeeds but creates empty network
 func TestRETENetwork_EmptyFile(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_empty_test")
 	if err != nil {
@@ -183,22 +206,29 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 		t.Fatalf("Failed to write file: %v", err)
 	}
 
-	// Build RETE network
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	_, err = pipeline.IngestFile(tsdFile, nil, storage)
+	network, err := pipeline.IngestFile(tsdFile, nil, storage)
 
-	// Expected to fail - empty file means no types and no rules
-	if err == nil {
-		t.Fatal("Expected error when building network from empty file, got nil")
+	// Should succeed - empty files create empty networks
+	if err != nil {
+		t.Fatalf("Expected success when ingesting empty file, got error: %v", err)
 	}
 
-	if !strings.Contains(err.Error(), "aucun TypeNode") && !strings.Contains(err.Error(), "aucun nœud terminal") {
-		t.Errorf("Expected error about TypeNodes or terminal nodes, got: %v", err)
+	if network == nil {
+		t.Fatal("Expected non-nil network")
 	}
 
-	t.Logf("✅ Correctly rejected network creation from empty file")
+	if len(network.TypeNodes) != 0 {
+		t.Errorf("Expected 0 TypeNodes for empty file, got %d", len(network.TypeNodes))
+	}
+
+	if len(network.TerminalNodes) != 0 {
+		t.Errorf("Expected 0 TerminalNodes for empty file, got %d", len(network.TerminalNodes))
+	}
+
+	t.Logf("✅ Successfully handled empty file")
 }
 
 // TestRETENetwork_TypesAndFactsSeparateFiles tests types and facts in separate files

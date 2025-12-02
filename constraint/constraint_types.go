@@ -7,11 +7,12 @@ package constraint
 // Program represents the complete AST of a constraint program including types, actions, expressions, facts and resets.
 // It serves as the root structure for parsed constraint files.
 type Program struct {
-	Types       []TypeDefinition   `json:"types"`       // Type definitions declared in the program
-	Actions     []ActionDefinition `json:"actions"`     // Action definitions with their signatures
-	Expressions []Expression       `json:"expressions"` // Constraint expressions/rules
-	Facts       []Fact             `json:"facts"`       // Facts parsed from the program
-	Resets      []Reset            `json:"resets"`      // Reset instructions to clear the system
+	Types        []TypeDefinition   `json:"types"`        // Type definitions declared in the program
+	Actions      []ActionDefinition `json:"actions"`      // Action definitions with their signatures
+	Expressions  []Expression       `json:"expressions"`  // Constraint expressions/rules
+	Facts        []Fact             `json:"facts"`        // Facts parsed from the program
+	Resets       []Reset            `json:"resets"`       // Reset instructions to clear the system
+	RuleRemovals []RuleRemoval      `json:"ruleRemovals"` // Rule removal commands
 }
 
 // TypeDefinition represents a user-defined type with its fields.
@@ -67,10 +68,14 @@ type Set struct {
 
 // TypedVariable represents a variable with its associated type.
 // Example: p: Person where 'p' is the name and 'Person' is the dataType.
+// For aggregation variables (type="aggregationVariable"), it also includes Function and Field.
 type TypedVariable struct {
-	Type     string `json:"type"`     // Always "typedVariable"
-	Name     string `json:"name"`     // Variable name (e.g., "p", "order")
-	DataType string `json:"dataType"` // Associated type (e.g., "Person", "Order")
+	Type     string      `json:"type"`               // "typedVariable" or "aggregationVariable"
+	Name     string      `json:"name"`               // Variable name (e.g., "p", "order", "avg_sal")
+	DataType string      `json:"dataType"`           // Associated type (e.g., "Person", "Order")
+	Function string      `json:"function,omitempty"` // Aggregation function (e.g., "AVG", "COUNT", "SUM") for aggregation variables
+	Field    interface{} `json:"field,omitempty"`    // Field being aggregated (map with object/field/type) for aggregation variables
+	Value    interface{} `json:"value,omitempty"`    // Optional value field for complex variable definitions
 }
 
 // Constraint represents a basic constraint in the system.
@@ -240,4 +245,11 @@ type FactValue struct {
 // Example: reset
 type Reset struct {
 	Type string `json:"type"` // Always "reset"
+}
+
+// RuleRemoval represents a command to remove a rule from the system.
+// Example: remove rule my_rule
+type RuleRemoval struct {
+	Type   string `json:"type"`   // Always "ruleRemoval"
+	RuleID string `json:"ruleID"` // ID of the rule to remove
 }

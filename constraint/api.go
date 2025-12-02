@@ -186,11 +186,32 @@ func ConvertToReteProgram(program *Program) interface{} {
 		expressionsInterface[i] = exprMap
 	}
 
+	// Convertir les ruleRemovals si présents
+	var ruleRemovalsInterface []interface{}
+	if len(program.RuleRemovals) > 0 {
+		ruleRemovalsInterface = make([]interface{}, len(program.RuleRemovals))
+		for i, removal := range program.RuleRemovals {
+			jsonData, err := json.Marshal(removal)
+			if err != nil {
+				continue
+			}
+			var removalMap map[string]interface{}
+			json.Unmarshal(jsonData, &removalMap)
+			ruleRemovalsInterface[i] = removalMap
+		}
+	}
+
 	// Créer une structure compatible avec le format attendu par RETE
 	reteProgram := map[string]interface{}{
 		"types":       typesInterface,
 		"expressions": expressionsInterface,
 	}
+
+	// Ajouter ruleRemovals seulement s'il y en a
+	if len(ruleRemovalsInterface) > 0 {
+		reteProgram["ruleRemovals"] = ruleRemovalsInterface
+	}
+
 	return reteProgram
 }
 

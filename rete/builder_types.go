@@ -6,7 +6,6 @@ package rete
 
 import (
 	"fmt"
-
 )
 
 // TypeBuilder handles the creation of TypeNodes and type definitions
@@ -37,6 +36,18 @@ func (tb *TypeBuilder) CreateTypeNodes(network *ReteNetwork, types []interface{}
 
 		// Create the type definition
 		typeDef := tb.CreateTypeDefinition(typeName, typeMap)
+
+		// Add to network.Types for incremental validation (avoid duplicates)
+		typeExists := false
+		for _, existingType := range network.Types {
+			if existingType.Name == typeName {
+				typeExists = true
+				break
+			}
+		}
+		if !typeExists {
+			network.Types = append(network.Types, typeDef)
+		}
 
 		// Create the TypeNode
 		typeNode := NewTypeNode(typeName, typeDef, storage)
