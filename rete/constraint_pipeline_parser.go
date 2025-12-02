@@ -39,6 +39,89 @@ func (cp *ConstraintPipeline) extractComponents(resultMap map[string]interface{}
 	return types, expressions, nil
 }
 
+// extractAndStoreActions extracts action definitions from the AST and stores them in the network
+func (cp *ConstraintPipeline) extractAndStoreActions(network *ReteNetwork, resultMap map[string]interface{}) error {
+	// Extraire les actions si présentes
+	actionsData, hasActions := resultMap["actions"]
+	if !hasActions {
+		// Pas d'actions dans ce fichier, ce n'est pas une erreur
+		return nil
+	}
+
+	actions, ok := actionsData.([]interface{})
+	if !ok {
+		return fmt.Errorf("format actions invalide: %T", actionsData)
+	}
+
+	// Traiter chaque action
+	for _, actionData := range actions {
+		actionMap, ok := actionData.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("format action invalide: %T", actionData)
+		}
+
+		// Extraire le nom de l'action
+		actionName, ok := actionMap["name"].(string)
+		if !ok {
+			return fmt.Errorf("nom d'action non trouvé ou invalide")
+		}
+
+		// Créer la définition d'action
+		actionDef := ActionDefinition{
+			Type: "actionDefinition",
+			Name: actionName,
+		}
+
+		// Extraire les paramètres si présents
+		if paramsData, hasParams := actionMap["parameters"]; hasParams {
+			params, ok := paramsData.([]interface{})
+			if !ok {
+				return fmt.Errorf("format paramètres invalide pour l'action %s: %T", actionName, paramsData)
+			}
+
+			actionDef.Parameters = make([]Parameter, len(params))
+			for i, paramData := range params {
+				paramMap, ok := paramData.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("format paramètre invalide pour l'action %s: %T", actionName, paramData)
+				}
+
+				paramName, ok := paramMap["name"].(string)
+				if !ok {
+					return fmt.Errorf("nom de paramètre non trouvé pour l'action %s", actionName)
+				}
+
+				paramType, ok := paramMap["type"].(string)
+				if !ok {
+					return fmt.Errorf("type de paramètre non trouvé pour l'action %s", actionName)
+				}
+
+				actionDef.Parameters[i] = Parameter{
+					Name: paramName,
+					Type: paramType,
+				}
+			}
+		}
+
+		// Ajouter à network.Actions (éviter les doublons)
+		actionExists := false
+		for i, existingAction := range network.Actions {
+			if existingAction.Name == actionName {
+				// Remplacer l'action existante
+				network.Actions[i] = actionDef
+				actionExists = true
+				break
+			}
+		}
+
+		if !actionExists {
+			network.Actions = append(network.Actions, actionDef)
+		}
+	}
+
+	return nil
+}
+
 // analyzeConstraints analyse les contraintes pour détecter les négations
 // Retourne (isNegation, negatedCondition, error)
 func (cp *ConstraintPipeline) analyzeConstraints(constraints interface{}) (bool, interface{}, error) {

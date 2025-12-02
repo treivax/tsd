@@ -175,6 +175,21 @@ func ConvertToReteProgram(program *Program) interface{} {
 		typesInterface[i] = typeMap
 	}
 
+	// Convertir les actions en map[string]interface{} via JSON
+	actionsInterface := make([]interface{}, len(program.Actions))
+	for i, actionDef := range program.Actions {
+		// Sérialiser vers JSON puis désérialiser en map
+		jsonData, err := json.Marshal(actionDef)
+		if err != nil {
+			continue
+		}
+		var actionMap map[string]interface{}
+		if err := json.Unmarshal(jsonData, &actionMap); err != nil {
+			continue
+		}
+		actionsInterface[i] = actionMap
+	}
+
 	// Convertir les expressions en map[string]interface{} via JSON
 	expressionsInterface := make([]interface{}, len(program.Expressions))
 	for i, expr := range program.Expressions {
@@ -210,6 +225,7 @@ func ConvertToReteProgram(program *Program) interface{} {
 	// Créer une structure compatible avec le format attendu par RETE
 	reteProgram := map[string]interface{}{
 		"types":       typesInterface,
+		"actions":     actionsInterface,
 		"expressions": expressionsInterface,
 	}
 

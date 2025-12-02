@@ -9,6 +9,17 @@ type Field struct {
 	Type string `json:"type"`
 }
 
+type Parameter struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type ActionDefinition struct {
+	Type       string      `json:"type"`       // Always "actionDefinition"
+	Name       string      `json:"name"`       // The action name (e.g., "notify")
+	Parameters []Parameter `json:"parameters"` // List of parameters for the action
+}
+
 type TypeDefinition struct {
 	Type   string  `json:"type"`
 	Name   string  `json:"name"`

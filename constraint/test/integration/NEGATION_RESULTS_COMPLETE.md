@@ -4,7 +4,7 @@
 **Date d'exécution**: 13 novembre 2025
 **Fichier contraintes**: /home/resinsec/dev/tsd/constraint/test/integration/negation_rules.tsd
 **Nombre de règles**: 19
-**Nombre de faits**: 27
+**Nombre de faits**: 1
 
 ## 🎯 RÈGLE 0: not_zero_age
 
@@ -163,4 +163,4 @@
 - **Terminaux totaux**: 19
 - **Terminaux actifs**: 0 (0.0%)
 - **Tokens générés**: 0
-- **Faits traités**: 27
+- **Faits traités**: 1

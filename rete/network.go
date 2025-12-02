@@ -19,19 +19,20 @@ type ReteNetwork struct {
 	TerminalNodes         map[string]*TerminalNode `json:"terminal_nodes"`
 	Storage               Storage                  `json:"-"`
 	Types                 []TypeDefinition         `json:"types"`
-	BetaBuilder           interface{}              `json:"-"` // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
-	LifecycleManager      *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
-	AlphaSharingManager   *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
-	AlphaChainBuilder     *AlphaChainBuilder       `json:"-"` // Constructeur de chaînes alpha avec décomposition
-	PassthroughRegistry   map[string]*AlphaNode    `json:"-"` // Registre de partage des AlphaNodes passthrough
-	BetaSharingRegistry   BetaSharingRegistry      `json:"-"` // Gestionnaire du partage des JoinNodes
-	BetaChainBuilder      *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
-	ChainMetrics          *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
-	Config                *ChainPerformanceConfig  `json:"-"` // Configuration de performance
-	ActionExecutor        *ActionExecutor          `json:"-"` // Exécuteur d'actions
-	ArithmeticResultCache *ArithmeticResultCache   `json:"-"` // Cache global des résultats arithmétiques intermédiaires
-	currentTx             *Transaction             `json:"-"` // Transaction courante (si en cours)
-	txMutex               sync.RWMutex             `json:"-"` // Mutex pour accès concurrent à la transaction
+	Actions               []ActionDefinition       `json:"actions"` // Action definitions for incremental validation
+	BetaBuilder           interface{}              `json:"-"`       // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
+	LifecycleManager      *LifecycleManager        `json:"-"`       // Gestionnaire du cycle de vie des nœuds
+	AlphaSharingManager   *AlphaSharingRegistry    `json:"-"`       // Gestionnaire du partage des AlphaNodes
+	AlphaChainBuilder     *AlphaChainBuilder       `json:"-"`       // Constructeur de chaînes alpha avec décomposition
+	PassthroughRegistry   map[string]*AlphaNode    `json:"-"`       // Registre de partage des AlphaNodes passthrough
+	BetaSharingRegistry   BetaSharingRegistry      `json:"-"`       // Gestionnaire du partage des JoinNodes
+	BetaChainBuilder      *BetaChainBuilder        `json:"-"`       // Constructeur de chaînes beta avec partage
+	ChainMetrics          *ChainBuildMetrics       `json:"-"`       // Métriques de performance pour la construction des chaînes
+	Config                *ChainPerformanceConfig  `json:"-"`       // Configuration de performance
+	ActionExecutor        *ActionExecutor          `json:"-"`       // Exécuteur d'actions
+	ArithmeticResultCache *ArithmeticResultCache   `json:"-"`       // Cache global des résultats arithmétiques intermédiaires
+	currentTx             *Transaction             `json:"-"`       // Transaction courante (si en cours)
+	txMutex               sync.RWMutex             `json:"-"`       // Mutex pour accès concurrent à la transaction
 }
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut

@@ -30,7 +30,9 @@ func (iv *IncrementalValidator) ValidateWithContext(parsedAST interface{}) error
 	}
 
 	// Extraire les types existants du réseau
+	// Extract existing types and actions from the network
 	existingTypes := iv.extractExistingTypes()
+	existingActions := iv.extractExistingActions()
 
 	// Convertir l'AST en programme
 	program, err := constraint.ConvertResultToProgram(parsedAST)
@@ -38,8 +40,8 @@ func (iv *IncrementalValidator) ValidateWithContext(parsedAST interface{}) error
 		return fmt.Errorf("erreur conversion programme: %w", err)
 	}
 
-	// Fusionner les types existants avec les nouveaux
-	mergedProgram := iv.mergePrograms(existingTypes, program)
+	// Fusionner les types et actions existants avec les nouveaux
+	mergedProgram := iv.mergePrograms(existingTypes, existingActions, program)
 
 	// Créer un AST fusionné pour la validation
 	mergedAST := iv.programToAST(mergedProgram)
@@ -83,13 +85,39 @@ func (iv *IncrementalValidator) extractExistingTypes() []constraint.TypeDefiniti
 	return types
 }
 
-// mergePrograms fusionne les types existants avec le nouveau programme
+// extractExistingActions extrait les actions déjà présentes dans le réseau
+func (iv *IncrementalValidator) extractExistingActions() []constraint.ActionDefinition {
+	actions := make([]constraint.ActionDefinition, 0, len(iv.network.Actions))
+
+	for _, actionDef := range iv.network.Actions {
+		// Convertir ActionDefinition RETE vers ActionDefinition constraint
+		params := make([]constraint.Parameter, len(actionDef.Parameters))
+		for i, param := range actionDef.Parameters {
+			params[i] = constraint.Parameter{
+				Name: param.Name,
+				Type: param.Type,
+			}
+		}
+
+		actions = append(actions, constraint.ActionDefinition{
+			Type:       actionDef.Type,
+			Name:       actionDef.Name,
+			Parameters: params,
+		})
+	}
+
+	return actions
+}
+
+// mergePrograms fusionne les types et actions existants avec le nouveau programme
 func (iv *IncrementalValidator) mergePrograms(
 	existingTypes []constraint.TypeDefinition,
+	existingActions []constraint.ActionDefinition,
 	newProgram *constraint.Program,
 ) *constraint.Program {
 	merged := &constraint.Program{
 		Types:       make([]constraint.TypeDefinition, 0),
+		Actions:     make([]constraint.ActionDefinition, 0),
 		Expressions: newProgram.Expressions,
 		Facts:       newProgram.Facts,
 	}
@@ -119,6 +147,31 @@ func (iv *IncrementalValidator) mergePrograms(
 	// Ajouter les nouveaux types (écrasent les anciens si même nom)
 	merged.Types = append(merged.Types, newProgram.Types...)
 
+	// Créer un index des actions existantes
+	actionIndex := make(map[string]constraint.ActionDefinition)
+	for _, actionDef := range existingActions {
+		actionIndex[actionDef.Name] = actionDef
+	}
+
+	// Ajouter les actions existantes qui ne sont pas redéfinies
+	for _, actionDef := range existingActions {
+		// Vérifier si cette action est redéfinie dans le nouveau programme
+		redefined := false
+		for _, newAction := range newProgram.Actions {
+			if newAction.Name == actionDef.Name {
+				redefined = true
+				break
+			}
+		}
+
+		if !redefined {
+			merged.Actions = append(merged.Actions, actionDef)
+		}
+	}
+
+	// Ajouter les nouvelles actions (écrasent les anciennes si même nom)
+	merged.Actions = append(merged.Actions, newProgram.Actions...)
+
 	return merged
 }
 
@@ -145,14 +198,55 @@ func (iv *IncrementalValidator) programToAST(program *constraint.Program) interf
 	}
 	result["types"] = types
 
+	// Convertir les actions
+	actions := make([]interface{}, len(program.Actions))
+	for i, actionDef := range program.Actions {
+		params := make([]interface{}, len(actionDef.Parameters))
+		for j, param := range actionDef.Parameters {
+			params[j] = map[string]interface{}{
+				"name": param.Name,
+				"type": param.Type,
+			}
+		}
+
+		actions[i] = map[string]interface{}{
+			"type":       actionDef.Type,
+			"name":       actionDef.Name,
+			"parameters": params,
+		}
+	}
+	result["actions"] = actions
+
 	// Convertir les expressions
 	expressions := make([]interface{}, len(program.Expressions))
 	for i, expr := range program.Expressions {
-		// Conversion simplifiée pour la validation
-		expressions[i] = map[string]interface{}{
+		// Conversion complète pour la validation
+		exprMap := map[string]interface{}{
 			"type": expr.Type,
 			"set":  expr.Set,
 		}
+
+		// Ajouter les contraintes si présentes
+		if expr.Constraints != nil {
+			exprMap["constraints"] = expr.Constraints
+		}
+
+		// Ajouter l'action si présente (CRUCIAL pour la validation)
+		if expr.Action != nil {
+			exprMap["action"] = expr.Action
+		}
+
+		// Ajouter les patterns si présents (pour agrégation)
+		if expr.Patterns != nil {
+			exprMap["patterns"] = expr.Patterns
+		}
+
+		// Ajouter le ruleId si présent
+		if expr.RuleId != "" {
+			exprMap["ruleId"] = expr.RuleId
+		}
+
+		expressions[i] = exprMap
 	}
 	result["expressions"] = expressions
 

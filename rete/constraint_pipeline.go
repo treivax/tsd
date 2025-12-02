@@ -227,6 +227,12 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		}
 	}
 
+	// ÉTAPE 5.5: Extraire et stocker les définitions d'actions
+	err = cp.extractAndStoreActions(network, reteResultMap)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur extraction actions: %w", err)
+	}
+
 	// ÉTAPE 6: Collecter tous les faits existants dans le réseau AVANT d'ajouter les nouvelles règles
 	// (sauf si reset car le réseau vient d'être créé vide)
 	var existingFacts []*Fact
