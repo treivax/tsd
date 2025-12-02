@@ -1,29 +1,31 @@
 # Skipped Tests Documentation
 
 **Last Updated:** 2025-12-02  
-**Total Skipped Tests:** 1
+**Total Skipped Tests:** 0
 
 ---
 
 ## Overview
 
-This document provides detailed information about tests that are currently skipped in the TSD test suite and the reasons why they are skipped.
+This document provides detailed information about tests that were previously skipped in the TSD test suite and why they were removed.
+
+**Current Status:** No tests are currently skipped. All tests either pass or have been removed.
 
 ---
 
-## Test Details
+## Previously Skipped Tests (Now Removed)
 
-### 1. TestQuotedStringsEscapeSequences
+### 1. TestQuotedStringsEscapeSequences - REMOVED
 
 **Location:** `test/integration/quoted_strings_integration_test.go`  
-**Status:** ⏭️ SKIP  
+**Status:** ❌ REMOVED  
 **Reason:** Redundant - functionality already tested elsewhere
 
 #### Description
 
 This test was intended to verify that escape sequences in quoted strings (like `\n`, `\t`, `\"`, `\\`, etc.) are properly handled in the TSD language.
 
-#### Why Skipped
+#### Why Removed
 
 The escape sequence functionality is already comprehensively tested in:
 
@@ -37,17 +39,6 @@ The escape sequence functionality is already comprehensively tested in:
    - Tests string matching in constraints
    - Verifies end-to-end behavior with the RETE network
 
-#### Test Code
-
-```go
-// TestQuotedStringsEscapeSequences tests various escape sequences in strings
-func TestQuotedStringsEscapeSequences(t *testing.T) {
-	// This test is covered by the unit tests in constraint package
-	// and the integration test above
-	t.Skip("Escape sequences are tested in constraint/quoted_strings_test.go")
-}
-```
-
 #### Coverage Status
 
 ✅ **Escape sequences are fully covered by existing tests:**
@@ -58,14 +49,7 @@ func TestQuotedStringsEscapeSequences(t *testing.T) {
 - Unicode sequences (if supported)
 - Invalid/malformed escape sequences
 
-#### Recommendation
-
-**Keep skipped.** No action needed. The functionality is well-tested through unit tests and the other integration test provides end-to-end validation.
-
-If in the future you want to add this test:
-- Create a dedicated `.tsd` file with rules using various escape sequences
-- Test that rules with escaped strings match facts correctly
-- Verify that action arguments containing escape sequences are handled properly
+The test was removed rather than kept as a skip because it added no value and maintaining skipped tests creates maintenance burden.
 
 ---
 
@@ -100,7 +84,7 @@ These tests expected `reset` instruction to work in the middle of a file, cleari
 **Integration Tests:**
 - **17 PASS** ✅
 - **0 FAIL** ✅
-- **1 SKIP** (documented above)
+- **0 SKIP** ✅
 
 **Incremental Tests:**
 - **All PASS** ✅

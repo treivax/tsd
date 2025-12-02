@@ -111,11 +111,3 @@ func TestQuotedStringsIntegration(t *testing.T) {
 
 	t.Logf("✓ Quoted strings integration test passed with %d total activations", totalActivations)
 }
-
-// TestQuotedStringsEscapeSequences tests various escape sequences in strings
-func TestQuotedStringsEscapeSequences(t *testing.T) {
-	// This test is covered by the unit tests in constraint package
-	// and the integration test above
-	t.Skip("Escape sequences are tested in constraint/quoted_strings_test.go")
-
-}
