@@ -6,7 +6,7 @@ package rete
 
 import (
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/treivax/tsd/constraint"
 )
@@ -56,397 +56,492 @@ func NewConstraintPipeline() *ConstraintPipeline {
 	return &ConstraintPipeline{}
 }
 
-// BuildNetworkFromConstraintFile construit un réseau RETE complet à partir d'un fichier .constraint
-// Cette fonction implémente le pipeline unique utilisé par TOUS les tests
-// Si le fichier contient des instructions reset, utilise l'IterativeParser pour appliquer
-// correctement la sémantique de reset (seuls les types/règles après le dernier reset sont conservés)
-func (cp *ConstraintPipeline) BuildNetworkFromConstraintFile(constraintFile string, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("========================================\n")
-	fmt.Printf("📁 Fichier: %s\n", constraintFile)
+// IngestFileWithMetrics est un wrapper qui collecte les métriques
+// IngestFileWithMetrics ingère un fichier avec collecte de métriques
+// IMPORTANT: Cette fonction utilise TOUJOURS les transactions avec auto-commit/auto-rollback.
+// En cas d'erreur, la transaction est automatiquement annulée (rollback).
+// En cas de succès, la transaction est automatiquement validée (commit).
+func (cp *ConstraintPipeline) IngestFileWithMetrics(filename string, network *ReteNetwork, storage Storage) (*ReteNetwork, *IngestionMetrics, error) {
+	metrics := NewMetricsCollector()
+	resultNetwork, err := cp.ingestFileWithMetrics(filename, network, storage, metrics)
+	finalMetrics := metrics.Finalize()
+	return resultNetwork, finalMetrics, err
+}
 
-	// ÉTAPE 1: Parsing initial pour détecter les resets
-	parsedAST, err := constraint.ParseConstraintFile(constraintFile)
+// IngestFile est la fonction unique et incrémentale pour étendre le réseau RETE.
+// Elle peut être appelée plusieurs fois avec des fichiers différents pour :
+// - Parser le fichier (types, règles, faits)
+// - Étendre le réseau RETE existant (ou créer un nouveau réseau si network == nil)
+// - Propager les faits préexistants vers les nouvelles règles
+// - Soumettre les nouveaux faits au réseau
+//
+// Cette fonction remplace toutes les anciennes variantes de pipeline.
+// Le support de la commande 'reset' en milieu de fichier a été supprimé.
+//
+// IMPORTANT: Cette fonction utilise TOUJOURS les transactions avec auto-commit/auto-rollback.
+// En cas d'erreur, la transaction est automatiquement annulée (rollback).
+// En cas de succès, la transaction est automatiquement validée (commit).
+func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, storage Storage) (*ReteNetwork, error) {
+	return cp.ingestFileWithMetrics(filename, network, storage, nil)
+}
+
+// ingestFileWithMetrics est l'implémentation interne avec support optionnel des métriques
+// IMPORTANT: Gère les transactions automatiquement (TOUJOURS activées)
+func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *ReteNetwork, storage Storage, metrics *MetricsCollector) (*ReteNetwork, error) {
+	fmt.Printf("========================================\n")
+	fmt.Printf("📁 Ingestion incrémentale: %s\n", filename)
+
+	// ÉTAPE 1: Parsing du fichier
+	parsingStart := time.Now()
+	parsedAST, err := constraint.ParseConstraintFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur parsing fichier %s: %w", constraintFile, err)
+		return nil, fmt.Errorf("❌ Erreur parsing fichier %s: %w", filename, err)
+	}
+	if metrics != nil {
+		metrics.RecordParsingDuration(time.Since(parsingStart))
 	}
 	fmt.Printf("✅ Parsing réussi\n")
 
-	// ÉTAPE 1.5: Validation sémantique du programme
-	err = constraint.ValidateConstraintProgram(parsedAST)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur validation sémantique: %w", err)
-	}
-	fmt.Printf("✅ Validation sémantique réussie\n")
-
-	// Valider que c'est un map[string]interface{}
+	// ÉTAPE 2: Vérifier la présence d'une commande reset
 	resultMap, ok := parsedAST.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("❌ Format AST non reconnu: %T", parsedAST)
 	}
 
-	// Vérifier si le fichier contient des instructions reset
 	hasResets := false
 	if resetsData, exists := resultMap["resets"]; exists {
 		if resets, ok := resetsData.([]interface{}); ok && len(resets) > 0 {
 			hasResets = true
-			fmt.Printf("⚠️  Instructions reset détectées (%d) - Utilisation de l'IterativeParser\n", len(resets))
+			fmt.Printf("🔄 Commande reset détectée - Réinitialisation complète du réseau\n")
 		}
 	}
 
-	// Si des resets sont présents, utiliser l'IterativeParser pour appliquer la sémantique correcte
+	// Si reset détecté, faire un GC de l'ancien réseau puis créer un nouveau
 	if hasResets {
-		return cp.buildNetworkWithResetSemantics(constraintFile, storage)
+		fmt.Printf("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau\n")
+
+		// OPTIMISATION 2: Garbage Collection automatique après reset
+		if network != nil {
+			fmt.Printf("🗑️  GC du réseau existant...\n")
+			network.GarbageCollect()
+			fmt.Printf("✅ GC terminé\n")
+		}
+
+		fmt.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		network = NewReteNetwork(storage)
+		if metrics != nil {
+			metrics.SetWasReset(true)
+		}
 	}
 
-	// ÉTAPE 2: Extraction et validation des composants (cas sans reset)
-	types, expressions, err := cp.extractComponents(resultMap)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
-	}
-	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
-
-	// ÉTAPE 3: Construction du réseau RETE
-	network, err := cp.buildNetwork(storage, types, expressions)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
-	}
-	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
-
-	// ÉTAPE 3.5: Traiter les suppressions de règles (si présentes)
-	err = cp.processRuleRemovals(network, resultMap)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur traitement suppressions de règles: %w", err)
+	// ÉTAPE 2.5: Démarrer une transaction (OBLIGATOIRE) une fois que le réseau est défini
+	var tx *Transaction
+	if network != nil {
+		tx = network.BeginTransaction()
+		network.SetTransaction(tx)
+		fmt.Printf("🔒 Transaction démarrée automatiquement: %s\n", tx.ID)
 	}
 
-	// ÉTAPE 4: Validation finale
-	err = cp.validateNetwork(network)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
-	}
-	fmt.Printf("✅ Validation réussie\n")
-
-	fmt.Printf("🎯 PIPELINE TERMINÉ AVEC SUCCÈS\n")
-	fmt.Printf("========================================\n\n")
-
-	return network, nil
-}
-
-// buildNetworkWithResetSemantics construit un réseau en appliquant correctement la sémantique reset
-// Analyse le fichier pour déterminer quels types/expressions viennent après le dernier reset
-func (cp *ConstraintPipeline) buildNetworkWithResetSemantics(constraintFile string, storage Storage) (*ReteNetwork, error) {
-	// Lire le fichier pour analyser la structure
-	fileContent, err := constraint.ReadFileContent(constraintFile)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur lecture fichier: %w", err)
+	// Fonction de rollback en cas d'erreur
+	rollbackOnError := func(err error) (*ReteNetwork, error) {
+		if tx != nil && tx.IsActive {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				fmt.Printf("❌ Erreur rollback: %v\n", rollbackErr)
+				return network, fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
+			}
+			fmt.Printf("🔙 Rollback automatique effectué\n")
+		}
+		return network, err
 	}
 
-	// Parser le fichier complet pour obtenir tous les éléments
-	parsedAST, err := constraint.ParseConstraintFile(constraintFile)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur parsing: %w", err)
-	}
-
-	// Valider
-	err = constraint.ValidateConstraintProgram(parsedAST)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur validation: %w", err)
+	// ÉTAPE 3: Validation sémantique
+	// OPTIMISATION 1: Validation incrémentale avec contexte (systématiquement activée)
+	validationStart := time.Now()
+	if network == nil || hasResets {
+		// Validation standard pour la création initiale ou après reset
+		err = constraint.ValidateConstraintProgram(parsedAST)
+		if err != nil {
+			return rollbackOnError(fmt.Errorf("❌ Erreur validation sémantique: %w", err))
+		}
+		fmt.Printf("✅ Validation sémantique réussie\n")
+		if metrics != nil {
+			metrics.RecordValidationDuration(time.Since(validationStart))
+			metrics.SetValidationSkipped(false)
+		}
+	} else {
+		// Validation incrémentale avec contexte du réseau existant
+		fmt.Printf("🔍 Validation sémantique incrémentale avec contexte...\n")
+		validator := NewIncrementalValidator(network)
+		err = validator.ValidateWithContext(parsedAST)
+		if err != nil {
+			return rollbackOnError(fmt.Errorf("❌ Erreur validation incrémentale: %w", err))
+		}
+		fmt.Printf("✅ Validation incrémentale réussie (%d types en contexte)\n", len(network.Types))
+		if metrics != nil {
+			metrics.RecordValidationDuration(time.Since(validationStart))
+			metrics.SetValidationSkipped(false)
+			metrics.SetWasIncremental(true)
+		}
 	}
 
 	// Convertir en programme
 	program, err := constraint.ConvertResultToProgram(parsedAST)
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur conversion: %w", err)
+		return nil, fmt.Errorf("❌ Erreur conversion programme: %w", err)
 	}
 
-	// Analyser où se trouve le dernier reset dans le fichier
-	lastResetPosition := cp.findLastResetPosition(fileContent)
-
-	// Filtrer les types et expressions pour ne garder que ceux après le dernier reset
-	filteredTypes, filteredExpressions := cp.filterAfterReset(
-		program.Types, program.Expressions, fileContent, lastResetPosition)
-
-	fmt.Printf("✅ Après application des resets: %d type(s), %d expression(s)\n",
-		len(filteredTypes), len(filteredExpressions))
+	// ÉTAPE 4: Créer ou étendre le réseau
+	if network == nil {
+		fmt.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		network = NewReteNetwork(storage)
+	} else if !hasResets {
+		fmt.Printf("🔄 Extension du réseau RETE existant\n")
+	}
 
 	// Convertir au format RETE
-	filteredProgram := &constraint.Program{
-		Types:       filteredTypes,
-		Expressions: filteredExpressions,
-		Facts:       []constraint.Fact{},  // Les faits seront ajoutés séparément
-		Resets:      []constraint.Reset{}, // Plus de resets après filtrage
-	}
-
-	reteProgram := constraint.ConvertToReteProgram(filteredProgram)
-	resultMap, ok := reteProgram.(map[string]interface{})
+	reteProgram := constraint.ConvertToReteProgram(program)
+	reteResultMap, ok := reteProgram.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("❌ Format programme RETE invalide: %T", reteProgram)
 	}
 
-	// Extraire les composants
-	types, expressions, err := cp.extractComponents(resultMap)
+	// ÉTAPE 5: Extraire et ajouter les nouveaux types
+	types, expressions, err := cp.extractComponents(reteResultMap)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
 	}
-	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
+	fmt.Printf("✅ Trouvé %d types et %d expressions dans le fichier\n", len(types), len(expressions))
 
-	// Construction du réseau RETE
-	network, err := cp.buildNetwork(storage, types, expressions)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
+	// Ajouter les types au réseau (évite les doublons automatiquement)
+	typeCreationStart := time.Now()
+	if len(types) > 0 {
+		err = cp.createTypeNodes(network, types, storage)
+		if err != nil {
+			return nil, fmt.Errorf("❌ Erreur ajout types: %w", err)
+		}
+		fmt.Printf("✅ Types ajoutés/mis à jour dans le réseau\n")
+		if metrics != nil {
+			metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
+			metrics.SetTypesAdded(len(types))
+		}
 	}
-	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
 
-	// Validation finale
+	// ÉTAPE 6: Collecter tous les faits existants dans le réseau AVANT d'ajouter les nouvelles règles
+	// (sauf si reset car le réseau vient d'être créé vide)
+	var existingFacts []*Fact
+	var existingFactsByType map[string][]*Fact
+	collectionStart := time.Now()
+	if !hasResets {
+		existingFacts = cp.collectExistingFacts(network)
+		existingFactsByType = cp.organizeFactsByType(existingFacts)
+		fmt.Printf("📊 Faits préexistants dans le réseau: %d\n", len(existingFacts))
+		if metrics != nil {
+			metrics.RecordFactCollectionDuration(time.Since(collectionStart))
+			metrics.SetExistingFactsCollected(len(existingFacts))
+		}
+	} else {
+		fmt.Printf("📊 Réseau réinitialisé - pas de faits préexistants\n")
+	}
+
+	// ÉTAPE 7: Identifier les terminaux existants avant l'ajout de règles
+	existingTerminals := make(map[string]bool)
+	for terminalID := range network.TerminalNodes {
+		existingTerminals[terminalID] = true
+	}
+
+	// ÉTAPE 8: Ajouter les nouvelles règles
+	ruleCreationStart := time.Now()
+	if len(expressions) > 0 {
+		err = cp.createRuleNodes(network, expressions, storage)
+		if err != nil {
+			return nil, fmt.Errorf("❌ Erreur ajout règles: %w", err)
+		}
+		fmt.Printf("✅ Règles ajoutées au réseau\n")
+		if metrics != nil {
+			metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
+			metrics.SetRulesAdded(len(expressions))
+		}
+	}
+
+	// ÉTAPE 9: Traiter les suppressions de règles (si présentes)
+	err = cp.processRuleRemovals(network, reteResultMap)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erreur traitement suppressions de règles: %w", err)
+	}
+
+	// ÉTAPE 10: Propager les faits existants vers les nouvelles règles uniquement
+	newTerminals := cp.identifyNewTerminals(network, existingTerminals)
+
+	if len(newTerminals) > 0 && len(existingFacts) > 0 {
+		fmt.Printf("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)\n", len(newTerminals))
+
+		// Propager de manière ciblée pour chaque nouveau terminal
+		propagationStart := time.Now()
+		propagatedCount := cp.propagateToNewTerminals(network, newTerminals, existingFactsByType)
+
+		if metrics != nil {
+			metrics.RecordPropagationDuration(time.Since(propagationStart))
+			metrics.SetFactsPropagated(propagatedCount)
+			metrics.SetNewTerminalsAdded(len(newTerminals))
+			metrics.SetPropagationTargets(len(newTerminals))
+		}
+
+		fmt.Printf("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))\n", propagatedCount)
+	}
+
+	// ÉTAPE 10: Soumettre les nouveaux faits du fichier
+	if len(program.Facts) > 0 {
+		factsForRete := constraint.ConvertFactsToReteFormat(*program)
+		fmt.Printf("📥 Soumission de %d nouveaux faits\n", len(factsForRete))
+
+		submissionStart := time.Now()
+		err := network.SubmitFactsFromGrammar(factsForRete)
+		if err != nil {
+			fmt.Printf("⚠️ Erreur soumission faits: %v\n", err)
+		} else {
+			fmt.Printf("✅ Nouveaux faits soumis\n")
+		}
+		if metrics != nil {
+			metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
+			metrics.SetFactsSubmitted(len(factsForRete))
+		}
+	}
+
+	// ÉTAPE 11: Validation finale
 	err = cp.validateNetwork(network)
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
 	}
 	fmt.Printf("✅ Validation réussie\n")
 
-	fmt.Printf("🎯 PIPELINE AVEC RESET TERMINÉ AVEC SUCCÈS\n")
+	// Enregistrer l'état final du réseau dans les métriques
+	if metrics != nil {
+		metrics.RecordNetworkState(network)
+	}
+
+	fmt.Printf("🎯 INGESTION INCRÉMENTALE TERMINÉE\n")
+	fmt.Printf("   - Total TypeNodes: %d\n", len(network.TypeNodes))
+	fmt.Printf("   - Total TerminalNodes: %d\n", len(network.TerminalNodes))
+	// ÉTAPE 9: Commit de la transaction (OBLIGATOIRE)
+	if tx != nil && tx.IsActive {
+		commitErr := tx.Commit()
+		if commitErr != nil {
+			return rollbackOnError(fmt.Errorf("❌ Erreur commit transaction: %w", commitErr))
+		}
+		fmt.Printf("✅ Transaction committée: %d changements\n", tx.GetCommandCount())
+	}
+
+	fmt.Printf("🎯 INGESTION TERMINÉE\n")
 	fmt.Printf("========================================\n\n")
 
 	return network, nil
 }
 
-// findLastResetPosition trouve la position du dernier mot "reset" dans le fichier
-// Retourne la ligne (0-based) où se trouve le dernier reset, ou -1 si aucun
-func (cp *ConstraintPipeline) findLastResetPosition(content string) int {
-	lines := strings.Split(content, "\n")
-	lastResetLine := -1
+// collectExistingFacts parcourt tous les nœuds du réseau pour collecter les faits existants
+func (cp *ConstraintPipeline) collectExistingFacts(network *ReteNetwork) []*Fact {
+	factMap := make(map[string]*Fact)
 
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "reset" {
-			lastResetLine = i
-		}
-	}
-
-	return lastResetLine
-}
-
-// filterAfterReset filtre les types et expressions pour ne garder que ceux définis après le reset
-// Stratégie: compte combien de définitions de types et d'expressions apparaissent avant le reset
-// dans le fichier source, puis ne garde que les éléments après ces positions dans les slices
-func (cp *ConstraintPipeline) filterAfterReset(
-	types []constraint.TypeDefinition,
-	expressions []constraint.Expression,
-	fileContent string,
-	resetLine int,
-) ([]constraint.TypeDefinition, []constraint.Expression) {
-
-	if resetLine < 0 {
-		// Pas de reset trouvé, retourner tout
-		return types, expressions
-	}
-
-	lines := strings.Split(fileContent, "\n")
-
-	// Compter combien de "type " apparaissent avant le reset
-	typesBeforeReset := 0
-	for i := 0; i < resetLine && i < len(lines); i++ {
-		trimmed := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(trimmed, "type ") && strings.Contains(trimmed, ":") {
-			typesBeforeReset++
-		}
-	}
-
-	// Compter combien de règles (lignes avec "==>") apparaissent avant le reset
-	expressionsBeforeReset := 0
-	for i := 0; i < resetLine && i < len(lines); i++ {
-		if strings.Contains(lines[i], "==>") {
-			expressionsBeforeReset++
-		}
-	}
-
-	// Filtrer les types: garder seulement ceux après l'index typesBeforeReset
-	var filteredTypes []constraint.TypeDefinition
-	if typesBeforeReset < len(types) {
-		filteredTypes = types[typesBeforeReset:]
-	}
-
-	// Filtrer les expressions: garder seulement celles après l'index expressionsBeforeReset
-	var filteredExpressions []constraint.Expression
-	if expressionsBeforeReset < len(expressions) {
-		filteredExpressions = expressions[expressionsBeforeReset:]
-	}
-
-	return filteredTypes, filteredExpressions
-}
-
-// BuildNetworkFromMultipleFiles construit un réseau RETE en parsant plusieurs fichiers de manière itérative
-// Cette fonction permet de parser des types, règles et faits répartis dans différents fichiers
-func (cp *ConstraintPipeline) BuildNetworkFromMultipleFiles(filenames []string, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("========================================\n")
-	fmt.Printf("📁 Fichiers: %v\n", filenames)
-
-	// Créer un parser itératif
-	parser := constraint.NewIterativeParser()
-
-	// Parser tous les fichiers de manière itérative
-	for i, filename := range filenames {
-		fmt.Printf("  📄 Parsing fichier %d/%d: %s\n", i+1, len(filenames), filename)
-		err := parser.ParseFile(filename)
-		if err != nil {
-			return nil, fmt.Errorf("❌ Erreur parsing fichier %s: %w", filename, err)
-		}
-	}
-	fmt.Printf("✅ Parsing itératif réussi\n")
-
-	// Obtenir le programme combiné
-	program := parser.GetProgram()
-
-	// Convertir au format RETE
-	reteProgram := constraint.ConvertToReteProgram(program)
-	resultMap, ok := reteProgram.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("❌ Format programme RETE invalide: %T", reteProgram)
-	}
-
-	// Extraire les composants
-	types, expressions, err := cp.extractComponents(resultMap)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
-	}
-	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
-
-	// Construction du réseau RETE
-	network, err := cp.buildNetwork(storage, types, expressions)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
-	}
-	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
-
-	// Injection des faits dans le réseau
-	if len(program.Facts) > 0 {
-		factsForRete := constraint.ConvertFactsToReteFormat(*program)
-
-		err := network.SubmitFactsFromGrammar(factsForRete)
-		if err != nil {
-			fmt.Printf("❌ Erreur injection faits: %v\n", err)
-		} else {
-			fmt.Printf("✅ Injection terminée: %d faits injectés\n", len(factsForRete))
-		}
-	}
-
-	fmt.Printf("🎯 PIPELINE MULTIFILES TERMINÉ\n")
-	fmt.Printf("========================================\n\n")
-
-	return network, nil
-}
-
-// BuildNetworkFromIterativeParser construit un réseau RETE à partir d'un parser itératif existant
-// Cette méthode est utile quand le parsing a déjà été fait et qu'on veut juste construire le réseau
-func (cp *ConstraintPipeline) BuildNetworkFromIterativeParser(parser *constraint.IterativeParser, storage Storage) (*ReteNetwork, error) {
-	fmt.Printf("========================================\n")
-
-	// Obtenir le programme combiné
-	program := parser.GetProgram()
-
-	// Convertir au format RETE
-	reteProgram := constraint.ConvertToReteProgram(program)
-	resultMap, ok := reteProgram.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("❌ Format programme RETE invalide: %T", reteProgram)
-	}
-
-	// Extraire les composants
-	types, expressions, err := cp.extractComponents(resultMap)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
-	}
-	fmt.Printf("✅ Trouvé %d types et %d expressions\n", len(types), len(expressions))
-
-	// Construction du réseau RETE
-	network, err := cp.buildNetwork(storage, types, expressions)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
-	}
-	fmt.Printf("✅ Réseau construit avec %d nœuds terminaux\n", len(network.TerminalNodes))
-
-	// Injection des faits dans le réseau
-	if len(program.Facts) > 0 {
-		factsForRete := constraint.ConvertFactsToReteFormat(*program)
-
-		err := network.SubmitFactsFromGrammar(factsForRete)
-		if err != nil {
-			fmt.Printf("❌ Erreur injection faits: %v\n", err)
-		} else {
-			fmt.Printf("✅ Injection terminée: %d faits injectés\n", len(factsForRete))
-		}
-	}
-
-	fmt.Printf("🎯 PIPELINE DEPUIS PARSER TERMINÉ\n")
-	fmt.Printf("========================================\n\n")
-
-	return network, nil
-}
-
-// BuildNetworkFromConstraintFileWithFacts construit un réseau et soumet immédiatement des faits
-func (cp *ConstraintPipeline) BuildNetworkFromConstraintFileWithFacts(constraintFile, factsFile string, storage Storage) (*ReteNetwork, []*Fact, error) {
-	fmt.Printf("========================================\n")
-	fmt.Printf("📁 Fichier contraintes: %s\n", constraintFile)
-	fmt.Printf("📁 Fichier faits: %s\n", factsFile)
-
-	// ÉTAPE 1: Construire le réseau depuis le fichier de contraintes
-	network, err := cp.BuildNetworkFromConstraintFile(constraintFile, storage)
-	if err != nil {
-		return nil, nil, fmt.Errorf("❌ Erreur construction réseau: %w", err)
-	}
-
-	// ÉTAPE 2: Parser et soumettre les faits
-	fmt.Printf("📊 Parsing des faits depuis %s\n", factsFile)
-
-	parsedFacts, err := constraint.ParseFactsFile(factsFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("❌ Erreur parsing faits: %w", err)
-	}
-
-	// Extraire les faits du programme parsé
-	factsList, err := constraint.ExtractFactsFromProgram(parsedFacts)
-	if err != nil {
-		return nil, nil, fmt.Errorf("❌ Erreur extraction faits: %w", err)
-	}
-
-	// Convertir et soumettre chaque fait
-	submittedFacts := []*Fact{}
-	for _, factMap := range factsList {
-		// ExtractFactsFromProgram retourne des maps avec 'reteType' et tous les champs directement
-		factID := getStringField(factMap, "id", "")
-		factType := getStringField(factMap, "reteType", "") // Utiliser 'reteType' au lieu de 'type'
-
-		if factID == "" || factType == "" {
-			fmt.Printf("⚠️ Fait ignoré: id='%s', type='%s'\n", factID, factType)
-			continue
-		}
-
-		// Les champs sont directement dans factMap (pas de sous-clé 'fields')
-		fields := make(map[string]interface{})
-		for key, value := range factMap {
-			// Exclure les métadonnées RETE (id, reteType)
-			if key != "id" && key != "reteType" {
-				fields[key] = value
+	// Collecter depuis le RootNode
+	if network.RootNode != nil && network.RootNode.Memory != nil {
+		for _, fact := range network.RootNode.Memory.Facts {
+			if fact != nil {
+				factMap[fact.ID] = fact
 			}
 		}
-
-		fact := &Fact{
-			ID:     factID,
-			Type:   factType,
-			Fields: fields,
-		}
-
-		err := network.SubmitFact(fact)
-		if err != nil {
-			fmt.Printf("⚠️ Erreur soumission fait %s: %v\n", factID, err)
-		}
-		submittedFacts = append(submittedFacts, fact)
 	}
 
-	fmt.Printf("✅ %d faits soumis au réseau\n", len(submittedFacts))
-	fmt.Printf("🎯 PIPELINE AVEC FAITS TERMINÉ\n")
-	fmt.Printf("========================================\n\n")
+	// Collecter depuis les TypeNodes
+	for _, typeNode := range network.TypeNodes {
+		for _, token := range typeNode.Memory.Tokens {
+			for _, fact := range token.Facts {
+				if fact != nil {
+					factMap[fact.ID] = fact
+				}
+			}
+		}
+	}
 
-	return network, submittedFacts, nil
+	// Collecter depuis les AlphaNodes
+	for _, alphaNode := range network.AlphaNodes {
+		for _, token := range alphaNode.Memory.Tokens {
+			for _, fact := range token.Facts {
+				if fact != nil {
+					factMap[fact.ID] = fact
+				}
+			}
+		}
+	}
+
+	// Collecter depuis les BetaNodes (JoinNodes, ExistsNodes, AccumulatorNodes, etc.)
+	for _, betaNodeInterface := range network.BetaNodes {
+		// Essayer de caster en JoinNode
+		if joinNode, ok := betaNodeInterface.(*JoinNode); ok {
+			// Mémoire gauche
+			for _, token := range joinNode.LeftMemory.Tokens {
+				for _, fact := range token.Facts {
+					if fact != nil {
+						factMap[fact.ID] = fact
+					}
+				}
+				// Collecter aussi les faits des parents dans les tokens de jointure
+				for parent := token.Parent; parent != nil; parent = parent.Parent {
+					for _, fact := range parent.Facts {
+						if fact != nil {
+							factMap[fact.ID] = fact
+						}
+					}
+				}
+			}
+			// Mémoire droite
+			for _, token := range joinNode.RightMemory.Tokens {
+				for _, fact := range token.Facts {
+					if fact != nil {
+						factMap[fact.ID] = fact
+					}
+				}
+			}
+		}
+		// Essayer de caster en ExistsNode
+		if existsNode, ok := betaNodeInterface.(*ExistsNode); ok {
+			for _, token := range existsNode.MainMemory.Tokens {
+				for _, fact := range token.Facts {
+					if fact != nil {
+						factMap[fact.ID] = fact
+					}
+				}
+			}
+			for _, token := range existsNode.ExistsMemory.Tokens {
+				for _, fact := range token.Facts {
+					if fact != nil {
+						factMap[fact.ID] = fact
+					}
+				}
+			}
+		}
+		// Essayer de caster en AccumulatorNode
+		if accNode, ok := betaNodeInterface.(*AccumulatorNode); ok {
+			// Collecter depuis MainFacts
+			for _, fact := range accNode.MainFacts {
+				if fact != nil {
+					factMap[fact.ID] = fact
+				}
+			}
+			// Collecter depuis AllFacts
+			for _, fact := range accNode.AllFacts {
+				if fact != nil {
+					factMap[fact.ID] = fact
+				}
+			}
+		}
+	}
+
+	// Convertir la map en slice
+	facts := make([]*Fact, 0, len(factMap))
+	for _, fact := range factMap {
+		facts = append(facts, fact)
+	}
+
+	return facts
+}
+
+// organizeFactsByType organise les faits par type pour une propagation ciblée
+func (cp *ConstraintPipeline) organizeFactsByType(facts []*Fact) map[string][]*Fact {
+	factsByType := make(map[string][]*Fact)
+	for _, fact := range facts {
+		if fact != nil {
+			factsByType[fact.Type] = append(factsByType[fact.Type], fact)
+		}
+	}
+	return factsByType
+}
+
+// identifyNewTerminals identifie les nœuds terminaux qui viennent d'être ajoutés
+func (cp *ConstraintPipeline) identifyNewTerminals(network *ReteNetwork, existingTerminals map[string]bool) []*TerminalNode {
+	var newTerminals []*TerminalNode
+	for terminalID, terminal := range network.TerminalNodes {
+		if !existingTerminals[terminalID] {
+			newTerminals = append(newTerminals, terminal)
+		}
+	}
+	return newTerminals
+}
+
+// propagateToNewTerminals propage les faits existants uniquement vers les nouvelles chaînes de règles
+func (cp *ConstraintPipeline) propagateToNewTerminals(
+	network *ReteNetwork,
+	newTerminals []*TerminalNode,
+	factsByType map[string][]*Fact,
+) int {
+	propagatedCount := 0
+
+	// Pour chaque nouveau terminal, identifier les types de faits qu'il attend
+	for _, terminal := range newTerminals {
+		// Identifier les types de faits attendus par cette règle
+		expectedTypes := cp.identifyExpectedTypesForTerminal(network, terminal)
+
+		// Propager uniquement les faits des types attendus
+		for _, typeName := range expectedTypes {
+			if facts, exists := factsByType[typeName]; exists {
+				for _, fact := range facts {
+					// Propager le fait via le TypeNode correspondant
+					if typeNode, exists := network.TypeNodes[typeName]; exists {
+						// Créer un token pour ce fait
+						token := &Token{
+							ID:     fmt.Sprintf("retro_%s_%s", typeName, fact.ID),
+							NodeID: typeNode.GetID(),
+							Facts:  []*Fact{fact},
+						}
+
+						// Propager aux enfants du TypeNode
+						err := typeNode.PropagateToChildren(fact, token)
+						if err == nil {
+							propagatedCount++
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return propagatedCount
+}
+
+// identifyExpectedTypesForTerminal identifie les types de faits attendus par un terminal
+func (cp *ConstraintPipeline) identifyExpectedTypesForTerminal(network *ReteNetwork, terminal *TerminalNode) []string {
+	expectedTypes := make(map[string]bool)
+
+	// Parcourir les TypeNodes pour trouver ceux qui ont ce terminal comme descendant
+	for typeName, typeNode := range network.TypeNodes {
+		if cp.isTerminalReachableFrom(typeNode, terminal.GetID()) {
+			expectedTypes[typeName] = true
+		}
+	}
+
+	// Convertir en slice
+	types := make([]string, 0, len(expectedTypes))
+	for typeName := range expectedTypes {
+		types = append(types, typeName)
+	}
+
+	return types
+}
+
+// isTerminalReachableFrom vérifie si un terminal est accessible depuis un nœud donné
+func (cp *ConstraintPipeline) isTerminalReachableFrom(node Node, terminalID string) bool {
+	// Vérification directe
+	if node.GetID() == terminalID {
+		return true
+	}
+
+	// Vérification récursive dans les enfants
+	for _, child := range node.GetChildren() {
+		if cp.isTerminalReachableFrom(child, terminalID) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // processRuleRemovals traite les commandes de suppression de règles

@@ -9,22 +9,17 @@ import (
 )
 
 // validateNetwork valide qu'un réseau RETE est bien formé
+// En mode incrémental, le réseau peut ne pas avoir de nœuds terminaux si on charge juste des types
 func (cp *ConstraintPipeline) validateNetwork(network *ReteNetwork) error {
 	if network == nil {
 		return fmt.Errorf("réseau est nil")
 	}
 
-	// Vérifier qu'on a au moins un TypeNode
-	if len(network.TypeNodes) == 0 {
-		return fmt.Errorf("aucun TypeNode dans le réseau")
-	}
+	// Vérifier qu'on a au moins un TypeNode (sauf si le réseau est complètement vide au début)
+	// En mode incrémental, on peut avoir un réseau sans types au tout début
+	// donc on ne valide pas strictement cette contrainte
 
-	// Vérifier qu'on a au moins un nœud terminal
-	if len(network.TerminalNodes) == 0 {
-		return fmt.Errorf("aucun nœud terminal dans le réseau")
-	}
-
-	// Vérifier que les nœuds terminaux ont des actions
+	// Vérifier que les nœuds terminaux (s'ils existent) ont des actions
 	for id, terminal := range network.TerminalNodes {
 		if terminal.Action == nil {
 			return fmt.Errorf("nœud terminal %s sans action", id)
