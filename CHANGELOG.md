@@ -4,6 +4,70 @@
 
 ### ✨ Added
 
+#### Customizable Actions System (December 2025)
+
+**Feature:** Système d'actions personnalisables avec registry et handlers pour définir des comportements d'actions.
+
+**What's New:**
+- **ActionHandler Interface:** Interface pour définir le comportement des actions personnalisées
+- **ActionRegistry:** Gestionnaire thread-safe pour enregistrer/désenregistrer des handlers d'actions
+- **Action Print:** Première action intégrée pour afficher des valeurs (strings, numbers, booleans, faits)
+- **Actions non définies tolérées:** Les actions sans handler sont simplement loguées sans erreur
+- **Validation optionnelle:** Chaque handler peut valider ses arguments avant exécution
+- **Architecture extensible:** Ajoutez facilement de nouvelles actions sans modifier le core
+
+**Architecture:**
+- `ActionHandler` interface avec méthodes `Execute()`, `GetName()`, `Validate()`
+- `ActionRegistry` avec méthodes `Register()`, `Unregister()`, `Get()`, `Has()`, `GetAll()`, `Clear()`
+- `PrintAction` implémentation de l'action print avec support multi-types
+- Integration dans `ActionExecutor` avec fallback pour actions non définies
+
+**API:**
+```go
+// Utiliser l'action print intégrée
+action := &Action{
+    Jobs: []JobCall{{Name: "print", Args: []interface{}{"Hello"}}},
+}
+network.ActionExecutor.ExecuteAction(action, token)
+
+// Créer et enregistrer une action personnalisée
+type CustomAction struct{}
+func (ca *CustomAction) Execute(args []interface{}, ctx *ExecutionContext) error {...}
+func (ca *CustomAction) GetName() string { return "custom" }
+func (ca *CustomAction) Validate(args []interface{}) error {...}
+
+customAction := &CustomAction{}
+network.ActionExecutor.RegisterAction(customAction)
+```
+
+**Output Example:**
+```
+📋 ACTION: print(p.name)
+🎯 ACTION EXÉCUTÉE: print("Alice")
+📋 ACTION: undefined_action(p.id)
+📋 ACTION NON DÉFINIE (log uniquement): undefined_action("123")
+```
+
+**Tests:**
+- 16 tests pour ActionRegistry (register, unregister, clear, multiple, etc.)
+- 10 tests pour PrintAction (string, number, boolean, fact, validation, etc.)
+- 6 tests d'intégration (règles simples, jobs multiples, actions mixtes, etc.)
+- 3 tests pour ActionExecutor avec registry
+
+**Documentation:**
+- `rete/ACTIONS_SYSTEM.md` - Documentation complète du système
+- `rete/ACTIONS_README.md` - Guide de démarrage rapide
+- `rete/examples/action_print_example.go` - Exemple d'utilisation complet
+
+**Files Added:**
+- `rete/action_handler.go` - Interface et registry
+- `rete/action_print.go` - Implémentation de l'action print
+- `rete/action_handler_test.go` - Tests unitaires
+- `rete/action_print_integration_test.go` - Tests d'intégration
+
+**Files Modified:**
+- `rete/action_executor.go` - Intégration du registry et support actions non définies
+
 #### Action Execution System (January 2025)
 
 **Feature:** Implémentation complète de l'exécution des actions avec logging systématique et validation des types.

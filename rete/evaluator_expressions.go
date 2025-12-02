@@ -85,14 +85,25 @@ func (e *AlphaConditionEvaluator) evaluateBinaryOperation(op constraint.BinaryOp
 
 // evaluateBinaryOperationMap évalue une opération binaire depuis une map
 func (e *AlphaConditionEvaluator) evaluateBinaryOperationMap(expr map[string]interface{}) (bool, error) {
-	// Supporter les deux formats: "operator" et "op"
+	// Extraire l'opérateur en utilisant l'utilitaire centralisé
+	// Essayer d'abord avec la clé "operator", sinon "op"
 	var operator string
-	var ok bool
+	var err error
 
-	if operator, ok = expr["operator"].(string); !ok {
-		if operator, ok = expr["op"].(string); !ok {
-			return false, fmt.Errorf("opérateur manquant (recherché 'operator' ou 'op')")
+	if _, hasOperator := expr["operator"]; hasOperator {
+		operator, err = ExtractOperatorFromMap(expr)
+		if err != nil {
+			return false, fmt.Errorf("erreur extraction opérateur: %w", err)
 		}
+	} else if opVal, hasOp := expr["op"]; hasOp {
+		// Créer une map temporaire avec la clé "operator" pour ExtractOperatorFromMap
+		tempMap := map[string]interface{}{"operator": opVal}
+		operator, err = ExtractOperatorFromMap(tempMap)
+		if err != nil {
+			return false, fmt.Errorf("erreur extraction opérateur (clé 'op'): %w", err)
+		}
+	} else {
+		return false, fmt.Errorf("opérateur manquant (recherché 'operator' ou 'op')")
 	}
 
 	// Debug: vérifier si left et right existent

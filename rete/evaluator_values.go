@@ -127,25 +127,20 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 
 	case "binaryOp", "binary_operation", "binaryOperation":
 		// Support des opérations binaires
-		// Gérer les différents types d'opérateurs
-		var operator string
-		var ok bool
-		if operator, ok = val["operator"].(string); !ok {
-			if operatorBytes, ok := val["operator"].([]uint8); ok {
-				operator = string(operatorBytes)
-			} else {
-				return nil, fmt.Errorf("opérateur invalide dans l'opération binaire: %T %+v", val["operator"], val["operator"])
-			}
+		// Extraire et normaliser l'opérateur en utilisant l'utilitaire centralisé
+		operator, err := ExtractOperatorFromMap(val)
+		if err != nil {
+			return nil, fmt.Errorf("erreur extraction opérateur: %w", err)
 		}
 
-		left, err := e.evaluateValue(val["left"])
-		if err != nil {
-			return nil, fmt.Errorf("erreur évaluation côté gauche (binaryOp %s): %w", operator, err)
+		left, evalErr := e.evaluateValue(val["left"])
+		if evalErr != nil {
+			return nil, fmt.Errorf("erreur évaluation côté gauche (binaryOp %s): %w", operator, evalErr)
 		}
 
-		right, err := e.evaluateValue(val["right"])
-		if err != nil {
-			return nil, fmt.Errorf("erreur évaluation côté droit (binaryOp %s): %w", operator, err)
+		right, evalErr := e.evaluateValue(val["right"])
+		if evalErr != nil {
+			return nil, fmt.Errorf("erreur évaluation côté droit (binaryOp %s): %w", operator, evalErr)
 		}
 
 		// Distinguer les opérations arithmétiques des comparaisons

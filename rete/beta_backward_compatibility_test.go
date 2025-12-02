@@ -314,6 +314,9 @@ rule join_xy : {x: X, y: Y} / x.id == y.xId ==> print("Join")`,
 
 // TestBetaBackwardCompatibility_JoinNodeSharing vérifie que le partage
 // des JoinNodes fonctionne correctement avec Beta Sharing
+// TODO: This test has a known issue with alpha/beta separation where passthrough
+// nodes are shared across rules with different alpha filters, causing incorrect
+// propagation. This will be fixed in a future optimization.
 func TestBetaBackwardCompatibility_JoinNodeSharing(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "join_sharing.tsd")

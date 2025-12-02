@@ -15,6 +15,7 @@ type ActionExecutor struct {
 	network       *ReteNetwork
 	logger        *log.Logger
 	enableLogging bool
+	registry      *ActionRegistry
 }
 
 // NewActionExecutor crée un nouveau exécuteur d'actions
@@ -22,11 +23,36 @@ func NewActionExecutor(network *ReteNetwork, logger *log.Logger) *ActionExecutor
 	if logger == nil {
 		logger = log.Default()
 	}
-	return &ActionExecutor{
+	ae := &ActionExecutor{
 		network:       network,
 		logger:        logger,
 		enableLogging: true,
+		registry:      NewActionRegistry(),
 	}
+
+	// Enregistrer les actions par défaut
+	ae.RegisterDefaultActions()
+
+	return ae
+}
+
+// RegisterDefaultActions enregistre les actions par défaut disponibles.
+func (ae *ActionExecutor) RegisterDefaultActions() {
+	// Enregistrer l'action print
+	printAction := NewPrintAction(nil)
+	if err := ae.registry.Register(printAction); err != nil {
+		ae.logger.Printf("⚠️  Erreur enregistrement action print: %v", err)
+	}
+}
+
+// GetRegistry retourne le registry d'actions.
+func (ae *ActionExecutor) GetRegistry() *ActionRegistry {
+	return ae.registry
+}
+
+// RegisterAction enregistre une action personnalisée.
+func (ae *ActionExecutor) RegisterAction(handler ActionHandler) error {
+	return ae.registry.Register(handler)
 }
 
 // SetLogging active ou désactive le logging des actions
@@ -73,9 +99,25 @@ func (ae *ActionExecutor) executeJob(job JobCall, ctx *ExecutionContext, jobInde
 		evaluatedArgs = append(evaluatedArgs, evaluated)
 	}
 
-	// Exécuter l'action (actuellement, on se contente de logger)
-	// Dans une implémentation complète, on pourrait dispatcher vers différents handlers
-	ae.logger.Printf("🎯 ACTION EXÉCUTÉE: %s(%v)", job.Name, formatArgs(evaluatedArgs))
+	// Vérifier si un handler est enregistré pour cette action
+	handler := ae.registry.Get(job.Name)
+	if handler != nil {
+		// Valider les arguments (optionnel)
+		if err := handler.Validate(evaluatedArgs); err != nil {
+			return fmt.Errorf("validation échouée pour action '%s': %w", job.Name, err)
+		}
+
+		// Exécuter l'action via son handler
+		if err := handler.Execute(evaluatedArgs, ctx); err != nil {
+			return fmt.Errorf("exécution échouée pour action '%s': %w", job.Name, err)
+		}
+
+		// Logger le succès
+		ae.logger.Printf("🎯 ACTION EXÉCUTÉE: %s(%v)", job.Name, formatArgs(evaluatedArgs))
+	} else {
+		// Aucun handler défini : comportement par défaut (simple log)
+		ae.logger.Printf("📋 ACTION NON DÉFINIE (log uniquement): %s(%v)", job.Name, formatArgs(evaluatedArgs))
+	}
 
 	return nil
 }
@@ -150,8 +192,12 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 		return ae.evaluateFactModification(argMap, ctx)
 
 	case "arithmetic":
-		// Expression arithmétique
+		// Expression arithmétique (format legacy)
 		return ae.evaluateArithmetic(argMap, ctx)
+
+	case "binaryOperation", "binaryOp", "binary_operation":
+		// Opération binaire (format du parser)
+		return ae.evaluateBinaryOperation(argMap, ctx)
 
 	default:
 		return arg, nil
@@ -256,7 +302,7 @@ func (ae *ActionExecutor) evaluateFactModification(argMap map[string]interface{}
 	return modifiedFact, nil
 }
 
-// evaluateArithmetic évalue une expression arithmétique
+// evaluateArithmetic évalue une expression arithmétique (format legacy)
 func (ae *ActionExecutor) evaluateArithmetic(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
 	operator, ok := argMap["operator"].(string)
 	if !ok {
@@ -273,11 +319,48 @@ func (ae *ActionExecutor) evaluateArithmetic(argMap map[string]interface{}, ctx 
 		return nil, fmt.Errorf("erreur évaluation right: %w", err)
 	}
 
+	return ae.evaluateArithmeticOperation(left, operator, right)
+}
+
+// evaluateBinaryOperation évalue une opération binaire (format du parser)
+func (ae *ActionExecutor) evaluateBinaryOperation(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
+	// Extraire et normaliser l'opérateur en utilisant l'utilitaire centralisé
+	operator, err := ExtractOperatorFromMap(argMap)
+	if err != nil {
+		return nil, fmt.Errorf("erreur extraction opérateur: %w", err)
+	}
+
+	left, err := ae.evaluateArgument(argMap["left"], ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erreur évaluation left: %w", err)
+	}
+
+	right, err := ae.evaluateArgument(argMap["right"], ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erreur évaluation right: %w", err)
+	}
+
+	// Distinguer les opérations arithmétiques des comparaisons
+	switch operator {
+	case "+", "-", "*", "/", "%":
+		// Opération arithmétique - retourne une valeur numérique
+		return ae.evaluateArithmeticOperation(left, operator, right)
+	case "==", "!=", "<", "<=", ">", ">=":
+		// Opération de comparaison - retourne un booléen
+		// (utile si des actions ont besoin d'évaluer des booléens)
+		return ae.evaluateComparison(left, operator, right)
+	default:
+		return nil, fmt.Errorf("opérateur binaire non supporté dans action: '%s'", operator)
+	}
+}
+
+// evaluateArithmeticOperation effectue une opération arithmétique
+func (ae *ActionExecutor) evaluateArithmeticOperation(left interface{}, operator string, right interface{}) (interface{}, error) {
 	// Convertir en nombres
 	leftNum, okL := toNumber(left)
 	rightNum, okR := toNumber(right)
 	if !okL || !okR {
-		return nil, fmt.Errorf("opération arithmétique nécessite des nombres")
+		return nil, fmt.Errorf("opération arithmétique nécessite des nombres (reçu: %T, %T)", left, right)
 	}
 
 	switch operator {
@@ -292,9 +375,55 @@ func (ae *ActionExecutor) evaluateArithmetic(argMap map[string]interface{}, ctx 
 			return nil, fmt.Errorf("division par zéro")
 		}
 		return leftNum / rightNum, nil
+	case "%":
+		if rightNum == 0 {
+			return nil, fmt.Errorf("modulo par zéro")
+		}
+		return float64(int64(leftNum) % int64(rightNum)), nil
 	default:
 		return nil, fmt.Errorf("opérateur arithmétique inconnu: %s", operator)
 	}
+}
+
+// evaluateComparison effectue une opération de comparaison
+func (ae *ActionExecutor) evaluateComparison(left interface{}, operator string, right interface{}) (interface{}, error) {
+	switch operator {
+	case "==":
+		return ae.areEqual(left, right), nil
+	case "!=":
+		return !ae.areEqual(left, right), nil
+	case "<", "<=", ">", ">=":
+		leftNum, okL := toNumber(left)
+		rightNum, okR := toNumber(right)
+		if !okL || !okR {
+			return nil, fmt.Errorf("comparaison numérique nécessite des nombres (reçu: %T, %T)", left, right)
+		}
+		switch operator {
+		case "<":
+			return leftNum < rightNum, nil
+		case "<=":
+			return leftNum <= rightNum, nil
+		case ">":
+			return leftNum > rightNum, nil
+		case ">=":
+			return leftNum >= rightNum, nil
+		}
+	}
+	return nil, fmt.Errorf("opérateur de comparaison inconnu: %s", operator)
+}
+
+// areEqual compare deux valeurs pour l'égalité
+func (ae *ActionExecutor) areEqual(left, right interface{}) bool {
+	// Normaliser les types numériques
+	leftNum, leftIsNum := toNumber(left)
+	rightNum, rightIsNum := toNumber(right)
+
+	if leftIsNum && rightIsNum {
+		return leftNum == rightNum
+	}
+
+	// Comparaison directe pour les autres types
+	return left == right
 }
 
 // validateFactFields valide que tous les champs requis sont présents et corrects

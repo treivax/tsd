@@ -640,3 +640,186 @@ func TestIsAlreadyConnected(t *testing.T) {
 		t.Error("child nil devrait retourner false")
 	}
 }
+
+// TestAlphaChainBuilder_BuildDecomposedChain tests decomposed chain building with metadata
+func TestAlphaChainBuilder_BuildDecomposedChain(t *testing.T) {
+	storage := NewMemoryStorage()
+	network := NewReteNetwork(storage)
+	builder := NewAlphaChainBuilder(network, storage)
+
+	// Create a type node as parent
+	typeDef := TypeDefinition{Fields: []Field{}}
+	typeNode := NewTypeNode("Person", typeDef, storage)
+	network.TypeNodes["Person"] = typeNode
+
+	// Create decomposed conditions with metadata
+	conditions := []DecomposedCondition{
+		{
+			SimpleCondition: NewSimpleCondition(
+				"binaryOp",
+				map[string]interface{}{"type": "fieldAccess", "field": "qte"},
+				"*",
+				map[string]interface{}{"type": "number", "value": 23},
+			),
+			ResultName:   "temp_1",
+			IsAtomic:     true,
+			Dependencies: []string{},
+		},
+		{
+			SimpleCondition: NewSimpleCondition(
+				"binaryOp",
+				map[string]interface{}{"type": "tempResult", "step_name": "temp_1"},
+				"-",
+				map[string]interface{}{"type": "number", "value": 10},
+			),
+			ResultName:   "temp_2",
+			IsAtomic:     true,
+			Dependencies: []string{"temp_1"},
+		},
+		{
+			SimpleCondition: NewSimpleCondition(
+				"comparison",
+				map[string]interface{}{"type": "tempResult", "step_name": "temp_2"},
+				">",
+				map[string]interface{}{"type": "number", "value": 0},
+			),
+			ResultName:   "temp_3",
+			IsAtomic:     true,
+			Dependencies: []string{"temp_2"},
+		},
+	}
+
+	// Build the decomposed chain
+	chain, err := builder.BuildDecomposedChain(conditions, "p", typeNode, "test_rule")
+	if err != nil {
+		t.Fatalf("BuildDecomposedChain failed: %v", err)
+	}
+
+	// Verify chain structure
+	if len(chain.Nodes) != 3 {
+		t.Errorf("Expected 3 nodes, got %d", len(chain.Nodes))
+	}
+
+	// Verify first node metadata
+	node1 := chain.Nodes[0]
+	if node1.ResultName != "temp_1" {
+		t.Errorf("Node 1: Expected ResultName 'temp_1', got '%s'", node1.ResultName)
+	}
+	if !node1.IsAtomic {
+		t.Error("Node 1: Expected IsAtomic=true")
+	}
+	if len(node1.Dependencies) != 0 {
+		t.Errorf("Node 1: Expected no dependencies, got %v", node1.Dependencies)
+	}
+
+	// Verify second node metadata
+	node2 := chain.Nodes[1]
+	if node2.ResultName != "temp_2" {
+		t.Errorf("Node 2: Expected ResultName 'temp_2', got '%s'", node2.ResultName)
+	}
+	if !node2.IsAtomic {
+		t.Error("Node 2: Expected IsAtomic=true")
+	}
+	if len(node2.Dependencies) != 1 || node2.Dependencies[0] != "temp_1" {
+		t.Errorf("Node 2: Expected Dependencies=['temp_1'], got %v", node2.Dependencies)
+	}
+
+	// Verify third node metadata
+	node3 := chain.Nodes[2]
+	if node3.ResultName != "temp_3" {
+		t.Errorf("Node 3: Expected ResultName 'temp_3', got '%s'", node3.ResultName)
+	}
+	if !node3.IsAtomic {
+		t.Error("Node 3: Expected IsAtomic=true")
+	}
+	if len(node3.Dependencies) != 1 || node3.Dependencies[0] != "temp_2" {
+		t.Errorf("Node 3: Expected Dependencies=['temp_2'], got %v", node3.Dependencies)
+	}
+
+	// Verify chain is connected
+	if chain.FinalNode != node3 {
+		t.Error("Expected FinalNode to be the last node")
+	}
+}
+
+// TestAlphaChainBuilder_DecomposedChainSharing tests node sharing with decomposed chains
+func TestAlphaChainBuilder_DecomposedChainSharing(t *testing.T) {
+	storage := NewMemoryStorage()
+	network := NewReteNetwork(storage)
+	builder := NewAlphaChainBuilder(network, storage)
+
+	typeDef := TypeDefinition{Fields: []Field{}}
+	typeNode := NewTypeNode("Order", typeDef, storage)
+	network.TypeNodes["Order"] = typeNode
+
+	// Condition that will be shared: c.qte * 23
+	sharedCondition := DecomposedCondition{
+		SimpleCondition: NewSimpleCondition(
+			"binaryOp",
+			map[string]interface{}{"type": "fieldAccess", "field": "qte"},
+			"*",
+			map[string]interface{}{"type": "number", "value": 23},
+		),
+		ResultName:   "temp_1",
+		IsAtomic:     true,
+		Dependencies: []string{},
+	}
+
+	// Rule 1: c.qte * 23 > 100
+	conditions1 := []DecomposedCondition{
+		sharedCondition,
+		{
+			SimpleCondition: NewSimpleCondition(
+				"comparison",
+				map[string]interface{}{"type": "tempResult", "step_name": "temp_1"},
+				">",
+				map[string]interface{}{"type": "number", "value": 100},
+			),
+			ResultName:   "temp_2",
+			IsAtomic:     true,
+			Dependencies: []string{"temp_1"},
+		},
+	}
+
+	// Rule 2: c.qte * 23 > 50 (shares first step with rule 1)
+	conditions2 := []DecomposedCondition{
+		sharedCondition,
+		{
+			SimpleCondition: NewSimpleCondition(
+				"comparison",
+				map[string]interface{}{"type": "tempResult", "step_name": "temp_1"},
+				">",
+				map[string]interface{}{"type": "number", "value": 50},
+			),
+			ResultName:   "temp_2",
+			IsAtomic:     true,
+			Dependencies: []string{"temp_1"},
+		},
+	}
+
+	// Build first chain
+	chain1, err := builder.BuildDecomposedChain(conditions1, "c", typeNode, "rule_1")
+	if err != nil {
+		t.Fatalf("BuildDecomposedChain rule_1 failed: %v", err)
+	}
+
+	// Build second chain
+	chain2, err := builder.BuildDecomposedChain(conditions2, "c", typeNode, "rule_2")
+	if err != nil {
+		t.Fatalf("BuildDecomposedChain rule_2 failed: %v", err)
+	}
+
+	// Verify that first nodes are shared (same ID)
+	if chain1.Nodes[0].ID != chain2.Nodes[0].ID {
+		t.Errorf("Expected first nodes to be shared, got IDs %s and %s",
+			chain1.Nodes[0].ID, chain2.Nodes[0].ID)
+	}
+
+	t.Logf("✅ Node sharing verified: %s is shared between rule_1 and rule_2",
+		chain1.Nodes[0].ID)
+
+	// Verify that second nodes are different (different comparison values)
+	if chain1.Nodes[1].ID == chain2.Nodes[1].ID {
+		t.Error("Expected second nodes to be different (different comparison values)")
+	}
+}

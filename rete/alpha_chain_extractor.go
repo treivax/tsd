@@ -67,6 +67,15 @@ type SimpleCondition struct {
 	Hash     string      `json:"hash"`     // Hash unique calculé automatiquement
 }
 
+// DecomposedCondition extends SimpleCondition with decomposition metadata
+// for supporting intermediate result propagation in alpha chains
+type DecomposedCondition struct {
+	SimpleCondition
+	ResultName   string   `json:"result_name,omitempty"`  // Name of intermediate result produced (e.g., "temp_1")
+	Dependencies []string `json:"dependencies,omitempty"` // Required intermediate results
+	IsAtomic     bool     `json:"is_atomic,omitempty"`    // true if atomic operation
+}
+
 // NewSimpleCondition crée une nouvelle condition simple avec hash calculé
 func NewSimpleCondition(condType string, left interface{}, operator string, right interface{}) SimpleCondition {
 	cond := SimpleCondition{

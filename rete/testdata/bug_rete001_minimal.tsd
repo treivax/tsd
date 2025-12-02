@@ -1,0 +1,24 @@
+// Test file for bug RETE-001: Alpha/Beta condition separation
+// This file contains a simple rule with mixed alpha and beta conditions
+
+// Define types
+type Produit(id: string, prix: number)
+type Commande(id: string, produit_id: string, qte: number)
+
+// Define action
+action resultat(commande_id: string, produit_id: string)
+
+// Rule with MIXED conditions:
+// - c.qte > 5 : ALPHA condition (only involves Commande, should be in AlphaNode)
+// - c.produit_id == p.id : BETA condition (involves both types, should be in JoinNode)
+rule test_alpha_beta_mixed : {c: Commande, p: Produit} /
+    c.produit_id == p.id AND c.qte > 5
+    ==> resultat(c.id, p.id)
+
+// Test facts
+Produit(id: "P1", prix: 100)
+Produit(id: "P2", prix: 200)
+
+Commande(id: "C1", produit_id: "P1", qte: 3)
+Commande(id: "C2", produit_id: "P1", qte: 10)
+Commande(id: "C3", produit_id: "P2", qte: 7)

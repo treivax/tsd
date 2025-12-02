@@ -21,6 +21,8 @@ type ReteNetwork struct {
 	BetaBuilder         interface{}              `json:"-"` // Constructeur de réseau Beta (deprecated, use BetaChainBuilder)
 	LifecycleManager    *LifecycleManager        `json:"-"` // Gestionnaire du cycle de vie des nœuds
 	AlphaSharingManager *AlphaSharingRegistry    `json:"-"` // Gestionnaire du partage des AlphaNodes
+	AlphaChainBuilder   *AlphaChainBuilder       `json:"-"` // Constructeur de chaînes alpha avec décomposition
+	PassthroughRegistry map[string]*AlphaNode    `json:"-"` // Registre de partage des AlphaNodes passthrough
 	BetaSharingRegistry BetaSharingRegistry      `json:"-"` // Gestionnaire du partage des JoinNodes
 	BetaChainBuilder    *BetaChainBuilder        `json:"-"` // Constructeur de chaînes beta avec partage
 	ChainMetrics        *ChainBuildMetrics       `json:"-"` // Métriques de performance pour la construction des chaînes
@@ -70,6 +72,7 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		BetaBuilder:         nil, // Deprecated field, kept for backward compatibility
 		LifecycleManager:    lifecycleManager,
 		AlphaSharingManager: NewAlphaSharingRegistryWithConfig(config, metrics),
+		PassthroughRegistry: make(map[string]*AlphaNode),
 		BetaSharingRegistry: betaSharingRegistry,
 		BetaChainBuilder:    betaChainBuilder, // Will be initialized lazily if needed
 		ChainMetrics:        metrics,
@@ -155,7 +158,10 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 		}
 
 		factType := "unknown"
+		// Chercher "type" ou "reteType" (ConvertFactsToReteFormat utilise "reteType")
 		if typ, ok := factMap["type"].(string); ok {
+			factType = typ
+		} else if typ, ok := factMap["reteType"].(string); ok {
 			factType = typ
 		}
 
@@ -167,7 +173,7 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 
 		// Copier tous les champs
 		for key, value := range factMap {
-			if key != "id" && key != "type" {
+			if key != "type" && key != "reteType" {
 				fact.Fields[key] = value
 			}
 		}
@@ -221,6 +227,9 @@ func (rn *ReteNetwork) Reset() {
 	} else {
 		rn.AlphaSharingManager = NewAlphaSharingRegistry()
 	}
+
+	// Reset passthrough registry
+	rn.PassthroughRegistry = make(map[string]*AlphaNode)
 
 	// Recreate a fresh root node with the existing storage
 	rn.RootNode = NewRootNode(rn.Storage)

@@ -342,6 +342,142 @@ func (acb *AlphaChainBuilder) BuildChain(
 	return chain, nil
 }
 
+// BuildDecomposedChain constructs an alpha chain from decomposed conditions with full metadata.
+// This method sets ResultName, IsAtomic, and Dependencies on each AlphaNode for
+// context-aware evaluation with intermediate result propagation.
+func (acb *AlphaChainBuilder) BuildDecomposedChain(
+	conditions []DecomposedCondition,
+	variableName string,
+	parentNode Node,
+	ruleID string,
+) (*AlphaChain, error) {
+	if len(conditions) == 0 {
+		return nil, fmt.Errorf("impossible de construire une chaîne sans conditions")
+	}
+
+	if parentNode == nil {
+		return nil, fmt.Errorf("le nœud parent ne peut pas être nil")
+	}
+
+	if acb.network.AlphaSharingManager == nil {
+		return nil, fmt.Errorf("AlphaSharingManager non initialisé dans le réseau")
+	}
+
+	if acb.network.LifecycleManager == nil {
+		return nil, fmt.Errorf("LifecycleManager non initialisé dans le réseau")
+	}
+
+	// Démarrer le chronomètre pour les métriques
+	startTime := time.Now()
+	nodesCreated := 0
+	nodesReused := 0
+	hashesGenerated := make([]string, 0, len(conditions))
+
+	chain := &AlphaChain{
+		Nodes:  make([]*AlphaNode, 0, len(conditions)),
+		Hashes: make([]string, 0, len(conditions)),
+		RuleID: ruleID,
+	}
+
+	currentParent := parentNode
+
+	// Construire la chaîne condition par condition
+	for i, decomposedCond := range conditions {
+		// Convertir DecomposedCondition en map pour la condition du nœud alpha
+		conditionMap := map[string]interface{}{
+			"type":     decomposedCond.Type,
+			"left":     decomposedCond.Left,
+			"operator": decomposedCond.Operator,
+			"right":    decomposedCond.Right,
+		}
+
+		// Obtenir ou créer l'AlphaNode via le gestionnaire de partage
+		alphaNode, hash, reused, err := acb.network.AlphaSharingManager.GetOrCreateAlphaNode(
+			conditionMap,
+			variableName,
+			acb.storage,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erreur lors de la création/récupération du nœud alpha %d: %w", i, err)
+		}
+
+		// SET DECOMPOSITION METADATA - This is the key enhancement
+		alphaNode.ResultName = decomposedCond.ResultName
+		alphaNode.IsAtomic = decomposedCond.IsAtomic
+		alphaNode.Dependencies = decomposedCond.Dependencies
+
+		// Ajouter le nœud et son hash à la chaîne
+		chain.Nodes = append(chain.Nodes, alphaNode)
+		chain.Hashes = append(chain.Hashes, hash)
+		hashesGenerated = append(hashesGenerated, hash)
+
+		if reused {
+			nodesReused++
+			// Nœud réutilisé - vérifier la connexion au parent
+			log.Printf("♻️  [AlphaChainBuilder] Réutilisation du nœud alpha %s (decomposed: %s) pour la règle %s (condition %d/%d)",
+				alphaNode.ID, alphaNode.ResultName, ruleID, i+1, len(conditions))
+
+			if !acb.isAlreadyConnectedCached(currentParent, alphaNode) {
+				// Connecter au parent si pas déjà connecté
+				currentParent.AddChild(alphaNode)
+				log.Printf("🔗 [AlphaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
+					alphaNode.ID, currentParent.GetID())
+			} else {
+				log.Printf("✓  [AlphaChainBuilder] Nœud %s déjà connecté au parent %s",
+					alphaNode.ID, currentParent.GetID())
+			}
+		} else {
+			nodesCreated++
+			// Nouveau nœud - le connecter au parent et l'ajouter au réseau
+			currentParent.AddChild(alphaNode)
+			acb.network.AlphaNodes[alphaNode.ID] = alphaNode
+
+			// Mettre à jour le cache de connexion
+			acb.updateConnectionCache(currentParent.GetID(), alphaNode.ID, true)
+
+			log.Printf("🆕 [AlphaChainBuilder] Nouveau nœud alpha %s créé (decomposed: %s, deps: %v) pour la règle %s (condition %d/%d)",
+				alphaNode.ID, alphaNode.ResultName, alphaNode.Dependencies, ruleID, i+1, len(conditions))
+			log.Printf("🔗 [AlphaChainBuilder] Connexion du nœud %s au parent %s",
+				alphaNode.ID, currentParent.GetID())
+		}
+
+		// Enregistrer le nœud dans le LifecycleManager avec la règle
+		lifecycle := acb.network.LifecycleManager.RegisterNode(alphaNode.ID, "alpha")
+		lifecycle.AddRuleReference(ruleID, "") // RuleName peut être ajouté plus tard si nécessaire
+
+		if reused {
+			log.Printf("📊 [AlphaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
+				alphaNode.ID, lifecycle.GetRefCount())
+		}
+
+		// Le nœud actuel devient le parent pour le prochain nœud
+		currentParent = alphaNode
+	}
+
+	// Le dernier nœud de la chaîne est le nœud final
+	chain.FinalNode = chain.Nodes[len(chain.Nodes)-1]
+
+	log.Printf("✅ [AlphaChainBuilder] Chaîne alpha décomposée complète construite pour la règle %s: %d nœud(s) atomiques",
+		ruleID, len(chain.Nodes))
+
+	// Enregistrer les métriques
+	if acb.metrics != nil {
+		buildTime := time.Since(startTime)
+		detail := ChainMetricDetail{
+			RuleID:          ruleID,
+			ChainLength:     len(chain.Nodes),
+			NodesCreated:    nodesCreated,
+			NodesReused:     nodesReused,
+			BuildTime:       buildTime,
+			Timestamp:       time.Now(),
+			HashesGenerated: hashesGenerated,
+		}
+		acb.metrics.RecordChainBuild(detail)
+	}
+
+	return chain, nil
+}
+
 // isAlreadyConnectedCached vérifie si un nœud enfant est déjà connecté à un nœud parent avec cache
 func (acb *AlphaChainBuilder) isAlreadyConnectedCached(parent Node, child Node) bool {
 	if parent == nil || child == nil {

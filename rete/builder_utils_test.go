@@ -105,7 +105,8 @@ func TestBuilderUtils_ConnectTypeNodeToBetaNode(t *testing.T) {
 	// Vérifier que l'AlphaNode est bien créé
 	alphaNode, ok := typeNode.Children[0].(*AlphaNode)
 	assert.True(t, ok)
-	assert.Equal(t, "test_rule_pass_p", alphaNode.ID)
+	// With per-rule passthroughs, the ID now includes the rule ID and variable name
+	assert.Equal(t, "passthrough_test_rule_p_Person_left", alphaNode.ID)
 
 	// Vérifier que l'AlphaNode a le BetaNode comme enfant
 	assert.Equal(t, 1, len(alphaNode.Children))

@@ -7,7 +7,6 @@ package rete
 import (
 	"fmt"
 	"strings"
-
 )
 
 // Node condition type constants
@@ -36,7 +35,17 @@ func NewBuilderUtils(storage Storage) *BuilderUtils {
 	}
 }
 
+// PassthroughNodeKey generates a registry key for a passthrough node
+// The key includes rule name to prevent incorrect sharing when rules have different alpha filters
+func PassthroughNodeKey(ruleName, typeName, varName, side string) string {
+	if side != "" {
+		return fmt.Sprintf("passthrough_%s_%s_%s_%s", ruleName, varName, typeName, side)
+	}
+	return fmt.Sprintf("passthrough_%s_%s_%s", ruleName, varName, typeName)
+}
+
 // CreatePassthroughAlphaNode creates a passthrough AlphaNode with optional side specification
+// DEPRECATED: Use GetOrCreatePassthroughAlphaNode instead for proper sharing
 func (bu *BuilderUtils) CreatePassthroughAlphaNode(ruleID, varName, side string) *AlphaNode {
 	passCondition := map[string]interface{}{
 		"type": ConditionTypePassthrough,
@@ -47,7 +56,41 @@ func (bu *BuilderUtils) CreatePassthroughAlphaNode(ruleID, varName, side string)
 	return NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, bu.storage)
 }
 
+// GetOrCreatePassthroughAlphaNode gets or creates a passthrough AlphaNode per rule
+// Each rule gets its own passthrough to prevent incorrect sharing when alpha filters differ
+func (bu *BuilderUtils) GetOrCreatePassthroughAlphaNode(
+	network *ReteNetwork,
+	ruleName string,
+	typeName string,
+	varName string,
+	side string,
+) *AlphaNode {
+	// Generate registry key based on rule, variable, type and side
+	key := PassthroughNodeKey(ruleName, typeName, varName, side)
+
+	// Check if passthrough already exists in registry
+	if existingNode, exists := network.PassthroughRegistry[key]; exists {
+		return existingNode // ✅ Reuse existing node
+	}
+
+	// Create new passthrough node
+	passCondition := map[string]interface{}{
+		"type": ConditionTypePassthrough,
+	}
+	if side != "" {
+		passCondition["side"] = side
+	}
+
+	alphaNode := NewAlphaNode(key, passCondition, varName, bu.storage)
+
+	// Register for future reuse
+	network.PassthroughRegistry[key] = alphaNode
+
+	return alphaNode
+}
+
 // ConnectTypeNodeToBetaNode connects a TypeNode to a BetaNode via a passthrough AlphaNode
+// Creates per-rule passthrough nodes to prevent incorrect sharing
 func (bu *BuilderUtils) ConnectTypeNodeToBetaNode(
 	network *ReteNetwork,
 	ruleID string,
@@ -57,16 +100,33 @@ func (bu *BuilderUtils) ConnectTypeNodeToBetaNode(
 	side string,
 ) {
 	if typeNode, exists := network.TypeNodes[varType]; exists {
-		alphaNode := bu.CreatePassthroughAlphaNode(ruleID, varName, side)
-		typeNode.AddChild(alphaNode)
+		// Get or create per-rule passthrough node
+		alphaNode := bu.GetOrCreatePassthroughAlphaNode(network, ruleID, varType, varName, side)
+
+		// Connect TypeNode -> AlphaNode (if not already connected)
+		if !bu.hasChild(typeNode, alphaNode) {
+			typeNode.AddChild(alphaNode)
+		}
+
+		// Connect AlphaNode -> BetaNode
 		alphaNode.AddChild(betaNode)
 
 		sideInfo := ""
 		if side != "" {
 			sideInfo = fmt.Sprintf(" (%s)", strings.ToUpper(side))
 		}
-		fmt.Printf("   ✓ %s -> PassthroughAlpha_%s -> %s%s\n", varType, varName, betaNode.GetID(), sideInfo)
+		fmt.Printf("   ✓ %s -> PassthroughAlpha[%s] -> %s%s\n", varType, alphaNode.GetID(), betaNode.GetID(), sideInfo)
 	}
+}
+
+// hasChild checks if a node already has a specific child
+func (bu *BuilderUtils) hasChild(parent Node, child Node) bool {
+	for _, c := range parent.GetChildren() {
+		if c.GetID() == child.GetID() {
+			return true
+		}
+	}
+	return false
 }
 
 // GetStringField safely extracts a string field from a map

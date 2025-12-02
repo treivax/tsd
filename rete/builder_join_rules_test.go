@@ -162,7 +162,7 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 		}
 	})
 
-	t.Run("error on missing type node", func(t *testing.T) {
+	t.Run("missing type node silently skips connection", func(t *testing.T) {
 		network := NewReteNetwork(storage)
 
 		variableNames := []string{"p", "e"}
@@ -172,8 +172,14 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 
 		err := jrb.createBinaryJoinRule(network, "bad_rule", variableNames, variableTypes, condition, terminalNode)
 
-		if err == nil {
-			t.Error("Expected error for missing TypeNode, got nil")
+		// Should not error, but the TypeNode connections are skipped
+		if err != nil {
+			t.Errorf("Should not error on missing TypeNode, got: %v", err)
+		}
+
+		// JoinNode should still be created
+		if len(network.BetaNodes) != 1 {
+			t.Errorf("Expected 1 BetaNode, got %d", len(network.BetaNodes))
 		}
 	})
 }

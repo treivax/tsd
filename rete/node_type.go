@@ -75,7 +75,31 @@ func (tn *TypeNode) ActivateRight(fact *Fact) error {
 	// Persistance désactivée pour les performances
 
 	// Propager aux enfants (AlphaNodes)
-	return tn.PropagateToChildren(fact, nil)
+	// Check if any child is a decomposed alpha chain and use context-aware activation
+	for _, child := range tn.GetChildren() {
+		if alphaNode, ok := child.(*AlphaNode); ok {
+			// Check if this AlphaNode is part of a decomposed chain
+			if alphaNode.IsAtomic || len(alphaNode.Dependencies) > 0 {
+				// Create evaluation context for decomposed chain
+				ctx := NewEvaluationContext(fact)
+				if err := alphaNode.ActivateWithContext(fact, ctx); err != nil {
+					return fmt.Errorf("error activating decomposed alpha chain: %w", err)
+				}
+			} else {
+				// Standard activation for non-decomposed alpha nodes
+				if err := alphaNode.ActivateRight(fact); err != nil {
+					return fmt.Errorf("error activating alpha node: %w", err)
+				}
+			}
+		} else {
+			// Non-alpha child, use standard propagation
+			if err := child.ActivateRight(fact); err != nil {
+				return fmt.Errorf("error propagating to child: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // validateFact valide qu'un fait respecte la définition de type

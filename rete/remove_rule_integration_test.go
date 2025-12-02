@@ -280,6 +280,8 @@ func TestRemoveRuleCommand_AfterFactSubmission(t *testing.T) {
 	content1 := `
 type Person(id: string, name: string, age:number)
 
+action notify(id: string)
+
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 `
 

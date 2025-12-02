@@ -385,9 +385,14 @@ func (jn *JoinNode) evaluateSimpleJoinConditions(bindings map[string]*Fact) bool
 			continue // Skip this condition - variables not available at this level
 		}
 
-		// Récupérer les valeurs des champs
-		leftValue := leftFact.Fields[joinCondition.LeftField]
-		rightValue := rightFact.Fields[joinCondition.RightField]
+		// Get field values
+		leftValue, leftExists := leftFact.Fields[joinCondition.LeftField]
+		rightValue, rightExists := rightFact.Fields[joinCondition.RightField]
+
+		// Vérifier que les champs existent
+		if !leftExists || !rightExists {
+			return false
+		}
 
 		// Évaluer l'opérateur
 		switch joinCondition.Operator {

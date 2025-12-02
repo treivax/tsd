@@ -26,6 +26,10 @@ func TestRemoveRuleIncremental_FullPipeline(t *testing.T) {
 	t.Log("\n📝 ÉTAPE 1: Création du fichier initial avec 3 règles")
 	initialContent := `type Person(id: string, name: string, age:number)
 
+action adult(id: string)
+action senior(id: string)
+action minor(id: string)
+
 rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id)
 rule senior_check : {p: Person} / p.age >= 65 ==> senior(p.id)
 rule minor_check : {p: Person} / p.age < 18 ==> minor(p.id)
@@ -172,7 +176,7 @@ func TestRemoveRuleIncremental_WithJoins(t *testing.T) {
 type Order(id: string, customer_id: string, amount:number)
 
 
-action process_order(id: string)
+action process_order(personId: string, orderId: string)
 action vip_order(arg: string)
 
 rule person_order : {p: Person, o: Order} / p.id == o.customer_id ==> process_order(p.id, o.id)

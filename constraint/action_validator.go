@@ -5,6 +5,7 @@
 package constraint
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 )
@@ -150,14 +151,20 @@ func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[
 			}
 
 			return "", fmt.Errorf("field '%s' not found in type '%s'", fieldName, objType)
-		case "binaryOp":
+		case "binaryOp", "binaryOperation", "binary_operation":
 			// For binary operations, infer from operands (assume number for arithmetic)
 			op, ok := v["operator"].(string)
 			if !ok {
 				return "", fmt.Errorf("binaryOp missing operator")
 			}
+
+			// The operator might be base64 encoded, try to decode it
+			if decoded, err := base64.StdEncoding.DecodeString(op); err == nil {
+				op = string(decoded)
+			}
+
 			// Arithmetic operations return number
-			if op == "+" || op == "-" || op == "*" || op == "/" {
+			if op == "+" || op == "-" || op == "*" || op == "/" || op == "%" {
 				return "number", nil
 			}
 			// Comparison operations return bool
