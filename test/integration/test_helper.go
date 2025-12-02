@@ -29,7 +29,7 @@ func NewTestHelper() *TestHelper {
 func (th *TestHelper) BuildNetworkFromConstraintFile(t *testing.T, constraintFile string) (*rete.ReteNetwork, rete.Storage) {
 	storage := rete.NewMemoryStorage()
 
-	network, err := th.pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	network, err := th.pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur pipeline constraint → RETE: %v", err)
 	}
@@ -41,10 +41,18 @@ func (th *TestHelper) BuildNetworkFromConstraintFile(t *testing.T, constraintFil
 func (th *TestHelper) BuildNetworkFromConstraintFileWithMassiveFacts(t *testing.T, constraintFile, factsFile string) (*rete.ReteNetwork, []*rete.Fact, rete.Storage) {
 	storage := rete.NewMemoryStorage()
 
-	network, facts, err := th.pipeline.BuildNetworkFromConstraintFileWithFacts(constraintFile, factsFile, storage)
+	network, err := th.pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
-		t.Fatalf("❌ Erreur pipeline constraint + faits → RETE: %v", err)
+		t.Fatalf("❌ Erreur pipeline constraint → RETE: %v", err)
 	}
+
+	network, err = th.pipeline.IngestFile(factsFile, network, storage)
+	if err != nil {
+		t.Fatalf("❌ Erreur pipeline facts → RETE: %v", err)
+	}
+
+	// Collect facts from storage
+	facts := storage.GetAllFacts()
 
 	return network, facts, storage
 }

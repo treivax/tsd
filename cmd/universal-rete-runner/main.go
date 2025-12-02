@@ -191,7 +191,8 @@ func ExecuteTest(testFile TestFile, expectError bool) TestResult {
 		// Read captured output
 		output := <-outputChan
 		result.Output = output
-		result.Errors = append(result.Errors, fmt.Sprintf("Failed to ingest constraint file: %v", err))
+		result.Error = fmt.Errorf("failed to ingest constraint file: %w", err)
+		result.Passed = expectError
 		return result
 	}
 
@@ -205,7 +206,8 @@ func ExecuteTest(testFile TestFile, expectError bool) TestResult {
 		// Read captured output
 		output := <-outputChan
 		result.Output = output
-		result.Errors = append(result.Errors, fmt.Sprintf("Failed to ingest facts file: %v", err))
+		result.Error = fmt.Errorf("failed to ingest facts file: %w", err)
+		result.Passed = expectError
 		return result
 	}
 

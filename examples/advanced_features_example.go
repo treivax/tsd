@@ -19,7 +19,7 @@ import (
 // 3. Transactions avec rollback
 
 func main() {
-	fmt.Println("=== Démonstration des fonctionnalités avancées ===\n")
+	fmt.Println("=== Démonstration des fonctionnalités avancées ===")
 
 	// Créer un répertoire temporaire pour les exemples
 	tmpDir, err := os.MkdirTemp("", "tsd_advanced_example_")

@@ -68,6 +68,11 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 
 	metrics := &AdvancedMetrics{}
 
+	// Create network if nil
+	if network == nil {
+		network = NewReteNetwork(storage)
+	}
+
 	// Phase 1: Démarrer une transaction (OBLIGATOIRE)
 	txStart := time.Now()
 	tx := network.BeginTransaction()

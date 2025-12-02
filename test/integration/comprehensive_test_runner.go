@@ -88,12 +88,17 @@ func runSingleTest(name, constraintFile, factsFile, description string, expectEr
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
-	// Try to build network
-	network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts(
-		constraintFile,
-		factsFile,
-		storage,
-	)
+	// Try to build network using IngestFile
+	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	if err == nil && factsFile != "" {
+		network, err = pipeline.IngestFile(factsFile, network, storage)
+	}
+
+	// Get facts from storage
+	var facts []*rete.Fact
+	if network != nil {
+		facts = storage.GetAllFacts()
+	}
 
 	// Handle expected errors
 	if expectError {

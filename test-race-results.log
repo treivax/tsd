@@ -1,0 +1,232 @@
+# github.com/treivax/tsd/cmd/universal-rete-runner [github.com/treivax/tsd/cmd/universal-rete-runner.test]
+cmd/universal-rete-runner/main.go:194:33: result.Errors undefined (type TestResult has no field or method Errors)
+cmd/universal-rete-runner/main.go:208:33: result.Errors undefined (type TestResult has no field or method Errors)
+# github.com/treivax/tsd/examples
+examples/chain_performance_example.go:14:6: main redeclared in this block
+	examples/advanced_features_example.go:21:6: other declaration of main
+examples/transaction_example.go:14:6: main redeclared in this block
+	examples/advanced_features_example.go:21:6: other declaration of main
+# github.com/treivax/tsd/test [github.com/treivax/tsd/test.test]
+test/iterative_parsing_test.go:81:27: pipeline.BuildNetworkFromIterativeParser undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromIterativeParser)
+test/iterative_parsing_test.go:133:12: undefined: err
+test/iterative_parsing_test.go:134:6: undefined: err
+test/iterative_parsing_test.go:135:54: undefined: err
+# github.com/treivax/tsd/test/integration [github.com/treivax/tsd/test/integration.test]
+test/integration/comprehensive_test_runner.go:92:34: pipeline.BuildNetworkFromConstraintFileWithFacts undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromConstraintFileWithFacts)
+test/integration/test_helper.go:32:30: th.pipeline.BuildNetworkFromConstraintFile undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromConstraintFile)
+test/integration/test_helper.go:44:37: th.pipeline.BuildNetworkFromConstraintFileWithFacts undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromConstraintFileWithFacts)
+test/integration/arguments_test.go:115:41: helper.pipeline.BuildNetworkFromConstraintFileWithFacts undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromConstraintFileWithFacts)
+test/integration/complex_beta_tuple_space_test.go:31:31: pipeline.BuildNetworkFromConstraintFile undefined (type *rete.ConstraintPipeline has no field or method BuildNetworkFromConstraintFile)
+# github.com/treivax/tsd/test/integration/incremental [github.com/treivax/tsd/test/integration/incremental.test]
+test/integration/incremental/advanced_test.go:214:5: tx.RecordChange undefined (type *rete.Transaction has no field or method RecordChange)
+test/integration/incremental/advanced_test.go:214:23: undefined: rete.ChangeTypeAddType
+test/integration/incremental/advanced_test.go:226:18: pipeline.IngestFileTransactional undefined (type *rete.ConstraintPipeline has no field or method IngestFileTransactional)
+test/integration/incremental/advanced_test.go:295:17: pipeline.IngestFileTransactional undefined (type *rete.ConstraintPipeline has no field or method IngestFileTransactional)
+test/integration/incremental/advanced_test.go:506:21: tx.GetSnapshotSize undefined (type *rete.Transaction has no field or method GetSnapshotSize)
+# github.com/treivax/tsd
+./test_default_optimizations.go:13:2: fmt.Println arg list ends with redundant newline
+FAIL	github.com/treivax/tsd [build failed]
+⚠️  Warning: -constraint flag is deprecated, use -file instead
+========================================
+📁 Ingestion incrémentale: /tmp/TestRunWithFacts3105192029/001/test.tsd
+✅ Parsing réussi
+✓ Programme valide avec 1 type(s), 1 expression(s) et 2 fait(s)
+✅ Validation sémantique réussie
+🆕 Création d'un nouveau réseau RETE
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Optimisation de l'ordre: true
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Partage de préfixes: true
+✅ Trouvé 1 types et 1 expressions dans le fichier
+   ✓ TypeNode créé: Person
+✅ Types ajoutés/mis à jour dans le réseau
+📊 Faits préexistants dans le réseau: 0
+   ✓ Règle alpha simple créée pour: r1
+   ✨ Nouveau AlphaNode partageable créé: alpha_46bd76aa323d46f5 (hash: alpha_46bd76aa323d46f5)
+   ✓ Règle alpha simple créée pour: r1
+   ✓ Person -> AlphaNode[alpha_46bd76aa323d46f5] -> TerminalNode[r1_terminal]
+   ✓ Règle créée: r1
+✅ Règles ajoutées au réseau
+📥 Soumission de 2 nouveaux faits
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P1, Type:Person, Fields:map[age:25 id:P1 name:Alice]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(name:Alice, age:25, id:P1))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P1")
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P2, Type:Person, Fields:map[age:30 id:P2 name:Bob]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(name:Bob, age:30, id:P2))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P2")
+✅ Nouveaux faits soumis
+✅ Validation réussie
+🎯 INGESTION INCRÉMENTALE TERMINÉE
+   - Total TypeNodes: 1
+   - Total TerminalNodes: 1
+🎯 INGESTION TERMINÉE
+========================================
+
+========================================
+📁 Ingestion incrémentale: /tmp/TestRunWithFacts3105192029/001/test.tsd
+✅ Parsing réussi
+🔒 Transaction démarrée automatiquement: 16075241-2b7c-4059-9e01-5a665c2da5ba
+🔍 Validation sémantique incrémentale avec contexte...
+🔙 Rollback automatique effectué
+========================================
+📁 Ingestion incrémentale: /tmp/TestRunWithFacts3105192029/001/test.tsd
+✅ Parsing réussi
+✓ Programme valide avec 1 type(s), 1 expression(s) et 2 fait(s)
+✅ Validation sémantique réussie
+🆕 Création d'un nouveau réseau RETE
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Optimisation de l'ordre: true
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Partage de préfixes: true
+✅ Trouvé 1 types et 1 expressions dans le fichier
+   ✓ TypeNode créé: Person
+✅ Types ajoutés/mis à jour dans le réseau
+📊 Faits préexistants dans le réseau: 0
+   ✓ Règle alpha simple créée pour: r1
+   ✨ Nouveau AlphaNode partageable créé: alpha_46bd76aa323d46f5 (hash: alpha_46bd76aa323d46f5)
+   ✓ Règle alpha simple créée pour: r1
+   ✓ Person -> AlphaNode[alpha_46bd76aa323d46f5] -> TerminalNode[r1_terminal]
+   ✓ Règle créée: r1
+✅ Règles ajoutées au réseau
+📥 Soumission de 2 nouveaux faits
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P1, Type:Person, Fields:map[age:25 id:P1 name:Alice]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(id:P1, name:Alice, age:25))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P1")
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P2, Type:Person, Fields:map[age:30 id:P2 name:Bob]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(name:Bob, age:30, id:P2))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P2")
+✅ Nouveaux faits soumis
+✅ Validation réussie
+🎯 INGESTION INCRÉMENTALE TERMINÉE
+   - Total TypeNodes: 1
+   - Total TerminalNodes: 1
+🎯 INGESTION TERMINÉE
+========================================
+
+========================================
+📁 Ingestion incrémentale: /tmp/TestRunWithFacts3105192029/001/test.tsd
+✅ Parsing réussi
+🔒 Transaction démarrée automatiquement: 2329e625-74ac-4b44-bc9b-1e730dc431bd
+🔍 Validation sémantique incrémentale avec contexte...
+🔙 Rollback automatique effectué
+========================================
+📁 Ingestion incrémentale: nonexistent.tsd
+--- FAIL: TestRunWithFacts (0.02s)
+    --- FAIL: TestRunWithFacts/successful_execution (0.01s)
+        main_test.go:1473: exitCode = 1, want 0
+        main_test.go:1415: Expected no stderr, got: Erreur pipeline RETE: ❌ Erreur validation incrémentale: validation incrémentale échouée: action manquante dans l'expression 1: chaque règle doit avoir une action définie
+    --- FAIL: TestRunWithFacts/verbose_mode (0.01s)
+        main_test.go:1473: exitCode = 1, want 0
+        main_test.go:1432: Verbose output should contain results header
+========================================
+📁 Ingestion incrémentale: /tmp/TestExecutePipeline918636623/001/test.tsd
+✅ Parsing réussi
+✓ Programme valide avec 1 type(s), 1 expression(s) et 2 fait(s)
+✅ Validation sémantique réussie
+🆕 Création d'un nouveau réseau RETE
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Optimisation de l'ordre: true
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Partage de préfixes: true
+✅ Trouvé 1 types et 1 expressions dans le fichier
+   ✓ TypeNode créé: Person
+✅ Types ajoutés/mis à jour dans le réseau
+📊 Faits préexistants dans le réseau: 0
+   ✓ Règle alpha simple créée pour: r1
+   ✨ Nouveau AlphaNode partageable créé: alpha_46bd76aa323d46f5 (hash: alpha_46bd76aa323d46f5)
+   ✓ Règle alpha simple créée pour: r1
+   ✓ Person -> AlphaNode[alpha_46bd76aa323d46f5] -> TerminalNode[r1_terminal]
+   ✓ Règle créée: r1
+✅ Règles ajoutées au réseau
+📥 Soumission de 2 nouveaux faits
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P1, Type:Person, Fields:map[age:25 id:P1 name:Alice]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(age:25, id:P1, name:Alice))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P1")
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P2, Type:Person, Fields:map[age:30 id:P2 name:Bob]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(name:Bob, age:30, id:P2))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P2")
+✅ Nouveaux faits soumis
+✅ Validation réussie
+🎯 INGESTION INCRÉMENTALE TERMINÉE
+   - Total TypeNodes: 1
+   - Total TerminalNodes: 1
+🎯 INGESTION TERMINÉE
+========================================
+
+========================================
+📁 Ingestion incrémentale: /tmp/TestExecutePipeline918636623/001/test.tsd
+✅ Parsing réussi
+🔒 Transaction démarrée automatiquement: 5f5dbcdf-7ff7-45b4-940d-918d8ac8017d
+🔍 Validation sémantique incrémentale avec contexte...
+🔙 Rollback automatique effectué
+========================================
+📁 Ingestion incrémentale: nonexistent.tsd
+========================================
+📁 Ingestion incrémentale: /tmp/TestExecutePipeline918636623/001/test.tsd
+✅ Parsing réussi
+✓ Programme valide avec 1 type(s), 1 expression(s) et 2 fait(s)
+✅ Validation sémantique réussie
+🆕 Création d'un nouveau réseau RETE
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Optimisation de l'ordre: true
+2025/12/02 18:43:30 ⚙️  [BetaChainBuilder] Partage de préfixes: true
+✅ Trouvé 1 types et 1 expressions dans le fichier
+   ✓ TypeNode créé: Person
+✅ Types ajoutés/mis à jour dans le réseau
+📊 Faits préexistants dans le réseau: 0
+   ✓ Règle alpha simple créée pour: r1
+   ✨ Nouveau AlphaNode partageable créé: alpha_46bd76aa323d46f5 (hash: alpha_46bd76aa323d46f5)
+   ✓ Règle alpha simple créée pour: r1
+   ✓ Person -> AlphaNode[alpha_46bd76aa323d46f5] -> TerminalNode[r1_terminal]
+   ✓ Règle créée: r1
+✅ Règles ajoutées au réseau
+📥 Soumission de 2 nouveaux faits
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P1, Type:Person, Fields:map[age:25 id:P1 name:Alice]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(name:Alice, age:25, id:P1))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P1")
+🔥 Soumission d'un nouveau fait au réseau RETE: Fact{ID:P2, Type:Person, Fields:map[age:30 id:P2 name:Bob]}
+🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: adult (Person(id:P2, name:Bob, age:30))
+2025/12/02 18:43:30 📋 ACTION: adult(p.id)
+2025/12/02 18:43:30 📋 ACTION NON DÉFINIE (log uniquement): adult("P2")
+✅ Nouveaux faits soumis
+✅ Validation réussie
+🎯 INGESTION INCRÉMENTALE TERMINÉE
+   - Total TypeNodes: 1
+   - Total TerminalNodes: 1
+🎯 INGESTION TERMINÉE
+========================================
+
+========================================
+📁 Ingestion incrémentale: nonexistent.tsd
+--- FAIL: TestExecutePipeline (0.02s)
+    --- FAIL: TestExecutePipeline/successful_pipeline_execution (0.01s)
+        main_test.go:1556: Unexpected error: ❌ Erreur validation incrémentale: validation incrémentale échouée: action manquante dans l'expression 1: chaque règle doit avoir une action définie
+        main_test.go:1517: Result should not be nil
+⚠️  Warning: -constraint flag is deprecated, use -file instead
+✓ Programme valide avec 1 type(s), 0 expression(s) et 0 fait(s)
+✓ Programme valide avec 1 type(s), 0 expression(s) et 0 fait(s)
+FAIL
+FAIL	github.com/treivax/tsd/cmd/tsd	0.741s
+FAIL	github.com/treivax/tsd/cmd/universal-rete-runner [build failed]
+ok  	github.com/treivax/tsd/constraint	0.755s
+ok  	github.com/treivax/tsd/constraint/cmd	3.584s
+?   	github.com/treivax/tsd/constraint/grammar	[no test files]
+ok  	github.com/treivax/tsd/constraint/internal/config	0.753s
+ok  	github.com/treivax/tsd/constraint/pkg/domain	0.753s
+ok  	github.com/treivax/tsd/constraint/pkg/validator	1.019s
+FAIL	github.com/treivax/tsd/examples [build failed]
+?   	github.com/treivax/tsd/examples/beta_chains	[no test files]
+?   	github.com/treivax/tsd/examples/lru_cache	[no test files]
+ok  	github.com/treivax/tsd/rete	6.545s
+?   	github.com/treivax/tsd/rete/examples	[no test files]
+?   	github.com/treivax/tsd/rete/examples/normalization	[no test files]
+ok  	github.com/treivax/tsd/rete/internal/config	1.013s
+ok  	github.com/treivax/tsd/rete/pkg/domain	1.013s
+ok  	github.com/treivax/tsd/rete/pkg/network	1.013s
+ok  	github.com/treivax/tsd/rete/pkg/nodes	1.050s
+?   	github.com/treivax/tsd/scripts	[no test files]
+FAIL	github.com/treivax/tsd/test [build failed]
+FAIL	github.com/treivax/tsd/test/integration [build failed]
+FAIL	github.com/treivax/tsd/test/integration/incremental [build failed]
+ok  	github.com/treivax/tsd/test/testutil	1.048s
+FAIL

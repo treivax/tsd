@@ -112,12 +112,23 @@ func TestErrorDetectionInArguments(t *testing.T) {
 	// This should fail due to validation errors in the constraint file
 	// Call the pipeline directly instead of using the helper to check for errors
 	storage := rete.NewMemoryStorage()
-	network, facts, err := helper.pipeline.BuildNetworkFromConstraintFileWithFacts(constraintFile, factsFile, storage)
+	network, err := helper.pipeline.IngestFile(constraintFile, nil, storage)
+	if err == nil && factsFile != "" {
+		network, err = helper.pipeline.IngestFile(factsFile, network, storage)
+	}
 
 	// We EXPECT an error to be returned (the file contains intentional errors)
 	if err == nil {
+		factCount := 0
+		if network != nil {
+			factCount = len(storage.GetAllFacts())
+		}
+		terminalCount := 0
+		if network != nil {
+			terminalCount = len(network.TerminalNodes)
+		}
 		t.Errorf("❌ Expected error to be detected in constraint file, but network was built successfully with %d facts, %d terminal nodes",
-			len(facts), len(network.TerminalNodes))
+			factCount, terminalCount)
 		return
 	}
 

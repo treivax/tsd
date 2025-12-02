@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== Test des optimisations par défaut ===\n")
+	fmt.Println("=== Test des optimisations par défaut ===")
 
 	tmpDir, _ := os.MkdirTemp("", "test_opt_")
 	defer os.RemoveAll(tmpDir)

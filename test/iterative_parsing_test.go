@@ -28,6 +28,9 @@ func TestIterativeParsingWithReteNetwork(t *testing.T) {
 	`
 
 	ruleContent := `
+		// Action definition
+		action adult_status(name: string)
+
 		// Règle de validation
 		rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)
 	`
@@ -78,7 +81,22 @@ func TestIterativeParsingWithReteNetwork(t *testing.T) {
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
-	network, err := pipeline.BuildNetworkFromIterativeParser(parser, storage)
+	// Create a temp file with combined content for IngestFile
+	combinedContent := typeContent + "\n" + ruleContent + "\n" + factContent
+	tmpFile, err := os.CreateTemp("", "iterative_test_*.tsd")
+	if err != nil {
+		t.Fatalf("Erreur création fichier temporaire: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	_, err = tmpFile.WriteString(combinedContent)
+	if err != nil {
+		t.Fatalf("Erreur écriture fichier temporaire: %v", err)
+	}
+	tmpFile.Close()
+
+	// Use IngestFile instead of removed BuildNetworkFromIterativeParser
+	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -100,16 +118,19 @@ func TestMultiFileParsing(t *testing.T) {
 	fmt.Println("🚀 Test de parsing multi-fichiers")
 
 	// Créer des fichiers temporaires
+	// Realistic separation: types+actions+rules in one file, facts in another
 	files := []string{
-		"/tmp/types.tsd",
-		"/tmp/rules.tsd",
+		"/tmp/schema_and_rules.tsd",
 		"/tmp/facts.tsd",
 	}
 
 	// Contenu des fichiers
 	contents := []string{
-		`type Person(name: string, age:number)`,
-		`rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)`,
+		`type Person(name: string, age:number)
+
+action adult_status(name: string)
+
+rule r1 : {p: Person} / p.age >= 18 ==> adult_status(p.name)`,
 		`Person(name:John, age:30)
 Person(name:Jane, age:16)`,
 	}
@@ -129,6 +150,7 @@ Person(name:Jane, age:16)`,
 
 	// Ingest files sequentially
 	var network *rete.ReteNetwork
+	var err error
 	for _, file := range files {
 		network, err = pipeline.IngestFile(file, network, storage)
 		if err != nil {

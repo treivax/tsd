@@ -240,10 +240,13 @@ func ExecutePipeline(constraintSource, factsFile string) (*Result, error) {
 		return nil, err
 	}
 
-	// Ingest facts file
-	network, err = pipeline.IngestFile(factsFile, network, storage)
-	if err != nil {
-		return nil, err
+	// Ingest facts file only if it's different from the constraint source
+	// (to avoid double-ingesting the same file)
+	if factsFile != constraintSource {
+		network, err = pipeline.IngestFile(factsFile, network, storage)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Collect facts from storage

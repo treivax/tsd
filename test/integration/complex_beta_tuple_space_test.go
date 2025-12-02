@@ -28,7 +28,7 @@ func TestComplexBetaNodesTupleSpace(t *testing.T) {
 
 	// 🚀 UTILISER LE PIPELINE UNIQUE
 	pipeline := rete.NewConstraintPipeline()
-	reteNetwork, err := pipeline.BuildNetworkFromConstraintFile(constraintFile, storage)
+	reteNetwork, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur pipeline constraint → RETE: %v", err)
 	}
