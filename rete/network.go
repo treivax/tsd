@@ -46,21 +46,16 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 	metrics := NewChainBuildMetrics()
 	lifecycleManager := NewLifecycleManager()
 
-	// Initialize Beta sharing if enabled
-	var betaSharingRegistry BetaSharingRegistry
-	var betaChainBuilder *BetaChainBuilder
-
-	if config.BetaSharingEnabled {
-		betaSharingConfig := BetaSharingConfig{
-			Enabled:                     true,
-			HashCacheSize:               config.BetaHashCacheMaxSize,
-			MaxSharedNodes:              10000, // Default limit
-			EnableMetrics:               true,
-			NormalizeOrder:              true,
-			EnableAdvancedNormalization: false,
-		}
-		betaSharingRegistry = NewBetaSharingRegistry(betaSharingConfig, lifecycleManager)
+	// Initialize Beta sharing (always enabled)
+	betaSharingConfig := BetaSharingConfig{
+		Enabled:                     true,
+		HashCacheSize:               config.BetaHashCacheMaxSize,
+		MaxSharedNodes:              10000, // Default limit
+		EnableMetrics:               true,
+		NormalizeOrder:              true,
+		EnableAdvancedNormalization: false,
 	}
+	betaSharingRegistry := NewBetaSharingRegistry(betaSharingConfig, lifecycleManager)
 
 	// Initialize arithmetic result cache with default config
 	arithmeticCacheConfig := DefaultCacheConfig()
@@ -79,7 +74,7 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		AlphaSharingManager:   NewAlphaSharingRegistryWithConfig(config, metrics),
 		PassthroughRegistry:   make(map[string]*AlphaNode),
 		BetaSharingRegistry:   betaSharingRegistry,
-		BetaChainBuilder:      betaChainBuilder, // Will be initialized lazily if needed
+		BetaChainBuilder:      nil, // Will be initialized below
 		ChainMetrics:          metrics,
 		Config:                config,
 		ArithmeticResultCache: arithmeticCache,
@@ -88,18 +83,16 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 	// Initialize action executor
 	network.ActionExecutor = NewActionExecutor(network, log.Default())
 
-	// Initialize BetaChainBuilder if Beta sharing is enabled
-	if betaSharingRegistry != nil {
-		betaChainBuilder = NewBetaChainBuilderWithComponents(
-			network,
-			storage,
-			betaSharingRegistry,
-			lifecycleManager,
-		)
-		betaChainBuilder.SetOptimizationEnabled(true)
-		betaChainBuilder.SetPrefixSharingEnabled(true)
-		network.BetaChainBuilder = betaChainBuilder
-	}
+	// Initialize BetaChainBuilder (always enabled)
+	betaChainBuilder := NewBetaChainBuilderWithComponents(
+		network,
+		storage,
+		betaSharingRegistry,
+		lifecycleManager,
+	)
+	betaChainBuilder.SetOptimizationEnabled(true)
+	betaChainBuilder.SetPrefixSharingEnabled(true)
+	network.BetaChainBuilder = betaChainBuilder
 
 	return network
 }

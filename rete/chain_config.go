@@ -54,10 +54,7 @@ type ChainPerformanceConfig struct {
 	BetaHashCacheTTL           time.Duration       `json:"beta_hash_cache_ttl,omitempty"`
 	BetaJoinResultCacheEnabled bool                `json:"beta_join_result_cache_enabled"`
 	BetaJoinResultCacheMaxSize int                 `json:"beta_join_result_cache_max_size"`
-	BetaJoinResultCacheTTL     time.Duration       `json:"beta_join_result_cache_ttl,omitempty"`
-
-	// Beta Sharing - Partage de JoinNodes entre règles
-	BetaSharingEnabled bool `json:"beta_sharing_enabled"`
+	BetaJoinResultCacheTTL     time.Duration       `json:"beta_join_result_cache_ttl"`
 }
 
 // DefaultChainPerformanceConfig retourne la configuration par défaut
@@ -95,9 +92,6 @@ func DefaultChainPerformanceConfig() *ChainPerformanceConfig {
 		BetaJoinResultCacheEnabled: true,
 		BetaJoinResultCacheMaxSize: 5000,        // 5k résultats de jointure cachés
 		BetaJoinResultCacheTTL:     time.Minute, // Expiration après 1 minute
-
-		// Beta Sharing - désactivé par défaut (safe rollout)
-		BetaSharingEnabled: false,
 	}
 }
 
@@ -132,8 +126,6 @@ func HighPerformanceConfig() *ChainPerformanceConfig {
 		BetaJoinResultCacheMaxSize: 50000,           // 50k résultats cachés
 		BetaJoinResultCacheTTL:     5 * time.Minute, // TTL plus long
 
-		// Beta Sharing - activé pour haute performance
-		BetaSharingEnabled: true,
 	}
 }
 
@@ -167,9 +159,6 @@ func LowMemoryConfig() *ChainPerformanceConfig {
 		BetaJoinResultCacheEnabled: false, // Désactivé en mode léger
 		BetaJoinResultCacheMaxSize: 0,
 		BetaJoinResultCacheTTL:     0,
-
-		// Beta Sharing - désactivé en mode léger
-		BetaSharingEnabled: false,
 	}
 }
 

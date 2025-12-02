@@ -13,52 +13,43 @@ import (
 func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
 	storage := NewMemoryStorage()
 
-	// Test with sharing disabled (default)
-	t.Run("SharingDisabled", func(t *testing.T) {
+	// Test 1: Default configuration (sharing always enabled)
+	t.Run("DefaultConfig", func(t *testing.T) {
 		config := DefaultChainPerformanceConfig()
-		config.BetaSharingEnabled = false
-
-		network := NewReteNetworkWithConfig(storage, config)
-
-		if network.BetaSharingRegistry != nil {
-			t.Error("BetaSharingRegistry should be nil when sharing is disabled")
-		}
-		if network.BetaChainBuilder != nil {
-			t.Error("BetaChainBuilder should be nil when sharing is disabled")
-		}
-	})
-
-	// Test with sharing enabled
-	t.Run("SharingEnabled", func(t *testing.T) {
-		config := DefaultChainPerformanceConfig()
-		config.BetaSharingEnabled = true
-
 		network := NewReteNetworkWithConfig(storage, config)
 
 		if network.BetaSharingRegistry == nil {
-			t.Fatal("BetaSharingRegistry should not be nil when sharing is enabled")
+			t.Fatal("BetaSharingRegistry should always be initialized")
 		}
 		if network.BetaChainBuilder == nil {
-			t.Fatal("BetaChainBuilder should not be nil when sharing is enabled")
-		}
-		if network.LifecycleManager == nil {
-			t.Fatal("LifecycleManager should not be nil")
+			t.Fatal("BetaChainBuilder should always be initialized")
 		}
 	})
 
-	// Test with HighPerformanceConfig
+	// Test 2: High performance preset
 	t.Run("HighPerformancePreset", func(t *testing.T) {
 		config := HighPerformanceConfig()
 		network := NewReteNetworkWithConfig(storage, config)
 
-		if !config.BetaSharingEnabled {
-			t.Error("BetaSharingEnabled should be true in HighPerformanceConfig")
-		}
 		if network.BetaSharingRegistry == nil {
 			t.Error("BetaSharingRegistry should be initialized in HighPerformanceConfig")
 		}
 		if network.BetaChainBuilder == nil {
 			t.Error("BetaChainBuilder should be initialized in HighPerformanceConfig")
+		}
+	})
+
+	// Test 3: Low memory preset
+	t.Run("LowMemoryPreset", func(t *testing.T) {
+		config := LowMemoryConfig()
+		network := NewReteNetworkWithConfig(storage, config)
+
+		// Even in low memory mode, beta sharing is enabled (it saves memory!)
+		if network.BetaSharingRegistry == nil {
+			t.Error("BetaSharingRegistry should be initialized even in LowMemoryConfig")
+		}
+		if network.BetaChainBuilder == nil {
+			t.Error("BetaChainBuilder should be initialized even in LowMemoryConfig")
 		}
 	})
 }
@@ -68,7 +59,6 @@ func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
 func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -149,7 +139,6 @@ func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 func TestBetaSharingIntegration_ChainBuilderMetrics(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -213,53 +202,11 @@ func TestBetaSharingIntegration_ChainBuilderMetrics(t *testing.T) {
 }
 
 // TestBetaSharingIntegration_BackwardCompatibility tests that existing functionality
-// still works when Beta sharing is disabled.
-func TestBetaSharingIntegration_BackwardCompatibility(t *testing.T) {
-	storage := NewMemoryStorage()
-	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = false
-
-	network := NewReteNetworkWithConfig(storage, config)
-
-	// Verify Beta components are not initialized
-	if network.BetaSharingRegistry != nil {
-		t.Error("BetaSharingRegistry should be nil when disabled")
-	}
-	if network.BetaChainBuilder != nil {
-		t.Error("BetaChainBuilder should be nil when disabled")
-	}
-
-	// Verify network still has essential components
-	if network.RootNode == nil {
-		t.Error("RootNode should be initialized")
-	}
-	if network.LifecycleManager == nil {
-		t.Error("LifecycleManager should be initialized")
-	}
-	if network.AlphaSharingManager == nil {
-		t.Error("AlphaSharingManager should be initialized")
-	}
-
-	// Stats methods should handle nil gracefully
-	betaStats := network.GetBetaSharingStats()
-	if betaStats != nil {
-		t.Error("GetBetaSharingStats should return nil when sharing is disabled")
-	}
-
-	betaMetrics := network.GetBetaChainMetrics()
-	if betaMetrics != nil {
-		t.Error("GetBetaChainMetrics should return nil when builder is disabled")
-	}
-
-	// ResetChainMetrics should not panic
-	network.ResetChainMetrics()
-}
 
 // TestBetaSharingIntegration_CascadeChain tests building a multi-join cascade chain.
 func TestBetaSharingIntegration_CascadeChain(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -311,7 +258,6 @@ func TestBetaSharingIntegration_CascadeChain(t *testing.T) {
 func TestBetaSharingIntegration_PrefixSharing(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -374,10 +320,9 @@ func TestBetaSharingIntegration_PrefixSharing(t *testing.T) {
 }
 
 // TestBetaSharingIntegration_MetricsReset tests that metrics can be reset properly.
-func TestBetaSharingIntegration_MetricsReset(t *testing.T) {
+func TestBetaSharingIntegration_MemoryManagement(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -421,7 +366,6 @@ func TestBetaSharingIntegration_MetricsReset(t *testing.T) {
 func TestBetaSharingIntegration_LifecycleIntegration(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -477,7 +421,6 @@ func TestBetaSharingIntegration_ConfigValidation(t *testing.T) {
 	// Test custom cache sizes
 	t.Run("CustomCacheSize", func(t *testing.T) {
 		config := DefaultChainPerformanceConfig()
-		config.BetaSharingEnabled = true
 		config.BetaHashCacheMaxSize = 5000
 
 		network := NewReteNetworkWithConfig(storage, config)

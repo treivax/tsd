@@ -20,7 +20,6 @@ import (
 // Configuration flags
 var (
 	scenario      = flag.String("scenario", "", "Scenario to run: simple, complex, advanced")
-	noSharing     = flag.Bool("no-sharing", false, "Disable Beta Sharing for comparison")
 	verbose       = flag.Bool("verbose", false, "Enable verbose logging")
 	compare       = flag.Bool("compare", false, "Compare all scenarios")
 	export        = flag.String("export", "", "Export results to file (json or csv)")
@@ -128,27 +127,17 @@ func runScenario(name string) {
 	// Print configuration
 	printConfig(config, name)
 
-	// Run with Beta Sharing
-	fmt.Println("🏗️  Building network with Beta Sharing...")
+	// Run with Beta Sharing (now always enabled)
+	fmt.Println("🏗️  Building network with Beta Sharing (always enabled)...")
 	resultsWith := runWithConfig(name, config)
-
-	// Run without Beta Sharing if requested
-	var resultsWithout *Results
-	if *noSharing || *compare {
-		configNoSharing := config
-		configNoSharing.BetaSharingEnabled = false
-		fmt.Println()
-		fmt.Println("🏗️  Building network WITHOUT Beta Sharing (comparison)...")
-		resultsWithout = runWithConfig(name, configNoSharing)
-	}
 
 	// Display results
 	fmt.Println()
-	displayResults(resultsWith, resultsWithout)
+	displayResults(resultsWith, nil)
 
 	// Export if requested
 	if *export != "" {
-		exportResults(resultsWith, resultsWithout)
+		exportResults(resultsWith, nil)
 	}
 }
 
@@ -174,11 +163,8 @@ func getConfig() *rete.ChainPerformanceConfig {
 	} else {
 		config.MetricsEnabled = true
 	}
-	if *noSharing {
-		config.BetaSharingEnabled = false
-	} else {
-		config.BetaSharingEnabled = true
-	}
+
+	// Beta Sharing is now always enabled (no longer configurable)
 
 	return config
 }
@@ -186,11 +172,7 @@ func getConfig() *rete.ChainPerformanceConfig {
 func printConfig(config *rete.ChainPerformanceConfig, scenario string) {
 	fmt.Println("📊 Configuration:")
 	fmt.Printf("  Scenario:         %s\n", scenario)
-	if config.BetaSharingEnabled {
-		fmt.Println("  Beta Sharing:     ✅ Enabled")
-	} else {
-		fmt.Println("  Beta Sharing:     ❌ Disabled")
-	}
+	fmt.Println("  Beta Sharing:     ✅ Always Enabled")
 	fmt.Printf("  Hash Cache Size:  %d\n", config.BetaHashCacheMaxSize)
 	fmt.Printf("  Join Cache Size:  %d\n", config.BetaJoinResultCacheMaxSize)
 	if config.MetricsEnabled {
@@ -260,10 +242,10 @@ func runWithConfig(scenario string, config *rete.ChainPerformanceConfig) *Result
 	results := &Results{
 		Scenario: scenario,
 		Config: map[string]interface{}{
-			"enable_beta_sharing": config.BetaSharingEnabled,
-			"join_cache_size":     config.BetaJoinResultCacheMaxSize,
-			"hash_cache_size":     config.BetaHashCacheMaxSize,
-			"enable_metrics":      config.MetricsEnabled,
+			"beta_sharing":    "always_enabled",
+			"join_cache_size": config.BetaJoinResultCacheMaxSize,
+			"hash_cache_size": config.BetaHashCacheMaxSize,
+			"enable_metrics":  config.MetricsEnabled,
 		},
 		Metrics: metricsData,
 	}
@@ -360,7 +342,7 @@ func runComparison() {
 	scenarios := []string{"simple", "complex", "advanced"}
 	config := getConfig()
 
-	fmt.Println("🔄 Running comparison across all scenarios...")
+	fmt.Println("📊 Running Beta Sharing across all scenarios")
 	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println()
 
@@ -368,18 +350,11 @@ func runComparison() {
 		fmt.Printf("📍 Scenario: %s\n", scenario)
 		fmt.Println(strings.Repeat("-", 60))
 
-		// With sharing
-		configWith := config
-		configWith.BetaSharingEnabled = true
-		resultsWith := runWithConfig(scenario, configWith)
+		// Beta Sharing is always enabled
+		results := runWithConfig(scenario, config)
 
-		// Without sharing
-		configWithout := config
-		configWithout.BetaSharingEnabled = false
-		resultsWithout := runWithConfig(scenario, configWithout)
-
-		// Display comparison
-		displayResults(resultsWith, resultsWithout)
+		// Display results
+		displayResults(results, nil)
 		fmt.Println()
 	}
 }

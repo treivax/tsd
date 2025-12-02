@@ -143,41 +143,34 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		joinCondition = condition
 	}
 
-	// STEP 4: Create JoinNode with beta conditions only
+	// STEP 4: Create JoinNode with beta conditions only using BetaSharingRegistry
 	var joinNode *JoinNode
 	var wasShared bool
 
-	// Try to use BetaSharingRegistry if available and enabled
-	if network.BetaSharingRegistry != nil && network.Config != nil && network.Config.BetaSharingEnabled {
-		allVars := []string{variableNames[0], variableNames[1]}
-		node, hash, shared, createErr := network.BetaSharingRegistry.GetOrCreateJoinNode(
-			joinCondition,
-			leftVars,
-			rightVars,
-			allVars,
-			varTypes,
-			jrb.utils.storage,
-		)
-		if createErr != nil {
-			// Fallback to direct creation on error
-			fmt.Printf("   ⚠️ Beta sharing failed: %v, falling back to direct creation\n", createErr)
-			joinNode = NewJoinNode(ruleID+"_join", joinCondition, leftVars, rightVars, varTypes, jrb.utils.storage)
-		} else {
-			joinNode = node
-			wasShared = shared
-			if shared {
-				fmt.Printf("   ♻️  Reused shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
-			} else {
-				fmt.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
-			}
-			// Register with lifecycle manager
-			if network.LifecycleManager != nil {
-				network.LifecycleManager.RegisterNode(hash, "JoinNode")
-			}
-		}
+	allVars := []string{variableNames[0], variableNames[1]}
+	node, hash, shared, createErr := network.BetaSharingRegistry.GetOrCreateJoinNode(
+		joinCondition,
+		leftVars,
+		rightVars,
+		allVars,
+		varTypes,
+		jrb.utils.storage,
+	)
+	if createErr != nil {
+		return fmt.Errorf("failed to create JoinNode: %w", createErr)
+	}
+
+	joinNode = node
+	wasShared = shared
+	if shared {
+		fmt.Printf("   ♻️  Reused shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
 	} else {
-		// Legacy mode: direct creation
-		joinNode = NewJoinNode(ruleID+"_join", joinCondition, leftVars, rightVars, varTypes, jrb.utils.storage)
+		fmt.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
+	}
+
+	// Register with lifecycle manager
+	if network.LifecycleManager != nil {
+		network.LifecycleManager.RegisterNode(hash, "JoinNode")
 	}
 
 	joinNode.AddChild(terminalNode)
@@ -249,16 +242,13 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRule(
 ) error {
 	fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
 
-	// Try to use BetaChainBuilder if available and enabled
-	if network.BetaChainBuilder != nil && network.Config != nil && network.Config.BetaSharingEnabled {
-		return jrb.createCascadeJoinRuleWithBuilder(network, ruleID, variableNames, variableTypes, condition, terminalNode)
-	}
-
-	// Fallback to legacy cascade implementation
-	return jrb.createCascadeJoinRuleLegacy(network, ruleID, variableNames, variableTypes, condition, terminalNode)
+	// Use BetaChainBuilder (always available)
+	return jrb.createCascadeJoinRuleWithBuilder(network, ruleID, variableNames, variableTypes, condition, terminalNode)
 }
 
-// createCascadeJoinRuleLegacy creates a cascade without BetaChainBuilder
+// createCascadeJoinRuleLegacy is deprecated and removed - BetaChainBuilder is now always used
+// This function is kept as a comment for historical reference
+/*
 func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 	network *ReteNetwork,
 	ruleID string,
@@ -443,6 +433,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 
 	return nil
 }
+*/
 
 // createCascadeJoinRuleWithBuilder creates a cascade using BetaChainBuilder with sharing support
 func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(

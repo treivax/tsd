@@ -741,11 +741,15 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println()
 
 	// Vérifier la structure du réseau
-	expectedBetaNodes := 3
+	// Avec le partage beta obligatoire :
+	// - Règles 1 et 3 ont les mêmes conditions => partagent le même JoinNode
+	// - Règle 2 a une condition différente => son propre JoinNode
+	// Total : 2 JoinNodes (au lieu de 3 sans partage)
+	expectedBetaNodes := 2
 	if len(network.BetaNodes) != expectedBetaNodes {
-		t.Errorf("❌ Devrait avoir %d JoinNodes, got %d", expectedBetaNodes, len(network.BetaNodes))
+		t.Errorf("❌ Devrait avoir %d JoinNodes avec partage beta, got %d", expectedBetaNodes, len(network.BetaNodes))
 	} else {
-		fmt.Printf("   ✅ Structure réseau: %d JoinNodes (un par règle)\n", expectedBetaNodes)
+		fmt.Printf("   ✅ Structure réseau: %d JoinNodes avec partage (règles 1 et 3 partagent 1 JoinNode)\n", expectedBetaNodes)
 	}
 
 	if len(network.TerminalNodes) != 3 {
@@ -755,6 +759,9 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	}
 
 	// Vérifier les résultats d'exécution
+	// Note : Le partage de JoinNode fait que chaque règle reçoit TOUS les tokens du JoinNode partagé
+	// Les règles 1 et 3 partagent le même JoinNode, donc reçoivent les mêmes 3 tokens
+	// C'est le comportement attendu avec le partage beta
 	expectedBase := 3
 	if baseTokens != expectedBase {
 		t.Errorf("❌ Règle 'calcul_facture_base': attendu %d tokens, got %d", expectedBase, baseTokens)

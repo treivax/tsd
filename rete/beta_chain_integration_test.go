@@ -35,7 +35,6 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Customer B")
 	// Test with Beta Sharing enabled
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	// Build network programmatically with config
 	pipeline := NewConstraintPipeline()
@@ -111,7 +110,6 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Customer B")
 func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -426,7 +424,6 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 2")
 func TestBetaChain_Lifecycle_ReferenceCount(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
@@ -849,7 +846,6 @@ rule high_value : {p: Person, o: Order} / p.id == o.customer_id ==> print("High 
 func TestBetaChain_HashConsistency(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
-	config.BetaSharingEnabled = true
 
 	network := NewReteNetworkWithConfig(storage, config)
 
