@@ -127,23 +127,16 @@ func DiscoverTests() []TestFile {
 
 	var allTestFiles []TestFile
 	for _, dir := range testDirs {
-		pattern := filepath.Join(dir.path, "*.constraint")
+		pattern := filepath.Join(dir.path, "*.tsd")
 		matches, _ := filepath.Glob(pattern)
 
-		for _, constraintFile := range matches {
-			base := strings.TrimSuffix(constraintFile, ".constraint")
-			factsFile := base + ".facts"
-
-			if _, err := os.Stat(factsFile); os.IsNotExist(err) {
-				continue
-			}
-
-			baseName := filepath.Base(base)
+		for _, tsdFile := range matches {
+			baseName := filepath.Base(strings.TrimSuffix(tsdFile, ".tsd"))
 			allTestFiles = append(allTestFiles, TestFile{
 				Name:       baseName,
 				Category:   dir.category,
-				Constraint: constraintFile,
-				Facts:      factsFile,
+				Constraint: tsdFile,
+				Facts:      tsdFile, // .tsd files contain both constraints and facts
 			})
 		}
 	}
