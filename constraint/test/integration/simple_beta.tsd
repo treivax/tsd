@@ -1,0 +1,10 @@
+type Customer(id: string, name: string, vip: bool)
+type Order(id: string, customer_id: string, total: number)
+
+
+// Actions auto-générées
+action apply_vip_discount(arg1: string, arg2: string)
+action link_customer_order(arg1: string, arg2: string)
+
+rule r1 : {c: Customer, o: Order} / c.id == o.customer_id ==> link_customer_order(c.id, o.id)
+rule r2 : {c: Customer, o: Order} / c.vip == true ==> apply_vip_discount(c.id, o.id)

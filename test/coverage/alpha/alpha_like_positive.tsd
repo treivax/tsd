@@ -1,6 +1,10 @@
 // Test opérateur LIKE (motif)
 type Email(id: string, address: string, verified: bool)
 
+
+// Action definitions
+action company_email_found(arg1: string, arg2: string)
+
 rule r1 : {e: Email} / e.address LIKE "%@company.com" ==> company_email_found(e.id, e.address)
 
 Email(id:"E001", address:"john@company.com", verified:true)

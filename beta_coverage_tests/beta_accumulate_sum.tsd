@@ -1,6 +1,10 @@
 type Employee(id: string, name: string, department: string)
 type Order(id: string, employee_id: string, amount: number)
 
+
+// Action definitions
+action PRINT(arg1: string, arg2: string, arg3: string)
+
 rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 1000 ==> PRINT("Employee ", e.name, " has total sales >= 1000")
 
 Employee(id:"EMP001", name:"Alice", department:"sales")

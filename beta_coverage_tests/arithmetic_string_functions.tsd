@@ -6,6 +6,21 @@ type Product(id:string, code:string, description:string, category:string)
 
 # Test 1: LENGTH - vérifier longueur de chaîne
 # Mots de passe avec au moins 8 caractères
+
+
+// Action definitions
+action strong_password(arg1: string)
+action french_user(arg1: string)
+action electronics_product(arg1: string)
+action abc_series(arg1: string)
+action short_email(arg1: string)
+action validated_user(arg1: string)
+action postal_123(arg1: string)
+action starts_with_a(arg1: string)
+action valid_name(arg1: string)
+action normalize_country(arg1: string, arg2: string)
+action toys_category(arg1: string)
+
 rule r1 : {u: User} / LENGTH(u.password) >= 8 ==> strong_password(u.id)
 
 # Test 2: UPPER - convertir en majuscules pour comparaison

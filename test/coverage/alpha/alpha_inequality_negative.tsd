@@ -1,6 +1,10 @@
 // Test inégalité négative
 type Order(id: string, total: number, status: string)
 
+
+// Action definitions
+action cancelled_order_found(arg1: string, arg2: number)
+
 rule r1 : {o: Order} / NOT(o.status != "cancelled") ==> cancelled_order_found(o.id, o.total)
 
 Order(id:ORD001, total:100, status:pending)

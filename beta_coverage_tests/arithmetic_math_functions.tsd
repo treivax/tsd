@@ -6,6 +6,21 @@ type Measurement(id:string, value:number, threshold:number)
 
 # Test 1: ABS - valeur absolue pour gérer valeurs négatives
 # ABS(balance) > 100 - détecte soldes importants (positifs ou négatifs)
+
+
+
+
+// Action definitions
+action significant_balance(arg1: string)
+action combined_high_value(arg1: string)
+action optimal_temp(arg1: string)
+action decimal_value(arg1: string)
+action requires_three_units(arg1: string)
+action good_rating(arg1: string)
+action cold_environment(arg1: string)
+action excellent_rating(arg1: string)
+action process_measurement(arg1: string, arg2: number, arg3: number, arg4: number, arg5: number)
+
 rule r1 : {a: Account} / ABS(a.balance) > 100 ==> significant_balance(a.id)
 
 # Test 2: ROUND - arrondir au plus proche

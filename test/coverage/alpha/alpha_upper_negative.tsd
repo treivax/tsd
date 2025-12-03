@@ -1,6 +1,10 @@
 // Test fonction UPPER() (majuscules) - négation
 type Department(id: string, name: string, active: bool)
 
+
+// Action definitions
+action non_finance_dept_found(arg1: string, arg2: string)
+
 rule r1 : {d: Department} / NOT(UPPER(d.name) == "FINANCE") ==> non_finance_dept_found(d.id, d.name)
 
 Department(id:"D001", name:"finance", active:true)

@@ -1,0 +1,223 @@
+// Tests complets des nœuds Alpha - Tous opérateurs et types de données
+// Couvre tous les cas de succès et d'échec avec le pipeline complet
+
+// Types de test
+type TestPerson(id: string, name: string, age: number, salary: number, active: bool, score: number)
+type TestProduct(id: string, name: string, price: number, category: string, available: bool, rating: number)
+
+// === TESTS ÉGALITÉ (== et =) ===
+
+// Test égalité string
+
+// Actions auto-générées
+action test_alt_equality_success(arg1: string)
+action test_alt_inequality_success(arg1: string)
+action test_boolean_false_success(arg1: string)
+action test_boolean_inequality_success(arg1: string)
+action test_boolean_true_success(arg1: string)
+action test_decimal_comparison_success(arg1: string)
+action test_decimal_equality_success(arg1: string)
+action test_exact_age_success(arg1: string)
+action test_expensive_product_success(arg1: string)
+action test_free_product_success(arg1: string)
+action test_greater_equal_success(arg1: string)
+action test_greater_than_success(arg1: string)
+action test_high_salary_success(arg1: string)
+action test_less_equal_success(arg1: string)
+action test_less_than_success(arg1: string)
+action test_low_rating_success(arg1: string)
+action test_minor_success(arg1: string)
+action test_negative_handling_success(arg1: string)
+action test_number_equality_success(arg1: string)
+action test_number_inequality_success(arg1: string)
+action test_perfect_rating_success(arg1: string)
+action test_positive_age_success(arg1: string)
+action test_precise_decimal_success(arg1: string)
+action test_senior_success(arg1: string)
+action test_string_equality_success(arg1: string)
+action test_string_greater_success(arg1: string)
+action test_string_inequality_success(arg1: string)
+action test_string_less_success(arg1: string)
+
+rule r1 : {p: TestPerson} / p.name == "Alice" ==> test_string_equality_success(p.name)
+
+// Test égalité number entier
+rule r2 : {p: TestPerson} / p.age == 25 ==> test_number_equality_success(p.name)
+
+// Test égalité number décimal
+rule r3 : {prod: TestProduct} / prod.price == 99.99 ==> test_decimal_equality_success(prod.name)
+
+// Test égalité boolean true
+rule r4 : {p: TestPerson} / p.active == true ==> test_boolean_true_success(p.name)
+
+// Test égalité boolean false
+rule r5 : {prod: TestProduct} / prod.available == false ==> test_boolean_false_success(prod.name)
+
+// Test égalité avec opérateur alternatif =
+rule r6 : {p: TestPerson} / p.name == "Bob" ==> test_alt_equality_success(p.name)
+
+// === TESTS INÉGALITÉ (!= et <>) ===
+
+// Test inégalité string
+rule r7 : {p: TestPerson} / p.name != "Charlie" ==> test_string_inequality_success(p.name)
+
+// Test inégalité number
+rule r8 : {p: TestPerson} / p.age != 30 ==> test_number_inequality_success(p.name)
+
+// Test inégalité boolean
+rule r9 : {p: TestPerson} / p.active != false ==> test_boolean_inequality_success(p.name)
+
+// Test inégalité avec opérateur alternatif !=
+rule r10 : {prod: TestProduct} / prod.category != "Electronics" ==> test_alt_inequality_success(prod.name)
+
+// === TESTS COMPARAISONS NUMÉRIQUES (<, <=, >, >=) ===
+
+// Test inférieur strict <
+rule r11 : {p: TestPerson} / p.age < 30 ==> test_less_than_success(p.name)
+
+// Test inférieur ou égal <=
+rule r12 : {p: TestPerson} / p.salary <= 50000 ==> test_less_equal_success(p.name)
+
+// Test supérieur strict >
+rule r13 : {p: TestPerson} / p.score > 85.5 ==> test_greater_than_success(p.name)
+
+// Test supérieur ou égal >=
+rule r14 : {prod: TestProduct} / prod.rating >= 4.0 ==> test_greater_equal_success(prod.name)
+
+// === TESTS COMPARAISONS STRING (lexicographique) ===
+
+// Test string inférieur
+rule r15 : {p: TestPerson} / p.name < "M" ==> test_string_less_success(p.name)
+
+// Test string supérieur
+rule r16 : {prod: TestProduct} / prod.name > "Product_A" ==> test_string_greater_success(prod.name)
+
+// === TESTS CAS LIMITES ET VALEURS SPÉCIALES ===
+
+// Test avec zéro
+rule r17 : {p: TestPerson} / p.age > 0 ==> test_positive_age_success(p.name)
+
+// Test avec valeur négative
+rule r18 : {p: TestPerson} / p.salary >= -1000 ==> test_negative_handling_success(p.name)
+
+// Test avec décimales
+rule r19 : {prod: TestProduct} / prod.price <= 999.99 ==> test_decimal_comparison_success(prod.name)
+
+// Test égalité exacte décimale
+rule r20 : {prod: TestProduct} / prod.rating == 3.14159 ==> test_precise_decimal_success(prod.name)
+
+// === TESTS COMBINAISONS DE TYPES ===
+
+// Test age exactement 18 (majorité)
+rule r21 : {p: TestPerson} / p.age == 18 ==> test_exact_age_success(p.name)
+
+// Test senior (65+)
+rule r22 : {p: TestPerson} / p.age >= 65 ==> test_senior_success(p.name)
+
+// Test mineur (< 18)
+rule r23 : {p: TestPerson} / p.age < 18 ==> test_minor_success(p.name)
+
+// Test salaire élevé
+rule r24 : {p: TestPerson} / p.salary > 100000 ==> test_high_salary_success(p.name)
+
+// Test produit gratuit
+rule r25 : {prod: TestProduct} / prod.price == 0 ==> test_free_product_success(prod.name)
+
+// Test produit cher
+rule r26 : {prod: TestProduct} / prod.price > 1000 ==> test_expensive_product_success(prod.name)
+
+// Test note parfaite
+rule r27 : {prod: TestProduct} / prod.rating == 5.0 ==> test_perfect_rating_success(prod.name)
+
+// Test note faible
+rule r28 : {prod: TestProduct} / prod.rating < 2.0 ==> test_low_rating_success(prod.name)
+
+// @author: Alpha Test Suite
+// @version: 1.0
+// @description: Données de test exhaustives pour tous les opérateurs Alpha
+// @test_purpose: Validation complète des nœuds Alpha avec succès et échecs
+
+// === FAITS POUR TESTS ÉGALITÉ ===
+// Pour: p.name == "Alice"
+TestPerson(id:"P001", name:"Alice", age:25, salary:45000, active:true, score:87.5)
+
+// Pour: p.age == 25 (déjà P001)
+
+// Pour: prod.price == 99.99
+TestProduct(id:"PROD001", name:"Laptop", price:99.99, category:"Electronics", available:true, rating:4.5)
+
+// Pour: p.active == true (déjà P001)
+
+// Pour: prod.available == false
+TestProduct(id:"PROD002", name:"Mouse", price:25.50, category:"Accessories", available:false, rating:4.2)
+
+// Pour: p.name == "Bob"
+TestPerson(id:"P002", name:"Bob", age:30, salary:55000, active:false, score:92.0)
+
+// === FAITS POUR TESTS INÉGALITÉ ===
+// Pour: p.name != "Charlie" (P001, P002 matchent)
+
+// Pour: p.age != 30 (P001 matche)
+
+// Pour: p.active != false (P001 matche)
+
+// Pour: prod.category != "Electronics" (PROD002 matche)
+
+// === FAITS POUR COMPARAISONS NUMÉRIQUES ===
+// Pour: p.age < 30 (P001 avec age:25 matche)
+
+// Pour: p.salary <= 50000 (P001 avec salary:45000 matche)
+
+// Pour: p.score > 85.5 (P001 avec score:87.5 matche)
+
+// Pour: prod.rating >= 4.0 (PROD001 avec rating:4.5 matche)
+
+// === FAITS POUR COMPARAISONS STRING ===
+// Pour: p.name < "M" (P001 "Alice" < "M", P002 "Bob" < "M" matchent)
+
+// Pour: prod.name > "Product_A"
+TestProduct(id:"PROD003", name:"Product_B", price:45.00, category:"Tools", available:true, rating:4.1)
+
+// === FAITS POUR CAS LIMITES ===
+// Pour: p.age > 0 (tous matchent sauf si age=0)
+
+// Pour: p.salary >= -1000 (tous matchent)
+
+// Pour: prod.price <= 999.99 (PROD001, PROD002, PROD003 matchent)
+
+// Pour: prod.rating == 3.14159
+TestProduct(id:"PROD004", name:"Special", price:149.99, category:"Limited", available:true, rating:3.14159)
+
+// === FAITS POUR COMBINAISONS ===
+// Pour: p.age == 18
+TestPerson(id:"P003", name:"Jack", age:18, salary:35000, active:true, score:78.0)
+
+// Pour: p.age >= 65
+TestPerson(id:"P004", name:"Kate", age:67, salary:85000, active:false, score:93.5)
+
+// Pour: p.age < 18
+TestPerson(id:"P005", name:"Liam", age:16, salary:25000, active:true, score:85.0)
+
+// Pour: p.salary > 100000
+TestPerson(id:"P006", name:"Mia", age:52, salary:120000, active:true, score:96.0)
+
+// Pour: prod.price == 0
+TestProduct(id:"PROD005", name:"FreeSample", price:0, category:"Sample", available:true, rating:3.0)
+
+// Pour: prod.price > 1000
+TestProduct(id:"PROD006", name:"Luxury", price:1500.00, category:"Premium", available:false, rating:5.0)
+
+// Pour: prod.rating == 5.0 (PROD006 matche)
+
+// Pour: prod.rating < 2.0
+TestProduct(id:"PROD007", name:"Basic", price:12.99, category:"Budget", available:true, rating:1.5)
+
+// Faits additionnels pour assurer la couverture
+TestPerson(id:"P007", name:"Charlie", age:35, salary:65000, active:true, score:88.5)
+TestPerson(id:"P008", name:"David", age:28, salary:48000, active:true, score:90.0)
+TestPerson(id:"P009", name:"Eve", age:22, salary:42000, active:false, score:95.5)
+TestProduct(id:"PROD008", name:"Tablet", price:299.99, category:"Electronics", available:false, rating:3.9)
+TestProduct(id:"PROD009", name:"Novel", price:15.99, category:"Books", available:true, rating:4.8)
+TestPerson(id:"P010", name:"Olivia", age:27, salary:52000, active:true, score:84.5)
+TestPerson(id:"P011", name:"William", age:55, salary:98000, active:false, score:89.0)
+TestProduct(id:"PROD010", name:"Accessory", price:19.99, category:"Tools", available:true, rating:3.7)

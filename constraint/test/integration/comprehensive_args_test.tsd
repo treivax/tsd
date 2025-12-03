@@ -1,0 +1,74 @@
+// Comprehensive test suite for action arguments
+// Tests all valid combinations of complete objects and field values
+
+// Types definition
+type User(
+    id: string,
+    name: string,
+    age: number,
+    active: bool
+)
+
+type Address(
+    id: string,
+    user_id: string,
+    street: string,
+    city: string,
+    zip: number
+)
+
+type Product(
+    id: string,
+    name: string,
+    price: number,
+    category: string
+)
+
+// Test 1: Pure variable arguments (complete objects)
+
+// Actions avec signatures correctes
+action analyze_product(product: Product, category: string)
+action compare_addresses(addr1: Address, addr2: Address, street1: string, street2: string)
+action log_user_info(userId: string, userName: string, userAge: number)
+action process_adult(user: User)
+action process_order(user: User, userId: string, address: Address, city: string, product: Product, productName: string, price: number)
+action process_user_address(user: User, street: string, city: string, address: Address)
+
+rule r1 : {u: User} / u.age >= 18 ==> process_adult(u)
+
+// Test 2: Pure field arguments (simple values)
+rule r2 : {u: User} / u.active == true ==> log_user_info(u.id, u.name, u.age)
+
+// Test 3: Mixed arguments (objects + fields in same action)
+rule r3 : {u: User, a: Address} / u.active == true AND a.user_id == u.id ==> process_user_address(u, a.street, a.city, a)
+
+// Test 4: Complex mixed arguments with multiple objects
+rule r4 : {u: User, a: Address, p: Product} / u.age >= 18 AND a.user_id == u.id AND p.price > 100 ==> process_order(u, u.id, a, a.city, p, p.name, p.price)
+
+// Test 5: Multiple same-type objects
+rule r5 : {a1: Address, a2: Address} / a1.city == "Paris" AND a2.city == "Lyon" AND a2.user_id != a1.user_id ==> compare_addresses(a1, a2, a1.street, a2.street)
+
+// Test 6: Simple field access
+rule r6 : {p: Product} / p.category == "electronics" ==> analyze_product(p, p.category)
+
+// Comprehensive test facts for action arguments testing
+// Covers all scenarios with valid data
+
+// Users with different properties
+User(id:"u001", name:"Alice", age:25, active:true)
+User(id:"u002", name:"Bob", age:17, active:true)
+User(id:"u003", name:"Charlie", age:30, active:false)
+User(id:"u004", name:"Diana", age:35, active:true)
+User(id:"u005", name:"Eve", age:22, active:true)
+
+// Addresses linked to users
+Address(id:"a001", user_id:"u001", street:"123 Main St", city:"Paris", zip:75001)
+Address(id:"a002", user_id:"u002", street:"456 Oak Ave", city:"Lyon", zip:69001)
+Address(id:"a003", user_id:"u004", street:"789 Pine Rd", city:"Paris", zip:75002)
+Address(id:"a004", user_id:"u005", street:"321 Elm St", city:"Lyon", zip:69002)
+
+// Products with different categories and prices
+Product(id:"p001", name:"Laptop", price:1200.00, category:"electronics")
+Product(id:"p002", name:"Phone", price:800.00, category:"electronics")
+Product(id:"p003", name:"Book", price:25.00, category:"books")
+Product(id:"p004", name:"Tablet", price:600.00, category:"electronics")

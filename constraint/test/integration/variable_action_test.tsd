@@ -1,0 +1,25 @@
+// Test des actions avec variables entières
+
+type TestUser(id: string, name: string, age: number)
+
+// Test avec variable entière comme argument
+
+// Actions auto-générées
+action compare_users(user1: TestUser, user2: TestUser)
+action process_adult_user(user: TestUser)
+action process_user_mixed(user: TestUser, userId: string)
+
+rule r1 : {u: TestUser} / u.age > 18 ==> process_adult_user(u)
+
+// Test avec mélange variable et champ
+rule r2 : {u: TestUser} / u.name == "Alice" ==> process_user_mixed(u, u.id)
+
+// Test avec multiple variables (pour plus tard)
+// {u1: TestUser, u2: TestUser} / u1.id != u2.id ==> compare_users(u1, u2)
+
+// Test facts for variable arguments in actions
+// Format: TypeName(field:value, field:value)
+
+TestUser(id:"user1", name:"Alice", age:25)
+TestUser(id:"user2", name:"Bob", age:16)
+TestUser(id:"user3", name:"Charlie", age:30)

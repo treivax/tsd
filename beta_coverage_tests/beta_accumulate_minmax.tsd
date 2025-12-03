@@ -1,6 +1,10 @@
 type Department(id: string, name: string, budget: number)
 type Employee(id: string, name: string, department: string, salary: number)
 
+
+// Action definitions
+action PRINT(arg1: string, arg2: string, arg3: string)
+
 rule r1 : {d: Department} / MAX(e: Employee / e.department == d.name ; e.salary) >= 80000 ==> PRINT("Department ", d.name, " has max salary >= 80000")
 
 Department(id:"DEPT001", name:"sales", budget:500000)

@@ -1,6 +1,10 @@
 // Test condition booléenne positive
 type Account(id: string, balance: number, active: bool)
 
+
+// Action definitions
+action active_account_found(arg1: string, arg2: number)
+
 rule r1 : {a: Account} / a.active == true ==> active_account_found(a.id, a.balance)
 
 Account(id:ACC001, balance:1000, active:true)

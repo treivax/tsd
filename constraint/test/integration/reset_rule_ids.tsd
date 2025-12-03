@@ -1,0 +1,54 @@
+// Test d'intégration : Réutilisation des identifiants de règles après reset
+// Ce fichier démontre que les IDs de règles peuvent être réutilisés après un reset
+
+type Person(id: string, name: string, age: number)
+
+// Première série de règles avec des IDs spécifiques
+
+// Actions auto-générées
+action adult(arg1: string)
+action cheap_product(arg1: string, arg2: number)
+action electronics_product(arg1: string)
+action expensive_product(arg1: string, arg2: number)
+action medium_product(arg1: string, arg2: number)
+action minor(arg1: string)
+action senior(arg1: string)
+
+rule r1 : {p: Person} / p.age >= 18 ==> adult(p.id)
+rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)
+rule r3 : {p: Person} / p.age >= 65 ==> senior(p.id)
+
+// Faits de test pour la première série
+Person(id: "P1", name: "Alice", age: 30)
+Person(id: "P2", name: "Bob", age: 16)
+Person(id: "P3", name: "Charlie", age: 70)
+
+// ========================================
+// RESET : Effacement complet de l'état
+// ========================================
+reset
+
+// Après le reset, on peut réutiliser les mêmes IDs de règles
+// C'est maintenant un nouveau contexte
+
+type Product(id: string, name: string, price: number, category: string)
+
+// ✅ VALIDE : Réutilisation de r1, r2, r3 après reset
+rule r1 : {prod: Product} / prod.price > 100 ==> expensive_product(prod.id, prod.price)
+rule r2 : {prod: Product} / prod.price <= 100 AND prod.price > 50 ==> medium_product(prod.id, prod.price)
+rule r3 : {prod: Product} / prod.price <= 50 ==> cheap_product(prod.id, prod.price)
+
+// Nouvelle règle avec nouvel ID
+rule r4 : {prod: Product} / prod.category == "electronics" ==> electronics_product(prod.id)
+
+// Faits de test pour la deuxième série
+Product(id: "PROD1", name: "Laptop", price: 1200, category: "electronics")
+Product(id: "PROD2", name: "Mouse", price: 25, category: "electronics")
+Product(id: "PROD3", name: "Keyboard", price: 75, category: "electronics")
+
+// Résultat attendu :
+// - Avant reset : 3 règles (r1, r2, r3) pour Person
+// - Après reset : 4 règles (r1, r2, r3, r4) pour Product
+// - Aucune erreur : les IDs r1, r2, r3 peuvent être réutilisés après reset
+// - Le type Person n'existe plus après le reset
+// - Le type Product existe uniquement après le reset

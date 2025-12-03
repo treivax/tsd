@@ -1,0 +1,43 @@
+// Test d'intégration : Validation de l'unicité des identifiants de règles
+// Ce fichier démontre le comportement du parseur face aux IDs de règles dupliqués
+
+type Person(id: string, name: string, age: number)
+type Order(id: string, customer_id: string, amount: number)
+
+// Règle 1 : Détection des adultes
+
+// Actions auto-générées
+action adult(arg1: string, arg2: string)
+action almost_adult(arg1: string)
+action centenarian(arg1: string)
+action minor(arg1: string, arg2: string)
+action process_premium(arg1: string, arg2: string)
+action process_standard(arg1: string, arg2: string)
+action senior(arg1: string, arg2: string)
+
+rule check_adult : {p: Person} / p.age >= 18 ==> adult(p.id, p.name)
+
+// Règle 2 : Détection des mineurs
+rule check_minor : {p: Person} / p.age < 18 ==> minor(p.id, p.name)
+
+// Règle 3 : Détection des seniors
+rule check_senior : {p: Person} / p.age >= 65 ==> senior(p.id, p.name)
+
+// ⚠️ ERREUR : Règle avec ID dupliqué (check_adult déjà utilisé)
+// Cette règle devrait être IGNORÉE avec un avertissement non-bloquant
+rule check_adult : {p: Person} / p.age > 100 ==> centenarian(p.id)
+
+// Règle 4 : Commandes premium (devrait être acceptée)
+rule premium_order : {p: Person, o: Order} / p.id == o.customer_id AND o.amount > 1000 ==> process_premium(p.id, o.id)
+
+// ⚠️ ERREUR : Autre ID dupliqué (check_minor déjà utilisé)
+// Cette règle devrait aussi être IGNORÉE
+rule check_minor : {p: Person} / p.age == 17 ==> almost_adult(p.id)
+
+// Règle 5 : Commandes standard (devrait être acceptée)
+rule standard_order : {p: Person, o: Order} / p.id == o.customer_id AND o.amount <= 1000 ==> process_standard(p.id, o.id)
+
+// Résultat attendu :
+// - 5 règles acceptées : check_adult, check_minor, check_senior, premium_order, standard_order
+// - 2 règles rejetées : duplicate check_adult (ligne 18), duplicate check_minor (ligne 26)
+// - 2 erreurs non-bloquantes enregistrées dans ProgramState.Errors

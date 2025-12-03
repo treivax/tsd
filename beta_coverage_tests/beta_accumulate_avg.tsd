@@ -1,6 +1,10 @@
 type Employee(id: string, name: string, department: string)
 type Performance(id: string, employee_id: string, score: number)
 
+
+// Action definitions
+action PRINT(arg1: string, arg2: string, arg3: string)
+
 rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5 ==> PRINT("Employee ", e.name, " has average performance >= 8.5")
 
 Employee(id:"EMP001", name:"Alice", department:"sales")

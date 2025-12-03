@@ -1,0 +1,14 @@
+// Fichier INVALIDE : expressions sans définitions de types (violation grammaire PEG)
+
+// Cette expression devrait échouer car aucun type "Transaction" n'est défini
+
+// Actions auto-générées
+action approveTransaction(arg1: string)
+
+rule r1 : {t: Transaction} / t.amount > 1000
+
+// Cette expression devrait aussi échouer
+rule r2 : {a: Account} / a.active == true
+
+// Action sans types définis
+rule r3 : {t: Transaction} / t.status == "approved" ==> approveTransaction(t.id)

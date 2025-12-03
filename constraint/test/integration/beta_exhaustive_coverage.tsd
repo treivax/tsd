@@ -1,0 +1,385 @@
+// Test de couverture exhaustive pour tous les types de noeuds Beta
+// =================================================================
+// Objectif: Valider TOUS les opérateurs et fonctionnalités des noeuds Beta
+// - JoinNode: jointures avec toutes conditions possibles
+// - NotNode: négations de tous types
+// - ExistsNode: quantifications existentielles avec toutes variantes
+// - AccumulateNode: toutes fonctions d'agrégation (SUM, COUNT, AVG, MIN, MAX)
+// - Combinaisons complexes multi-noeuds Beta
+
+// Types de données pour tests exhaustifs Beta
+type TestPerson(id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string, department: string, level: number)
+type TestOrder(id: string, customer_id: string, product_id: string, amount: number, total: number, date: string, status: string, priority: string, discount: number, region: string)
+type TestProduct(id: string, name: string, category: string, price: number, available: bool, rating: number, keywords: string, brand: string, stock: number, supplier: string)
+type TestTransaction(id: string, account_id: string, amount: number, type: string, timestamp: number, approved: bool, currency: string, reference: string)
+type TestAlert(id: string, user_id: string, level: string, message: string, timestamp: number, resolved: bool, category: string)
+
+// =====================================================================
+// SECTION 1: JoinNode - Jointures exhaustives avec tous opérateurs
+// =====================================================================
+
+// 1.1 Jointures égalité simples
+
+// Actions auto-générées
+action active_person_with_large_order(arg1: string)
+action all_orders_over_hundred(arg1: string)
+action complex_join_not_exists(arg1: string, arg2: string)
+action double_not_active(arg1: string)
+action exists_full_price_order(arg1: string)
+action exists_large_order_for_person(arg1: string)
+action exists_large_transaction(arg1: string)
+action exists_non_cancelled_order(arg1: string)
+action exists_order_for_person(arg1: string)
+action exists_order_for_product(arg1: string)
+action exists_order_long_region_name(arg1: string)
+action exists_order_over_ten_percent_salary(arg1: string)
+action exists_order_with_available_product(arg1: string)
+action exists_processed_order(arg1: string)
+action exists_product_matching_tags(arg1: string)
+action exists_shipped_high_priority_valuable_order(arg1: string)
+action frequent_approved_transactions(arg1: string)
+action frequent_customer(arg1: string)
+action high_amount_sum(arg1: string)
+action high_average_order_value(arg1: string)
+action high_avg_completed_orders(arg1: string)
+action high_purchase_sum(arg1: string)
+action high_score_person(arg1: string)
+action high_total_orders_sum(arg1: string)
+action join_active_customer_pending_order(arg1: string, arg2: string)
+action join_active_person_priority_order(arg1: string, arg2: string)
+action join_age_greater_amount(arg1: string, arg2: string)
+action join_age_times_thousand_geq_total(arg1: string, arg2: string)
+action join_amount_less_price(arg1: string, arg2: string)
+action join_available_product_positive_amount(arg1: string, arg2: string)
+action join_complex_arithmetic(arg1: string, arg2: string)
+action join_confirmed_shipped_electronics_books(arg1: string, arg2: string)
+action join_discounted_amount_eq_price(arg1: string, arg2: string)
+action join_high_earner_large_order(arg1: string, arg2: string)
+action join_keywords_contains_status(arg1: string, arg2: string)
+action join_monthly_salary_gt_amount(arg1: string, arg2: string)
+action join_name_length_geq_region_length(arg1: string, arg2: string)
+action join_not_cheap_order(arg1: string, arg2: string)
+action join_order_product_equal(arg1: string, arg2: string)
+action join_order_product_price_diff(arg1: string, arg2: string)
+action join_order_with_existing_product(arg1: string, arg2: string)
+action join_person_order_different(arg1: string, arg2: string)
+action join_person_order_equal(arg1: string, arg2: string)
+action join_salary_geq_total(arg1: string, arg2: string)
+action join_sales_marketing_north_south(arg1: string, arg2: string)
+action join_senior_or_experienced_valuable_order(arg1: string, arg2: string)
+action join_tags_status_case_insensitive(arg1: string, arg2: string)
+action join_total_leq_price(arg1: string, arg2: string)
+action join_triple_department_matches_category(arg1: string, arg2: string, arg3: string)
+action join_triple_person_order_product(arg1: string, arg2: string, arg3: string)
+action join_working_age_reasonable_order(arg1: string, arg2: string)
+action max_order_under_ten_thousand(arg1: string)
+action min_approved_transaction_threshold(arg1: string)
+action not_active_high_earner(arg1: string)
+action not_age_times_thousand_less_salary(arg1: string)
+action not_amount_plus_discount_geq_total(arg1: string)
+action not_cancelled_order(arg1: string)
+action not_cancelled_refunded_order(arg1: string)
+action not_cheap_product(arg1: string)
+action not_exists_cancelled_order(arg1: string)
+action not_high_total(arg1: string)
+action not_low_salary(arg1: string)
+action not_minor_poor_large_urgent_order(arg1: string, arg2: string)
+action not_obsolete_product(arg1: string)
+action not_order_exceeds_monthly_salary(arg1: string, arg2: string)
+action not_pending_or_low_priority(arg1: string)
+action not_short_name(arg1: string)
+action not_temporary_employee(arg1: string)
+action not_zero_age(arg1: string)
+action popular_product(arg1: string)
+action three_way_join_test(arg1: string, arg2: string, arg3: string)
+action valid_non_zero_person(arg1: string)
+action valid_person_name(arg1: string)
+action valid_positive_order(arg1: string)
+
+rule r1 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id ==> join_person_order_equal(p.id, o.id)
+rule r2 : {o: TestOrder, prod: TestProduct} / o.product_id == prod.id ==> join_order_product_equal(o.id, prod.id)
+
+// 1.2 Jointures inégalité
+rule r3 : {p: TestPerson, o: TestOrder} / p.id != o.customer_id ==> join_person_order_different(p.id, o.id)
+rule r4 : {o: TestOrder, prod: TestProduct} / o.amount != prod.price ==> join_order_product_price_diff(o.id, prod.id)
+
+// 1.3 Jointures comparaisons numériques
+rule r5 : {p: TestPerson, o: TestOrder} / p.age > o.amount ==> join_age_greater_amount(p.id, o.id)
+rule r6 : {p: TestPerson, o: TestOrder} / p.salary >= o.total ==> join_salary_geq_total(p.id, o.id)
+rule r7 : {o: TestOrder, prod: TestProduct} / o.amount < prod.price ==> join_amount_less_price(o.id, prod.id)
+rule r8 : {o: TestOrder, prod: TestProduct} / o.total <= prod.price ==> join_total_leq_price(o.id, prod.id)
+
+// 1.4 Jointures avec expressions arithmétiques
+rule r9 : {p: TestPerson, o: TestOrder} / p.age * 1000 >= o.total ==> join_age_times_thousand_geq_total(p.id, o.id)
+rule r10 : {p: TestPerson, o: TestOrder} / p.salary / 12 > o.amount ==> join_monthly_salary_gt_amount(p.id, o.id)
+rule r11 : {o: TestOrder, prod: TestProduct} / o.amount + o.discount == prod.price ==> join_discounted_amount_eq_price(o.id, prod.id)
+rule r12 : {o: TestOrder, prod: TestProduct} / (o.total - o.discount) * 1.2 <= prod.price * prod.rating ==> join_complex_arithmetic(o.id, prod.id)
+
+// 1.5 Jointures avec opérateurs logiques AND/OR
+rule r13 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND p.active == true AND o.status == "pending" ==> join_active_customer_pending_order(p.id, o.id)
+rule r14 : {p: TestPerson, o: TestOrder} / p.salary > 50000 AND o.total > 1000 AND p.department == o.region ==> join_high_earner_large_order(p.id, o.id)
+rule r15 : {p: TestPerson, o: TestOrder} / (p.age > 30 OR p.level > 5) AND (o.amount > 500 OR o.priority == "high") ==> join_senior_or_experienced_valuable_order(p.id, o.id)
+
+// 1.6 Jointures avec fonctions string
+rule r16 : {p: TestPerson, o: TestOrder} / UPPER(p.tags) == UPPER(o.status) ==> join_tags_status_case_insensitive(p.id, o.id)
+rule r17 : {p: TestPerson, o: TestOrder} / LENGTH(p.id) >= LENGTH(o.region) ==> join_name_length_geq_region_length(p.id, o.id)
+rule r18 : {o: TestOrder, prod: TestProduct} / prod.keywords CONTAINS o.status ==> join_keywords_contains_status(o.id, prod.id)
+
+// 1.7 Jointures avec opérateur IN
+rule r19 : {p: TestPerson, o: TestOrder} / p.department IN ["sales", "marketing"] AND o.region IN ["north", "south"] ==> join_sales_marketing_north_south(p.id, o.id)
+rule r20 : {o: TestOrder, prod: TestProduct} / o.status IN ["confirmed", "shipped"] AND prod.category IN ["electronics", "books"] ==> join_confirmed_shipped_electronics_books(o.id, prod.id)
+
+// 1.8 Jointures avec conditions boolean
+rule r21 : {p: TestPerson, o: TestOrder} / p.active == true AND (o.status == "active" OR o.priority == "high") ==> join_active_person_priority_order(p.id, o.id)
+rule r22 : {o: TestOrder, prod: TestProduct} / prod.available == true AND o.amount > 0 ==> join_available_product_positive_amount(o.id, prod.id)
+
+// 1.9 Jointures triple (3 faits)
+rule r23 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> join_triple_person_order_product(p.id, o.id, prod.id)
+rule r24 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id AND p.department == prod.category ==> join_triple_department_matches_category(p.id, o.id, prod.id)
+
+// 1.10 Jointures avec conditions de plage
+rule r25 : {p: TestPerson, o: TestOrder} / p.age >= 25 AND p.age <= 65 AND o.total >= 100 AND o.total <= 10000 ==> join_working_age_reasonable_order(p.id, o.id)
+
+// =====================================================================
+// SECTION 2: NotNode - Négations exhaustives
+// =====================================================================
+
+// 2.1 Négations simples d'égalité
+rule r26 : {p: TestPerson} / NOT (p.age == 0) ==> not_zero_age(p.id)
+rule r27 : {o: TestOrder} / NOT (o.status == "cancelled") ==> not_cancelled_order(o.id)
+
+// 2.2 Négations de comparaisons
+rule r28 : {p: TestPerson} / NOT (p.salary < 30000) ==> not_low_salary(p.id)
+rule r29 : {o: TestOrder} / NOT (o.total > 50000) ==> not_high_total(o.id)
+rule r30 : {prod: TestProduct} / NOT (prod.price <= 10) ==> not_cheap_product(prod.id)
+
+// 2.3 Négations d'expressions arithmétiques
+rule r31 : {p: TestPerson} / NOT (p.age * 1000 < p.salary) ==> not_age_times_thousand_less_salary(p.id)
+rule r32 : {o: TestOrder} / NOT (o.amount + o.discount >= o.total) ==> not_amount_plus_discount_geq_total(o.id)
+
+// 2.4 Négations avec conditions logiques
+rule r33 : {p: TestPerson} / NOT (p.active == true AND p.salary > 70000) ==> not_active_high_earner(p.id)
+rule r34 : {o: TestOrder} / NOT (o.status == "pending" OR o.priority == "low") ==> not_pending_or_low_priority(o.id)
+
+// 2.5 Négations de fonctions string
+rule r35 : {p: TestPerson} / NOT (LENGTH(p.id) < 3) ==> not_short_name(p.id)
+rule r36 : {prod: TestProduct} / NOT (prod.keywords CONTAINS "obsolete") ==> not_obsolete_product(prod.id)
+
+// 2.6 Négations d'opérateur IN
+rule r37 : {p: TestPerson} / NOT (p.department IN ["temp", "intern"]) ==> not_temporary_employee(p.id)
+rule r38 : {o: TestOrder} / NOT (o.status IN ["cancelled", "refunded"]) ==> not_cancelled_refunded_order(o.id)
+
+// 2.7 Négations de jointures (NOT avec plusieurs faits)
+rule r39 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total > p.salary / 12) ==> not_order_exceeds_monthly_salary(p.id, o.id)
+
+// 2.8 Double négation
+rule r40 : {p: TestPerson} / NOT (NOT (p.active == true)) ==> double_not_active(p.id)
+
+// 2.9 Négations complexes imbriquées
+rule r41 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT ((p.age < 18 OR p.salary < 25000) AND (o.total > 1000 OR o.priority == "urgent")) ==> not_minor_poor_large_urgent_order(p.id, o.id)
+
+// =====================================================================
+// SECTION 3: ExistsNode - Quantification existentielle exhaustive
+// =====================================================================
+
+// 3.1 EXISTS simples avec égalité
+rule r42 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id) ==> exists_order_for_person(p.id)
+rule r43 : {prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id) ==> exists_order_for_product(prod.id)
+
+// 3.2 EXISTS avec comparaisons numériques
+rule r44 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 1000) ==> exists_large_order_for_person(p.id)
+rule r45 : {prod: TestProduct} / EXISTS (o: TestOrder / o.product_id == prod.id AND o.amount >= prod.price) ==> exists_full_price_order(prod.id)
+
+// 3.3 EXISTS avec expressions arithmétiques
+rule r46 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > p.salary / 10) ==> exists_order_over_ten_percent_salary(p.id)
+rule r47 : {p: TestPerson} / EXISTS (t: TestTransaction / t.account_id == p.id AND t.amount * 2 >= p.salary) ==> exists_large_transaction(p.id)
+
+// 3.4 EXISTS avec conditions logiques
+rule r48 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND (o.status == "shipped" OR o.priority == "high") AND o.total > 500) ==> exists_shipped_high_priority_valuable_order(p.id)
+
+// 3.5 EXISTS avec fonctions string
+rule r49 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND LENGTH(o.region) > 5) ==> exists_order_long_region_name(p.id)
+rule r50 : {p: TestPerson} / EXISTS (prod: TestProduct / prod.keywords CONTAINS p.tags) ==> exists_product_matching_tags(p.id)
+
+// 3.6 EXISTS avec opérateur IN
+rule r51 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND o.status IN ["confirmed", "shipped", "delivered"]) ==> exists_processed_order(p.id)
+
+// 3.7 EXISTS imbriqués (EXISTS dans EXISTS)
+rule r52 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND EXISTS (prod: TestProduct / prod.id == o.product_id AND prod.available == true)) ==> exists_order_with_available_product(p.id)
+
+// 3.8 EXISTS avec négation interne
+rule r53 : {p: TestPerson} / EXISTS (o: TestOrder / o.customer_id == p.id AND NOT (o.status == "cancelled")) ==> exists_non_cancelled_order(p.id)
+
+// 3.9 Combinaison EXISTS et conditions externes
+rule r54 : {p: TestPerson} / p.active == true AND EXISTS (o: TestOrder / o.customer_id == p.id AND o.total > 2000) ==> active_person_with_large_order(p.id)
+
+// =====================================================================
+// SECTION 4: AccumulateNode - Agrégations exhaustives
+// =====================================================================
+
+// 4.1 SUM - Sommes simples par relation
+rule r55 : {p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.total) > 5000 ==> high_total_orders_sum(p.id)
+rule r56 : {p: TestPerson} / SUM(o: TestOrder / p.id == o.customer_id ; o.amount) >= 10 ==> high_amount_sum(p.id)
+// 4.2 COUNT - Comptages avec conditions
+rule r57 : {p: TestPerson} / COUNT(o: TestOrder / p.id == o.customer_id) >= 3 ==> frequent_customer(p.id)
+rule r58 : {prod: TestProduct} / COUNT(o: TestOrder / prod.id == o.product_id) >= 2 ==> popular_product(prod.id)
+// 4.3 AVG - Moyennes
+rule r59 : {p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id ; o.total) > 500 ==> high_average_order_value(p.id)
+// 4.4 MIN - Valeurs minimales
+rule r60 : {p: TestPerson} / MIN(o: TestOrder / p.id == o.customer_id ; o.total) > 100 ==> all_orders_over_hundred(p.id)
+//4.5 MAX - Valeurs maximales
+rule r61 : {p: TestPerson} / MAX(o: TestOrder / p.id == o.customer_id ; o.total) <= 10000 ==> max_order_under_ten_thousand(p.id)
+// 4.6 SUM avec condition complexe
+rule r62 : {p: TestPerson} / SUM(t: TestTransaction / p.id == t.account_id AND t.type == "purchase" ; t.amount) > 1000 ==> high_purchase_sum(p.id)
+// 4.7 COUNT avec conditions multiples
+rule r63 : {p: TestPerson} / COUNT(t: TestTransaction / p.id == t.account_id AND t.approved == true) >= 5 ==> frequent_approved_transactions(p.id)
+// 4.8 AVG avec filtrage par type
+rule r64 : {p: TestPerson} / AVG(o: TestOrder / p.id == o.customer_id AND o.status == "completed" ; o.amount) > 200 ==> high_avg_completed_orders(p.id)
+// 4.9 MIN avec agrégation conditionnelle
+rule r65 : {p: TestPerson} / MIN(t: TestTransaction / p.id == t.account_id AND t.approved == true ; t.amount) > 50 ==> min_approved_transaction_threshold(p.id)
+// =====================================================================
+// SECTION 5: Combinaisons complexes multi-noeuds Beta
+// =====================================================================
+
+// 5.1 JOIN + NOT
+rule r66 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.total < 100) ==> join_not_cheap_order(p.id, o.id)
+
+// 5.2 JOIN + EXISTS
+rule r67 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> join_order_with_existing_product(p.id, o.id)
+
+// 5.3 NOT + EXISTS
+rule r68 : {p: TestPerson} / NOT (EXISTS (o: TestOrder / o.customer_id == p.id AND o.status == "cancelled")) ==> not_exists_cancelled_order(p.id)
+
+// 5.4 Combinaison triple
+rule r69 : {p: TestPerson, o: TestOrder} / p.id == o.customer_id AND NOT (o.status == "pending") AND EXISTS (prod: TestProduct / prod.id == o.product_id) ==> complex_join_not_exists(p.id, o.id)
+
+// =====================================================================
+// SECTION 6: Cas limites et edge cases pour tests de robustesse
+// =====================================================================
+
+// 6.1 Conditions avec valeurs nulles/zero
+rule r70 : {p: TestPerson} / p.age != 0 AND p.salary > 0 ==> valid_non_zero_person(p.id)
+rule r71 : {o: TestOrder} / o.amount > 0 AND o.total > 0 ==> valid_positive_order(o.id)
+
+// 6.2 Chaînes vides et longueurs
+rule r72 : {p: TestPerson} / LENGTH(p.id) > 0 ==> valid_person_name(p.id)
+
+// 6.3 Conditions avec précision décimale
+rule r73 : {p: TestPerson} / p.score >= 7.5 AND p.score <= 9.99 ==> high_score_person(p.id)
+
+// 6.4 Tests jointures multiples
+rule r74 : {p: TestPerson, o: TestOrder, prod: TestProduct} / p.id == o.customer_id AND o.product_id == prod.id ==> three_way_join_test(p.id, o.id, prod.id)
+
+// Faits de test exhaustifs pour la couverture des noeuds Beta
+// :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+// Dataset complet pour tester tous les types de noeuds Beta avec :
+// - Jointures (JoinNode) avec tous opérateurs et conditions
+// - Négations (NotNode) avec cas succès/échec
+// - Quantifications (ExistsNode) avec variantes d'existence
+// - Agrégations (AccumulateNode) avec SUM, COUNT, AVG, MIN, MAX
+// - Combinaisons complexes multi-noeuds
+
+// Personnes de test - 20 profils variés
+TestPerson(id:"P001", name:"Alice", age:25, salary:45000, active:true, score:8.5, tags:"junior", status:"active", department:"sales", level:2)
+TestPerson(id:"P002", name:"Bob", age:35, salary:75000, active:true, score:9.2, tags:"senior", status:"active", department:"engineering", level:5)
+TestPerson(id:"P003", name:"Charlie", age:16, salary:0, active:false, score:6.0, tags:"intern", status:"inactive", department:"hr", level:1)
+TestPerson(id:"P004", name:"Diana", age:45, salary:85000, active:true, score:7.8, tags:"manager", status:"active", department:"marketing", level:7)
+TestPerson(id:"P005", name:"Eve", age:30, salary:55000, active:false, score:8.0, tags:"employee", status:"inactive", department:"sales", level:3)
+TestPerson(id:"P006", name:"Frank", age:0, salary:-5000, active:true, score:0.0, tags:"test", status:"active", department:"qa", level:1)
+TestPerson(id:"P007", name:"Grace", age:65, salary:95000, active:true, score:10.0, tags:"executive", status:"active", department:"management", level:9)
+TestPerson(id:"P008", name:"Henry", age:18, salary:25000, active:false, score:5.5, tags:"junior", status:"inactive", department:"support", level:1)
+TestPerson(id:"P009", name:"Ivy", age:40, salary:68000, active:true, score:8.7, tags:"senior", status:"active", department:"engineering", level:6)
+TestPerson(id:"P010", name:"Jack", age:28, salary:52000, active:true, score:7.9, tags:"employee", status:"active", department:"sales", level:4)
+TestPerson(id:"P011", name:"Kate", age:55, salary:120000, active:true, score:9.5, tags:"director", status:"active", department:"management", level:8)
+TestPerson(id:"P012", name:"Leo", age:32, salary:61000, active:false, score:6.8, tags:"employee", status:"inactive", department:"marketing", level:3)
+TestPerson(id:"P013", name:"Mia", age:27, salary:48000, active:true, score:8.1, tags:"employee", status:"active", department:"design", level:3)
+TestPerson(id:"P014", name:"Noah", age:38, salary:72000, active:true, score:8.9, tags:"senior", status:"active", department:"engineering", level:5)
+TestPerson(id:"P015", name:"Olivia", age:22, salary:38000, active:false, score:7.2, tags:"junior", status:"inactive", department:"hr", level:2)
+TestPerson(id:"P016", name:"Paul", age:50, salary:88000, active:true, score:9.1, tags:"manager", status:"active", department:"operations", level:6)
+TestPerson(id:"P017", name:"Quinn", age:26, salary:44000, active:true, score:7.6, tags:"employee", status:"active", department:"support", level:2)
+TestPerson(id:"P018", name:"Rosa", age:42, salary:79000, active:true, score:8.4, tags:"senior", status:"active", department:"finance", level:5)
+TestPerson(id:"P019", name:"Sam", age:19, salary:28000, active:false, score:6.5, tags:"trainee", status:"inactive", department:"qa", level:1)
+TestPerson(id:"P020", name:"Tina", age:33, salary:58000, active:true, score:8.2, tags:"employee", status:"active", department:"marketing", level:4)
+
+// Commandes de test - 25 commandes variées
+TestOrder(id:"O001", customer_id:"P001", product_id:"PROD001", amount:2, total:1999.98, date:"2024-01-15", status:"pending", priority:"normal", discount:50.0, region:"north")
+TestOrder(id:"O002", customer_id:"P002", product_id:"PROD002", amount:1, total:25.50, date:"2024-01-20", status:"confirmed", priority:"low", discount:0.0, region:"south")
+TestOrder(id:"O003", customer_id:"P001", product_id:"PROD003", amount:3, total:225.00, date:"2024-02-01", status:"shipped", priority:"high", discount:15.0, region:"north")
+TestOrder(id:"O004", customer_id:"P004", product_id:"PROD004", amount:1, total:299.99, date:"2024-02-05", status:"delivered", priority:"normal", discount:0.0, region:"east")
+TestOrder(id:"O005", customer_id:"P002", product_id:"PROD001", amount:1, total:999.99, date:"2024-02-10", status:"confirmed", priority:"high", discount:100.0, region:"south")
+TestOrder(id:"O006", customer_id:"P005", product_id:"PROD005", amount:2, total:999.98, date:"2024-02-15", status:"cancelled", priority:"low", discount:0.0, region:"west")
+TestOrder(id:"O007", customer_id:"P007", product_id:"PROD006", amount:4, total:600.00, date:"2024-03-01", status:"shipped", priority:"urgent", discount:50.0, region:"north")
+TestOrder(id:"O008", customer_id:"P010", product_id:"PROD002", amount:10, total:255.00, date:"2024-03-05", status:"pending", priority:"normal", discount:0.0, region:"south")
+TestOrder(id:"O009", customer_id:"P001", product_id:"PROD007", amount:1, total:89.99, date:"2024-03-10", status:"completed", priority:"low", discount:10.0, region:"north")
+TestOrder(id:"O010", customer_id:"P011", product_id:"PROD008", amount:2, total:399.98, date:"2024-03-15", status:"confirmed", priority:"high", discount:0.0, region:"east")
+TestOrder(id:"O011", customer_id:"P013", product_id:"PROD003", amount:1, total:75.00, date:"2024-04-01", status:"shipped", priority:"normal", discount:5.0, region:"west")
+TestOrder(id:"O012", customer_id:"P014", product_id:"PROD001", amount:1, total:999.99, date:"2024-04-05", status:"delivered", priority:"urgent", discount:0.0, region:"south")
+TestOrder(id:"O013", customer_id:"P016", product_id:"PROD004", amount:3, total:899.97, date:"2024-04-10", status:"confirmed", priority:"high", discount:100.0, region:"north")
+TestOrder(id:"O014", customer_id:"P018", product_id:"PROD006", amount:1, total:150.00, date:"2024-04-15", status:"pending", priority:"low", discount:0.0, region:"east")
+TestOrder(id:"O015", customer_id:"P020", product_id:"PROD002", amount:5, total:127.50, date:"2024-05-01", status:"shipped", priority:"normal", discount:12.5, region:"west")
+TestOrder(id:"O016", customer_id:"P002", product_id:"PROD005", amount:1, total:499.99, date:"2024-05-05", status:"cancelled", priority:"low", discount:0.0, region:"south")
+TestOrder(id:"O017", customer_id:"P007", product_id:"PROD007", amount:2, total:179.98, date:"2024-05-10", status:"completed", priority:"normal", discount:0.0, region:"north")
+TestOrder(id:"O018", customer_id:"P009", product_id:"PROD008", amount:1, total:199.99, date:"2024-05-15", status:"delivered", priority:"urgent", discount:0.0, region:"east")
+TestOrder(id:"O019", customer_id:"P004", product_id:"PROD001", amount:2, total:1999.98, date:"2024-06-01", status:"confirmed", priority:"high", discount:200.0, region:"east")
+TestOrder(id:"O020", customer_id:"P011", product_id:"PROD003", amount:4, total:300.00, date:"2024-06-05", status:"shipped", priority:"normal", discount:0.0, region:"north")
+TestOrder(id:"O021", customer_id:"P001", product_id:"PROD002", amount:20, total:510.00, date:"2024-06-10", status:"pending", priority:"low", discount:0.0, region:"north")
+TestOrder(id:"O022", customer_id:"P013", product_id:"PROD004", amount:1, total:299.99, date:"2024-06-15", status:"confirmed", priority:"normal", discount:0.0, region:"west")
+TestOrder(id:"O023", customer_id:"P016", product_id:"PROD006", amount:3, total:450.00, date:"2024-07-01", status:"delivered", priority:"high", discount:0.0, region:"north")
+TestOrder(id:"O024", customer_id:"P020", product_id:"PROD005", amount:1, total:499.99, date:"2024-07-05", status:"shipped", priority:"urgent", discount:25.0, region:"west")
+TestOrder(id:"O025", customer_id:"P018", product_id:"PROD007", amount:3, total:269.97, date:"2024-07-10", status:"completed", priority:"normal", discount:0.0, region:"east")
+
+// Produits de test - 15 produits variés
+TestProduct(id:"PROD001", name:"Laptop", category:"electronics", price:999.99, available:true, rating:4.5, keywords:"computer", brand:"TechCorp", stock:50, supplier:"TechSupply")
+TestProduct(id:"PROD002", name:"Mouse", category:"accessories", price:25.50, available:true, rating:4.0, keywords:"peripheral", brand:"TechCorp", stock:200, supplier:"TechSupply")
+TestProduct(id:"PROD003", name:"Keyboard", category:"accessories", price:75.00, available:false, rating:3.5, keywords:"typing", brand:"KeyTech", stock:0, supplier:"KeySupply")
+TestProduct(id:"PROD004", name:"Monitor", category:"electronics", price:299.99, available:true, rating:4.8, keywords:"display", brand:"ScreenPro", stock:30, supplier:"ScreenSupply")
+TestProduct(id:"PROD005", name:"Tablet", category:"electronics", price:499.99, available:false, rating:4.2, keywords:"mobile", brand:"TabletInc", stock:0, supplier:"TabletSupply")
+TestProduct(id:"PROD006", name:"Headphones", category:"audio", price:150.00, available:true, rating:4.6, keywords:"sound", brand:"AudioMax", stock:75, supplier:"AudioSupply")
+TestProduct(id:"PROD007", name:"Webcam", category:"electronics", price:89.99, available:true, rating:3.8, keywords:"video", brand:"CamTech", stock:25, supplier:"CamSupply")
+TestProduct(id:"PROD008", name:"Chair", category:"furniture", price:199.99, available:true, rating:4.1, keywords:"office", brand:"ComfortSeats", stock:15, supplier:"FurnitureSupply")
+TestProduct(id:"PROD009", name:"Desk", category:"furniture", price:299.99, available:false, rating:4.3, keywords:"workspace", brand:"WorkSpace", stock:0, supplier:"FurnitureSupply")
+TestProduct(id:"PROD010", name:"Phone", category:"electronics", price:699.99, available:true, rating:4.7, keywords:"mobile", brand:"PhoneCorp", stock:40, supplier:"PhoneSupply")
+TestProduct(id:"PROD011", name:"Printer", category:"electronics", price:249.99, available:true, rating:3.9, keywords:"printing", brand:"PrintTech", stock:20, supplier:"PrintSupply")
+TestProduct(id:"PROD012", name:"Scanner", category:"electronics", price:199.99, available:false, rating:4.0, keywords:"scanning", brand:"ScanTech", stock:0, supplier:"ScanSupply")
+TestProduct(id:"PROD013", name:"Speakers", category:"audio", price:120.00, available:true, rating:4.4, keywords:"sound", brand:"AudioMax", stock:60, supplier:"AudioSupply")
+TestProduct(id:"PROD014", name:"Cable", category:"accessories", price:15.99, available:true, rating:3.5, keywords:"connection", brand:"CableTech", stock:500, supplier:"CableSupply")
+TestProduct(id:"PROD015", name:"Lamp", category:"furniture", price:79.99, available:true, rating:4.2, keywords:"lighting", brand:"LightCorp", stock:35, supplier:"LightSupply")
+
+// Transactions de test - 20 transactions variées
+TestTransaction(id:"T001", account_id:"P001", amount:1999.98, type:"purchase", timestamp:1700000000, approved:true, currency:"USD", reference:"ORD-O001")
+TestTransaction(id:"T002", account_id:"P002", amount:25.50, type:"purchase", timestamp:1700100000, approved:true, currency:"USD", reference:"ORD-O002")
+TestTransaction(id:"T003", account_id:"P001", amount:225.00, type:"purchase", timestamp:1700200000, approved:true, currency:"USD", reference:"ORD-O003")
+TestTransaction(id:"T004", account_id:"P004", amount:299.99, type:"purchase", timestamp:1700300000, approved:true, currency:"USD", reference:"ORD-O004")
+TestTransaction(id:"T005", account_id:"P002", amount:999.99, type:"purchase", timestamp:1700400000, approved:false, currency:"USD", reference:"ORD-O005")
+TestTransaction(id:"T006", account_id:"P005", amount:-999.98, type:"refund", timestamp:1700500000, approved:true, currency:"USD", reference:"ORD-O006")
+TestTransaction(id:"T007", account_id:"P007", amount:600.00, type:"purchase", timestamp:1700600000, approved:true, currency:"USD", reference:"ORD-O007")
+TestTransaction(id:"T008", account_id:"P010", amount:255.00, type:"purchase", timestamp:1700700000, approved:true, currency:"USD", reference:"ORD-O008")
+TestTransaction(id:"T009", account_id:"P001", amount:89.99, type:"purchase", timestamp:1700800000, approved:true, currency:"USD", reference:"ORD-O009")
+TestTransaction(id:"T010", account_id:"P011", amount:399.98, type:"purchase", timestamp:1700900000, approved:true, currency:"USD", reference:"ORD-O010")
+TestTransaction(id:"T011", account_id:"P013", amount:75.00, type:"purchase", timestamp:1701000000, approved:true, currency:"USD", reference:"ORD-O011")
+TestTransaction(id:"T012", account_id:"P014", amount:999.99, type:"purchase", timestamp:1701100000, approved:false, currency:"USD", reference:"ORD-O012")
+TestTransaction(id:"T013", account_id:"P016", amount:899.97, type:"purchase", timestamp:1701200000, approved:true, currency:"USD", reference:"ORD-O013")
+TestTransaction(id:"T014", account_id:"P018", amount:150.00, type:"purchase", timestamp:1701300000, approved:true, currency:"USD", reference:"ORD-O014")
+TestTransaction(id:"T015", account_id:"P020", amount:127.50, type:"purchase", timestamp:1701400000, approved:true, currency:"USD", reference:"ORD-O015")
+TestTransaction(id:"T016", account_id:"P009", amount:199.99, type:"purchase", timestamp:1701500000, approved:true, currency:"USD", reference:"ORD-O018")
+TestTransaction(id:"T017", account_id:"P004", amount:1999.98, type:"purchase", timestamp:1701600000, approved:true, currency:"USD", reference:"ORD-O019")
+TestTransaction(id:"T018", account_id:"P011", amount:300.00, type:"purchase", timestamp:1701700000, approved:true, currency:"USD", reference:"ORD-O020")
+TestTransaction(id:"T019", account_id:"P001", amount:510.00, type:"purchase", timestamp:1701800000, approved:false, currency:"USD", reference:"ORD-O021")
+TestTransaction(id:"T020", account_id:"P007", amount:50000.00, type:"withdrawal", timestamp:1701900000, approved:true, currency:"USD", reference:"WITHDRAW-001")
+
+// Alertes de test - 15 alertes variées
+TestAlert(id:"A001", user_id:"P001", level:"high", message:"Multiple large orders detected", timestamp:1700050000, resolved:false, category:"fraud")
+TestAlert(id:"A002", user_id:"P002", level:"medium", message:"Unusual purchase pattern", timestamp:1700150000, resolved:true, category:"behavior")
+TestAlert(id:"A003", user_id:"P005", level:"low", message:"Account inactive warning", timestamp:1700250000, resolved:false, category:"account")
+TestAlert(id:"A004", user_id:"P007", level:"critical", message:"Large withdrawal detected", timestamp:1701950000, resolved:false, category:"security")
+TestAlert(id:"A005", user_id:"P010", level:"medium", message:"Payment method updated", timestamp:1700750000, resolved:true, category:"payment")
+TestAlert(id:"A006", user_id:"P011", level:"high", message:"VIP customer activity spike", timestamp:1700950000, resolved:false, category:"vip")
+TestAlert(id:"A007", user_id:"P013", level:"low", message:"Profile incomplete", timestamp:1701050000, resolved:true, category:"profile")
+TestAlert(id:"A008", user_id:"P001", level:"medium", message:"Shipping address changed", timestamp:1701850000, resolved:false, category:"shipping")
+TestAlert(id:"A009", user_id:"P016", level:"high", message:"Bulk order processing", timestamp:1701250000, resolved:true, category:"orders")
+TestAlert(id:"A010", user_id:"P018", level:"critical", message:"Suspicious transaction blocked", timestamp:1701350000, resolved:false, category:"security")
+TestAlert(id:"A011", user_id:"P020", level:"low", message:"Promotional offer available", timestamp:1701450000, resolved:true, category:"promotion")
+TestAlert(id:"A012", user_id:"P004", level:"medium", message:"Repeated purchases detected", timestamp:1701650000, resolved:false, category:"behavior")
+TestAlert(id:"A013", user_id:"P009", level:"high", message:"Account verification required", timestamp:1701550000, resolved:true, category:"verification")
+TestAlert(id:"A014", user_id:"P014", level:"low", message:"Newsletter subscription confirmed", timestamp:1701150000, resolved:true, category:"newsletter")
+TestAlert(id:"A015", user_id:"P007", level:"critical", message:"Executive account access", timestamp:1702000000, resolved:false, category:"executive")

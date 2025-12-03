@@ -1,0 +1,46 @@
+// Test 1 : Conditions Alpha Simples (AlphaNode)
+// Types de base
+type Transaction(id: string, amount: number, status: string, timestamp: number)
+type Account(id: string, balance: number, type: string, active: bool)
+
+// Expressions alpha simples - conditions sur un seul fait
+
+// Actions auto-générées
+action activate_account_services(arg1: string)
+action apply_premium_benefits(arg1: string)
+action check_balance_threshold(arg1: string, arg2: number)
+action confirm_approval(arg1: string)
+action enable_vip_features(arg1: string)
+action flag_large_transaction(arg1: string)
+action process_transaction(arg1: string)
+action update_transaction_status(arg1: string, arg2: string)
+action validate_amount_precision(arg1: string)
+action validate_id_length(arg1: string)
+action validate_transaction(arg1: string)
+action validate_transaction_format(arg1: string)
+
+rule r1 : {t: Transaction} / t.amount > 1000 ==> flag_large_transaction(t.id)
+
+rule r2 : {t: Transaction} / t.status == "approved" ==> process_transaction(t.id)
+
+rule r3 : {a: Account} / a.active == true AND a.balance >= 0 ==> activate_account_services(a.id)
+
+rule r4 : {t: Transaction} / t.amount >= 100 AND t.amount <= 10000 ==> validate_transaction(t.id)
+
+// Opérateurs de comparaison avancés
+rule r5 : {t: Transaction} / t.status IN ["pending", "approved", "rejected"] ==> update_transaction_status(t.id, t.status)
+
+rule r6 : {a: Account} / a.type LIKE "premium%" ==> apply_premium_benefits(a.id)
+
+rule r7 : {t: Transaction} / t.id MATCHES "TX[0-9]+" ==> validate_transaction_format(t.id)
+
+rule r8 : {a: Account} / a.id CONTAINS "VIP" ==> enable_vip_features(a.id)
+
+// Fonctions intégrées
+rule r9 : {t: Transaction} / LENGTH(t.id) == 8 ==> validate_id_length(t.id)
+
+rule r10 : {t: Transaction} / UPPER(t.status) == "APPROVED" ==> confirm_approval(t.id)
+
+rule r11 : {a: Account} / ABS(a.balance) > 1000 ==> check_balance_threshold(a.id, a.balance)
+
+rule r12 : {t: Transaction} / ROUND(t.amount) == t.amount ==> validate_amount_precision(t.id)

@@ -1,0 +1,8 @@
+// Fichier INVALIDE : référence à un type non déclaré
+type Account(id: string, balance: number, active: bool)
+
+// Cette expression fait référence à un type "Transaction" qui n'est PAS déclaré
+rule r1 : {t: Transaction} / t.amount > 1000
+
+// Cette expression est valide car "Account" est déclaré
+rule r2 : {a: Account} / a.active == true

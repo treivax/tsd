@@ -6,6 +6,18 @@ type Order(id:string, subtotal:number, tax_rate:number, shipping:number)
 
 # Test 1: Addition dans contrainte
 # Un produit avec price + discount >= 150 déclenche high_value
+
+
+// Action definitions
+action bulk_order(arg1: string)
+action unit_discount(arg1: string)
+action calculate_total(arg1: string, arg2: number)
+action apply_tax(arg1: string, arg2: number)
+action final_price(arg1: string, arg2: number)
+action unit_price(arg1: string, arg2: number)
+action high_value(arg1: string)
+action low_price(arg1: string)
+
 rule r1 : {p: Product} / p.price + p.discount >= 150 ==> high_value(p.id)
 
 # Test 2: Soustraction dans contrainte

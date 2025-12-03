@@ -1,0 +1,7 @@
+type User(id: string, name: string)
+
+
+// Actions auto-générées
+action process_user(arg1: string)
+
+rule r1 : {u: User} / u.id == "123" ==> process_user(u.id)

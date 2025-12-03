@@ -1,0 +1,7 @@
+type TestUser(id: string, name: string)
+
+
+// Actions auto-générées
+action simple_action(arg1: string, arg2: string)
+
+rule r1 : {u: TestUser} / u.id == "123" ==> simple_action(u.id, u.name)

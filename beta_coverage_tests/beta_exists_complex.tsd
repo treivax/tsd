@@ -3,6 +3,12 @@ type Company(id: string, name: string, industry: string, size: string)
 type Department(id: string, company_id: string, name: string, budget: number)
 type Employee(id: string, department_id: string, name: string, position: string, salary: number)
 
+
+// Action definitions
+action well_funded_tech_company(arg1: string)
+action has_senior_talent(arg1: string)
+action well_managed_large_company(arg1: string)
+
 rule r1 : {c: Company, d: Department} / c.industry == "tech" AND d.company_id == c.id AND d.budget > 1000000 ==> well_funded_tech_company(c.id)
 rule r2 : {d: Department, e: Employee} / d.name == "engineering" AND e.department_id == d.id AND e.position == "senior" AND e.salary > 120000 ==> has_senior_talent(d.id)
 rule r3 : {c: Company, d: Department, e: Employee} / c.size == "large" AND d.company_id == c.id AND e.department_id == d.id AND e.position == "director" AND d.budget > 500000 ==> well_managed_large_company(c.id)

@@ -1,0 +1,71 @@
+// Test 7 : Expressions Complexes Multi-Nœuds
+// Types pour scénarios ultra-complexes
+type BankAccount(id: string, customer_id: string, balance: number, type: string, opened: number)
+type Customer(id: string, name: string, age: number, risk_profile: string, vip: bool)
+type Transaction(id: string, account_id: string, amount: number, type: string, timestamp: number, foreign: bool)
+type SecurityEvent(id: string, account_id: string, event_type: string, severity: string, timestamp: number)
+type ComplianceRule(id: string, rule_type: string, threshold: number, active: bool)
+
+// Scénario 1 : Détection de Fraude Ultra-Complexe
+// Combine Alpha + Beta + NOT + EXISTS + ACCUMULATE + Actions
+
+// Actions auto-générées
+action freezeAccount(arg1: string, arg2: string, arg3: string)
+action riskAssessment(arg1: string, arg2: string, arg3: string)
+action suggestInvestment(arg1: string, arg2: string, arg3: string)
+
+rule r1 : {c: Customer, ba: BankAccount, t: Transaction, se: SecurityEvent, cr: ComplianceRule} /
+    // Jointures de base (Beta)
+    c.id == ba.customer_id AND
+    ba.id == t.account_id AND
+    ba.id == se.account_id AND
+    cr.rule_type == "fraud_detection" AND cr.active == true AND
+
+    // Conditions Alpha
+    c.age >= 18 AND ba.type IN ["checking", "savings"] AND
+
+    // Négation : PAS de transactions légitimes récentes
+    NOT (EXISTS (t2: Transaction / t2.account_id == ba.id AND t2.type == "legitimate" AND t2.timestamp > (t.timestamp - 86400))) AND
+
+    // Existence : Transactions suspectes à l'étranger
+    EXISTS (t3: Transaction / t3.account_id == ba.id AND t3.foreign == true AND t3.amount > 5000) AND
+
+    // Agrégation : Montant total élevé
+    SUM(t4: Transaction / t4.account_id == ba.id ; t4.amount) > cr.threshold AND
+
+    // Conditions avec fonctions
+    LENGTH(c.name) > 2 AND UPPER(se.event_type) CONTAINS "SUSPICIOUS" AND
+
+    // Expressions arithmétiques complexes
+    (t.amount * 1.1) > (ba.balance * 0.5)
+
+    ==> freezeAccount(ba.id, c.id, "fraud")
+
+// Scénario 2 : Analyse de Risque Multi-Niveaux
+rule r2 : {c: Customer, ba: BankAccount} /
+    // Profil client à risque
+    (c.risk_profile == "high" OR c.vip == false) AND
+
+    // PAS de compte premium
+    NOT (ba.type == "premium" AND ba.balance > 100000) AND
+
+    // Existence d'événements de sécurité récents
+    EXISTS (se: SecurityEvent / se.account_id == ba.id AND se.severity IN ["medium", "high"] AND se.timestamp > 1700000000) AND
+
+    // Activité transactionnelle anormale
+    EXISTS (t: Transaction / t.account_id == ba.id AND t.foreign == true AND t.amount > 25000)
+
+    ==> riskAssessment(c.id, ba.id, "multi_level")
+
+// Scénario 3 : Optimisation de Portefeuille (Finance)
+rule r3 : {c: Customer, ba: BankAccount} /
+    // Client VIP avec gros solde
+    c.vip == true AND ba.balance > 500000 AND
+
+    // PAS de transactions récentes importantes
+    NOT (EXISTS (t: Transaction / t.account_id == ba.id AND t.amount > 10000 AND t.timestamp > 1697408000)) AND
+
+    // Profil conservateur
+    c.risk_profile == "conservative" AND c.age > 50
+
+    ==> suggestInvestment(c.id, ba.id, "conservative")

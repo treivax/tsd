@@ -3,6 +3,12 @@ type Customer(id: string, name: string, segment: string, country: string)
 type Order(id: string, customer_id: string, amount: number, date: string)
 type Payment(id: string, order_id: string, method: string, status: string)
 
+
+// Action definitions
+action paid_customer_order(arg1: string, arg2: string)
+action credit_customer_order(arg1: string, arg2: string)
+action premium_high_value_customer(arg1: string)
+
 rule r1 : {c: Customer, o: Order} / c.id == o.customer_id AND o.amount > 0 AND EXISTS (p: Payment / p.order_id == o.id AND p.status == "completed") ==> paid_customer_order(c.id, o.id)
 rule r2 : {c: Customer, o: Order} / c.id == o.customer_id AND o.amount >= 100 AND EXISTS (p: Payment / p.order_id == o.id AND p.method == "credit_card") ==> credit_customer_order(c.id, o.id)
 rule r3 : {c: Customer} / c.segment == "premium" AND c.country != "" AND EXISTS (o: Order / o.customer_id == c.id AND o.amount > 1000) ==> premium_high_value_customer(c.id)

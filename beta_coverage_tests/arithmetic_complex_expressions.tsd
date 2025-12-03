@@ -6,6 +6,19 @@ type Transaction(id:string, base:number, multiplier:number, offset:number)
 
 # Test 1: Parenthèses - forcer priorité
 # (amount + tax) * discount != amount + tax * discount
+
+
+
+// Action definitions
+action exact_match(arg1: string)
+action compute(arg1: string, arg2: number)
+action div_add_test(arg1: string)
+action nested_parens(arg1: string)
+action high_total(arg1: string)
+action priority_test(arg1: string)
+action complex_calc(arg1: string)
+action scaled_value(arg1: string)
+
 rule r1 : {i: Invoice} / (i.amount + i.tax) * i.discount > 100 ==> high_total(i.id)
 
 # Test 2: Priorité des opérateurs - * avant +

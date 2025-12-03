@@ -1,6 +1,10 @@
 // Test opérateur == (égalité)
 type Customer(id: string, tier: string, points: number)
 
+
+// Action definitions
+action gold_customer_found(arg1: string, arg2: number)
+
 rule r1 : {c: Customer} / c.tier == "gold" ==> gold_customer_found(c.id, c.points)
 
 Customer(id:"C001", tier:"gold", points:5000)

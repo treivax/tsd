@@ -1,0 +1,39 @@
+// Test 2 : Jointures Beta (JoinNodeImpl)
+// Types pour jointures multi-faits
+type Customer(id: string, name: string, age: number, vip: bool)
+type Order(id: string, customer_id: string, total: number, date: string)
+type Product(id: string, name: string, price: number, category: string)
+
+// Jointures simples entre deux faits
+
+// Actions auto-générées
+action apply_bulk_discount(arg1: string, arg2: string)
+action apply_margin_bonus(arg1: string, arg2: string)
+action apply_special_offer(arg1: string, arg2: string)
+action apply_vip_benefits(arg1: string, arg2: string)
+action calculate_age_discount(arg1: string, arg2: string)
+action confirm_price_match(arg1: string, arg2: string)
+action process_large_order(arg1: string, arg2: string)
+action process_vip_transaction(arg1: string, arg2: string, arg3: string)
+action validate_customer_order(arg1: string, arg2: string)
+
+rule r1 : {c: Customer, o: Order} / c.id == o.customer_id AND o.total > 500 ==> process_large_order(c.id, o.id)
+
+rule r2 : {o: Order, p: Product} / o.total >= p.price * 2 ==> apply_bulk_discount(o.id, p.id)
+
+rule r3 : {c: Customer, o: Order} / c.vip == true AND o.total > 1000 AND c.age >= 18 ==> apply_vip_benefits(c.id, o.id)
+
+// Jointures complexes avec expressions arithmétiques
+rule r4 : {c: Customer, o: Order} / c.age * 10 >= o.total / 100 ==> calculate_age_discount(c.id, o.id)
+
+rule r5 : {o: Order, p: Product} / (o.total - p.price) > p.price * 0.1 ==> apply_margin_bonus(o.id, p.id)
+
+// Jointures avec fonctions
+rule r6 : {c: Customer, o: Order} / LENGTH(c.name) > 5 AND UPPER(o.date) CONTAINS "2024" ==> validate_customer_order(c.id, o.id)
+
+rule r7 : {o: Order, p: Product} / ROUND(o.total) == CEIL(p.price * 1.2) ==> confirm_price_match(o.id, p.id)
+
+// Jointures avec conditions logiques complexes
+rule r8 : {c: Customer, o: Order} / (c.vip == true OR c.age > 65) AND (o.total > 100 AND o.total < 50000) ==> apply_special_offer(c.id, o.id)
+
+rule r9 : {c: Customer, o: Order, p: Product} / c.id == o.customer_id AND o.total >= p.price AND c.vip == true ==> process_vip_transaction(c.id, o.id, p.id)

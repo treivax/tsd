@@ -7,6 +7,31 @@ type Order(id: string, product_id: string, quantity: number, tax_rate: number, s
 // === SECTION 1: Opérateurs de base avec 2 variables ===
 
 // Test 1: Addition simple entre 2 variables
+
+
+
+
+// Action definitions
+action chain_operations(arg1: string, arg2: string)
+action rounded_unit_25(arg1: string, arg2: string)
+action order_total(arg1: string, arg2: string, arg3: number)
+action low_unit_price(arg1: string, arg2: string)
+action margin_ratio(arg1: string, arg2: string)
+action floor_unit_min_10(arg1: string, arg2: string)
+action nested_functions(arg1: string, arg2: string)
+action rounded_unit_price(arg1: string, arg2: string, arg3: number)
+action order_details(arg1: string, arg2: string, arg3: number, arg4: number, arg5: number)
+action profit_with_shipping(arg1: string, arg2: string)
+action similar_values(arg1: string, arg2: string)
+action total_with_shipping(arg1: string, arg2: string, arg3: number)
+action expensive_with_shipping(arg1: string, arg2: string)
+action profitable_after_shipping(arg1: string, arg2: string)
+action priority_test(arg1: string, arg2: string)
+action forced_priority(arg1: string, arg2: string)
+action needs_3_batches(arg1: string, arg2: string)
+action final_price(arg1: string, arg2: string, arg3: number)
+action bulk_order_value(arg1: string, arg2: string)
+
 rule r1 : {p: Product, o: Order} / p.id == o.product_id AND p.price + o.shipping > 100 ==> expensive_with_shipping(p.id, o.id)
 
 // Test 2: Soustraction entre 2 variables
