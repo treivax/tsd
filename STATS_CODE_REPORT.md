@@ -49,7 +49,7 @@ Lignes vides      ███████████████ 5,387 (14.3%)
 
 #### 🔴 URGENT
 1. **Augmenter coverage** : 61.1% → 70% minimum
-   - Focus: `test/integration` (30.8%), `cmd/universal-rete-runner` (45.2%)
+   - Focus: `cmd/universal-rete-runner` (45.2%), helpers de test (`test/testutil` 52.9%, `test/integration/test_helper.go` 30.8%)
 2. **Refactoriser fonctions longues** : 
    - `ingestFileWithMetrics()` (258 lignes) 
    - `createBinaryJoinRule()` (215 lignes)
@@ -83,6 +83,7 @@ Lignes vides      ███████████████ 5,387 (14.3%)
 ### Tests Détectés
 
 - **Fichiers** : 139 fichiers `*_test.go`
+- **Fichiers helpers** : 2 fichiers non-test (`test_helper.go`, `comprehensive_test_runner.go`)
 - **Lignes** : 72,242 lignes
 - **Tests** : 1,249 fonctions `Test*`
 - **Benchmarks** : 102 fonctions `Benchmark*`
@@ -496,7 +497,7 @@ dupl -t 50 ./...
 | `rete/` | 74 | ~45,000 | ~750 | 147% |
 | `constraint/` | 36 | ~18,000 | ~350 | 467% ✅ |
 | `cmd/` | 4 | ~2,400 | ~35 | 382% ✅ |
-| `test/integration/` | 5 | ~2,850 | ~22 | N/A |
+| `test/integration/` | 14 tests | ~2,850 | 17 | N/A |
 | `test/testutil/` | 3 | ~990 | ~15 | N/A |
 | Autres | ~17 | ~3,000 | ~77 | - |
 
@@ -525,7 +526,7 @@ dupl -t 50 ./...
 | `constraint` | **67.1%** | 🟢 Bon | Améliorer |
 | `test/testutil` | **52.9%** | ⚠️ Insuffisant | **P2** - Améliorer |
 | `cmd/universal-rete-runner` | **45.2%** | ⚠️ Insuffisant | **P1** - Améliorer |
-| `test/integration` | **30.8%** | 🔴 Faible | **P1** - Urgent |
+| `test/integration` (helpers) | **30.8%** | 🔴 Faible | **P2** - Améliorer |
 | `constraint/grammar` | **0.0%** | ℹ️ Généré | Exclure |
 | `examples/*` | **0.0%** | ℹ️ Exemples | Normal |
 
@@ -544,7 +545,7 @@ Packages Métier (rete, constraint, nodes)
 Packages Utilities & CLI
 ██████████████████████████████ 48%
 
-Packages Integration
+Packages Integration (helpers)
 ██████████████████ 31%
 
 Packages Exemples
@@ -579,26 +580,15 @@ Packages Exemples
 
 **Points d'Amélioration** :
 - ⚠️ Coverage globale à 61.1% (cible 70%)
-- 🔴 **Urgent** : `test/integration` à 30.8%
-- ⚠️ `cmd/universal-rete-runner` à 45.2%
+- 🔴 **Urgent** : `cmd/universal-rete-runner` à 45.2%
+- ⚠️ `test/integration` helpers à 30.8% (test_helper.go, comprehensive_test_runner.go)
 - ⚠️ `test/testutil` à 52.9% (helpers devraient être > 80%)
 
 ### Actions Recommandées Coverage
 
 #### 🔴 **PRIORITÉ 1 - URGENT**
 
-**1. Augmenter coverage `test/integration` (30.8% → 60%)**
-```
-Action : Ajouter tests intégration manquants
-Focus : Scénarios end-to-end complexes
-  - Multi-source aggregations
-  - Nested OR/AND
-  - Actions arithmétiques
-Impact : Sécurité features avancées
-Effort : 1-2 jours
-```
-
-**2. Tester `cmd/universal-rete-runner` (45.2% → 70%)**
+**1. Tester `cmd/universal-rete-runner` (45.2% → 70%)**
 ```
 Action : Tests CLI avec entrées mockées
 Focus : Arguments CLI, fichiers input/output
@@ -608,12 +598,25 @@ Effort : 0.5 jour
 
 #### ⚠️ **PRIORITÉ 2 - MOYEN TERME**
 
-**3. Améliorer `test/testutil` (52.9% → 80%)**
+**2. Améliorer `test/testutil` (52.9% → 80%)**
 ```
 Action : Tests unitaires pour helpers
 Raison : Helpers doivent être ultra-fiables
 Impact : Confiance suite de tests
 Effort : 0.5 jour
+```
+
+**3. Améliorer `test/integration` helpers (30.8% → 60%)**
+```
+Action : Tests unitaires pour test_helper.go (9 fonctions, 170 lignes)
+Focus : Fonctions utilitaires utilisées par 17 tests d'intégration
+  - BuildNetworkFromConstraintFile()
+  - BuildNetworkFromConstraintFileWithMassiveFacts()
+  - Autres helpers
+Raison : Les helpers de test doivent être fiables
+Impact : Confiance dans l'infrastructure de test
+Effort : 0.5 jour
+Note : Les 17 tests d'intégration eux-mêmes sont complets et passent tous
 ```
 
 **4. Compléter `rete` (70.6% → 75%)**
@@ -884,7 +887,7 @@ func (b *JoinRuleBuilder) Build() (*Rule, error)
 
 ### ⚠️ PRIORITÉ 2 - MOYEN TERME (2-4 semaines)
 
-#### 4. Augmenter Coverage `cmd/universal-rete-runner` (45.2% → 70%)
+#### 3. Augmenter Coverage `cmd/universal-rete-runner` (45.2% → 70%)
 
 **Action** :
 ```bash
@@ -898,7 +901,7 @@ func (b *JoinRuleBuilder) Build() (*Rule, error)
 **Effort** : 0.5 jour
 **Impact** : 🟢 Moyen (fiabilité outil)
 
-#### 5. Découper `network.go` (1,130 lignes → 3 fichiers)
+#### 4. Découper `network.go` (1,130 lignes → 3 fichiers)
 
 **Solution** :
 ```
@@ -911,7 +914,7 @@ network.go (1,130 lignes) →
 **Effort** : 1 jour
 **Impact** : 🟢 Moyen (clarté, pas urgent car code stable)
 
-#### 6. Refactoriser `ingestFileWithMetrics()` (258 lignes)
+#### 5. Refactoriser `ingestFileWithMetrics()` (258 lignes)
 
 **Problème** :
 - Fonction 258 lignes dans `constraint_pipeline.go`
@@ -929,7 +932,7 @@ func (cp *ConstraintPipeline) withMetrics(fn func() error, metrics *MetricsColle
 
 ### ✅ PRIORITÉ 3 - MAINTENANCE (Opportuniste)
 
-#### 7. Améliorer Documentation `cmd/` (11.9% → 15%)
+#### 6. Améliorer Documentation `cmd/` (11.9% → 15%)
 
 **Action** :
 ```go
@@ -941,6 +944,12 @@ func (cp *ConstraintPipeline) withMetrics(fn func() error, metrics *MetricsColle
 
 **Effort** : 0.5 jour
 **Impact** : 🟢 Faible (user experience)
+
+#### 7. Tester Helpers `test/integration` (30.8% → 60%)
+
+**Quand** : Lors de modification du parser aggregation
+**Effort** : 1 jour
+**Impact** : 🟢 Moyen (clarté parsing)
 
 #### 8. Refactoriser `extractMultiSourceAggregationInfo()` (205 lignes)
 
@@ -975,16 +984,17 @@ staticcheck ./...
 | Jour | Tâche | Effort | Impact |
 |------|-------|--------|--------|
 | Lun | **Supprimer doublon parser.go** | 0.1j | 🔴 Critique |
-| Lun-Mar | **Améliorer coverage test/integration** (30.8%→60%) | 1.5j | 🔴 Critique |
+| Lun-Mar | **Tester cmd/universal-rete-runner** (45.2%→70%) | 1j | 🔴 Important |
 | Mer | **Refactoriser createBinaryJoinRule()** (215 lignes) | 1j | 🔴 Important |
-| Jeu | **Tester cmd/universal-rete-runner** (45.2%→70%) | 0.5j | ⚠️ Moyen |
+| Jeu | **Tester helpers test/integration** (30.8%→60%) | 0.5j | ⚠️ Moyen |
 | Ven | **Refactoriser ingestFileWithMetrics()** (258 lignes) | 0.5j | ⚠️ Moyen |
 
 **Résultat attendu** :
 - ✅ Code généré : -5,999 lignes (suppression doublon)
-- ✅ Coverage global : 61.1% → ~67%
+- ✅ Coverage global : 61.1% → ~64%
 - ✅ Fonctions > 200 lignes : 5 → 3
-- ✅ Sécurité features avancées
+- ✅ Infrastructure CLI testée
+- ✅ Helpers de test fiables
 
 ### Mois 1 (Moyen Terme)
 
@@ -1128,8 +1138,8 @@ Le projet TSD est un **moteur RETE de haute qualité** avec :
 🎯 **Recommandation globale** : **PRODUCTION-READY** avec quelques améliorations recommandées
 
 **Priorité absolue** : 
-1. Supprimer doublon parser.go (5 minutes)
-2. Augmenter coverage globale à 70% (focus test/integration)
+1. ✅ Supprimer doublon parser.go (FAIT)
+2. Augmenter coverage globale à 70% (focus cmd/universal-rete-runner, puis helpers de test)
 
 **Note finale** : **8.5/10** 🌟 - Excellent projet, qualité professionnelle
 
