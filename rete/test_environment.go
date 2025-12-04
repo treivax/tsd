@@ -248,12 +248,21 @@ func (te *TestEnvironment) RequireIngestFileContent(content string) *ReteNetwork
 // SubmitFact submits a fact to the network using a transaction.
 func (te *TestEnvironment) SubmitFact(fact Fact) error {
 	tx := te.Network.GetTransaction()
-	if tx == nil {
-		te.t.Fatal("No transaction available")
+	if tx == nil || !tx.IsActive {
+		// Create a new transaction if none exists or current one is inactive
+		newTx := te.Network.BeginTransaction()
+		te.Network.SetTransaction(newTx)
+		tx = newTx
 	}
 
 	cmd := NewAddFactCommand(te.Storage, &fact)
-	return tx.RecordAndExecute(cmd)
+	err := tx.RecordAndExecute(cmd)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction to make changes visible
+	return tx.Commit()
 }
 
 // RequireSubmitFact submits a fact and fails the test if there's an error.
