@@ -18,7 +18,8 @@ import (
 type Transaction struct {
 	ID           string
 	Network      *ReteNetwork
-	Commands     []Command // Log des commandes exécutées (pour rollback)
+	Commands     []Command           // Log des commandes exécutées (pour rollback)
+	Options      *TransactionOptions // Configuration de la transaction (Strong mode)
 	IsActive     bool
 	IsCommitted  bool
 	IsRolledBack bool
@@ -26,13 +27,23 @@ type Transaction struct {
 	mutex        sync.RWMutex
 }
 
-// BeginTransaction démarre une nouvelle transaction sur le réseau
+// BeginTransaction démarre une nouvelle transaction sur le réseau avec options par défaut
 // Cette opération est O(1) en temps et mémoire (vs O(N) avec snapshot)
 func (network *ReteNetwork) BeginTransaction() *Transaction {
+	return network.BeginTransactionWithOptions(nil)
+}
+
+// BeginTransactionWithOptions démarre une nouvelle transaction avec options personnalisées
+func (network *ReteNetwork) BeginTransactionWithOptions(opts *TransactionOptions) *Transaction {
+	if opts == nil {
+		opts = DefaultTransactionOptions()
+	}
+
 	return &Transaction{
 		ID:           uuid.New().String(),
 		Network:      network,
 		Commands:     make([]Command, 0, 16), // Pré-allocation raisonnable
+		Options:      opts,
 		IsActive:     true,
 		IsCommitted:  false,
 		IsRolledBack: false,
