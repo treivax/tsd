@@ -298,6 +298,66 @@ TEST_PARALLEL=8 make test-parallel
 - [🧪 Tests Alpha](docs/alpha_tests_detailed.md) - Tests détaillés par opérateur
 - [✅ Rapport de Validation](docs/validation_report.md) - Validation des expressions complexes
 - [🔧 Guide Développeur](docs/development_guidelines.md) - Standards et bonnes pratiques
+- [📝 Guide de Logging](LOGGING_GUIDE.md) - **NOUVEAU** Guide complet du système de logging
+
+## 📝 Logging
+
+TSD fournit un système de logging thread-safe avec plusieurs niveaux de verbosité, optimisé pour la production et les tests.
+
+### Configuration Rapide
+
+```go
+import "github.com/treivax/tsd/rete"
+
+// Logger par défaut (Info level)
+logger := rete.NewLogger(rete.LogLevelInfo, os.Stdout)
+
+// Configuration du network
+network := rete.NewReteNetwork(storage)
+network.SetLogger(logger)
+
+// Personnalisation
+logger.SetLevel(rete.LogLevelDebug)
+logger.SetTimestamps(true)
+```
+
+### Niveaux de Log
+
+- `LogLevelSilent` (0) - Aucune sortie
+- `LogLevelError` (1) - Erreurs critiques uniquement
+- `LogLevelWarn` (2) - Avertissements
+- `LogLevelInfo` (3) - Informations générales (défaut)
+- `LogLevelDebug` (4) - Détails de débogage
+
+### Utilisation dans les Tests
+
+```go
+func TestMyFeature(t *testing.T) {
+    t.Parallel() // Safe avec TestEnvironment !
+
+    env := rete.NewTestEnvironment(t,
+        rete.WithLogLevel(rete.LogLevelDebug),
+        rete.WithTimestamps(false),
+    )
+    defer env.Cleanup()
+
+    // Utiliser les composants
+    env.Network.SubmitFact(fact)
+
+    // Inspecter les logs
+    logs := env.GetLogs()
+    assert.Contains(t, logs, "✅ Fait persisté")
+}
+```
+
+### Bonnes Pratiques
+
+- ✅ **Info** : Opérations majeures et résultats
+- 🔍 **Debug** : Détails d'exécution et traces
+- ⚠️ **Warn** : Situations sous-optimales
+- ❌ **Error** : Erreurs critiques uniquement
+
+**📖 Documentation complète :** [LOGGING_GUIDE.md](LOGGING_GUIDE.md)
 
 ## 🎯 Cas d'Usage Validés
 
