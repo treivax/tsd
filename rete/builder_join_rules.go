@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"strings"
 )
@@ -78,7 +77,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		return fmt.Errorf("error splitting conditions: %w", err)
 	}
 
-	tsdio.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
+	fmt.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
 
 	// STEP 2: Create AlphaNodes for alpha conditions with optional decomposition
 	alphaNodesByVariable := make(map[string][]*AlphaNode)
@@ -96,7 +95,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		}
 
 		if varType == "" {
-			tsdio.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
+			fmt.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
 			continue
 		}
 
@@ -107,7 +106,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		}
 
 		// ALWAYS DECOMPOSE: Systematic decomposition for all alpha conditions
-		tsdio.Printf("   🔬 Decomposing alpha condition for %s\n", varName)
+		fmt.Printf("   🔬 Decomposing alpha condition for %s\n", varName)
 
 		decomposer := NewArithmeticExpressionDecomposer()
 		decomposedSteps, err := decomposer.DecomposeToDecomposedConditions(alphaCond.Condition)
@@ -115,7 +114,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 			return fmt.Errorf("error decomposing alpha condition: %w", err)
 		}
 
-		tsdio.Printf("   ✨ Decomposed into %d atomic steps for %s\n", len(decomposedSteps), varName)
+		fmt.Printf("   ✨ Decomposed into %d atomic steps for %s\n", len(decomposedSteps), varName)
 
 		// Build decomposed chain
 		chainBuilder := NewAlphaChainBuilder(network, jrb.utils.storage)
@@ -182,9 +181,9 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 	joinNode = node
 	wasShared = shared
 	if shared {
-		tsdio.Printf("   ♻️  Reused shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
+		fmt.Printf("   ♻️  Reused shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
 	} else {
-		tsdio.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
+		fmt.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", joinNode.ID, hash)
 	}
 
 	// Register with lifecycle manager
@@ -198,7 +197,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 		router := NewRuleRouterNode(ruleID, joinNode.ID, jrb.utils.storage)
 		router.SetTerminalNode(terminalNode)
 		joinNode.AddChild(router)
-		tsdio.Printf("   🔀 Created RuleRouterNode %s for shared JoinNode %s\n", router.ID, joinNode.ID)
+		fmt.Printf("   🔀 Created RuleRouterNode %s for shared JoinNode %s\n", router.ID, joinNode.ID)
 	} else {
 		// JoinNode is new - connect terminal directly
 		joinNode.AddChild(terminalNode)
@@ -215,14 +214,14 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 	// For each variable, connect: TypeNode -> [AlphaFilter] -> PassthroughAlpha -> JoinNode
 	// IMPORTANT: Skip this step if JoinNode was shared - inputs are already connected
 	if wasShared {
-		tsdio.Printf("   ⏭️  Skipping input reconnection for shared JoinNode %s (already connected)\n", joinNode.ID)
+		fmt.Printf("   ⏭️  Skipping input reconnection for shared JoinNode %s (already connected)\n", joinNode.ID)
 	}
 
 	if !wasShared {
 		for i, varName := range variableNames {
 			varType := variableTypes[i]
 			if varType == "" {
-				tsdio.Printf("   ⚠️ Type vide pour variable %s\n", varName)
+				fmt.Printf("   ⚠️ Type vide pour variable %s\n", varName)
 				continue
 			}
 
@@ -249,7 +248,7 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 					passthroughAlpha.AddChild(joinNode)
 				}
 
-				tsdio.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
+				fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
 					varType, len(alphaNodes), varName, side)
 			} else {
 				// No alpha filter for this variable, connect directly
@@ -259,13 +258,13 @@ func (jrb *JoinRuleBuilder) createBinaryJoinRule(
 	}
 
 	if wasShared {
-		tsdio.Printf("   ✅ JoinNode %s réutilisé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+		fmt.Printf("   ✅ JoinNode %s réutilisé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
 	} else {
-		tsdio.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
+		fmt.Printf("   ✅ JoinNode %s créé pour jointure %s\n", joinNode.ID, strings.Join(variableNames, " ⋈ "))
 	}
 
 	if len(alphaConditions) > 0 {
-		tsdio.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", len(alphaConditions))
+		fmt.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", len(alphaConditions))
 	}
 
 	return nil
@@ -280,7 +279,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRule(
 	condition map[string]interface{},
 	terminalNode *TerminalNode,
 ) error {
-	tsdio.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
+	fmt.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
 
 	// Use BetaChainBuilder (always available)
 	return jrb.createCascadeJoinRuleWithBuilder(network, ruleID, variableNames, variableTypes, condition, terminalNode)
@@ -297,7 +296,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 	condition map[string]interface{},
 	terminalNode *TerminalNode,
 ) error {
-	tsdio.Printf("   🔧 Construction d'architecture en cascade de JoinNodes (legacy mode)\n")
+	fmt.Printf("   🔧 Construction d'architecture en cascade de JoinNodes (legacy mode)\n")
 
 	// STEP 1: Split conditions into alpha (unary) and beta (binary)
 	splitter := NewConditionSplitter()
@@ -306,7 +305,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 		return fmt.Errorf("error splitting conditions: %w", err)
 	}
 
-	tsdio.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
+	fmt.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
 
 	// STEP 2: Create AlphaNodes for alpha conditions (filtering before join)
 	// Track alpha nodes by variable to connect them properly in the cascade
@@ -325,7 +324,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 		}
 
 		if varType == "" {
-			tsdio.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
+			fmt.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
 			continue
 		}
 
@@ -339,7 +338,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 		// Store in map - multiple alpha nodes can exist for same variable
 		alphaNodesByVariable[varName] = append(alphaNodesByVariable[varName], alphaNode)
 
-		tsdio.Printf("   ✨ Created AlphaNode filter: %s for variable %s\n", alphaNodeID, varName)
+		fmt.Printf("   ✨ Created AlphaNode filter: %s for variable %s\n", alphaNodeID, varName)
 
 		// Connect TypeNode -> AlphaNode (filtering)
 		typeNode, exists := network.TypeNodes[varType]
@@ -347,7 +346,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 			return fmt.Errorf("TypeNode %s not found for alpha filter", varType)
 		}
 		typeNode.AddChild(alphaNode)
-		tsdio.Printf("   🔗 Connected %s -> AlphaFilter(%s)\n", varType, varName)
+		fmt.Printf("   🔗 Connected %s -> AlphaFilter(%s)\n", varType, varName)
 	}
 
 	// STEP 3: Reconstruct beta-only condition for JoinNodes
@@ -399,16 +398,16 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 			// Connect passthrough to JoinNode
 			passthroughAlpha.AddChild(currentJoinNode)
 
-			tsdio.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
+			fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
 				varType, len(alphaNodes), varName, side)
 		} else {
 			// No alpha filter for this variable, connect directly
 			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, currentJoinNode, side)
 		}
-		tsdio.Printf("   ✓ Cascade level 1 connection\n")
+		fmt.Printf("   ✓ Cascade level 1 connection\n")
 	}
 
-	tsdio.Printf("   ✅ JoinNode cascade level 1: %s ⋈ %s\n", variableNames[0], variableNames[1])
+	fmt.Printf("   ✅ JoinNode cascade level 1: %s ⋈ %s\n", variableNames[0], variableNames[1])
 
 	// STEP 5: Join each subsequent variable to the previous result
 	for i := 2; i < len(variableNames); i++ {
@@ -450,15 +449,15 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 			// Connect passthrough to JoinNode
 			passthroughAlpha.AddChild(nextJoinNode)
 
-			tsdio.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (right)\n",
+			fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (right)\n",
 				nextVarType, len(alphaNodes), nextVarName)
 		} else {
 			// No alpha filter, connect directly
 			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, nextVarName, nextVarType, nextJoinNode, NodeSideRight)
 		}
-		tsdio.Printf("   ✓ Cascade level %d connection\n", i)
+		fmt.Printf("   ✓ Cascade level %d connection\n", i)
 
-		tsdio.Printf("   ✅ JoinNode cascade level %d: (%s) ⋈ %s\n", i, strings.Join(accumulatedVars, " ⋈ "), nextVarName)
+		fmt.Printf("   ✅ JoinNode cascade level %d: (%s) ⋈ %s\n", i, strings.Join(accumulatedVars, " ⋈ "), nextVarName)
 
 		currentJoinNode = nextJoinNode
 	}
@@ -467,9 +466,9 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleLegacy(
 	currentJoinNode.AddChild(terminalNode)
 
 	if len(alphaConditions) > 0 {
-		tsdio.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", len(alphaConditions))
+		fmt.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", len(alphaConditions))
 	}
-	tsdio.Printf("   ✅ Architecture en cascade complète: %s\n", strings.Join(variableNames, " ⋈ "))
+	fmt.Printf("   ✅ Architecture en cascade complète: %s\n", strings.Join(variableNames, " ⋈ "))
 
 	return nil
 }
@@ -484,7 +483,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 	condition map[string]interface{},
 	terminalNode *TerminalNode,
 ) error {
-	tsdio.Printf("   🔧 Construction avec BetaChainBuilder (sharing enabled)\n")
+	fmt.Printf("   🔧 Construction avec BetaChainBuilder (sharing enabled)\n")
 
 	// STEP 1: Split conditions into alpha (unary) and beta (binary)
 	splitter := NewConditionSplitter()
@@ -493,7 +492,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 		return fmt.Errorf("error splitting conditions: %w", err)
 	}
 
-	tsdio.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
+	fmt.Printf("   🔍 Condition analysis: %d alpha, %d beta\n", len(alphaConditions), len(betaConditions))
 
 	// STEP 2: Create AlphaNodes for alpha conditions (filtering before join)
 	alphaNodesByVariable := make(map[string][]*AlphaNode)
@@ -511,7 +510,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 		}
 
 		if varType == "" {
-			tsdio.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
+			fmt.Printf("   ⚠️ Could not find type for alpha variable %s, skipping alpha filter\n", varName)
 			continue
 		}
 
@@ -525,7 +524,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 		// Store in map
 		alphaNodesByVariable[varName] = append(alphaNodesByVariable[varName], alphaNode)
 
-		tsdio.Printf("   ✨ Created AlphaNode filter: %s for variable %s\n", alphaNodeID, varName)
+		fmt.Printf("   ✨ Created AlphaNode filter: %s for variable %s\n", alphaNodeID, varName)
 
 		// Connect TypeNode -> AlphaNode
 		typeNode, exists := network.TypeNodes[varType]
@@ -533,7 +532,7 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 			return fmt.Errorf("TypeNode %s not found for alpha filter", varType)
 		}
 		typeNode.AddChild(alphaNode)
-		tsdio.Printf("   🔗 Connected %s -> AlphaFilter(%s)\n", varType, varName)
+		fmt.Printf("   🔗 Connected %s -> AlphaFilter(%s)\n", varType, varName)
 	}
 
 	// STEP 3: Reconstruct beta-only condition for JoinNodes
@@ -639,7 +638,7 @@ func (jrb *JoinRuleBuilder) connectChainToNetwork(
 			}
 			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, firstJoin, side)
 		}
-		tsdio.Printf("   ✓ Connected first two variables to initial JoinNode\n")
+		fmt.Printf("   ✓ Connected first two variables to initial JoinNode\n")
 	}
 
 	// Connect subsequent variables to their respective join nodes
@@ -648,18 +647,18 @@ func (jrb *JoinRuleBuilder) connectChainToNetwork(
 		varName := variableNames[i]
 		varType := variableTypes[i]
 		jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, NodeSideRight)
-		tsdio.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
+		fmt.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
 	}
 
 	// Connect the final node to the terminal
 	if chain.FinalNode != nil {
 		chain.FinalNode.AddChild(terminalNode)
-		tsdio.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
+		fmt.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
 			len(chain.Nodes),
 			network.BetaChainBuilder.GetMetrics().SharedJoinNodesReused)
 	}
 
-	tsdio.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
+	fmt.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
 
 	return nil
 }
@@ -698,14 +697,14 @@ func (jrb *JoinRuleBuilder) connectChainToNetworkWithAlpha(
 				// Connect passthrough to JoinNode
 				passthroughAlpha.AddChild(firstJoin)
 
-				tsdio.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
+				fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (%s)\n",
 					varType, len(alphaNodes), varName, side)
 			} else {
 				// No alpha filter, connect directly
 				jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, firstJoin, side)
 			}
 		}
-		tsdio.Printf("   ✓ Connected first two variables to initial JoinNode\n")
+		fmt.Printf("   ✓ Connected first two variables to initial JoinNode\n")
 	}
 
 	// Connect subsequent variables to their respective join nodes
@@ -727,13 +726,13 @@ func (jrb *JoinRuleBuilder) connectChainToNetworkWithAlpha(
 			// Connect passthrough to JoinNode
 			passthroughAlpha.AddChild(joinNode)
 
-			tsdio.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (right)\n",
+			fmt.Printf("   🔗 Chained %s -> %d AlphaFilter(s)(%s) -> Passthrough -> JoinNode (right)\n",
 				varType, len(alphaNodes), varName)
 		} else {
 			// No alpha filter, connect directly
 			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, NodeSideRight)
 		}
-		tsdio.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
+		fmt.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
 	}
 
 	// Connect the final node to the terminal
@@ -746,15 +745,15 @@ func (jrb *JoinRuleBuilder) connectChainToNetworkWithAlpha(
 		}
 
 		if alphaCount > 0 {
-			tsdio.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", alphaCount)
+			fmt.Printf("   ✅ Alpha/Beta separation: %d alpha filters created\n", alphaCount)
 		}
 
-		tsdio.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
+		fmt.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
 			len(chain.Nodes),
 			network.BetaChainBuilder.GetMetrics().SharedJoinNodesReused)
 	}
 
-	tsdio.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
+	fmt.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
 
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/treivax/tsd/constraint"
-	"github.com/treivax/tsd/tsdio"
 )
 
 // AggregationInfo contient les informations extraites d'une agrégation
@@ -55,6 +54,14 @@ type ConstraintPipeline struct {
 	logger *Logger // Logger structuré pour instrumentation
 }
 
+// GetLogger retourne le logger, en l'initialisant si nécessaire
+func (cp *ConstraintPipeline) GetLogger() *Logger {
+	if cp.logger == nil {
+		cp.logger = NewLogger(LogLevelInfo, os.Stdout)
+	}
+	return cp.logger
+}
+
 // NewConstraintPipeline crée une nouvelle instance du pipeline
 func NewConstraintPipeline() *ConstraintPipeline {
 	return &ConstraintPipeline{
@@ -67,14 +74,6 @@ func (cp *ConstraintPipeline) SetLogger(logger *Logger) {
 	if logger != nil {
 		cp.logger = logger
 	}
-}
-
-// GetLogger retourne le logger actuel du pipeline
-func (cp *ConstraintPipeline) GetLogger() *Logger {
-	if cp.logger == nil {
-		cp.logger = NewLogger(LogLevelInfo, os.Stdout)
-	}
-	return cp.logger
 }
 
 // IngestFileWithMetrics est un wrapper qui collecte les métriques
@@ -133,22 +132,22 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if resetsData, exists := resultMap["resets"]; exists {
 		if resets, ok := resetsData.([]interface{}); ok && len(resets) > 0 {
 			hasResets = true
-			cp.logger.Info("🔄 Commande reset détectée - Réinitialisation complète du réseau")
+			cp.GetLogger().Info("🔄 Commande reset détectée - Réinitialisation complète du réseau")
 		}
 	}
 
 	// Si reset détecté, faire un GC de l'ancien réseau puis créer un nouveau
 	if hasResets {
-		tsdio.Printf("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau\n")
+		cp.GetLogger().Info("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau")
 
 		// OPTIMISATION 2: Garbage Collection automatique après reset
 		if network != nil {
-			cp.logger.Debug("🗑️ GC du réseau existant...")
+			cp.GetLogger().Debug("🗑️ GC du réseau existant...")
 			network.GarbageCollect()
-			cp.logger.Debug("✅ GC terminé")
+			cp.GetLogger().Debug("✅ GC terminé")
 		}
 
-		cp.logger.Info("🆕 Création d'un nouveau réseau RETE")
+		cp.GetLogger().Info("🆕 Création d'un nouveau réseau RETE")
 		network = NewReteNetwork(storage)
 		if metrics != nil {
 			metrics.SetWasReset(true)
@@ -160,7 +159,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if network != nil {
 		tx = network.BeginTransaction()
 		network.SetTransaction(tx)
-		cp.logger.Info("🔒 Transaction démarrée automatiquement: %s", tx.ID)
+		cp.GetLogger().Info("🔒 Transaction démarrée automatiquement: %s", tx.ID)
 	}
 
 	// Fonction de rollback en cas d'erreur
@@ -168,10 +167,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if tx != nil && tx.IsActive {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				cp.logger.Error("❌ Erreur rollback: %v", rollbackErr)
+				cp.GetLogger().Error("❌ Erreur rollback: %v", rollbackErr)
 				return network, fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
 			}
-			cp.logger.Warn("🔙 Rollback automatique effectué")
+			cp.GetLogger().Warn("🔙 Rollback automatique effectué")
 		}
 		return network, err
 	}
@@ -185,20 +184,20 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation sémantique: %w", err))
 		}
-		cp.logger.Info("✅ Validation sémantique réussie")
+		cp.GetLogger().Info("✅ Validation sémantique réussie")
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
 		}
 	} else {
 		// Validation incrémentale avec contexte du réseau existant
-		cp.logger.Info("🔍 Validation sémantique incrémentale avec contexte...")
+		cp.GetLogger().Info("🔍 Validation sémantique incrémentale avec contexte...")
 		validator := NewIncrementalValidator(network)
 		err = validator.ValidateWithContext(parsedAST)
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation incrémentale: %w", err))
 		}
-		cp.logger.Info("✅ Validation incrémentale réussie (%d types en contexte)", len(network.Types))
+		cp.GetLogger().Info("✅ Validation incrémentale réussie (%d types en contexte)", len(network.Types))
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
@@ -214,10 +213,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 
 	// ÉTAPE 4: Créer ou étendre le réseau
 	if network == nil {
-		cp.logger.Info("🆕 Création d'un nouveau réseau RETE")
+		cp.GetLogger().Info("🆕 Création d'un nouveau réseau RETE")
 		network = NewReteNetwork(storage)
 	} else if !hasResets {
-		cp.logger.Info("🔄 Extension du réseau RETE existant")
+		cp.GetLogger().Info("🔄 Extension du réseau RETE existant")
 	}
 
 	// Convertir au format RETE
@@ -232,7 +231,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
 	}
-	cp.logger.Info("✅ Trouvé %d types et %d expressions dans le fichier", len(types), len(expressions))
+	cp.GetLogger().Info("✅ Trouvé %d types et %d expressions dans le fichier", len(types), len(expressions))
 
 	// Ajouter les types au réseau (évite les doublons automatiquement)
 	typeCreationStart := time.Now()
@@ -241,7 +240,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout types: %w", err)
 		}
-		cp.logger.Info("✅ Types ajoutés/mis à jour dans le réseau")
+		cp.GetLogger().Info("✅ Types ajoutés/mis à jour dans le réseau")
 		if metrics != nil {
 			metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
 			metrics.SetTypesAdded(len(types))
@@ -262,13 +261,13 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if !hasResets {
 		existingFacts = cp.collectExistingFacts(network)
 		existingFactsByType = cp.organizeFactsByType(existingFacts)
-		cp.logger.Debug("📊 Faits préexistants dans le réseau: %d", len(existingFacts))
+		cp.GetLogger().Debug("📊 Faits préexistants dans le réseau: %d", len(existingFacts))
 		if metrics != nil {
 			metrics.RecordFactCollectionDuration(time.Since(collectionStart))
 			metrics.SetExistingFactsCollected(len(existingFacts))
 		}
 	} else {
-		cp.logger.Debug("📊 Réseau réinitialisé - pas de faits préexistants")
+		cp.GetLogger().Debug("📊 Réseau réinitialisé - pas de faits préexistants")
 	}
 
 	// ÉTAPE 7: Identifier les terminaux existants avant l'ajout de règles
@@ -284,7 +283,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout règles: %w", err)
 		}
-		cp.logger.Info("✅ Règles ajoutées au réseau")
+		cp.GetLogger().Info("✅ Règles ajoutées au réseau")
 		if metrics != nil {
 			metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
 			metrics.SetRulesAdded(len(expressions))
@@ -301,7 +300,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	newTerminals := cp.identifyNewTerminals(network, existingTerminals)
 
 	if len(newTerminals) > 0 && len(existingFacts) > 0 {
-		cp.logger.Info("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)", len(newTerminals))
+		cp.GetLogger().Info("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)", len(newTerminals))
 
 		// Propager de manière ciblée pour chaque nouveau terminal
 		propagationStart := time.Now()
@@ -314,21 +313,21 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 			metrics.SetPropagationTargets(len(newTerminals))
 		}
 
-		cp.logger.Info("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))", propagatedCount)
+		cp.GetLogger().Info("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))", propagatedCount)
 	}
 
 	// ÉTAPE 10: Soumettre les nouveaux faits du fichier
 	var factsForRete []map[string]interface{}
 	if len(program.Facts) > 0 {
 		factsForRete = constraint.ConvertFactsToReteFormat(*program)
-		tsdio.Printf("📥 Soumission de %d nouveaux faits\n", len(factsForRete))
+		cp.GetLogger().Info("📥 Soumission de %d nouveaux faits", len(factsForRete))
 
 		submissionStart := time.Now()
 		err := network.SubmitFactsFromGrammar(factsForRete)
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur soumission faits: %w", err))
 		}
-		tsdio.Printf("✅ Nouveaux faits soumis\n")
+		cp.GetLogger().Info("✅ Nouveaux faits soumis")
 		if metrics != nil {
 			metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
 			metrics.SetFactsSubmitted(len(factsForRete))
@@ -340,20 +339,20 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
 	}
-	tsdio.Printf("✅ Validation réussie\n")
+	cp.GetLogger().Info("✅ Validation réussie")
 
 	// Enregistrer l'état final du réseau dans les métriques
 	if metrics != nil {
 		metrics.RecordNetworkState(network)
 	}
 
-	tsdio.Printf("🎯 INGESTION INCRÉMENTALE TERMINÉE\n")
-	tsdio.Printf("   - Total TypeNodes: %d\n", len(network.TypeNodes))
-	tsdio.Printf("   - Total TerminalNodes: %d\n", len(network.TerminalNodes))
+	cp.GetLogger().Info("🎯 INGESTION INCRÉMENTALE TERMINÉE")
+	cp.GetLogger().Info("   - Total TypeNodes: %d", len(network.TypeNodes))
+	cp.GetLogger().Info("   - Total TerminalNodes: %d", len(network.TerminalNodes))
 
 	// ÉTAPE 12: Vérification de cohérence avant commit
 	if tx != nil && tx.IsActive && len(factsForRete) > 0 {
-		tsdio.Printf("🔍 Vérification de cohérence pré-commit...\n")
+		cp.GetLogger().Info("🔍 Vérification de cohérence pré-commit...")
 
 		// Vérifier que tous les faits soumis sont bien dans le storage
 		expectedFactCount := len(factsForRete)
@@ -388,21 +387,21 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		}
 
 		if expectedFactCount != actualFactCount {
-			tsdio.Printf("❌ Incohérence détectée: %d faits attendus, %d trouvés\n", expectedFactCount, actualFactCount)
-			tsdio.Printf("   Faits manquants: %v\n", missingFacts)
+			cp.GetLogger().Error("❌ Incohérence détectée: %d faits attendus, %d trouvés", expectedFactCount, actualFactCount)
+			cp.GetLogger().Error("   Faits manquants: %v", missingFacts)
 			return rollbackOnError(fmt.Errorf(
 				"incohérence pré-commit: %d faits attendus mais %d trouvés dans le storage",
 				expectedFactCount, actualFactCount))
 		}
 
-		tsdio.Printf("✅ Cohérence vérifiée: %d/%d faits présents\n", actualFactCount, expectedFactCount)
+		cp.GetLogger().Info("✅ Cohérence vérifiée: %d/%d faits présents", actualFactCount, expectedFactCount)
 
 		// Synchroniser le storage pour garantir la durabilité
-		tsdio.Printf("💾 Synchronisation du storage...\n")
+		cp.GetLogger().Info("💾 Synchronisation du storage...")
 		if err := storage.Sync(); err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur sync storage: %w", err))
 		}
-		tsdio.Printf("✅ Storage synchronisé\n")
+		cp.GetLogger().Info("✅ Storage synchronisé")
 	}
 
 	// ÉTAPE 13: Commit de la transaction (OBLIGATOIRE)
@@ -411,11 +410,11 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if commitErr != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur commit transaction: %w", commitErr))
 		}
-		tsdio.Printf("✅ Transaction committée: %d changements\n", tx.GetCommandCount())
+		cp.GetLogger().Info("✅ Transaction committée: %d changements", tx.GetCommandCount())
 	}
 
-	tsdio.Printf("🎯 INGESTION TERMINÉE\n")
-	tsdio.Printf("========================================\n\n")
+	cp.GetLogger().Info("🎯 INGESTION TERMINÉE")
+	cp.GetLogger().Info("========================================")
 
 	return network, nil
 }
@@ -639,32 +638,32 @@ func (cp *ConstraintPipeline) processRuleRemovals(network *ReteNetwork, resultMa
 		return nil // Pas de suppressions de règles
 	}
 
-	tsdio.Printf("🗑️  Traitement de %d suppression(s) de règles\n", len(ruleRemovals))
+	cp.GetLogger().Info("🗑️  Traitement de %d suppression(s) de règles", len(ruleRemovals))
 
 	// Traiter chaque suppression de règle
 	for _, removalData := range ruleRemovals {
 		removalMap, ok := removalData.(map[string]interface{})
 		if !ok {
-			tsdio.Printf("⚠️  Format de suppression invalide: %v\n", removalData)
+			cp.GetLogger().Warn("⚠️  Format de suppression invalide: %v", removalData)
 			continue
 		}
 
 		ruleID, ok := removalMap["ruleID"].(string)
 		if !ok || ruleID == "" {
-			tsdio.Printf("⚠️  Identifiant de règle manquant ou invalide: %v\n", removalMap)
+			cp.GetLogger().Warn("⚠️  Identifiant de règle manquant ou invalide: %v", removalMap)
 			continue
 		}
 
 		// Supprimer la règle du réseau
-		tsdio.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
+		cp.GetLogger().Info("🗑️  Suppression de la règle: %s", ruleID)
 		err := network.RemoveRule(ruleID)
 		if err != nil {
 			// Logger l'erreur mais continuer avec les autres suppressions
-			tsdio.Printf("⚠️  Erreur lors de la suppression de la règle %s: %v\n", ruleID, err)
+			cp.GetLogger().Warn("⚠️  Erreur lors de la suppression de la règle %s: %v", ruleID, err)
 			continue
 		}
 
-		tsdio.Printf("✅ Règle %s supprimée avec succès\n", ruleID)
+		cp.GetLogger().Info("✅ Règle %s supprimée avec succès", ruleID)
 	}
 
 	return nil

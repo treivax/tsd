@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"strings"
 )
@@ -116,7 +115,7 @@ func (bu *BuilderUtils) ConnectTypeNodeToBetaNode(
 		if side != "" {
 			sideInfo = fmt.Sprintf(" (%s)", strings.ToUpper(side))
 		}
-		tsdio.Printf("   ✓ %s -> PassthroughAlpha[%s] -> %s%s\n", varType, alphaNode.GetID(), betaNode.GetID(), sideInfo)
+		fmt.Printf("   ✓ %s -> PassthroughAlpha[%s] -> %s%s\n", varType, alphaNode.GetID(), betaNode.GetID(), sideInfo)
 	}
 }
 

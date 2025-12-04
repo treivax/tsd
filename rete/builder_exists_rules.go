@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -65,7 +64,7 @@ func (erb *ExistsRuleBuilder) CreateExistsRule(
 	// Create pass-through AlphaNodes for both variables
 	erb.ConnectExistsNodeToTypeNodes(network, ruleID, existsNode, mainVariable, mainVarType, existsVariable, existsVarType)
 
-	tsdio.Printf("   ✅ ExistsNode %s créé pour %s EXISTS %s\n", existsNode.ID, mainVariable, existsVariable)
+	fmt.Printf("   ✅ ExistsNode %s créé pour %s EXISTS %s\n", existsNode.ID, mainVariable, existsVariable)
 	return nil
 }
 

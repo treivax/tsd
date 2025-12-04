@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"strconv"
 	"sync"
@@ -141,7 +140,7 @@ func (jn *JoinNode) ActivateRetract(factID string) error {
 	jn.mutex.Unlock()
 	totalRemoved := len(leftTokensToRemove) + len(rightTokensToRemove) + len(resultTokensToRemove)
 	if totalRemoved > 0 {
-		tsdio.Printf("🗑️  [JOIN_%s] Rétractation: %d tokens retirés (L:%d R:%d RES:%d)\n", jn.ID, totalRemoved, len(leftTokensToRemove), len(rightTokensToRemove), len(resultTokensToRemove))
+		fmt.Printf("🗑️  [JOIN_%s] Rétractation: %d tokens retirés (L:%d R:%d RES:%d)\n", jn.ID, totalRemoved, len(leftTokensToRemove), len(rightTokensToRemove), len(resultTokensToRemove))
 	}
 	return jn.PropagateRetractToChildren(factID)
 }
@@ -244,9 +243,9 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 		}
 	}
 
-	tsdio.Printf("❌ JOINNODE[%s]: Aucune variable trouvée pour fait %s (type: %s)\n", jn.ID, fact.ID, fact.Type)
-	tsdio.Printf("   Variables disponibles: %v\n", jn.AllVariables)
-	tsdio.Printf("   Types attendus: %v\n", jn.VariableTypes)
+	fmt.Printf("❌ JOINNODE[%s]: Aucune variable trouvée pour fait %s (type: %s)\n", jn.ID, fact.ID, fact.Type)
+	fmt.Printf("   Variables disponibles: %v\n", jn.AllVariables)
+	fmt.Printf("   Types attendus: %v\n", jn.VariableTypes)
 	return ""
 }
 
@@ -505,7 +504,7 @@ func convertToFloat64(value interface{}) (float64, bool) {
 // extractJoinConditions extrait les conditions de jointure d'une condition complexe
 func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	for key, value := range condition {
-		tsdio.Printf("    %s: %v (type: %T)\n", key, value, value)
+		fmt.Printf("    %s: %v (type: %T)\n", key, value, value)
 	}
 
 	var joinConditions []JoinCondition
@@ -513,7 +512,7 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	// Cas 1: condition wrappée dans un type "constraint"
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "constraint" {
 		if innerCondition, ok := condition["constraint"].(map[string]interface{}); ok {
-			tsdio.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
+			fmt.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
 			return extractJoinConditions(innerCondition)
 		}
 	}
@@ -521,7 +520,7 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	// Cas 2: condition EXISTS avec array de conditions
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "exists" {
 		if conditionsData, ok := condition["conditions"].([]map[string]interface{}); ok {
-			tsdio.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
+			fmt.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
 			for _, subCondition := range conditionsData {
 				subJoinConditions := extractJoinConditions(subCondition)
 				joinConditions = append(joinConditions, subJoinConditions...)
@@ -532,21 +531,21 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 
 	// Cas 3: condition directe de comparaison
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "comparison" {
-		tsdio.Printf("  ✅ Condition de comparaison détectée\n")
+		fmt.Printf("  ✅ Condition de comparaison détectée\n")
 		if left, leftOk := condition["left"].(map[string]interface{}); leftOk {
 			if right, rightOk := condition["right"].(map[string]interface{}); rightOk {
-				tsdio.Printf("  ✅ Left et Right extraits\n")
+				fmt.Printf("  ✅ Left et Right extraits\n")
 				if leftType, _ := left["type"].(string); leftType == "fieldAccess" {
 					if rightType, _ := right["type"].(string); rightType == "fieldAccess" {
 						// Condition de jointure détectée
-						tsdio.Printf("  ✅ Condition de jointure fieldAccess détectée\n")
+						fmt.Printf("  ✅ Condition de jointure fieldAccess détectée\n")
 						leftObj, _ := left["object"].(string)
 						leftField, _ := left["field"].(string)
 						rightObj, _ := right["object"].(string)
 						rightField, _ := right["field"].(string)
 						operator, _ := condition["operator"].(string)
 
-						tsdio.Printf("    📌 %s.%s %s %s.%s\n", leftObj, leftField, operator, rightObj, rightField)
+						fmt.Printf("    📌 %s.%s %s %s.%s\n", leftObj, leftField, operator, rightObj, rightField)
 
 						joinConditions = append(joinConditions, JoinCondition{
 							LeftField:  leftField,
@@ -563,7 +562,7 @@ func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 
 	// Cas 4: logicalExpr avec opérations AND/OR
 	if conditionType, exists := condition["type"].(string); exists && conditionType == "logicalExpr" {
-		tsdio.Printf("  ✅ LogicalExpr détectée, extraction des conditions\n")
+		fmt.Printf("  ✅ LogicalExpr détectée, extraction des conditions\n")
 
 		// Extraire les conditions de la partie gauche
 		if left, ok := condition["left"].(map[string]interface{}); ok {

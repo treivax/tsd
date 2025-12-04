@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -62,7 +61,7 @@ func (tb *TypeBuilder) CreateTypeNodes(network *ReteNetwork, types []interface{}
 		// CRUCIAL: Connect the TypeNode to the RootNode to enable fact propagation
 		network.RootNode.AddChild(typeNode)
 
-		tsdio.Printf("   ✓ TypeNode créé: %s\n", typeName)
+		fmt.Printf("   ✓ TypeNode créé: %s\n", typeName)
 	}
 
 	return nil

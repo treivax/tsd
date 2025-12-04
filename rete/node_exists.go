@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"sync"
 )
@@ -113,7 +112,7 @@ func (en *ExistsNode) ActivateRetract(factID string) error {
 		totalRemoved++
 	}
 	if totalRemoved > 0 {
-		tsdio.Printf("🗑️  [EXISTS_%s] Rétractation: %d éléments retirés (MAIN:%d EXISTS:%v RES:%d)\n", en.ID, totalRemoved, len(mainTokensToRemove), existsInExistsMemory, len(resultTokensToRemove))
+		fmt.Printf("🗑️  [EXISTS_%s] Rétractation: %d éléments retirés (MAIN:%d EXISTS:%v RES:%d)\n", en.ID, totalRemoved, len(mainTokensToRemove), existsInExistsMemory, len(resultTokensToRemove))
 	}
 	return en.PropagateRetractToChildren(factID)
 }
@@ -182,7 +181,7 @@ func (en *ExistsNode) checkExistence(mainToken *Token) bool {
 func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) bool {
 
 	for i, condition := range en.ExistsCondition {
-		tsdio.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
+		fmt.Printf("    Condition %d: %s.%s %s %s.%s\n", i,
 			condition.LeftVar, condition.LeftField, condition.Operator,
 			condition.RightVar, condition.RightField)
 
@@ -192,13 +191,13 @@ func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) 
 		if condition.LeftVar == en.MainVariable {
 			leftFact = mainFact
 			rightFact = existsFact
-			tsdio.Printf("    → MainFact comme LeftVar (%s), ExistsFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
+			fmt.Printf("    → MainFact comme LeftVar (%s), ExistsFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
 		} else if condition.LeftVar == en.ExistsVariable {
 			leftFact = existsFact
 			rightFact = mainFact
-			tsdio.Printf("    → ExistsFact comme LeftVar (%s), MainFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
+			fmt.Printf("    → ExistsFact comme LeftVar (%s), MainFact comme RightVar (%s)\n", condition.LeftVar, condition.RightVar)
 		} else {
-			tsdio.Printf("    ❌ Variable %s non trouvée dans MainVariable:%s ou ExistsVariable:%s\n", condition.LeftVar, en.MainVariable, en.ExistsVariable)
+			fmt.Printf("    ❌ Variable %s non trouvée dans MainVariable:%s ou ExistsVariable:%s\n", condition.LeftVar, en.MainVariable, en.ExistsVariable)
 			continue
 		}
 
@@ -208,23 +207,23 @@ func (en *ExistsNode) evaluateExistsCondition(mainFact *Fact, existsFact *Fact) 
 		switch condition.Operator {
 		case "==":
 			if leftValue != rightValue {
-				tsdio.Printf("    ❌ Condition %d échoue: %v != %v\n", i, leftValue, rightValue)
+				fmt.Printf("    ❌ Condition %d échoue: %v != %v\n", i, leftValue, rightValue)
 				return false
 			}
-			tsdio.Printf("    ✅ Condition %d réussie: %v == %v\n", i, leftValue, rightValue)
+			fmt.Printf("    ✅ Condition %d réussie: %v == %v\n", i, leftValue, rightValue)
 		case "!=":
 			if leftValue == rightValue {
-				tsdio.Printf("    ❌ Condition %d échoue: %v == %v\n", i, leftValue, rightValue)
+				fmt.Printf("    ❌ Condition %d échoue: %v == %v\n", i, leftValue, rightValue)
 				return false
 			}
-			tsdio.Printf("    ✅ Condition %d réussie: %v != %v\n", i, leftValue, rightValue)
+			fmt.Printf("    ✅ Condition %d réussie: %v != %v\n", i, leftValue, rightValue)
 		default:
-			tsdio.Printf("    ❌ Opérateur non supporté: %s\n", condition.Operator)
+			fmt.Printf("    ❌ Opérateur non supporté: %s\n", condition.Operator)
 			return false
 		}
 	}
 
-	tsdio.Printf("  ✅ Toutes les conditions EXISTS satisfaites\n")
+	fmt.Printf("  ✅ Toutes les conditions EXISTS satisfaites\n")
 	return true
 }
 

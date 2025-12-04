@@ -10,8 +10,6 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"github.com/treivax/tsd/tsdio"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -674,7 +672,7 @@ func (rn *ReteNetwork) removeSimpleRule(ruleID string, nodeIDs []string) error {
 		}
 	}
 
-	tsdio.Printf("✅ Règle %s supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, len(nodesToDelete))
+	rn.logger.Info("✅ Règle %s supprimée avec succès (%d nœud(s) supprimé(s))", ruleID, len(nodesToDelete))
 	return nil
 }
 
@@ -710,7 +708,7 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 	if terminalID != "" {
 		if err := rn.removeNodeWithCheck(terminalID, ruleID); err == nil {
 			deletedCount++
-			tsdio.Printf("   🗑️  TerminalNode %s supprimé\n", terminalID)
+			rn.logger.Debug("   🗑️  TerminalNode %s supprimé", terminalID)
 		}
 	}
 
@@ -728,28 +726,28 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 		// Décrémenter RefCount pour tous les nœuds
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			tsdio.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v", nodeID, err)
 			continue
 		}
 
 		if !stopDeletion && shouldDelete {
 			// RefCount == 0, on peut supprimer
 			if err := rn.removeNodeFromNetwork(nodeID); err != nil {
-				tsdio.Printf("   ⚠️  Erreur suppression nœud %s: %v\n", nodeID, err)
+				rn.logger.Warn("   ⚠️  Erreur suppression nœud %s: %v", nodeID, err)
 			} else {
 				deletedCount++
-				tsdio.Printf("   🗑️  AlphaNode %s supprimé (position %d dans la chaîne)\n", nodeID, len(orderedAlphaNodes)-i)
+				rn.logger.Debug("   🗑️  AlphaNode %s supprimé (position %d dans la chaîne)", nodeID, len(orderedAlphaNodes)-i)
 			}
 		} else if !shouldDelete && !stopDeletion {
 			// Premier nœud partagé rencontré - on arrête la suppression mais on continue à décrémenter
 			refCount := lifecycle.GetRefCount()
-			tsdio.Printf("   ♻️  AlphaNode %s conservé (%d référence(s) restante(s)) - arrêt des suppressions\n", nodeID, refCount)
-			tsdio.Printf("   ℹ️  Décrémentation du RefCount des nœuds parents partagés\n")
+			rn.logger.Debug("   ♻️  AlphaNode %s conservé (%d référence(s) restante(s)) - arrêt des suppressions", nodeID, refCount)
+			rn.logger.Debug("   ℹ️  Décrémentation du RefCount des nœuds parents partagés")
 			stopDeletion = true
 		} else if stopDeletion {
 			// Nœuds parents - juste décrémenter le RefCount
 			refCount := lifecycle.GetRefCount()
-			tsdio.Printf("   ♻️  AlphaNode %s: RefCount décrémenté (%d référence(s) restante(s))\n", nodeID, refCount)
+			rn.logger.Debug("   ♻️  AlphaNode %s: RefCount décrémenté (%d référence(s) restante(s))", nodeID, refCount)
 		}
 	}
 
@@ -758,11 +756,11 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
-			tsdio.Printf("   🗑️  %s %s supprimé\n", lifecycle.NodeType, nodeID)
+			rn.logger.Debug("   🗑️  %s %s supprimé", lifecycle.NodeType, nodeID)
 		}
 	}
 
-	tsdio.Printf("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, deletedCount)
+	rn.logger.Info("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))", ruleID, deletedCount)
 	return nil
 }
 
@@ -951,7 +949,7 @@ func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
 			parent := rn.getChainParent(alphaNode)
 			if parent != nil {
 				rn.removeChildFromNode(parent, alphaNode)
-				tsdio.Printf("   🔗 AlphaNode %s déconnecté de son parent %s\n", nodeID, parent.GetID())
+				rn.logger.Debug("   🔗 AlphaNode %s déconnecté de son parent %s", nodeID, parent.GetID())
 			}
 
 			delete(rn.AlphaNodes, nodeID)
@@ -961,9 +959,9 @@ func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
 				// Vérifier si c'est un nœud partagé (les nœuds partagés ont un ID qui commence par "alpha_")
 				if len(nodeID) > 6 && nodeID[:6] == "alpha_" {
 					if err := rn.AlphaSharingManager.RemoveAlphaNode(nodeID); err != nil {
-						tsdio.Printf("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v\n", err)
+						rn.logger.Warn("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v", err)
 					} else {
-						tsdio.Printf("   ✓ AlphaNode %s supprimé du AlphaSharingManager\n", nodeID)
+						rn.logger.Debug("   ✓ AlphaNode %s supprimé du AlphaSharingManager", nodeID)
 					}
 				}
 			}
@@ -1080,7 +1078,7 @@ func (rn *ReteNetwork) isJoinNode(nodeID string) bool {
 
 // removeRuleWithJoins removes a rule that contains join nodes
 func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) error {
-	tsdio.Printf("   🔗 Removing rule with join nodes: %s\n", ruleID)
+	rn.logger.Debug("   🔗 Removing rule with join nodes: %s", ruleID)
 
 	// Separate nodes by type
 	var terminalNodes []string
@@ -1112,7 +1110,7 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 	for _, nodeID := range terminalNodes {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
-			tsdio.Printf("   🗑️  TerminalNode %s removed\n", nodeID)
+			rn.logger.Debug("   🗑️  TerminalNode %s removed", nodeID)
 		}
 	}
 
@@ -1122,7 +1120,7 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 		if rn.BetaSharingRegistry != nil {
 			canDelete, err := rn.BetaSharingRegistry.RemoveRuleFromJoinNode(nodeID, ruleID)
 			if err != nil {
-				tsdio.Printf("   ⚠️  Error removing rule from join node %s: %v\n", nodeID, err)
+				rn.logger.Warn("   ⚠️  Error removing rule from join node %s: %v", nodeID, err)
 				continue
 			}
 
@@ -1130,18 +1128,18 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 				// No more rules reference this join node - safe to delete
 				if err := rn.removeJoinNodeFromNetwork(nodeID); err == nil {
 					deletedCount++
-					tsdio.Printf("   🗑️  JoinNode %s removed (no more references)\n", nodeID)
+					rn.logger.Debug("   🗑️  JoinNode %s removed (no more references)", nodeID)
 				}
 			} else {
 				// Join node is still shared by other rules
 				refCount := rn.BetaSharingRegistry.GetJoinNodeRefCount(nodeID)
-				tsdio.Printf("   ✓ JoinNode %s preserved (%d rule(s) remaining)\n", nodeID, refCount)
+				rn.logger.Debug("   ✓ JoinNode %s preserved (%d rule(s) remaining)", nodeID, refCount)
 			}
 		} else {
 			// No sharing registry - use lifecycle manager
 			if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 				deletedCount++
-				tsdio.Printf("   🗑️  JoinNode %s removed\n", nodeID)
+				rn.logger.Debug("   🗑️  JoinNode %s removed", nodeID)
 			}
 		}
 	}
@@ -1150,11 +1148,11 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 	for _, nodeID := range alphaNodes {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
-			tsdio.Printf("   🗑️  AlphaNode %s removed\n", nodeID)
+			rn.logger.Debug("   🗑️  AlphaNode %s removed", nodeID)
 		} else {
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
 			if lifecycle != nil && lifecycle.HasReferences() {
-				tsdio.Printf("   ✓ AlphaNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+				rn.logger.Debug("   ✓ AlphaNode %s preserved (%d reference(s))", nodeID, lifecycle.GetRefCount())
 			}
 		}
 	}
@@ -1168,21 +1166,21 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			tsdio.Printf("   ⚠️  Error removing rule from type node %s: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Error removing rule from type node %s: %v", nodeID, err)
 			continue
 		}
 
 		if shouldDelete {
 			if err := rn.removeNodeFromNetwork(nodeID); err == nil {
 				deletedCount++
-				tsdio.Printf("   🗑️  TypeNode %s removed\n", nodeID)
+				rn.logger.Debug("   🗑️  TypeNode %s removed", nodeID)
 			}
 		} else {
-			tsdio.Printf("   ✓ TypeNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+			rn.logger.Debug("   ✓ TypeNode %s preserved (%d reference(s))", nodeID, lifecycle.GetRefCount())
 		}
 	}
 
-	tsdio.Printf("✅ Rule %s removed successfully (%d node(s) deleted)\n", ruleID, deletedCount)
+	rn.logger.Info("✅ Rule %s removed successfully (%d node(s) deleted)", ruleID, deletedCount)
 	return nil
 }
 
@@ -1195,7 +1193,7 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 		return fmt.Errorf("join node %s not found in network", nodeID)
 	}
 
-	tsdio.Printf("   🗑️  Removing join node %s from network\n", nodeID)
+	rn.logger.Debug("   🗑️  Removing join node %s from network", nodeID)
 
 	// Convert join node to proper type first
 	var node Node
@@ -1220,7 +1218,7 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 
 		if isChild {
 			delete(rn.TerminalNodes, terminalID)
-			tsdio.Printf("   🗑️  Removed terminal node %s (child of join node)\n", terminalID)
+			rn.logger.Debug("   🗑️  Removed terminal node %s (child of join node)", terminalID)
 
 			// Remove from lifecycle manager
 			if rn.LifecycleManager != nil {
@@ -1256,18 +1254,18 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 	// Step 4: Remove from lifecycle manager
 	if rn.LifecycleManager != nil {
 		if err := rn.LifecycleManager.RemoveNode(nodeID); err != nil {
-			tsdio.Printf("   ⚠️  Warning: failed to remove join node %s from lifecycle manager: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Warning: failed to remove join node %s from lifecycle manager: %v", nodeID, err)
 		}
 	}
 
 	// Step 5: Remove from beta sharing registry
 	if rn.BetaSharingRegistry != nil {
 		if err := rn.BetaSharingRegistry.UnregisterJoinNode(nodeID); err != nil {
-			tsdio.Printf("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v", nodeID, err)
 		}
 	}
 
-	tsdio.Printf("   ✅ Join node %s successfully removed from network\n", nodeID)
+	rn.logger.Info("   ✅ Join node %s successfully removed from network", nodeID)
 	return nil
 }
 

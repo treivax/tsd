@@ -1,7 +1,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"sort"
 	"strings"
@@ -19,11 +18,11 @@ func NewNetworkDiagram(network *ReteNetwork) *NetworkDiagram {
 
 // PrintDetailedDiagram affiche un diagramme complet avec les opérateurs
 func (nd *NetworkDiagram) PrintDetailedDiagram() {
-	tsdio.Println()
-	tsdio.Println(strings.Repeat("═", 120))
-	tsdio.Println("📊 DIAGRAMME DÉTAILLÉ DU RÉSEAU RETE")
-	tsdio.Println(strings.Repeat("═", 120))
-	tsdio.Println()
+	fmt.Println()
+	fmt.Println(strings.Repeat("═", 120))
+	fmt.Println("📊 DIAGRAMME DÉTAILLÉ DU RÉSEAU RETE")
+	fmt.Println(strings.Repeat("═", 120))
+	fmt.Println()
 
 	// 1. Type Nodes
 	nd.printTypeNodes()
@@ -49,16 +48,16 @@ func (nd *NetworkDiagram) PrintDetailedDiagram() {
 	// 8. Summary
 	nd.printSummary()
 
-	tsdio.Println()
-	tsdio.Println(strings.Repeat("═", 120))
-	tsdio.Println()
+	fmt.Println()
+	fmt.Println(strings.Repeat("═", 120))
+	fmt.Println()
 }
 
 func (nd *NetworkDiagram) printTypeNodes() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 1️⃣  TYPE NODES (Routage par type)                                                                    │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 1️⃣  TYPE NODES (Routage par type)                                                                    │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	typeNames := make([]string, 0, len(nd.network.TypeNodes))
 	for typeName := range nd.network.TypeNodes {
@@ -68,19 +67,19 @@ func (nd *NetworkDiagram) printTypeNodes() {
 
 	for _, typeName := range typeNames {
 		node := nd.network.TypeNodes[typeName]
-		tsdio.Printf("   [T] type_%s\n", typeName)
-		tsdio.Printf("       │ Type: %s\n", typeName)
-		tsdio.Printf("       │ Enfants: %d nœuds\n", len(node.Children))
-		tsdio.Printf("       └─→ Propage tous les faits de type %s\n", typeName)
-		tsdio.Println()
+		fmt.Printf("   [T] type_%s\n", typeName)
+		fmt.Printf("       │ Type: %s\n", typeName)
+		fmt.Printf("       │ Enfants: %d nœuds\n", len(node.Children))
+		fmt.Printf("       └─→ Propage tous les faits de type %s\n", typeName)
+		fmt.Println()
 	}
 }
 
 func (nd *NetworkDiagram) printAlphaNodes() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 2️⃣  ALPHA NODES (Filtres et calculs atomiques)                                                       │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 2️⃣  ALPHA NODES (Filtres et calculs atomiques)                                                       │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	// Grouper par variable
 	alphasByVar := make(map[string][]*AlphaNode)
@@ -98,8 +97,8 @@ func (nd *NetworkDiagram) printAlphaNodes() {
 
 	for _, varName := range vars {
 		nodes := alphasByVar[varName]
-		tsdio.Printf("   📍 Variable: %s (%d nœuds)\n", varName, len(nodes))
-		tsdio.Println()
+		fmt.Printf("   📍 Variable: %s (%d nœuds)\n", varName, len(nodes))
+		fmt.Println()
 
 		// Trier les nœuds par ID pour un affichage cohérent
 		sort.Slice(nodes, func(i, j int) bool {
@@ -109,7 +108,7 @@ func (nd *NetworkDiagram) printAlphaNodes() {
 		for i, node := range nodes {
 			nd.printAlphaNodeDetail(node, i+1, len(nodes))
 		}
-		tsdio.Println()
+		fmt.Println()
 	}
 }
 
@@ -123,7 +122,7 @@ func (nd *NetworkDiagram) printAlphaNodeDetail(node *AlphaNode, index, total int
 		symbol = "├─"
 	}
 
-	tsdio.Printf("      %s [α] %s\n", symbol, node.ID)
+	fmt.Printf("      %s [α] %s\n", symbol, node.ID)
 
 	// Extraire les détails de la condition
 	if condMap, ok := node.Condition.(map[string]interface{}); ok {
@@ -132,54 +131,54 @@ func (nd *NetworkDiagram) printAlphaNodeDetail(node *AlphaNode, index, total int
 		switch condType {
 		case "passthrough":
 			side, _ := condMap["side"].(string)
-			tsdio.Printf("         │ Type: PASSTHROUGH\n")
+			fmt.Printf("         │ Type: PASSTHROUGH\n")
 			if side != "" {
-				tsdio.Printf("         │ Side: %s\n", side)
+				fmt.Printf("         │ Side: %s\n", side)
 			}
-			tsdio.Printf("         │ Opération: Propagation sans filtre\n")
+			fmt.Printf("         │ Opération: Propagation sans filtre\n")
 
 		case "comparison":
 			operator, _ := condMap["operator"].(string)
 			left := nd.formatExpression(condMap["left"])
 			right := nd.formatExpression(condMap["right"])
-			tsdio.Printf("         │ Type: COMPARISON\n")
-			tsdio.Printf("         │ Opérateur: %s\n", nd.symbolizeOperator(operator))
-			tsdio.Printf("         │ Expression: %s %s %s\n", left, nd.symbolizeOperator(operator), right)
+			fmt.Printf("         │ Type: COMPARISON\n")
+			fmt.Printf("         │ Opérateur: %s\n", nd.symbolizeOperator(operator))
+			fmt.Printf("         │ Expression: %s %s %s\n", left, nd.symbolizeOperator(operator), right)
 
 		case "binaryOp":
 			operator, _ := condMap["operator"].(string)
 			left := nd.formatExpression(condMap["left"])
 			right := nd.formatExpression(condMap["right"])
-			tsdio.Printf("         │ Type: BINARY OPERATION\n")
-			tsdio.Printf("         │ Opérateur: %s\n", nd.symbolizeOperator(operator))
-			tsdio.Printf("         │ Calcul: %s %s %s\n", left, nd.symbolizeOperator(operator), right)
+			fmt.Printf("         │ Type: BINARY OPERATION\n")
+			fmt.Printf("         │ Opérateur: %s\n", nd.symbolizeOperator(operator))
+			fmt.Printf("         │ Calcul: %s %s %s\n", left, nd.symbolizeOperator(operator), right)
 
 		case "tempResult":
 			stepName, _ := condMap["step_name"].(string)
 			stepIdx, _ := condMap["step_idx"].(int)
-			tsdio.Printf("         │ Type: TEMP RESULT\n")
-			tsdio.Printf("         │ Step: %s (étape %d)\n", stepName, stepIdx)
-			tsdio.Printf("         │ Opération: Stockage résultat intermédiaire\n")
+			fmt.Printf("         │ Type: TEMP RESULT\n")
+			fmt.Printf("         │ Step: %s (étape %d)\n", stepName, stepIdx)
+			fmt.Printf("         │ Opération: Stockage résultat intermédiaire\n")
 
 		default:
-			tsdio.Printf("         │ Type: %s\n", condType)
+			fmt.Printf("         │ Type: %s\n", condType)
 		}
 
 		// Note: Les informations de partage sont affichées dans le résumé
 	}
 
-	tsdio.Printf("         │ Enfants: %d\n", len(node.Children))
+	fmt.Printf("         │ Enfants: %d\n", len(node.Children))
 }
 
 func (nd *NetworkDiagram) printPassthroughNodes() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 3️⃣  PASSTHROUGH NODES (Préparation pour jointure)                                                    │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 3️⃣  PASSTHROUGH NODES (Préparation pour jointure)                                                    │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	if len(nd.network.PassthroughRegistry) == 0 {
-		tsdio.Println("   (Aucun passthrough node)")
-		tsdio.Println()
+		fmt.Println("   (Aucun passthrough node)")
+		fmt.Println()
 		return
 	}
 
@@ -198,34 +197,34 @@ func (nd *NetworkDiagram) printPassthroughNodes() {
 	sort.Strings(leftNodes)
 	sort.Strings(rightNodes)
 
-	tsdio.Println("   LEFT Side (tokens pour jointure gauche):")
+	fmt.Println("   LEFT Side (tokens pour jointure gauche):")
 	for _, key := range leftNodes {
 		node := nd.network.PassthroughRegistry[key]
-		tsdio.Printf("      [⇒] %s\n", node.ID)
-		tsdio.Printf("          │ Rôle: Passthrough LEFT\n")
-		tsdio.Printf("          │ Enfants: %d\n", len(node.Children))
-		tsdio.Println()
+		fmt.Printf("      [⇒] %s\n", node.ID)
+		fmt.Printf("          │ Rôle: Passthrough LEFT\n")
+		fmt.Printf("          │ Enfants: %d\n", len(node.Children))
+		fmt.Println()
 	}
 
-	tsdio.Println("   RIGHT Side (tokens pour jointure droite):")
+	fmt.Println("   RIGHT Side (tokens pour jointure droite):")
 	for _, key := range rightNodes {
 		node := nd.network.PassthroughRegistry[key]
-		tsdio.Printf("      [⇒] %s\n", node.ID)
-		tsdio.Printf("          │ Rôle: Passthrough RIGHT\n")
-		tsdio.Printf("          │ Enfants: %d\n", len(node.Children))
-		tsdio.Println()
+		fmt.Printf("      [⇒] %s\n", node.ID)
+		fmt.Printf("          │ Rôle: Passthrough RIGHT\n")
+		fmt.Printf("          │ Enfants: %d\n", len(node.Children))
+		fmt.Println()
 	}
 }
 
 func (nd *NetworkDiagram) printJoinNodes() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 4️⃣  JOIN NODES (Jointures Beta)                                                                      │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 4️⃣  JOIN NODES (Jointures Beta)                                                                      │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	if len(nd.network.BetaNodes) == 0 {
-		tsdio.Println("   (Aucun join node)")
-		tsdio.Println()
+		fmt.Println("   (Aucun join node)")
+		fmt.Println()
 		return
 	}
 
@@ -253,16 +252,16 @@ func (nd *NetworkDiagram) printJoinNodes() {
 			symbol = "└─"
 		}
 
-		tsdio.Printf("   %s [⋈] %s\n", symbol, joinNode.ID)
-		tsdio.Printf("      │ Type: JOIN NODE\n")
-		tsdio.Printf("      │ Variables LEFT: %v\n", joinNode.LeftVariables)
-		tsdio.Printf("      │ Variables RIGHT: %v\n", joinNode.RightVariables)
+		fmt.Printf("   %s [⋈] %s\n", symbol, joinNode.ID)
+		fmt.Printf("      │ Type: JOIN NODE\n")
+		fmt.Printf("      │ Variables LEFT: %v\n", joinNode.LeftVariables)
+		fmt.Printf("      │ Variables RIGHT: %v\n", joinNode.RightVariables)
 
 		// Afficher les JoinConditions
 		if len(joinNode.JoinConditions) > 0 {
-			tsdio.Printf("      │ Conditions de jointure:\n")
+			fmt.Printf("      │ Conditions de jointure:\n")
 			for _, jc := range joinNode.JoinConditions {
-				tsdio.Printf("      │   • %s.%s %s %s.%s\n",
+				fmt.Printf("      │   • %s.%s %s %s.%s\n",
 					jc.LeftVar, jc.LeftField,
 					nd.symbolizeOperator(jc.Operator),
 					jc.RightVar, jc.RightField)
@@ -272,16 +271,16 @@ func (nd *NetworkDiagram) printJoinNodes() {
 		// Vérifier si partagé
 		rulesUsing := nd.findRulesUsingJoinNode(id)
 		if len(rulesUsing) > 1 {
-			tsdio.Printf("      │ Partagé par: %d règles ✨ SHARED\n", len(rulesUsing))
+			fmt.Printf("      │ Partagé par: %d règles ✨ SHARED\n", len(rulesUsing))
 			for _, rule := range rulesUsing {
-				tsdio.Printf("      │   - %s\n", rule)
+				fmt.Printf("      │   - %s\n", rule)
 			}
 		} else if len(rulesUsing) == 1 {
-			tsdio.Printf("      │ Utilisé par: %s\n", rulesUsing[0])
+			fmt.Printf("      │ Utilisé par: %s\n", rulesUsing[0])
 		}
 
-		tsdio.Printf("      │ Enfants: %d\n", len(joinNode.Children))
-		tsdio.Println()
+		fmt.Printf("      │ Enfants: %d\n", len(joinNode.Children))
+		fmt.Println()
 	}
 }
 
@@ -308,28 +307,28 @@ func (nd *NetworkDiagram) printRouterNodes() {
 		return
 	}
 
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 5️⃣  ROUTER NODES (Routage des tokens vers les règles)                                                │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 5️⃣  ROUTER NODES (Routage des tokens vers les règles)                                                │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	for _, router := range routers {
-		tsdio.Printf("   [🔀] %s\n", router.ID)
-		tsdio.Printf("       │ Type: RULE ROUTER\n")
-		tsdio.Printf("       │ Pour la règle: %s\n", router.RuleID)
-		tsdio.Printf("       │ Depuis JoinNode: %s\n", router.JoinNodeID)
+		fmt.Printf("   [🔀] %s\n", router.ID)
+		fmt.Printf("       │ Type: RULE ROUTER\n")
+		fmt.Printf("       │ Pour la règle: %s\n", router.RuleID)
+		fmt.Printf("       │ Depuis JoinNode: %s\n", router.JoinNodeID)
 		if router.TerminalNode != nil {
-			tsdio.Printf("       │ Vers TerminalNode: %s\n", router.TerminalNode.ID)
+			fmt.Printf("       │ Vers TerminalNode: %s\n", router.TerminalNode.ID)
 		}
-		tsdio.Println()
+		fmt.Println()
 	}
 }
 
 func (nd *NetworkDiagram) printTerminalNodes() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 6️⃣  TERMINAL NODES (Actions)                                                                         │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 6️⃣  TERMINAL NODES (Actions)                                                                         │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	terminalIDs := make([]string, 0, len(nd.network.TerminalNodes))
 	for id := range nd.network.TerminalNodes {
@@ -344,128 +343,128 @@ func (nd *NetworkDiagram) printTerminalNodes() {
 			symbol = "└─"
 		}
 
-		tsdio.Printf("   %s [⚡] %s\n", symbol, terminal.ID)
+		fmt.Printf("   %s [⚡] %s\n", symbol, terminal.ID)
 		if terminal.Action != nil {
-			tsdio.Printf("      │ Action: %s\n", terminal.Action.Type)
+			fmt.Printf("      │ Action: %s\n", terminal.Action.Type)
 		}
-		tsdio.Printf("      │ Tokens en mémoire: %d\n", len(terminal.Memory.Tokens))
-		tsdio.Println()
+		fmt.Printf("      │ Tokens en mémoire: %d\n", len(terminal.Memory.Tokens))
+		fmt.Println()
 	}
 }
 
 func (nd *NetworkDiagram) printFlowDiagram() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 7️⃣  DIAGRAMME DE FLUX (Architecture complète)                                                        │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 7️⃣  DIAGRAMME DE FLUX (Architecture complète)                                                        │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
-	tsdio.Println("   Expression TSD des règles:")
-	tsdio.Println("   ═════════════════════════════════════════════════════════════════════════════════════════")
-	tsdio.Println()
-	tsdio.Println("   R1: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) > 0  → facture_calculee")
-	tsdio.Println("   R2: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) < 0  → facture_speciale")
-	tsdio.Println("   R3: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) > 0  → facture_speciale")
-	tsdio.Println()
-	tsdio.Println("   Architecture RETE:")
-	tsdio.Println("   ═════════════════════════════════════════════════════════════════════════════════════════")
-	tsdio.Println()
-	tsdio.Println("                                     ┌─────────────────┐")
-	tsdio.Println("                                     │  [T] Commande   │")
-	tsdio.Println("                                     │   type_Commande │")
-	tsdio.Println("                                     └────────┬────────┘")
-	tsdio.Println("                                              │")
-	tsdio.Println("                      ┌───────────────────────┼───────────────────────┐")
-	tsdio.Println("                      │                       │                       │")
-	tsdio.Println("   ┌──────────────────▼──────────────┐        │        ┌──────────────▼──────────────┐")
-	tsdio.Println("   │ [α] c.qte × 23                  │◄───────┴───────►│ [α] c.qte × 23              │")
-	tsdio.Println("   │  alpha_1362ff5a962dca07         │  PARTAGÉ R1-R3  │  alpha_1362ff5a962dca07     │")
-	tsdio.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
-	tsdio.Println("                │                                                   │")
-	tsdio.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
-	tsdio.Println("   │ [α] <temp_1> - 10               │◄───────────────►│ [α] <temp_1> - 10           │")
-	tsdio.Println("   │  alpha_e2ae7bbb66d00288         │  PARTAGÉ R1-R3  │  alpha_e2ae7bbb66d00288     │")
-	tsdio.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
-	tsdio.Println("                │                                                   │")
-	tsdio.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
-	tsdio.Println("   │ [α] c.remise × 43               │◄───────────────►│ [α] c.remise × 43           │")
-	tsdio.Println("   │  alpha_c4780a7d3c271103         │  PARTAGÉ R1-R3  │  alpha_c4780a7d3c271103     │")
-	tsdio.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
-	tsdio.Println("                │                                                   │")
-	tsdio.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
-	tsdio.Println("   │ [α] <temp_2> + <temp_3>         │◄───────────────►│ [α] <temp_2> + <temp_3>     │")
-	tsdio.Println("   │  alpha_e03528dec0e1f043         │  PARTAGÉ R1-R3  │  alpha_e03528dec0e1f043     │")
-	tsdio.Println("   └────────┬───────────┬────────────┘                 └────────┬───────────┬────────┘")
-	tsdio.Println("            │           │                                       │           │")
-	tsdio.Println("   ┌────────▼──────┐    │                              ┌────────▼──────┐    │")
-	tsdio.Println("   │ [α] > 0       │    │                              │ [α] < 0       │    │")
-	tsdio.Println("   │ R1 & R3       │    │                              │ R2 seule      │    │")
-	tsdio.Println("   │ alpha_2913... │    │                              │ alpha_81a5... │    │")
-	tsdio.Println("   └───────┬───────┘    │                              └───────┬───────┘    │")
-	tsdio.Println("           │            │                                      │            │")
-	tsdio.Println("   ┌───────▼────────┐   │                              ┌───────▼────────┐   │")
-	tsdio.Println("   │ [⇒] Passthrough│   │                              │ [⇒] Passthrough│   │")
-	tsdio.Println("   │ RIGHT R1       │   │                              │ RIGHT R2       │   │")
-	tsdio.Println("   └───────┬────────┘   │                              └───────┬────────┘   │")
-	tsdio.Println("           │            │                                      │            │")
-	tsdio.Println("           │    ┌───────▼────────┐                            │    ┌───────▼────────┐")
-	tsdio.Println("           │    │ [⇒] Passthrough│                            │    │ [⇒] Passthrough│")
-	tsdio.Println("           │    │ RIGHT R3       │                            │    │ RIGHT R3 (skip)│")
-	tsdio.Println("           │    └───────┬────────┘                            │    └───────┬────────┘")
-	tsdio.Println("           │            │                                      │            │")
-	tsdio.Println("           └────────┬───┘                                      └────────┬───┘")
-	tsdio.Println("                    │                                                   │")
-	tsdio.Println("   ┌─────────────────────────────────┐                 ┌─────────────────────────────────┐")
-	tsdio.Println("   │  [T] Produit (LEFT)             │                 │  [T] Produit (LEFT)             │")
-	tsdio.Println("   └────────┬────────────────────────┘                 └────────┬────────────────────────┘")
-	tsdio.Println("            │                                                   │")
-	tsdio.Println("   ┌────────▼────────────────────┐                    ┌────────▼────────────────────┐")
-	tsdio.Println("   │ [⇒] Passthrough LEFT R1     │                    │ [⇒] Passthrough LEFT R2     │")
-	tsdio.Println("   └────────┬────────────────────┘                    └────────┬────────────────────┘")
-	tsdio.Println("            │                                                  │")
-	tsdio.Println("            ├──────────────────────────────┐                  │")
-	tsdio.Println("            │                              │                  │")
-	tsdio.Println("   ┌────────▼─────────────────────┐  ┌────▼───────────────────────┐")
-	tsdio.Println("   │ [⋈] JoinNode SHARED          │  │ [⋈] JoinNode R2            │")
-	tsdio.Println("   │ join_514c9d1bff12fa4f        │  │ join_118236e6b5bc9f95      │")
-	tsdio.Println("   │ c.produit_id == p.id         │  │ c.produit_id == p.id       │")
-	tsdio.Println("   │ Partagé: R1 & R3             │  │ Dédié: R2                  │")
-	tsdio.Println("   └────┬───────────────────┬─────┘  └────────┬───────────────────┘")
-	tsdio.Println("        │                   │                 │")
-	tsdio.Println("   ┌────▼────────┐   ┌──────▼─────────┐   ┌──▼───────────────┐")
-	tsdio.Println("   │ [⚡] R1      │   │ [🔀] Router R3 │   │ [⚡] R2           │")
-	tsdio.Println("   │ Terminal    │   │ RuleRouterNode │   │ Terminal         │")
-	tsdio.Println("   │ 3 tokens ✓  │   └──────┬─────────┘   │ 0 tokens ✓       │")
-	tsdio.Println("   └─────────────┘          │             └──────────────────┘")
-	tsdio.Println("                     ┌──────▼─────────┐")
-	tsdio.Println("                     │ [⚡] R3         │")
-	tsdio.Println("                     │ Terminal       │")
-	tsdio.Println("                     │ 3 tokens ✓     │")
-	tsdio.Println("                     └────────────────┘")
-	tsdio.Println()
-	tsdio.Println("   Légende:")
-	tsdio.Println("   ────────")
-	tsdio.Println("   [T]  = TypeNode     (routage par type)")
-	tsdio.Println("   [α]  = AlphaNode    (filtrage/calcul atomique)")
-	tsdio.Println("   [⇒]  = Passthrough  (préparation jointure)")
-	tsdio.Println("   [⋈]  = JoinNode     (jointure beta)")
-	tsdio.Println("   [🔀] = RouterNode   (routage tokens)")
-	tsdio.Println("   [⚡] = TerminalNode (action)")
-	tsdio.Println()
-	tsdio.Println("   Points clés:")
-	tsdio.Println("   ───────────")
-	tsdio.Println("   • AlphaNodes décomposés partagés entre R1 et R3 (mêmes conditions)")
-	tsdio.Println("   • JoinNode partagé entre R1 et R3 (mêmes conditions alpha + beta)")
-	tsdio.Println("   • R2 a son propre JoinNode (condition alpha différente: < au lieu de >)")
-	tsdio.Println("   • RuleRouterNode route les tokens du JoinNode partagé vers R3")
-	tsdio.Println("   • R1 connectée directement au JoinNode (première règle)")
-	tsdio.Println()
+	fmt.Println("   Expression TSD des règles:")
+	fmt.Println("   ═════════════════════════════════════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("   R1: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) > 0  → facture_calculee")
+	fmt.Println("   R2: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) < 0  → facture_speciale")
+	fmt.Println("   R3: c.produit_id == p.id AND (c.qte × 23 - 10 + c.remise × 43) > 0  → facture_speciale")
+	fmt.Println()
+	fmt.Println("   Architecture RETE:")
+	fmt.Println("   ═════════════════════════════════════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("                                     ┌─────────────────┐")
+	fmt.Println("                                     │  [T] Commande   │")
+	fmt.Println("                                     │   type_Commande │")
+	fmt.Println("                                     └────────┬────────┘")
+	fmt.Println("                                              │")
+	fmt.Println("                      ┌───────────────────────┼───────────────────────┐")
+	fmt.Println("                      │                       │                       │")
+	fmt.Println("   ┌──────────────────▼──────────────┐        │        ┌──────────────▼──────────────┐")
+	fmt.Println("   │ [α] c.qte × 23                  │◄───────┴───────►│ [α] c.qte × 23              │")
+	fmt.Println("   │  alpha_1362ff5a962dca07         │  PARTAGÉ R1-R3  │  alpha_1362ff5a962dca07     │")
+	fmt.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
+	fmt.Println("                │                                                   │")
+	fmt.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
+	fmt.Println("   │ [α] <temp_1> - 10               │◄───────────────►│ [α] <temp_1> - 10           │")
+	fmt.Println("   │  alpha_e2ae7bbb66d00288         │  PARTAGÉ R1-R3  │  alpha_e2ae7bbb66d00288     │")
+	fmt.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
+	fmt.Println("                │                                                   │")
+	fmt.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
+	fmt.Println("   │ [α] c.remise × 43               │◄───────────────►│ [α] c.remise × 43           │")
+	fmt.Println("   │  alpha_c4780a7d3c271103         │  PARTAGÉ R1-R3  │  alpha_c4780a7d3c271103     │")
+	fmt.Println("   └────────────┬────────────────────┘                 └────────────┬────────────────┘")
+	fmt.Println("                │                                                   │")
+	fmt.Println("   ┌────────────▼────────────────────┐                 ┌────────────▼────────────────┐")
+	fmt.Println("   │ [α] <temp_2> + <temp_3>         │◄───────────────►│ [α] <temp_2> + <temp_3>     │")
+	fmt.Println("   │  alpha_e03528dec0e1f043         │  PARTAGÉ R1-R3  │  alpha_e03528dec0e1f043     │")
+	fmt.Println("   └────────┬───────────┬────────────┘                 └────────┬───────────┬────────┘")
+	fmt.Println("            │           │                                       │           │")
+	fmt.Println("   ┌────────▼──────┐    │                              ┌────────▼──────┐    │")
+	fmt.Println("   │ [α] > 0       │    │                              │ [α] < 0       │    │")
+	fmt.Println("   │ R1 & R3       │    │                              │ R2 seule      │    │")
+	fmt.Println("   │ alpha_2913... │    │                              │ alpha_81a5... │    │")
+	fmt.Println("   └───────┬───────┘    │                              └───────┬───────┘    │")
+	fmt.Println("           │            │                                      │            │")
+	fmt.Println("   ┌───────▼────────┐   │                              ┌───────▼────────┐   │")
+	fmt.Println("   │ [⇒] Passthrough│   │                              │ [⇒] Passthrough│   │")
+	fmt.Println("   │ RIGHT R1       │   │                              │ RIGHT R2       │   │")
+	fmt.Println("   └───────┬────────┘   │                              └───────┬────────┘   │")
+	fmt.Println("           │            │                                      │            │")
+	fmt.Println("           │    ┌───────▼────────┐                            │    ┌───────▼────────┐")
+	fmt.Println("           │    │ [⇒] Passthrough│                            │    │ [⇒] Passthrough│")
+	fmt.Println("           │    │ RIGHT R3       │                            │    │ RIGHT R3 (skip)│")
+	fmt.Println("           │    └───────┬────────┘                            │    └───────┬────────┘")
+	fmt.Println("           │            │                                      │            │")
+	fmt.Println("           └────────┬───┘                                      └────────┬───┘")
+	fmt.Println("                    │                                                   │")
+	fmt.Println("   ┌─────────────────────────────────┐                 ┌─────────────────────────────────┐")
+	fmt.Println("   │  [T] Produit (LEFT)             │                 │  [T] Produit (LEFT)             │")
+	fmt.Println("   └────────┬────────────────────────┘                 └────────┬────────────────────────┘")
+	fmt.Println("            │                                                   │")
+	fmt.Println("   ┌────────▼────────────────────┐                    ┌────────▼────────────────────┐")
+	fmt.Println("   │ [⇒] Passthrough LEFT R1     │                    │ [⇒] Passthrough LEFT R2     │")
+	fmt.Println("   └────────┬────────────────────┘                    └────────┬────────────────────┘")
+	fmt.Println("            │                                                  │")
+	fmt.Println("            ├──────────────────────────────┐                  │")
+	fmt.Println("            │                              │                  │")
+	fmt.Println("   ┌────────▼─────────────────────┐  ┌────▼───────────────────────┐")
+	fmt.Println("   │ [⋈] JoinNode SHARED          │  │ [⋈] JoinNode R2            │")
+	fmt.Println("   │ join_514c9d1bff12fa4f        │  │ join_118236e6b5bc9f95      │")
+	fmt.Println("   │ c.produit_id == p.id         │  │ c.produit_id == p.id       │")
+	fmt.Println("   │ Partagé: R1 & R3             │  │ Dédié: R2                  │")
+	fmt.Println("   └────┬───────────────────┬─────┘  └────────┬───────────────────┘")
+	fmt.Println("        │                   │                 │")
+	fmt.Println("   ┌────▼────────┐   ┌──────▼─────────┐   ┌──▼───────────────┐")
+	fmt.Println("   │ [⚡] R1      │   │ [🔀] Router R3 │   │ [⚡] R2           │")
+	fmt.Println("   │ Terminal    │   │ RuleRouterNode │   │ Terminal         │")
+	fmt.Println("   │ 3 tokens ✓  │   └──────┬─────────┘   │ 0 tokens ✓       │")
+	fmt.Println("   └─────────────┘          │             └──────────────────┘")
+	fmt.Println("                     ┌──────▼─────────┐")
+	fmt.Println("                     │ [⚡] R3         │")
+	fmt.Println("                     │ Terminal       │")
+	fmt.Println("                     │ 3 tokens ✓     │")
+	fmt.Println("                     └────────────────┘")
+	fmt.Println()
+	fmt.Println("   Légende:")
+	fmt.Println("   ────────")
+	fmt.Println("   [T]  = TypeNode     (routage par type)")
+	fmt.Println("   [α]  = AlphaNode    (filtrage/calcul atomique)")
+	fmt.Println("   [⇒]  = Passthrough  (préparation jointure)")
+	fmt.Println("   [⋈]  = JoinNode     (jointure beta)")
+	fmt.Println("   [🔀] = RouterNode   (routage tokens)")
+	fmt.Println("   [⚡] = TerminalNode (action)")
+	fmt.Println()
+	fmt.Println("   Points clés:")
+	fmt.Println("   ───────────")
+	fmt.Println("   • AlphaNodes décomposés partagés entre R1 et R3 (mêmes conditions)")
+	fmt.Println("   • JoinNode partagé entre R1 et R3 (mêmes conditions alpha + beta)")
+	fmt.Println("   • R2 a son propre JoinNode (condition alpha différente: < au lieu de >)")
+	fmt.Println("   • RuleRouterNode route les tokens du JoinNode partagé vers R3")
+	fmt.Println("   • R1 connectée directement au JoinNode (première règle)")
+	fmt.Println()
 }
 
 func (nd *NetworkDiagram) printSummary() {
-	tsdio.Println("┌" + strings.Repeat("─", 118) + "┐")
-	tsdio.Println("│ 📈 RÉSUMÉ DU RÉSEAU                                                                                  │")
-	tsdio.Println("└" + strings.Repeat("─", 118) + "┘")
-	tsdio.Println()
+	fmt.Println("┌" + strings.Repeat("─", 118) + "┐")
+	fmt.Println("│ 📈 RÉSUMÉ DU RÉSEAU                                                                                  │")
+	fmt.Println("└" + strings.Repeat("─", 118) + "┘")
+	fmt.Println()
 
 	uniqueJoins := make(map[string]bool)
 	for _, node := range nd.network.BetaNodes {
@@ -474,12 +473,12 @@ func (nd *NetworkDiagram) printSummary() {
 		}
 	}
 
-	tsdio.Printf("   Type Nodes:        %3d (routage par type)\n", len(nd.network.TypeNodes))
-	tsdio.Printf("   Alpha Nodes:       %3d (filtres et calculs atomiques)\n", len(nd.network.AlphaNodes))
-	tsdio.Printf("   Passthrough Nodes: %3d (préparation jointure)\n", len(nd.network.PassthroughRegistry))
-	tsdio.Printf("   Join Nodes:        %3d (jointures beta)\n", len(uniqueJoins))
-	tsdio.Printf("   Terminal Nodes:    %3d (actions)\n", len(nd.network.TerminalNodes))
-	tsdio.Println()
+	fmt.Printf("   Type Nodes:        %3d (routage par type)\n", len(nd.network.TypeNodes))
+	fmt.Printf("   Alpha Nodes:       %3d (filtres et calculs atomiques)\n", len(nd.network.AlphaNodes))
+	fmt.Printf("   Passthrough Nodes: %3d (préparation jointure)\n", len(nd.network.PassthroughRegistry))
+	fmt.Printf("   Join Nodes:        %3d (jointures beta)\n", len(uniqueJoins))
+	fmt.Printf("   Terminal Nodes:    %3d (actions)\n", len(nd.network.TerminalNodes))
+	fmt.Println()
 
 	// Calculer les statistiques de partage alpha
 	sharedAlphaCount := 0
@@ -498,10 +497,10 @@ func (nd *NetworkDiagram) printSummary() {
 		}
 	}
 
-	tsdio.Printf("   📊 Statistiques de partage:\n")
-	tsdio.Printf("      • AlphaNodes partagés:  %d / %d\n", sharedAlphaCount, len(nd.network.AlphaNodes))
-	tsdio.Printf("      • JoinNodes partagés:   %d / %d\n", sharedJoinCount, len(uniqueJoins))
-	tsdio.Println()
+	fmt.Printf("   📊 Statistiques de partage:\n")
+	fmt.Printf("      • AlphaNodes partagés:  %d / %d\n", sharedAlphaCount, len(nd.network.AlphaNodes))
+	fmt.Printf("      • JoinNodes partagés:   %d / %d\n", sharedJoinCount, len(uniqueJoins))
+	fmt.Println()
 }
 
 // Helper functions

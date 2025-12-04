@@ -4,7 +4,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"sync"
 )
@@ -80,7 +79,7 @@ func (msn *MultiSourceAccumulatorNode) Activate(fact *Fact, token *Token) error 
 	}
 	msn.CombinedTokens[mainFactID][token.ID] = token
 
-	tsdio.Printf("📊 MULTI_ACCUMULATOR[%s]: Received token %s for main fact %s\n",
+	fmt.Printf("📊 MULTI_ACCUMULATOR[%s]: Received token %s for main fact %s\n",
 		msn.ID, token.ID, mainFactID)
 
 	// Recompute aggregations for this main fact
@@ -94,7 +93,7 @@ func (msn *MultiSourceAccumulatorNode) processMainFact(mainFact *Fact) error {
 	// Get all tokens for this main fact
 	tokens := msn.CombinedTokens[mainFactID]
 	if len(tokens) == 0 {
-		tsdio.Printf("📊 MULTI_ACCUMULATOR[%s]: No tokens for main fact %s\n", msn.ID, mainFactID)
+		fmt.Printf("📊 MULTI_ACCUMULATOR[%s]: No tokens for main fact %s\n", msn.ID, mainFactID)
 		return nil
 	}
 
@@ -114,17 +113,17 @@ func (msn *MultiSourceAccumulatorNode) processMainFact(mainFact *Fact) error {
 		// Cache the result
 		msn.AggregateCache[mainFactID][aggVar.Name] = value
 
-		tsdio.Printf("📊 MULTI_ACCUMULATOR[%s]: %s = %.2f for main fact %s\n",
+		fmt.Printf("📊 MULTI_ACCUMULATOR[%s]: %s = %.2f for main fact %s\n",
 			msn.ID, aggVar.Name, value, mainFactID)
 
 		// Check threshold if specified
 		if aggVar.Operator != "" && aggVar.Operator != ">=" || aggVar.Threshold != 0 {
 			if !msn.evaluateThreshold(value, aggVar.Operator, aggVar.Threshold) {
-				tsdio.Printf("❌ MULTI_ACCUMULATOR[%s]: Threshold not satisfied: %s (%.2f %s %.2f)\n",
+				fmt.Printf("❌ MULTI_ACCUMULATOR[%s]: Threshold not satisfied: %s (%.2f %s %.2f)\n",
 					msn.ID, aggVar.Name, value, aggVar.Operator, aggVar.Threshold)
 				allThresholdsSatisfied = false
 			} else {
-				tsdio.Printf("✅ MULTI_ACCUMULATOR[%s]: Threshold satisfied: %s (%.2f %s %.2f)\n",
+				fmt.Printf("✅ MULTI_ACCUMULATOR[%s]: Threshold satisfied: %s (%.2f %s %.2f)\n",
 					msn.ID, aggVar.Name, value, aggVar.Operator, aggVar.Threshold)
 			}
 		}
@@ -132,7 +131,7 @@ func (msn *MultiSourceAccumulatorNode) processMainFact(mainFact *Fact) error {
 
 	// Only fire if all thresholds are satisfied
 	if allThresholdsSatisfied {
-		tsdio.Printf("✅ MULTI_ACCUMULATOR[%s]: All thresholds satisfied for main fact %s\n",
+		fmt.Printf("✅ MULTI_ACCUMULATOR[%s]: All thresholds satisfied for main fact %s\n",
 			msn.ID, mainFactID)
 
 		// Create a token with the main fact and aggregation results
@@ -156,12 +155,12 @@ func (msn *MultiSourceAccumulatorNode) processMainFact(mainFact *Fact) error {
 			// Propagate to children
 			for _, child := range msn.Children {
 				if err := child.ActivateLeft(newToken); err != nil {
-					tsdio.Printf("⚠️  Error activating child: %v\n", err)
+					fmt.Printf("⚠️  Error activating child: %v\n", err)
 				}
 			}
 		}
 	} else {
-		tsdio.Printf("❌ MULTI_ACCUMULATOR[%s]: Not all thresholds satisfied for main fact %s\n",
+		fmt.Printf("❌ MULTI_ACCUMULATOR[%s]: Not all thresholds satisfied for main fact %s\n",
 			msn.ID, mainFactID)
 	}
 
@@ -200,7 +199,7 @@ func (msn *MultiSourceAccumulatorNode) computeAggregation(
 		// Get the field value
 		fieldValue, exists := sourceFact.Fields[aggVar.Field]
 		if !exists {
-			tsdio.Printf("⚠️  MULTI_ACCUMULATOR[%s]: Field %s not found in fact %s\n",
+			fmt.Printf("⚠️  MULTI_ACCUMULATOR[%s]: Field %s not found in fact %s\n",
 				msn.ID, aggVar.Field, sourceFact.ID)
 			continue
 		}
@@ -305,7 +304,7 @@ func (msn *MultiSourceAccumulatorNode) toFloat64(val interface{}) float64 {
 	case uint64:
 		return float64(v)
 	default:
-		tsdio.Printf("⚠️  Cannot convert %v (type %T) to float64, returning 0\n", val, val)
+		fmt.Printf("⚠️  Cannot convert %v (type %T) to float64, returning 0\n", val, val)
 		return 0
 	}
 }
@@ -330,13 +329,13 @@ func (msn *MultiSourceAccumulatorNode) ActivateRetract(factID string) error {
 
 	// Check if this is a main fact being retracted
 	if mainFact, exists := msn.MainFacts[factID]; exists {
-		tsdio.Printf("🔄 MULTI_ACCUMULATOR[%s]: Retracting main fact %s\n", msn.ID, factID)
+		fmt.Printf("🔄 MULTI_ACCUMULATOR[%s]: Retracting main fact %s\n", msn.ID, factID)
 		msn.ClearMainFact(mainFact.ID)
 
 		// Propagate retraction to children
 		for _, child := range msn.Children {
 			if err := child.ActivateRetract(factID); err != nil {
-				tsdio.Printf("⚠️  Error propagating retraction to child: %v\n", err)
+				fmt.Printf("⚠️  Error propagating retraction to child: %v\n", err)
 			}
 		}
 		return nil
@@ -357,7 +356,7 @@ func (msn *MultiSourceAccumulatorNode) ActivateRetract(factID string) error {
 			if factInToken {
 				// Remove this token
 				delete(msn.CombinedTokens[mainFactID], tokenID)
-				tsdio.Printf("🔄 MULTI_ACCUMULATOR[%s]: Removed token %s due to fact %s retraction\n",
+				fmt.Printf("🔄 MULTI_ACCUMULATOR[%s]: Removed token %s due to fact %s retraction\n",
 					msn.ID, tokenID, factID)
 			}
 		}
@@ -370,7 +369,7 @@ func (msn *MultiSourceAccumulatorNode) ActivateRetract(factID string) error {
 			// Recompute aggregations for this main fact
 			if mainFact, exists := msn.MainFacts[mainFactID]; exists {
 				if err := msn.processMainFact(mainFact); err != nil {
-					tsdio.Printf("⚠️  Error recomputing aggregations after retraction: %v\n", err)
+					fmt.Printf("⚠️  Error recomputing aggregations after retraction: %v\n", err)
 				}
 			}
 		}
@@ -398,7 +397,7 @@ func (msn *MultiSourceAccumulatorNode) ClearMainFact(mainFactID string) {
 	delete(msn.CombinedTokens, mainFactID)
 	delete(msn.AggregateCache, mainFactID)
 
-	tsdio.Printf("🧹 MULTI_ACCUMULATOR[%s]: Cleared data for main fact %s\n", msn.ID, mainFactID)
+	fmt.Printf("🧹 MULTI_ACCUMULATOR[%s]: Cleared data for main fact %s\n", msn.ID, mainFactID)
 }
 
 // GetStats returns statistics about the accumulator state

@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -36,7 +35,7 @@ func (rn *RootNode) ActivateRetract(factID string) error {
 	rn.mutex.Lock()
 	rn.Memory.RemoveFact(factID)
 	rn.mutex.Unlock()
-	tsdio.Printf("🗑️  [ROOT] Rétractation du fait: %s\n", factID)
+	fmt.Printf("🗑️  [ROOT] Rétractation du fait: %s\n", factID)
 	return rn.PropagateRetractToChildren(factID)
 }
 

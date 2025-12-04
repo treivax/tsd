@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"time"
 
@@ -80,7 +79,7 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	network.SetTransaction(tx)
 	metrics.TransactionID = tx.ID
 	metrics.TransactionFootprint = tx.GetMemoryFootprint()
-	tsdio.Printf("🔒 Transaction démarrée: %s (footprint: %.2f KB)\n",
+	cp.GetLogger().Info("🔒 Transaction démarrée: %s (footprint: %.2f KB)",
 		tx.ID, float64(metrics.TransactionFootprint)/1024)
 
 	// Vérifier la taille de l'empreinte mémoire
@@ -97,8 +96,8 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	}()
 
 	// Phase 2: Parser le fichier
-	tsdio.Printf("========================================\n")
-	tsdio.Printf("📁 Ingestion avancée: %s\n", filename)
+	cp.GetLogger().Info("========================================")
+	cp.GetLogger().Info("📁 Ingestion avancée: %s", filename)
 
 	parsedAST, err := parseFile(filename)
 	if err != nil {
@@ -107,7 +106,7 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 			tx.Rollback()
 			metrics.RollbackPerformed = true
 			metrics.RollbackDuration = time.Since(rollbackStart)
-			tsdio.Printf("🔙 Rollback effectué en %v\n", metrics.RollbackDuration)
+			cp.GetLogger().Warn("🔙 Rollback effectué en %v", metrics.RollbackDuration)
 		}
 		return nil, metrics, fmt.Errorf("❌ Erreur parsing: %w", err)
 	}
@@ -115,12 +114,12 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	// Phase 3: Vérifier reset et effectuer GC (toujours activé)
 	hasReset := detectReset(parsedAST)
 	if hasReset {
-		tsdio.Printf("🔄 Commande reset détectée\n")
+		cp.GetLogger().Info("🔄 Commande reset détectée")
 
 		// Effectuer GC de l'ancien réseau (toujours activé)
 		if network != nil {
 			gcStart := time.Now()
-			tsdio.Printf("🗑️  Garbage Collection de l'ancien réseau...\n")
+			cp.GetLogger().Info("🗑️  Garbage Collection de l'ancien réseau...")
 
 			// Compter les nœuds avant GC
 			nodesBefore := len(network.TypeNodes) + len(network.AlphaNodes) +
@@ -132,13 +131,13 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 			metrics.NodesCollected = nodesBefore
 			metrics.GCDuration = time.Since(gcStart)
 
-			tsdio.Printf("✅ GC terminé: %d nœuds collectés en %v\n",
+			cp.GetLogger().Info("✅ GC terminé: %d nœuds collectés en %v",
 				metrics.NodesCollected, metrics.GCDuration)
 		}
 
 		// Créer nouveau réseau
 		network = NewReteNetwork(storage)
-		tsdio.Printf("🆕 Nouveau réseau RETE créé\n")
+		cp.GetLogger().Info("🆕 Nouveau réseau RETE créé")
 	}
 
 	// Phase 4: Validation sémantique (toujours activée)
@@ -146,7 +145,7 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	validationStart := time.Now()
 	if network != nil && !hasReset {
 		// Validation incrémentale avec contexte (mode incrémental)
-		tsdio.Printf("🔍 Validation incrémentale avec contexte...\n")
+		cp.GetLogger().Info("🔍 Validation incrémentale avec contexte...")
 
 		validator := NewIncrementalValidator(network)
 		err = validator.ValidateWithContext(parsedAST)
@@ -156,20 +155,20 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 
 		if err != nil {
 			metrics.ValidationErrors = append(metrics.ValidationErrors, err.Error())
-			tsdio.Printf("❌ Validation incrémentale échouée: %v\n", err)
+			cp.GetLogger().Error("❌ Validation incrémentale échouée: %v", err)
 
 			if config.AutoRollbackOnError {
 				rollbackStart := time.Now()
 				tx.Rollback()
 				metrics.RollbackPerformed = true
 				metrics.RollbackDuration = time.Since(rollbackStart)
-				tsdio.Printf("🔙 Rollback effectué en %v\n", metrics.RollbackDuration)
+				cp.GetLogger().Warn("🔙 Rollback effectué en %v", metrics.RollbackDuration)
 			}
 
 			return nil, metrics, fmt.Errorf("❌ Validation incrémentale: %w", err)
 		}
 
-		tsdio.Printf("✅ Validation incrémentale réussie (%d types en contexte)\n",
+		cp.GetLogger().Info("✅ Validation incrémentale réussie (%d types en contexte)",
 			metrics.TypesFoundInContext)
 	} else {
 		// Validation standard (création initiale ou après reset)
@@ -187,7 +186,7 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	ingestionNetwork, ingestionErr := cp.IngestFile(filename, network, storage)
 
 	if ingestionErr != nil {
-		tsdio.Printf("❌ Erreur lors de l'ingestion: %v\n", ingestionErr)
+		cp.GetLogger().Error("❌ Erreur lors de l'ingestion: %v", ingestionErr)
 
 		// Rollback automatique si configuré
 		if config.AutoRollbackOnError {
@@ -197,14 +196,14 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 			metrics.RollbackDuration = time.Since(rollbackStart)
 
 			if rollbackErr != nil {
-				tsdio.Printf("❌ Erreur rollback: %v\n", rollbackErr)
+				cp.GetLogger().Error("❌ Erreur rollback: %v", rollbackErr)
 				return nil, metrics, fmt.Errorf(
 					"erreur ingestion: %w; erreur rollback: %v",
 					ingestionErr, rollbackErr,
 				)
 			}
 
-			tsdio.Printf("🔙 Rollback effectué avec succès en %v\n", metrics.RollbackDuration)
+			cp.GetLogger().Warn("🔙 Rollback effectué avec succès en %v", metrics.RollbackDuration)
 		}
 
 		return nil, metrics, ingestionErr
@@ -218,16 +217,16 @@ func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
 	if config.AutoCommit {
 		commitErr := tx.Commit()
 		if commitErr != nil {
-			tsdio.Printf("❌ Erreur commit: %v\n", commitErr)
+			cp.GetLogger().Error("❌ Erreur commit: %v", commitErr)
 			return nil, metrics, fmt.Errorf("erreur commit: %w", commitErr)
 		}
-		tsdio.Printf("✅ Transaction committée: %d changements\n", metrics.ChangesTracked)
+		cp.GetLogger().Info("✅ Transaction committée: %d changements", metrics.ChangesTracked)
 	} else {
-		tsdio.Printf("⏸️  Transaction active, commit manuel requis\n")
+		cp.GetLogger().Info("⏸️  Transaction active, commit manuel requis")
 	}
 
-	tsdio.Printf("🎯 INGESTION AVANCÉE TERMINÉE\n")
-	tsdio.Printf("========================================\n\n")
+	cp.GetLogger().Info("🎯 INGESTION AVANCÉE TERMINÉE")
+	cp.GetLogger().Info("========================================")
 
 	return network, metrics, nil
 }
@@ -288,40 +287,40 @@ func PrintAdvancedMetrics(metrics *AdvancedMetrics) {
 		return
 	}
 
-	tsdio.Println("\n📊 MÉTRIQUES AVANCÉES")
-	tsdio.Println("═══════════════════════════════════════")
+	fmt.Println("\n📊 MÉTRIQUES AVANCÉES")
+	fmt.Println("═══════════════════════════════════════")
 
 	// Validation (toujours activée)
 	if metrics.ValidationWithContextDuration > 0 {
-		tsdio.Printf("🔍 Validation incrémentale\n")
-		tsdio.Printf("   Durée: %v\n", metrics.ValidationWithContextDuration)
-		tsdio.Printf("   Types en contexte: %d\n", metrics.TypesFoundInContext)
+		fmt.Println("🔍 Validation incrémentale")
+		fmt.Printf("   Durée: %v\n", metrics.ValidationWithContextDuration)
+		fmt.Printf("   Types en contexte: %d\n", metrics.TypesFoundInContext)
 		if len(metrics.ValidationErrors) > 0 {
-			tsdio.Printf("   Erreurs: %d\n", len(metrics.ValidationErrors))
+			fmt.Printf("   Erreurs: %d\n", len(metrics.ValidationErrors))
 		}
 	}
 
 	// Garbage Collection
 	if metrics.GCPerformed {
-		tsdio.Printf("\n🗑️  Garbage Collection\n")
-		tsdio.Printf("   Durée: %v\n", metrics.GCDuration)
-		tsdio.Printf("   Nœuds collectés: %d\n", metrics.NodesCollected)
+		fmt.Println("\n🗑️  Garbage Collection")
+		fmt.Printf("   Durée: %v\n", metrics.GCDuration)
+		fmt.Printf("   Nœuds collectés: %d\n", metrics.NodesCollected)
 		if metrics.MemoryFreed > 0 {
-			tsdio.Printf("   Mémoire libérée: %.2f MB\n", float64(metrics.MemoryFreed)/(1024*1024))
+			fmt.Printf("   Mémoire libérée: %.2f MB\n", float64(metrics.MemoryFreed)/(1024*1024))
 		}
 	}
 
 	// Transaction (toujours active)
-	tsdio.Printf("\n🔒 Transaction\n")
-	tsdio.Printf("   ID: %s\n", metrics.TransactionID)
-	tsdio.Printf("   Durée: %v\n", metrics.TransactionDuration)
-	tsdio.Printf("   Empreinte mémoire: %.2f KB\n", float64(metrics.TransactionFootprint)/1024)
-	tsdio.Printf("   Changements trackés: %d\n", metrics.ChangesTracked)
+	fmt.Println("\n🔒 Transaction")
+	fmt.Printf("   ID: %s\n", metrics.TransactionID)
+	fmt.Printf("   Durée: %v\n", metrics.TransactionDuration)
+	fmt.Printf("   Empreinte mémoire: %.2f KB\n", float64(metrics.TransactionFootprint)/1024)
+	fmt.Printf("   Changements trackés: %d\n", metrics.ChangesTracked)
 	if metrics.RollbackPerformed {
-		tsdio.Printf("   ⚠️  Rollback effectué en %v\n", metrics.RollbackDuration)
+		fmt.Printf("   ⚠️  Rollback effectué en %v\n", metrics.RollbackDuration)
 	}
 
-	tsdio.Println("═══════════════════════════════════════")
+	fmt.Println("═══════════════════════════════════════")
 }
 
 // GetAdvancedMetricsSummary retourne un résumé textuel des métriques

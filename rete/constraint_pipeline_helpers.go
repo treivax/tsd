@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -122,7 +121,7 @@ func (cp *ConstraintPipeline) buildConditionFromConstraints(constraintsData inte
 	}
 
 	if isNegation {
-		tsdio.Printf("   🚫 Détection contrainte NOT - création d'un AlphaNode de négation\n")
+		cp.GetLogger().Info("   🚫 Détection contrainte NOT - création d'un AlphaNode de négation")
 		return map[string]interface{}{
 			"type":      "negation",
 			"negated":   true,
@@ -208,12 +207,12 @@ func (cp *ConstraintPipeline) connectAlphaNodeToTypeNode(
 		// Les TypeNodes sont stockés avec leur nom direct, pas avec "type_" préfixe
 		if typeNode, exists := network.TypeNodes[variableType]; exists {
 			typeNode.AddChild(alphaNode)
-			tsdio.Printf("   ✓ AlphaNode %s connecté au TypeNode %s\n", alphaNode.ID, variableType)
+			cp.GetLogger().Debug("   ✓ AlphaNode %s connecté au TypeNode %s", alphaNode.ID, variableType)
 			return
 		}
-		tsdio.Printf("   ⚠️  TypeNode %s non trouvé pour variable %s\n", variableType, variableName)
+		cp.GetLogger().Warn("   ⚠️  TypeNode %s non trouvé pour variable %s", variableType, variableName)
 	} else {
-		tsdio.Printf("   ⚠️  Type de variable non trouvé pour %s, fallback\n", variableName)
+		cp.GetLogger().Warn("   ⚠️  Type de variable non trouvé pour %s, fallback", variableName)
 	}
 
 	// Fallback: connecter au premier type node trouvé
@@ -255,7 +254,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	// Analyser l'expression pour déterminer son type
 	exprType, err := AnalyzeExpression(actualCondition)
 	if err != nil {
-		tsdio.Printf("   ⚠️  Erreur analyse expression: %v, fallback vers comportement simple\n", err)
+		cp.GetLogger().Warn("   ⚠️  Erreur analyse expression: %v, fallback vers comportement simple", err)
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
@@ -263,19 +262,19 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	// DOIT être traité AVANT le check CanDecompose car OR n'est pas décomposable
 	if exprType == ExprTypeOR || exprType == ExprTypeMixed {
 		if exprType == ExprTypeOR {
-			tsdio.Printf("   ℹ️  Expression OR détectée, normalisation avancée et création d'un nœud alpha unique\n")
+			cp.GetLogger().Debug("   ℹ️  Expression OR détectée, normalisation avancée et création d'un nœud alpha unique")
 		} else {
-			tsdio.Printf("   ℹ️  Expression mixte (AND+OR) détectée, normalisation avancée et création d'un nœud alpha unique\n")
+			cp.GetLogger().Debug("   ℹ️  Expression mixte (AND+OR) détectée, normalisation avancée et création d'un nœud alpha unique")
 		}
 
 		// Analyser la complexité de l'expression pour déterminer la stratégie de normalisation
 		analysis, err := AnalyzeNestedOR(actualCondition)
 		if err != nil {
-			tsdio.Printf("   ⚠️  Erreur analyse OR imbriqué: %v, fallback vers normalisation simple\n", err)
+			cp.GetLogger().Warn("   ⚠️  Erreur analyse OR imbriqué: %v, fallback vers normalisation simple", err)
 			// Fallback vers normalisation simple
 			normalizedExpr, err := NormalizeORExpression(actualCondition)
 			if err != nil {
-				tsdio.Printf("   ⚠️  Erreur normalisation simple: %v, fallback vers comportement simple\n", err)
+				cp.GetLogger().Warn("   ⚠️  Erreur normalisation simple: %v, fallback vers comportement simple", err)
 				return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 			}
 			normalizedCondition := map[string]interface{}{
@@ -286,37 +285,37 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 		}
 
 		// Afficher les informations d'analyse
-		tsdio.Printf("   📊 Analyse OR: Complexité=%v, Profondeur=%d, OR=%d, AND=%d\n",
+		cp.GetLogger().Debug("   📊 Analyse OR: Complexité=%v, Profondeur=%d, OR=%d, AND=%d",
 			analysis.Complexity, analysis.NestingDepth, analysis.ORTermCount, analysis.ANDTermCount)
 
 		if analysis.OptimizationHint != "" {
-			tsdio.Printf("   💡 Suggestion: %s\n", analysis.OptimizationHint)
+			cp.GetLogger().Info("   💡 Suggestion: %s", analysis.OptimizationHint)
 		}
 
 		// Utiliser la normalisation avancée pour les expressions complexes
 		var normalizedExpr interface{}
 		if analysis.RequiresFlattening || analysis.RequiresDNF {
-			tsdio.Printf("   🔧 Application de la normalisation avancée (aplatissement=%v, DNF=%v)\n",
+			cp.GetLogger().Info("   🔧 Application de la normalisation avancée (aplatissement=%v, DNF=%v)",
 				analysis.RequiresFlattening, analysis.RequiresDNF)
 
 			normalizedExpr, err = NormalizeNestedOR(actualCondition)
 			if err != nil {
-				tsdio.Printf("   ⚠️  Erreur normalisation avancée: %v, fallback vers normalisation simple\n", err)
+				cp.GetLogger().Warn("   ⚠️  Erreur normalisation avancée: %v, fallback vers normalisation simple", err)
 				// Fallback vers normalisation simple
 				normalizedExpr, err = NormalizeORExpression(actualCondition)
 				if err != nil {
-					tsdio.Printf("   ⚠️  Erreur normalisation simple: %v, utilisation expression originale\n", err)
+					cp.GetLogger().Warn("   ⚠️  Erreur normalisation simple: %v, utilisation expression originale", err)
 					normalizedExpr = actualCondition
 				}
 			} else {
-				tsdio.Printf("   ✅ Normalisation avancée réussie\n")
+				cp.GetLogger().Info("   ✅ Normalisation avancée réussie")
 			}
 		} else {
 			// Pour les expressions simples, utiliser la normalisation standard
-			tsdio.Printf("   🔧 Application de la normalisation standard\n")
+			cp.GetLogger().Info("   🔧 Application de la normalisation standard")
 			normalizedExpr, err = NormalizeORExpression(actualCondition)
 			if err != nil {
-				tsdio.Printf("   ⚠️  Erreur normalisation: %v, utilisation expression originale\n", err)
+				cp.GetLogger().Warn("   ⚠️  Erreur normalisation: %v, utilisation expression originale", err)
 				normalizedExpr = actualCondition
 			}
 		}
@@ -332,7 +331,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 
 	// Vérifier si l'expression peut être décomposée
 	if !CanDecompose(exprType) {
-		tsdio.Printf("   ℹ️  Expression de type %s non décomposable, utilisation du nœud simple\n", exprType)
+		cp.GetLogger().Debug("   ℹ️  Expression de type %s non décomposable, utilisation du nœud simple", exprType)
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
@@ -342,26 +341,26 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	}
 
 	// Expressions AND ou NOT - tenter la décomposition en chaîne
-	tsdio.Printf("   🔍 Expression de type %s détectée, tentative de décomposition...\n", exprType)
+	cp.GetLogger().Debug("   🔍 Expression de type %s détectée, tentative de décomposition...", exprType)
 
 	// Extraire les conditions de l'expression (utiliser la condition déballée)
 	conditions, opType, err := ExtractConditions(actualCondition)
 	if err != nil {
-		tsdio.Printf("   ⚠️  Erreur extraction conditions: %v, fallback vers comportement simple\n", err)
+		cp.GetLogger().Warn("   ⚠️  Erreur extraction conditions: %v, fallback vers comportement simple", err)
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
 	// Si une seule condition, pas besoin de chaîne
 	if len(conditions) <= 1 {
-		tsdio.Printf("   ℹ️  Une seule condition extraite, utilisation du nœud simple\n")
+		cp.GetLogger().Debug("   ℹ️  Une seule condition extraite, utilisation du nœud simple")
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
-	tsdio.Printf("   🔗 Décomposition en chaîne: %d conditions détectées (opérateur: %s)\n", len(conditions), opType)
+	cp.GetLogger().Info("   🔗 Décomposition en chaîne: %d conditions détectées (opérateur: %s)", len(conditions), opType)
 
 	// Normaliser les conditions
 	normalizedConditions := NormalizeConditions(conditions, opType)
-	tsdio.Printf("   📋 Conditions normalisées: %d condition(s)\n", len(normalizedConditions))
+	cp.GetLogger().Info("   📋 Conditions normalisées: %d condition(s)", len(normalizedConditions))
 
 	// Trouver le TypeNode parent pour connecter la chaîne
 	var parentNode Node
@@ -380,7 +379,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	}
 
 	if parentNode == nil {
-		tsdio.Printf("   ⚠️  Aucun TypeNode trouvé, fallback vers comportement simple\n")
+		cp.GetLogger().Warn("   ⚠️  Aucun TypeNode trouvé, fallback vers comportement simple")
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
@@ -390,13 +389,13 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	// Construire la chaîne d'AlphaNodes
 	chain, err := chainBuilder.BuildChain(normalizedConditions, variableName, parentNode, ruleID)
 	if err != nil {
-		tsdio.Printf("   ⚠️  Erreur construction chaîne: %v, fallback vers comportement simple\n", err)
+		cp.GetLogger().Warn("   ⚠️  Erreur construction chaîne: %v, fallback vers comportement simple", err)
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
 	// Valider la chaîne
 	if err := chain.ValidateChain(); err != nil {
-		tsdio.Printf("   ⚠️  Chaîne invalide: %v, fallback vers comportement simple\n", err)
+		cp.GetLogger().Warn("   ⚠️  Chaîne invalide: %v, fallback vers comportement simple", err)
 		return cp.createSimpleAlphaNodeWithTerminal(network, ruleID, condition, variableName, variableType, action, storage)
 	}
 
@@ -408,14 +407,14 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 	}
 
 	// Afficher les statistiques de construction
-	tsdio.Printf("   ✅ Chaîne construite: %d nœud(s), %d partagé(s)\n", len(chain.Nodes), sharedCount)
+	cp.GetLogger().Info("   ✅ Chaîne construite: %d nœud(s), %d partagé(s)", len(chain.Nodes), sharedCount)
 
 	// Logger les détails de chaque nœud
 	for i, node := range chain.Nodes {
 		if i < sharedCount {
-			tsdio.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", node.ID, chain.Hashes[i])
+			cp.GetLogger().Info("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)", node.ID, chain.Hashes[i])
 		} else {
-			tsdio.Printf("   ✨ Nouveau AlphaNode créé: %s (hash: %s)\n", node.ID, chain.Hashes[i])
+			cp.GetLogger().Info("   ✨ Nouveau AlphaNode créé: %s (hash: %s)", node.ID, chain.Hashes[i])
 		}
 	}
 
@@ -431,7 +430,7 @@ func (cp *ConstraintPipeline) createAlphaNodeWithTerminal(
 		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 	}
 
-	tsdio.Printf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne\n", terminalNode.ID, chain.FinalNode.ID)
+	cp.GetLogger().Debug("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne", terminalNode.ID, chain.FinalNode.ID)
 
 	return nil
 }
@@ -470,9 +469,9 @@ func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
 	}
 
 	if wasShared {
-		tsdio.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+		cp.GetLogger().Info("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)", alphaNode.ID, alphaHash)
 	} else {
-		tsdio.Printf("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+		cp.GetLogger().Info("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)", alphaNode.ID, alphaHash)
 
 		// Connecter au type node approprié (seulement pour les nouveaux nœuds)
 		cp.connectAlphaNodeToTypeNode(network, alphaNode, variableType, variableName)
@@ -500,9 +499,9 @@ func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
 	}
 
 	if conditionMap["type"] == "negation" {
-		tsdio.Printf("   ✓ AlphaNode de négation créé: %s -> %s\n", alphaNode.ID, terminalNode.ID)
+		cp.GetLogger().Debug("   ✓ AlphaNode de négation créé: %s -> %s", alphaNode.ID, terminalNode.ID)
 	} else if wasShared {
-		tsdio.Printf("   ✓ Règle %s attachée à l'AlphaNode partagé %s via terminal %s\n",
+		cp.GetLogger().Debug("   ✓ Règle %s attachée à l'AlphaNode partagé %s via terminal %s",
 			ruleID, alphaNode.ID, terminalNode.ID)
 	}
 
@@ -513,12 +512,12 @@ func (cp *ConstraintPipeline) createSimpleAlphaNodeWithTerminal(
 func (cp *ConstraintPipeline) logRuleCreation(ruleType string, ruleID string, variableNames []string) {
 	switch ruleType {
 	case "join":
-		tsdio.Printf("   📍 Règle multi-variables détectée (%d variables): %v\n", len(variableNames), variableNames)
+		cp.GetLogger().Info("   📍 Règle multi-variables détectée (%d variables): %v", len(variableNames), variableNames)
 	case "exists":
-		tsdio.Printf("   🔍 Règle EXISTS détectée pour: %s\n", ruleID)
+		cp.GetLogger().Debug("   🔍 Règle EXISTS détectée pour: %s", ruleID)
 	case "accumulator":
-		tsdio.Printf("   📊 Règle d'agrégation détectée pour: %s\n", ruleID)
+		cp.GetLogger().Debug("   📊 Règle d'agrégation détectée pour: %s", ruleID)
 	case "alpha":
-		tsdio.Printf("   ✓ Règle alpha simple créée pour: %s\n", ruleID)
+		cp.GetLogger().Debug("   ✓ Règle alpha simple créée pour: %s", ruleID)
 	}
 }

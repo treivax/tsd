@@ -5,7 +5,6 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"sync"
 	"time"
@@ -278,16 +277,16 @@ func (acb *AlphaChainBuilder) BuildChain(
 		if reused {
 			nodesReused++
 			// Nœud réutilisé - vérifier la connexion au parent
-			tsdio.LogPrintf("♻️  [AlphaChainBuilder] Réutilisation du nœud alpha %s pour la règle %s (condition %d/%d)",
+			fmt.Printf("♻️  [AlphaChainBuilder] Réutilisation du nœud alpha %s pour la règle %s (condition %d/%d)",
 				alphaNode.ID, ruleID, i+1, len(conditions))
 
 			if !acb.isAlreadyConnectedCached(currentParent, alphaNode) {
 				// Connecter au parent si pas déjà connecté
 				currentParent.AddChild(alphaNode)
-				tsdio.LogPrintf("🔗 [AlphaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
+				fmt.Printf("🔗 [AlphaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
 					alphaNode.ID, currentParent.GetID())
 			} else {
-				tsdio.LogPrintf("✓  [AlphaChainBuilder] Nœud %s déjà connecté au parent %s",
+				fmt.Printf("✓  [AlphaChainBuilder] Nœud %s déjà connecté au parent %s",
 					alphaNode.ID, currentParent.GetID())
 			}
 		} else {
@@ -299,9 +298,9 @@ func (acb *AlphaChainBuilder) BuildChain(
 			// Mettre à jour le cache de connexion
 			acb.updateConnectionCache(currentParent.GetID(), alphaNode.ID, true)
 
-			tsdio.LogPrintf("🆕 [AlphaChainBuilder] Nouveau nœud alpha %s créé pour la règle %s (condition %d/%d)",
+			fmt.Printf("🆕 [AlphaChainBuilder] Nouveau nœud alpha %s créé pour la règle %s (condition %d/%d)",
 				alphaNode.ID, ruleID, i+1, len(conditions))
-			tsdio.LogPrintf("🔗 [AlphaChainBuilder] Connexion du nœud %s au parent %s",
+			fmt.Printf("🔗 [AlphaChainBuilder] Connexion du nœud %s au parent %s",
 				alphaNode.ID, currentParent.GetID())
 		}
 
@@ -310,7 +309,7 @@ func (acb *AlphaChainBuilder) BuildChain(
 		lifecycle.AddRuleReference(ruleID, "") // RuleName peut être ajouté plus tard si nécessaire
 
 		if reused {
-			tsdio.LogPrintf("📊 [AlphaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
+			fmt.Printf("📊 [AlphaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
 				alphaNode.ID, lifecycle.GetRefCount())
 		}
 
@@ -321,7 +320,7 @@ func (acb *AlphaChainBuilder) BuildChain(
 	// Le dernier nœud de la chaîne est le nœud final
 	chain.FinalNode = chain.Nodes[len(chain.Nodes)-1]
 
-	tsdio.LogPrintf("✅ [AlphaChainBuilder] Chaîne alpha complète construite pour la règle %s: %d nœud(s)",
+	fmt.Printf("✅ [AlphaChainBuilder] Chaîne alpha complète construite pour la règle %s: %d nœud(s)",
 		ruleID, len(chain.Nodes))
 
 	// Enregistrer les métriques
@@ -414,16 +413,16 @@ func (acb *AlphaChainBuilder) BuildDecomposedChain(
 		if reused {
 			nodesReused++
 			// Nœud réutilisé - vérifier la connexion au parent
-			tsdio.LogPrintf("♻️  [AlphaChainBuilder] Réutilisation du nœud alpha %s (decomposed: %s) pour la règle %s (condition %d/%d)",
+			fmt.Printf("♻️  [AlphaChainBuilder] Réutilisation du nœud alpha %s (decomposed: %s) pour la règle %s (condition %d/%d)",
 				alphaNode.ID, alphaNode.ResultName, ruleID, i+1, len(conditions))
 
 			if !acb.isAlreadyConnectedCached(currentParent, alphaNode) {
 				// Connecter au parent si pas déjà connecté
 				currentParent.AddChild(alphaNode)
-				tsdio.LogPrintf("🔗 [AlphaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
+				fmt.Printf("🔗 [AlphaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
 					alphaNode.ID, currentParent.GetID())
 			} else {
-				tsdio.LogPrintf("✓  [AlphaChainBuilder] Nœud %s déjà connecté au parent %s",
+				fmt.Printf("✓  [AlphaChainBuilder] Nœud %s déjà connecté au parent %s",
 					alphaNode.ID, currentParent.GetID())
 			}
 		} else {
@@ -435,9 +434,9 @@ func (acb *AlphaChainBuilder) BuildDecomposedChain(
 			// Mettre à jour le cache de connexion
 			acb.updateConnectionCache(currentParent.GetID(), alphaNode.ID, true)
 
-			tsdio.LogPrintf("🆕 [AlphaChainBuilder] Nouveau nœud alpha %s créé (decomposed: %s, deps: %v) pour la règle %s (condition %d/%d)",
+			fmt.Printf("🆕 [AlphaChainBuilder] Nouveau nœud alpha %s créé (decomposed: %s, deps: %v) pour la règle %s (condition %d/%d)",
 				alphaNode.ID, alphaNode.ResultName, alphaNode.Dependencies, ruleID, i+1, len(conditions))
-			tsdio.LogPrintf("🔗 [AlphaChainBuilder] Connexion du nœud %s au parent %s",
+			fmt.Printf("🔗 [AlphaChainBuilder] Connexion du nœud %s au parent %s",
 				alphaNode.ID, currentParent.GetID())
 		}
 
@@ -446,7 +445,7 @@ func (acb *AlphaChainBuilder) BuildDecomposedChain(
 		lifecycle.AddRuleReference(ruleID, "") // RuleName peut être ajouté plus tard si nécessaire
 
 		if reused {
-			tsdio.LogPrintf("📊 [AlphaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
+			fmt.Printf("📊 [AlphaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
 				alphaNode.ID, lifecycle.GetRefCount())
 		}
 
@@ -457,7 +456,7 @@ func (acb *AlphaChainBuilder) BuildDecomposedChain(
 	// Le dernier nœud de la chaîne est le nœud final
 	chain.FinalNode = chain.Nodes[len(chain.Nodes)-1]
 
-	tsdio.LogPrintf("✅ [AlphaChainBuilder] Chaîne alpha décomposée complète construite pour la règle %s: %d nœud(s) atomiques",
+	fmt.Printf("✅ [AlphaChainBuilder] Chaîne alpha décomposée complète construite pour la règle %s: %d nœud(s) atomiques",
 		ruleID, len(chain.Nodes))
 
 	// Enregistrer les métriques
