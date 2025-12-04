@@ -78,50 +78,39 @@ func ExecuteTSDFileWithOptions(t *testing.T, path string, opts *ExecutionOptions
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
+	// Variable to hold network reference
+	var network *rete.ReteNetwork
+	var err error
+
 	// Capture stdout if requested
 	var capturedOutput string
 	if opts.CaptureOutput {
 		capturedOutput = captureOutput(func() {
-			network, err := pipeline.IngestFile(path, nil, storage)
+			network, err = pipeline.IngestFile(path, nil, storage)
 			result.Error = err
-
-			if network != nil {
-				result.TypeNodes = len(network.TypeNodes)
-				result.TerminalNodes = len(network.TerminalNodes)
-
-				// Count activations
-				for _, terminal := range network.TerminalNodes {
-					if terminal.Memory != nil && terminal.Memory.Tokens != nil {
-						result.Activations += len(terminal.Memory.Tokens)
-					}
-				}
-			}
-
-			// Get facts from storage
-			facts := storage.GetAllFacts()
-			result.Facts = len(facts)
 		})
 		result.Output = capturedOutput
 	} else {
-		network, err := pipeline.IngestFile(path, nil, storage)
+		network, err = pipeline.IngestFile(path, nil, storage)
 		result.Error = err
+	}
 
-		if network != nil {
-			result.TypeNodes = len(network.TypeNodes)
-			result.TerminalNodes = len(network.TerminalNodes)
+	// Process results AFTER capture is complete to avoid race conditions
+	if network != nil {
+		result.TypeNodes = len(network.TypeNodes)
+		result.TerminalNodes = len(network.TerminalNodes)
 
-			// Count activations
-			for _, terminal := range network.TerminalNodes {
-				if terminal.Memory != nil && terminal.Memory.Tokens != nil {
-					result.Activations += len(terminal.Memory.Tokens)
-				}
+		// Count activations
+		for _, terminal := range network.TerminalNodes {
+			if terminal.Memory != nil && terminal.Memory.Tokens != nil {
+				result.Activations += len(terminal.Memory.Tokens)
 			}
 		}
-
-		// Get facts from storage
-		facts := storage.GetAllFacts()
-		result.Facts = len(facts)
 	}
+
+	// Get facts from storage AFTER everything is done
+	facts := storage.GetAllFacts()
+	result.Facts = len(facts)
 
 	result.Duration = time.Since(startTime)
 

@@ -323,6 +323,11 @@ func (rn *ReteNetwork) RepropagateExistingFact(fact *Fact) error {
 // waitForFactPersistence attend qu'un fait soit persisté avec retry + backoff exponentiel
 // Cette fonction implémente la barrière de synchronisation de la Phase 2
 func (rn *ReteNetwork) waitForFactPersistence(fact *Fact, timeout time.Duration) error {
+	return rn.waitForFactPersistenceWithMetrics(fact, timeout, nil)
+}
+
+// waitForFactPersistenceWithMetrics attend la persistance d'un fait avec collecte de métriques optionnelle
+func (rn *ReteNetwork) waitForFactPersistenceWithMetrics(fact *Fact, timeout time.Duration, metricsCollector *CoherenceMetricsCollector) error {
 	internalID := fact.GetInternalID()
 	deadline := time.Now().Add(timeout)
 	attempt := 0
@@ -330,11 +335,20 @@ func (rn *ReteNetwork) waitForFactPersistence(fact *Fact, timeout time.Duration)
 	for time.Now().Before(deadline) {
 		attempt++
 
+		// Enregistrer la tentative de vérification
+		if metricsCollector != nil {
+			metricsCollector.RecordVerifyAttempt()
+		}
+
 		// Vérifier si le fait est persisté
 		if storedFact := rn.Storage.GetFact(internalID); storedFact != nil {
 			// ✅ Fait trouvé
 			if attempt > 1 {
 				tsdio.Printf("✅ Fait %s persisté après %d tentative(s)\n", fact.ID, attempt)
+				if metricsCollector != nil {
+					metricsCollector.RecordFactRetried()
+					metricsCollector.RecordRetry(attempt - 1)
+				}
 			}
 			return nil
 		}
@@ -361,8 +375,26 @@ func (rn *ReteNetwork) waitForFactPersistence(fact *Fact, timeout time.Duration)
 // SubmitFactsFromGrammar soumet une liste de faits au réseau RETE avec garanties de synchronisation (Phase 2)
 // Cette fonction garantit que tous les faits soumis sont persistés et visibles avant de retourner
 func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) error {
+	return rn.submitFactsFromGrammarWithMetrics(facts, nil)
+}
+
+// SubmitFactsFromGrammarWithMetrics soumet des faits avec collecte de métriques de cohérence
+func (rn *ReteNetwork) SubmitFactsFromGrammarWithMetrics(facts []map[string]interface{}, metricsCollector *CoherenceMetricsCollector) error {
+	return rn.submitFactsFromGrammarWithMetrics(facts, metricsCollector)
+}
+
+// submitFactsFromGrammarWithMetrics est l'implémentation interne avec support optionnel des métriques
+func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]interface{}, metricsCollector *CoherenceMetricsCollector) error {
 	if len(facts) == 0 {
 		return nil
+	}
+
+	// Démarrer la phase de soumission si collecteur disponible
+	if metricsCollector != nil {
+		metricsCollector.StartPhase("fact_submission")
+		defer func() {
+			metricsCollector.EndPhase("fact_submission", len(facts), true)
+		}()
 	}
 
 	// Timeout par fait : timeout total divisé par nombre de faits
@@ -406,19 +438,46 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 		}
 
 		// 2. Soumettre le fait au réseau RETE
+		if metricsCollector != nil {
+			metricsCollector.RecordFactSubmitted()
+		}
+
 		if err := rn.SubmitFact(fact); err != nil {
+			if metricsCollector != nil {
+				metricsCollector.RecordFactFailed()
+			}
 			return fmt.Errorf("erreur soumission fait %s: %w", fact.ID, err)
 		}
 		factsSubmitted++
 
 		// 3. Barrière de synchronisation Phase 2 : attendre la persistance avec retry
-		if err := rn.waitForFactPersistence(fact, timeoutPerFact); err != nil {
+		waitStart := time.Now()
+		err := rn.waitForFactPersistenceWithMetrics(fact, timeoutPerFact, metricsCollector)
+		waitDuration := time.Since(waitStart)
+
+		if metricsCollector != nil {
+			metricsCollector.RecordWaitTime(waitDuration)
+		}
+
+		if err != nil {
+			if metricsCollector != nil {
+				metricsCollector.RecordTimeout()
+				metricsCollector.RecordFactFailed()
+			}
 			return fmt.Errorf("échec synchronisation fait %s: %w", fact.ID, err)
+		}
+
+		if metricsCollector != nil {
+			metricsCollector.RecordFactPersisted()
 		}
 		factsPersisted++
 	}
 
 	duration := time.Since(startTime)
+
+	if metricsCollector != nil {
+		metricsCollector.RecordSubmissionTime(duration)
+	}
 
 	// 4. Vérification finale de cohérence
 	if factsSubmitted != factsPersisted {

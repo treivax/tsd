@@ -1,0 +1,56 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	
+	"github.com/treivax/tsd/rete"
+)
+
+func main() {
+	rule := `type Person(name: string, age: number)
+
+action print(arg1: string)
+
+rule r1 : {p: Person} / p.age > 18 ==> print("adult")
+rule r2 : {p: Person} / p.age <= 18 ==> print("minor")
+
+Person(name:"Alice", age:25)
+Person(name:"Bob", age:15)
+`
+
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write([]byte(rule)); err != nil {
+		panic(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		panic(err)
+	}
+
+	pipeline := rete.NewConstraintPipeline()
+	storage := rete.NewMemoryStorage()
+
+	network, err := pipeline.IngestFile(tmpfile.Name(), nil, storage)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	facts := storage.GetAllFacts()
+	fmt.Printf("\n=== RESULTS ===\n")
+	fmt.Printf("Facts in storage: %d\n", len(facts))
+	for i, f := range facts {
+		fmt.Printf("  Fact %d: %s (Type: %s)\n", i, f.ID, f.Type)
+	}
+	
+	fmt.Printf("TypeNodes: %d\n", len(network.TypeNodes))
+	fmt.Printf("TerminalNodes: %d\n", len(network.TerminalNodes))
+	for id := range network.TerminalNodes {
+		fmt.Printf("  Terminal: %s\n", id)
+	}
+}
