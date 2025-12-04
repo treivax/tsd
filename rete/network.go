@@ -7,6 +7,7 @@ package rete
 import (
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -36,6 +37,7 @@ type ReteNetwork struct {
 	ArithmeticResultCache *ArithmeticResultCache   `json:"-"`       // Cache global des résultats arithmétiques intermédiaires
 	currentTx             *Transaction             `json:"-"`       // Transaction courante (si en cours)
 	txMutex               sync.RWMutex             `json:"-"`       // Mutex pour accès concurrent à la transaction
+	logger                *Logger                  `json:"-"`       // Logger structuré pour instrumentation
 
 	// Phase 2: Configuration de synchronisation pour garanties de cohérence
 	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
@@ -97,6 +99,7 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		ChainMetrics:          metrics,
 		Config:                config,
 		ArithmeticResultCache: arithmeticCache,
+		logger:                NewLogger(LogLevelInfo, os.Stdout), // Logger par défaut niveau Info
 
 		// Phase 2: Initialiser les paramètres de synchronisation
 		SubmissionTimeout: DefaultSubmissionTimeout,
@@ -247,10 +250,25 @@ func (rn *ReteNetwork) ResetChainMetrics() {
 	}
 }
 
+// SetLogger configure le logger pour le réseau RETE
+func (rn *ReteNetwork) SetLogger(logger *Logger) {
+	if logger != nil {
+		rn.logger = logger
+	}
+}
+
+// GetLogger retourne le logger actuel du réseau
+func (rn *ReteNetwork) GetLogger() *Logger {
+	if rn.logger == nil {
+		rn.logger = NewLogger(LogLevelInfo, os.Stdout)
+	}
+	return rn.logger
+}
+
 // SubmitFact soumet un nouveau fait au réseau RETE
 // Si une transaction est active, la commande est enregistrée pour rollback
 func (rn *ReteNetwork) SubmitFact(fact *Fact) error {
-	tsdio.Printf("🔥 Soumission d'un nouveau fait au réseau RETE: %s\n", fact.String())
+	rn.logger.Debug("🔥 Soumission fait: %s", fact.String())
 
 	// Vérifier si une transaction est active
 	tx := rn.GetTransaction()
@@ -344,7 +362,7 @@ func (rn *ReteNetwork) waitForFactPersistenceWithMetrics(fact *Fact, timeout tim
 		if storedFact := rn.Storage.GetFact(internalID); storedFact != nil {
 			// ✅ Fait trouvé
 			if attempt > 1 {
-				tsdio.Printf("✅ Fait %s persisté après %d tentative(s)\n", fact.ID, attempt)
+				rn.logger.Info("✅ Fait %s persisté après %d tentative(s)", fact.ID, attempt)
 				if metricsCollector != nil {
 					metricsCollector.RecordFactRetried()
 					metricsCollector.RecordRetry(attempt - 1)
@@ -485,8 +503,7 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 			factsSubmitted, factsPersisted)
 	}
 
-	tsdio.Printf("✅ Phase 2 - Synchronisation complète: %d/%d faits persistés en %v\n",
-		factsPersisted, factsSubmitted, duration)
+	rn.logger.Info("✅ Phase 2 - Synchronisation complète: %d/%d faits persistés en %v", factsPersisted, factsSubmitted, duration)
 
 	return nil
 }
@@ -494,7 +511,7 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 // RetractFact retire un fait du réseau et propage la rétractation
 // factID doit être l'identifiant interne (Type_ID)
 func (rn *ReteNetwork) RetractFact(factID string) error {
-	tsdio.Printf("🗑️  Rétractation du fait: %s\n", factID)
+	rn.logger.Info("🗑️ Rétractation du fait: %s", factID)
 
 	// Vérifier que le fait existe dans le réseau
 	memory := rn.RootNode.GetMemory()
@@ -510,7 +527,7 @@ func (rn *ReteNetwork) RetractFact(factID string) error {
 // This removes all facts, rules, types, and network nodes.
 // After calling Reset, the network is ready to accept new definitions from scratch.
 func (rn *ReteNetwork) Reset() {
-	tsdio.Println("🧹 Réinitialisation complète du réseau RETE")
+	rn.logger.Info("🧹 Réinitialisation complète du réseau RETE")
 
 	// Clear all node collections
 	rn.TypeNodes = make(map[string]*TypeNode)
@@ -540,13 +557,13 @@ func (rn *ReteNetwork) Reset() {
 	// Recreate a fresh root node with the existing storage
 	rn.RootNode = NewRootNode(rn.Storage)
 
-	tsdio.Println("✅ Réseau RETE réinitialisé avec succès")
+	rn.logger.Info("✅ Réseau RETE réinitialisé avec succès")
 }
 
 // ClearMemory efface uniquement les mémoires (faits et tokens) de tous les nœuds
 // sans détruire la structure du réseau
 func (rn *ReteNetwork) ClearMemory() {
-	tsdio.Println("🧹 Nettoyage de la mémoire du réseau RETE")
+	rn.logger.Info("🧹 Nettoyage de la mémoire du réseau RETE")
 
 	// Clear TypeNode memories
 	for _, typeNode := range rn.TypeNodes {
@@ -580,12 +597,12 @@ func (rn *ReteNetwork) ClearMemory() {
 		terminalNode.mutex.Unlock()
 	}
 
-	tsdio.Println("✅ Mémoire du réseau RETE nettoyée avec succès")
+	rn.logger.Info("✅ Mémoire du réseau RETE nettoyée avec succès")
 }
 
 // RemoveRule supprime une règle et tous ses nœuds qui ne sont plus utilisés
 func (rn *ReteNetwork) RemoveRule(ruleID string) error {
-	tsdio.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
+	rn.logger.Info("🗑️ Suppression de la règle: %s", ruleID)
 
 	if rn.LifecycleManager == nil {
 		return fmt.Errorf("LifecycleManager non initialisé")
@@ -597,7 +614,7 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 		return fmt.Errorf("règle %s non trouvée ou aucun nœud associé", ruleID)
 	}
 
-	tsdio.Printf("   📊 Nœuds associés à la règle: %d\n", len(nodeIDs))
+	rn.logger.Debug("   📊 Nœuds associés à la règle %s: %d", ruleID, len(nodeIDs))
 
 	// Detect rule type and use appropriate removal strategy
 	hasChain := false
@@ -614,13 +631,13 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 
 	// Utiliser la suppression optimisée pour les chaînes avec joins
 	if hasJoinNodes {
-		tsdio.Printf("   🔗 JoinNodes détectés, utilisation de la suppression avec lifecycle\n")
+		rn.logger.Debug("   🔗 JoinNodes détectés, utilisation de la suppression avec lifecycle")
 		return rn.removeRuleWithJoins(ruleID, nodeIDs)
 	}
 
 	// Utiliser la suppression optimisée pour les chaînes alpha
 	if hasChain {
-		tsdio.Printf("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée\n")
+		rn.logger.Debug("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée")
 		return rn.removeAlphaChain(ruleID)
 	}
 
@@ -635,25 +652,25 @@ func (rn *ReteNetwork) removeSimpleRule(ruleID string, nodeIDs []string) error {
 	for _, nodeID := range nodeIDs {
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			tsdio.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v", nodeID, err)
 			continue
 		}
 
 		if shouldDelete {
 			nodesToDelete = append(nodesToDelete, nodeID)
-			tsdio.Printf("   ✓ Nœud %s marqué pour suppression (plus de références)\n", nodeID)
+			rn.logger.Debug("   ✓ Nœud %s marqué pour suppression (plus de références)", nodeID)
 		} else {
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
-			tsdio.Printf("   ✓ Nœud %s conservé (%d référence(s) restante(s))\n", nodeID, lifecycle.GetRefCount())
+			rn.logger.Debug("   ✓ Nœud %s conservé (%d référence(s) restante(s))", nodeID, lifecycle.GetRefCount())
 		}
 	}
 
 	// Supprimer les nœuds qui n'ont plus de références
 	for _, nodeID := range nodesToDelete {
 		if err := rn.removeNodeFromNetwork(nodeID); err != nil {
-			tsdio.Printf("   ⚠️  Erreur lors de la suppression du nœud %s: %v\n", nodeID, err)
+			rn.logger.Warn("   ⚠️  Erreur lors de la suppression du nœud %s: %v", nodeID, err)
 		} else {
-			tsdio.Printf("   🗑️  Nœud %s supprimé du réseau\n", nodeID)
+			rn.logger.Debug("   🗑️  Nœud %s supprimé du réseau", nodeID)
 		}
 	}
 

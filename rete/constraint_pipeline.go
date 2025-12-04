@@ -6,11 +6,11 @@ package rete
 
 import (
 	"fmt"
+	"os"
 	"time"
 
-	"github.com/treivax/tsd/tsdio"
-
 	"github.com/treivax/tsd/constraint"
+	"github.com/treivax/tsd/tsdio"
 )
 
 // AggregationInfo contient les informations extraites d'une agrégation
@@ -51,11 +51,30 @@ type SourcePattern struct {
 
 // ConstraintPipeline implémente le pipeline complet :
 // fichier .constraint → parseur PEG → conversion AST → réseau RETE
-type ConstraintPipeline struct{}
+type ConstraintPipeline struct {
+	logger *Logger // Logger structuré pour instrumentation
+}
 
 // NewConstraintPipeline crée une nouvelle instance du pipeline
 func NewConstraintPipeline() *ConstraintPipeline {
-	return &ConstraintPipeline{}
+	return &ConstraintPipeline{
+		logger: NewLogger(LogLevelInfo, os.Stdout), // Logger par défaut niveau Info
+	}
+}
+
+// SetLogger configure le logger pour le pipeline
+func (cp *ConstraintPipeline) SetLogger(logger *Logger) {
+	if logger != nil {
+		cp.logger = logger
+	}
+}
+
+// GetLogger retourne le logger actuel du pipeline
+func (cp *ConstraintPipeline) GetLogger() *Logger {
+	if cp.logger == nil {
+		cp.logger = NewLogger(LogLevelInfo, os.Stdout)
+	}
+	return cp.logger
 }
 
 // IngestFileWithMetrics est un wrapper qui collecte les métriques
@@ -90,8 +109,8 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 // ingestFileWithMetrics est l'implémentation interne avec support optionnel des métriques
 // IMPORTANT: Gère les transactions automatiquement (TOUJOURS activées)
 func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *ReteNetwork, storage Storage, metrics *MetricsCollector) (*ReteNetwork, error) {
-	tsdio.Printf("========================================\n")
-	tsdio.Printf("📁 Ingestion incrémentale: %s\n", filename)
+	cp.logger.Info("========================================")
+	cp.logger.Info("📁 Ingestion incrémentale: %s", filename)
 
 	// ÉTAPE 1: Parsing du fichier
 	parsingStart := time.Now()
@@ -102,7 +121,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if metrics != nil {
 		metrics.RecordParsingDuration(time.Since(parsingStart))
 	}
-	tsdio.Printf("✅ Parsing réussi\n")
+	cp.logger.Info("✅ Parsing réussi")
 
 	// ÉTAPE 2: Vérifier la présence d'une commande reset
 	resultMap, ok := parsedAST.(map[string]interface{})
@@ -114,7 +133,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if resetsData, exists := resultMap["resets"]; exists {
 		if resets, ok := resetsData.([]interface{}); ok && len(resets) > 0 {
 			hasResets = true
-			tsdio.Printf("🔄 Commande reset détectée - Réinitialisation complète du réseau\n")
+			cp.logger.Info("🔄 Commande reset détectée - Réinitialisation complète du réseau")
 		}
 	}
 
@@ -124,12 +143,12 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 
 		// OPTIMISATION 2: Garbage Collection automatique après reset
 		if network != nil {
-			tsdio.Printf("🗑️  GC du réseau existant...\n")
+			cp.logger.Debug("🗑️ GC du réseau existant...")
 			network.GarbageCollect()
-			tsdio.Printf("✅ GC terminé\n")
+			cp.logger.Debug("✅ GC terminé")
 		}
 
-		tsdio.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		cp.logger.Info("🆕 Création d'un nouveau réseau RETE")
 		network = NewReteNetwork(storage)
 		if metrics != nil {
 			metrics.SetWasReset(true)
@@ -141,7 +160,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if network != nil {
 		tx = network.BeginTransaction()
 		network.SetTransaction(tx)
-		tsdio.Printf("🔒 Transaction démarrée automatiquement: %s\n", tx.ID)
+		cp.logger.Info("🔒 Transaction démarrée automatiquement: %s", tx.ID)
 	}
 
 	// Fonction de rollback en cas d'erreur
@@ -149,10 +168,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if tx != nil && tx.IsActive {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				tsdio.Printf("❌ Erreur rollback: %v\n", rollbackErr)
+				cp.logger.Error("❌ Erreur rollback: %v", rollbackErr)
 				return network, fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
 			}
-			tsdio.Printf("🔙 Rollback automatique effectué\n")
+			cp.logger.Warn("🔙 Rollback automatique effectué")
 		}
 		return network, err
 	}
@@ -166,20 +185,20 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation sémantique: %w", err))
 		}
-		tsdio.Printf("✅ Validation sémantique réussie\n")
+		cp.logger.Info("✅ Validation sémantique réussie")
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
 		}
 	} else {
 		// Validation incrémentale avec contexte du réseau existant
-		tsdio.Printf("🔍 Validation sémantique incrémentale avec contexte...\n")
+		cp.logger.Info("🔍 Validation sémantique incrémentale avec contexte...")
 		validator := NewIncrementalValidator(network)
 		err = validator.ValidateWithContext(parsedAST)
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation incrémentale: %w", err))
 		}
-		tsdio.Printf("✅ Validation incrémentale réussie (%d types en contexte)\n", len(network.Types))
+		cp.logger.Info("✅ Validation incrémentale réussie (%d types en contexte)", len(network.Types))
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
@@ -195,10 +214,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 
 	// ÉTAPE 4: Créer ou étendre le réseau
 	if network == nil {
-		tsdio.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		cp.logger.Info("🆕 Création d'un nouveau réseau RETE")
 		network = NewReteNetwork(storage)
 	} else if !hasResets {
-		tsdio.Printf("🔄 Extension du réseau RETE existant\n")
+		cp.logger.Info("🔄 Extension du réseau RETE existant")
 	}
 
 	// Convertir au format RETE
@@ -213,7 +232,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
 	}
-	tsdio.Printf("✅ Trouvé %d types et %d expressions dans le fichier\n", len(types), len(expressions))
+	cp.logger.Info("✅ Trouvé %d types et %d expressions dans le fichier", len(types), len(expressions))
 
 	// Ajouter les types au réseau (évite les doublons automatiquement)
 	typeCreationStart := time.Now()
@@ -222,7 +241,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout types: %w", err)
 		}
-		tsdio.Printf("✅ Types ajoutés/mis à jour dans le réseau\n")
+		cp.logger.Info("✅ Types ajoutés/mis à jour dans le réseau")
 		if metrics != nil {
 			metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
 			metrics.SetTypesAdded(len(types))
@@ -243,13 +262,13 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if !hasResets {
 		existingFacts = cp.collectExistingFacts(network)
 		existingFactsByType = cp.organizeFactsByType(existingFacts)
-		tsdio.Printf("📊 Faits préexistants dans le réseau: %d\n", len(existingFacts))
+		cp.logger.Debug("📊 Faits préexistants dans le réseau: %d", len(existingFacts))
 		if metrics != nil {
 			metrics.RecordFactCollectionDuration(time.Since(collectionStart))
 			metrics.SetExistingFactsCollected(len(existingFacts))
 		}
 	} else {
-		tsdio.Printf("📊 Réseau réinitialisé - pas de faits préexistants\n")
+		cp.logger.Debug("📊 Réseau réinitialisé - pas de faits préexistants")
 	}
 
 	// ÉTAPE 7: Identifier les terminaux existants avant l'ajout de règles
@@ -265,7 +284,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout règles: %w", err)
 		}
-		tsdio.Printf("✅ Règles ajoutées au réseau\n")
+		cp.logger.Info("✅ Règles ajoutées au réseau")
 		if metrics != nil {
 			metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
 			metrics.SetRulesAdded(len(expressions))
@@ -282,7 +301,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	newTerminals := cp.identifyNewTerminals(network, existingTerminals)
 
 	if len(newTerminals) > 0 && len(existingFacts) > 0 {
-		tsdio.Printf("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)\n", len(newTerminals))
+		cp.logger.Info("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)", len(newTerminals))
 
 		// Propager de manière ciblée pour chaque nouveau terminal
 		propagationStart := time.Now()
@@ -295,7 +314,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 			metrics.SetPropagationTargets(len(newTerminals))
 		}
 
-		tsdio.Printf("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))\n", propagatedCount)
+		cp.logger.Info("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))", propagatedCount)
 	}
 
 	// ÉTAPE 10: Soumettre les nouveaux faits du fichier
