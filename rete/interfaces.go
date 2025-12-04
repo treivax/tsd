@@ -26,4 +26,5 @@ type Storage interface {
 	RemoveFact(factID string) error // Supprimer un fait du storage par son ID interne
 	GetFact(factID string) *Fact    // Récupérer un fait par son ID interne
 	GetAllFacts() []*Fact           // Récupérer tous les faits du storage
+	Sync() error                    // Garantit que toutes les écritures sont durables et visibles
 }

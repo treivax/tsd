@@ -5,10 +5,11 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"log"
 	"sync"
+
+	"github.com/treivax/tsd/tsdio"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -302,6 +303,10 @@ func (rn *ReteNetwork) RepropagateExistingFact(fact *Fact) error {
 
 // SubmitFactsFromGrammar soumet plusieurs faits depuis la grammaire au réseau
 func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) error {
+	// Compteurs pour garantir la cohérence
+	factsSubmitted := 0
+	factsPersisted := 0
+
 	for i, factMap := range facts {
 		// Convertir le map en Fact
 		factID := fmt.Sprintf("fact_%d", i)
@@ -333,7 +338,26 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 		if err := rn.SubmitFact(fact); err != nil {
 			return fmt.Errorf("erreur soumission fait %s: %w", fact.ID, err)
 		}
+		factsSubmitted++
+
+		// Vérifier immédiatement que le fait a été persisté dans le storage
+		// Ceci garantit la cohérence "read-after-write"
+		// Note: On doit utiliser l'ID interne (Type_ID) car c'est ainsi que les faits sont stockés
+		internalID := fact.GetInternalID()
+		if rn.Storage.GetFact(internalID) != nil {
+			factsPersisted++
+		} else {
+			tsdio.Printf("⚠️  Fait %s (ID interne: %s) soumis mais non persisté immédiatement\n", fact.ID, internalID)
+		}
 	}
+
+	// Vérification finale de cohérence
+	if factsSubmitted != factsPersisted {
+		return fmt.Errorf("incohérence détectée: %d faits soumis mais seulement %d persistés dans le storage",
+			factsSubmitted, factsPersisted)
+	}
+
+	tsdio.Printf("✅ Cohérence vérifiée: %d/%d faits persistés\n", factsPersisted, factsSubmitted)
 	return nil
 }
 

@@ -5,9 +5,10 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"time"
+
+	"github.com/treivax/tsd/tsdio"
 
 	"github.com/treivax/tsd/constraint"
 )
@@ -298,17 +299,17 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	}
 
 	// ÉTAPE 10: Soumettre les nouveaux faits du fichier
+	var factsForRete []map[string]interface{}
 	if len(program.Facts) > 0 {
-		factsForRete := constraint.ConvertFactsToReteFormat(*program)
+		factsForRete = constraint.ConvertFactsToReteFormat(*program)
 		tsdio.Printf("📥 Soumission de %d nouveaux faits\n", len(factsForRete))
 
 		submissionStart := time.Now()
 		err := network.SubmitFactsFromGrammar(factsForRete)
 		if err != nil {
-			tsdio.Printf("⚠️ Erreur soumission faits: %v\n", err)
-		} else {
-			tsdio.Printf("✅ Nouveaux faits soumis\n")
+			return rollbackOnError(fmt.Errorf("❌ Erreur soumission faits: %w", err))
 		}
+		tsdio.Printf("✅ Nouveaux faits soumis\n")
 		if metrics != nil {
 			metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
 			metrics.SetFactsSubmitted(len(factsForRete))
@@ -330,7 +331,62 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	tsdio.Printf("🎯 INGESTION INCRÉMENTALE TERMINÉE\n")
 	tsdio.Printf("   - Total TypeNodes: %d\n", len(network.TypeNodes))
 	tsdio.Printf("   - Total TerminalNodes: %d\n", len(network.TerminalNodes))
-	// ÉTAPE 9: Commit de la transaction (OBLIGATOIRE)
+
+	// ÉTAPE 12: Vérification de cohérence avant commit
+	if tx != nil && tx.IsActive && len(factsForRete) > 0 {
+		tsdio.Printf("🔍 Vérification de cohérence pré-commit...\n")
+
+		// Vérifier que tous les faits soumis sont bien dans le storage
+		expectedFactCount := len(factsForRete)
+		actualFactCount := 0
+		missingFacts := make([]string, 0)
+
+		for i, factMap := range factsForRete {
+			var factID string
+			if id, ok := factMap["id"].(string); ok {
+				factID = id
+			} else {
+				// Générer le même ID que dans SubmitFactsFromGrammar
+				factID = fmt.Sprintf("fact_%d", i)
+			}
+
+			// Extraire le type du fait
+			factType := "unknown"
+			if typ, ok := factMap["type"].(string); ok {
+				factType = typ
+			} else if typ, ok := factMap["reteType"].(string); ok {
+				factType = typ
+			}
+
+			// Construire l'ID interne (Type_ID) comme dans GetInternalID()
+			internalID := fmt.Sprintf("%s_%s", factType, factID)
+
+			if storage.GetFact(internalID) != nil {
+				actualFactCount++
+			} else {
+				missingFacts = append(missingFacts, internalID)
+			}
+		}
+
+		if expectedFactCount != actualFactCount {
+			tsdio.Printf("❌ Incohérence détectée: %d faits attendus, %d trouvés\n", expectedFactCount, actualFactCount)
+			tsdio.Printf("   Faits manquants: %v\n", missingFacts)
+			return rollbackOnError(fmt.Errorf(
+				"incohérence pré-commit: %d faits attendus mais %d trouvés dans le storage",
+				expectedFactCount, actualFactCount))
+		}
+
+		tsdio.Printf("✅ Cohérence vérifiée: %d/%d faits présents\n", actualFactCount, expectedFactCount)
+
+		// Synchroniser le storage pour garantir la durabilité
+		tsdio.Printf("💾 Synchronisation du storage...\n")
+		if err := storage.Sync(); err != nil {
+			return rollbackOnError(fmt.Errorf("❌ Erreur sync storage: %w", err))
+		}
+		tsdio.Printf("✅ Storage synchronisé\n")
+	}
+
+	// ÉTAPE 13: Commit de la transaction (OBLIGATOIRE)
 	if tx != nil && tx.IsActive {
 		commitErr := tx.Commit()
 		if commitErr != nil {
