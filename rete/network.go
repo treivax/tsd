@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/treivax/tsd/tsdio"
 )
@@ -35,7 +36,19 @@ type ReteNetwork struct {
 	ArithmeticResultCache *ArithmeticResultCache   `json:"-"`       // Cache global des résultats arithmétiques intermédiaires
 	currentTx             *Transaction             `json:"-"`       // Transaction courante (si en cours)
 	txMutex               sync.RWMutex             `json:"-"`       // Mutex pour accès concurrent à la transaction
+
+	// Phase 2: Configuration de synchronisation pour garanties de cohérence
+	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
+	VerifyRetryDelay  time.Duration `json:"-"` // Délai entre tentatives de vérification
+	MaxVerifyRetries  int           `json:"-"` // Nombre max de tentatives de vérification
 }
+
+// Valeurs par défaut pour la synchronisation Phase 2
+const (
+	DefaultSubmissionTimeout = 30 * time.Second
+	DefaultVerifyRetryDelay  = 10 * time.Millisecond
+	DefaultMaxVerifyRetries  = 10
+)
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
 func NewReteNetwork(storage Storage) *ReteNetwork {
@@ -84,6 +97,11 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 		ChainMetrics:          metrics,
 		Config:                config,
 		ArithmeticResultCache: arithmeticCache,
+
+		// Phase 2: Initialiser les paramètres de synchronisation
+		SubmissionTimeout: DefaultSubmissionTimeout,
+		VerifyRetryDelay:  DefaultVerifyRetryDelay,
+		MaxVerifyRetries:  DefaultMaxVerifyRetries,
 	}
 
 	// Initialize action executor
@@ -302,13 +320,65 @@ func (rn *ReteNetwork) RepropagateExistingFact(fact *Fact) error {
 }
 
 // SubmitFactsFromGrammar soumet plusieurs faits depuis la grammaire au réseau
+// waitForFactPersistence attend qu'un fait soit persisté avec retry + backoff exponentiel
+// Cette fonction implémente la barrière de synchronisation de la Phase 2
+func (rn *ReteNetwork) waitForFactPersistence(fact *Fact, timeout time.Duration) error {
+	internalID := fact.GetInternalID()
+	deadline := time.Now().Add(timeout)
+	attempt := 0
+
+	for time.Now().Before(deadline) {
+		attempt++
+
+		// Vérifier si le fait est persisté
+		if storedFact := rn.Storage.GetFact(internalID); storedFact != nil {
+			// ✅ Fait trouvé
+			if attempt > 1 {
+				tsdio.Printf("✅ Fait %s persisté après %d tentative(s)\n", fact.ID, attempt)
+			}
+			return nil
+		}
+
+		// Si on n'a pas dépassé le nombre max de retries, utiliser backoff exponentiel
+		if attempt < rn.MaxVerifyRetries {
+			// Backoff exponentiel: 10ms, 20ms, 40ms, 80ms, 160ms, 320ms, max 500ms
+			backoff := rn.VerifyRetryDelay * time.Duration(1<<uint(attempt-1))
+			if backoff > 500*time.Millisecond {
+				backoff = 500 * time.Millisecond
+			}
+			time.Sleep(backoff)
+		} else {
+			// Après max retries, attendre un peu avant de vérifier à nouveau
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	// ❌ Timeout dépassé
+	return fmt.Errorf("timeout: fait %s (ID interne: %s) non persisté après %v",
+		fact.ID, internalID, timeout)
+}
+
+// SubmitFactsFromGrammar soumet une liste de faits au réseau RETE avec garanties de synchronisation (Phase 2)
+// Cette fonction garantit que tous les faits soumis sont persistés et visibles avant de retourner
 func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) error {
+	if len(facts) == 0 {
+		return nil
+	}
+
+	// Timeout par fait : timeout total divisé par nombre de faits
+	// Minimum 1 seconde par fait pour éviter les timeouts prématurés
+	timeoutPerFact := rn.SubmissionTimeout / time.Duration(len(facts))
+	if timeoutPerFact < 1*time.Second {
+		timeoutPerFact = 1 * time.Second
+	}
+
 	// Compteurs pour garantir la cohérence
 	factsSubmitted := 0
 	factsPersisted := 0
+	startTime := time.Now()
 
 	for i, factMap := range facts {
-		// Convertir le map en Fact
+		// 1. Convertir le map en Fact
 		factID := fmt.Sprintf("fact_%d", i)
 		if id, ok := factMap["id"].(string); ok {
 			factID = id
@@ -335,29 +405,30 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 			}
 		}
 
+		// 2. Soumettre le fait au réseau RETE
 		if err := rn.SubmitFact(fact); err != nil {
 			return fmt.Errorf("erreur soumission fait %s: %w", fact.ID, err)
 		}
 		factsSubmitted++
 
-		// Vérifier immédiatement que le fait a été persisté dans le storage
-		// Ceci garantit la cohérence "read-after-write"
-		// Note: On doit utiliser l'ID interne (Type_ID) car c'est ainsi que les faits sont stockés
-		internalID := fact.GetInternalID()
-		if rn.Storage.GetFact(internalID) != nil {
-			factsPersisted++
-		} else {
-			tsdio.Printf("⚠️  Fait %s (ID interne: %s) soumis mais non persisté immédiatement\n", fact.ID, internalID)
+		// 3. Barrière de synchronisation Phase 2 : attendre la persistance avec retry
+		if err := rn.waitForFactPersistence(fact, timeoutPerFact); err != nil {
+			return fmt.Errorf("échec synchronisation fait %s: %w", fact.ID, err)
 		}
+		factsPersisted++
 	}
 
-	// Vérification finale de cohérence
+	duration := time.Since(startTime)
+
+	// 4. Vérification finale de cohérence
 	if factsSubmitted != factsPersisted {
 		return fmt.Errorf("incohérence détectée: %d faits soumis mais seulement %d persistés dans le storage",
 			factsSubmitted, factsPersisted)
 	}
 
-	tsdio.Printf("✅ Cohérence vérifiée: %d/%d faits persistés\n", factsPersisted, factsSubmitted)
+	tsdio.Printf("✅ Phase 2 - Synchronisation complète: %d/%d faits persistés en %v\n",
+		factsPersisted, factsSubmitted, duration)
+
 	return nil
 }
 
