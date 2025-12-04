@@ -66,3 +66,4 @@ full_test_output.txt
 test_results.txt
 coverage.out
 coverage.html
+*.log

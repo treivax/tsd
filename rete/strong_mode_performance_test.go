@@ -347,13 +347,14 @@ func TestPerformanceGrades(t *testing.T) {
 	testCases := []struct {
 		name          string
 		failureRate   float64
+		timeoutRate   float64
 		expectedGrade string
 	}{
-		{"Excellent", 0.01, "A"},
-		{"Good", 0.08, "B"},
-		{"Fair", 0.15, "C"},
-		{"Poor", 0.25, "D"},
-		{"Failing", 0.40, "F"},
+		{"Excellent", 0.01, 0.0, "A"},
+		{"Good", 0.06, 0.03, "B"},
+		{"Fair", 0.08, 0.06, "C"},
+		{"Poor", 0.12, 0.08, "D"},
+		{"Failing", 0.25, 0.12, "F"},
 	}
 
 	for _, tc := range testCases {
@@ -364,11 +365,20 @@ func TestPerformanceGrades(t *testing.T) {
 			failureCount := int(100 * tc.failureRate)
 
 			for i := 0; i < successCount; i++ {
-				cm := &CoherenceMetrics{FactsSubmitted: 10, FactsPersisted: 10}
+				cm := &CoherenceMetrics{
+					FactsSubmitted:      10,
+					FactsPersisted:      10,
+					TotalVerifyAttempts: 10,
+				}
 				pm.RecordTransaction(100*time.Millisecond, 10, true, cm)
 			}
 			for i := 0; i < failureCount; i++ {
-				cm := &CoherenceMetrics{FactsSubmitted: 10, FactsFailed: 10}
+				timeouts := int(float64(10) * tc.timeoutRate / tc.failureRate)
+				cm := &CoherenceMetrics{
+					FactsSubmitted: 10,
+					FactsFailed:    10,
+					TotalTimeouts:  timeouts,
+				}
 				pm.RecordTransaction(100*time.Millisecond, 10, false, cm)
 			}
 
