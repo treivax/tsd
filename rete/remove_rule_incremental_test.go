@@ -387,7 +387,7 @@ func TestRemoveRuleIncremental_ParseOnly(t *testing.T) {
 			t.Logf("Test: %s", tc.name)
 			t.Logf("Input: %s", tc.input)
 
-			result, err := constraint.Parse("", []byte(tc.input))
+			result, err := constraint.ParseConstraint("", []byte(tc.input))
 			if err != nil {
 				t.Fatalf("❌ Erreur parsing: %v", err)
 			}

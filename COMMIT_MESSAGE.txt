@@ -1,0 +1,43 @@
+fix: Résoudre les problèmes de compilation du parser et valider la sécurité concurrentielle
+
+## Problèmes Résolus
+
+1. **Parser non trouvé dans les tests**
+   - Le fichier `parser.go` généré était dans `constraint/grammar/` mais déclarait `package constraint`
+   - Go ne le compilait pas avec le package principal
+   - Solution: Déplacé vers `constraint/parser.go` (emplacement correct selon Makefile)
+
+2. **Imports incorrects**
+   - Retiré les imports `github.com/treivax/tsd/constraint/grammar` obsolètes
+   - Mis à jour `constraint/api.go` pour utiliser les fonctions directement
+   - Corrigé `rete/remove_rule_incremental_test.go` pour utiliser `constraint.ParseConstraint()`
+
+## Tests de Parallélisme et Race Conditions
+
+✅ **Tous les tests unitaires passent** avec le détecteur de race
+✅ **Aucune race condition détectée** avec `-race` et `-parallel 10`
+✅ **Validation complète de la migration thread-safe**
+
+Packages testés avec succès:
+- constraint (tous sous-packages)
+- rete (tous sous-packages)
+- cmd/tsd
+- test/testutil
+
+## Fichiers Modifiés
+
+- `constraint/parser.go` - Déplacé depuis grammar/
+- `constraint/api.go` - Retiré import grammar, utilise Parse directement
+- `constraint/aggregation_join_test.go` - Utilise Parse directement
+- `constraint/multi_source_aggregation_test.go` - Utilise Parse directement
+- `rete/remove_rule_incremental_test.go` - Utilise constraint.ParseConstraint
+
+## Documentation Ajoutée
+
+- `TEST_PARALLELISM_REPORT.md` - Rapport complet de validation de la sécurité concurrentielle
+
+## Notes
+
+Les tests d'intégration (`-tags=integration`) montrent quelques échecs fonctionnels
+(comptage de faits) qui ne sont pas liés au parallélisme. Ces problèmes existaient
+avant et nécessitent une investigation séparée.

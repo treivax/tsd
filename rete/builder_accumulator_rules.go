@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -71,12 +72,12 @@ func (arb *AccumulatorRuleBuilder) CreateAccumulatorRule(
 
 	// Connect the TypeNodes to the AccumulatorNode
 	arb.utils.ConnectTypeNodeToBetaNode(network, ruleID, mainVariable, mainType, accumNode, "")
-	fmt.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s]\n", mainType, aggInfo.Function)
+	tsdio.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s]\n", mainType, aggInfo.Function)
 
 	arb.utils.ConnectTypeNodeToBetaNode(network, ruleID, aggInfo.AggVariable, aggInfo.AggType, accumNode, "")
-	fmt.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s] (pour agrégation)\n", aggInfo.AggType, aggInfo.Function)
+	tsdio.Printf("   ✓ %s -> PassthroughAlpha -> AccumulatorNode[%s] (pour agrégation)\n", aggInfo.AggType, aggInfo.Function)
 
-	fmt.Printf("   ✅ AccumulatorNode %s créé pour %s(%s.%s) %s %.2f\n",
+	tsdio.Printf("   ✅ AccumulatorNode %s créé pour %s(%s.%s) %s %.2f\n",
 		accumNode.ID, aggInfo.Function, aggInfo.AggVariable, aggInfo.Field, aggInfo.Operator, aggInfo.Threshold)
 	return nil
 }
@@ -139,7 +140,7 @@ func (arb *AccumulatorRuleBuilder) CreateMultiSourceAccumulatorRule(
 	aggInfo *AggregationInfo,
 	action *Action,
 ) error {
-	fmt.Printf("   🔗 Création règle multi-source avec %d sources et %d agrégations\n",
+	tsdio.Printf("   🔗 Création règle multi-source avec %d sources et %d agrégations\n",
 		len(aggInfo.SourcePatterns), len(aggInfo.AggregationVars))
 
 	// Step 1: Create the join chain for all sources
@@ -154,7 +155,7 @@ func (arb *AccumulatorRuleBuilder) CreateMultiSourceAccumulatorRule(
 	// Step 3: Connect the join chain to the accumulator
 	if lastJoinNode != nil {
 		lastJoinNode.AddChild(accumulatorNode)
-		fmt.Printf("   ✓ JoinChain -> MultiSourceAccumulatorNode[%s]\n", accumulatorNode.ID)
+		tsdio.Printf("   ✓ JoinChain -> MultiSourceAccumulatorNode[%s]\n", accumulatorNode.ID)
 	}
 
 	// Step 4: Create and connect the terminal node
@@ -241,7 +242,7 @@ func (arb *AccumulatorRuleBuilder) createSourceJoinNode(
 			},
 		}
 
-		fmt.Printf("   ✓ Creating JoinNode: %s.%s == %s.%s\n",
+		tsdio.Printf("   ✓ Creating JoinNode: %s.%s == %s.%s\n",
 			joinCondition.LeftVar, joinCondition.LeftField,
 			joinCondition.RightVar, joinCondition.RightField)
 	}
@@ -314,13 +315,13 @@ func (arb *AccumulatorRuleBuilder) createMultiSourceAccumulatorNode(
 	network.BetaNodes[accumulatorNode.ID] = accumulatorNode
 
 	// Log aggregation details
-	fmt.Printf("   📊 MultiSourceAccumulatorNode créé avec %d agrégations\n", len(aggInfo.AggregationVars))
+	tsdio.Printf("   📊 MultiSourceAccumulatorNode créé avec %d agrégations\n", len(aggInfo.AggregationVars))
 	for _, aggVar := range aggInfo.AggregationVars {
 		thresholdStr := ""
 		if aggVar.Operator != "" && (aggVar.Operator != ">=" || aggVar.Threshold != 0) {
 			thresholdStr = fmt.Sprintf(" (threshold: %s %.2f)", aggVar.Operator, aggVar.Threshold)
 		}
-		fmt.Printf("     • %s: %s(%s.%s)%s\n",
+		tsdio.Printf("     • %s: %s(%s.%s)%s\n",
 			aggVar.Name, aggVar.Function, aggVar.SourceVar, aggVar.Field, thresholdStr)
 	}
 
@@ -340,8 +341,8 @@ func (arb *AccumulatorRuleBuilder) connectAccumulatorToTerminal(
 
 	// Connect the accumulator to the terminal
 	accumulatorNode.AddChild(terminalNode)
-	fmt.Printf("   ✓ MultiSourceAccumulatorNode -> TerminalNode[%s]\n", terminalNode.ID)
+	tsdio.Printf("   ✓ MultiSourceAccumulatorNode -> TerminalNode[%s]\n", terminalNode.ID)
 
-	fmt.Printf("   ✅ Multi-source accumulator rule créée: %s\n", ruleID)
+	tsdio.Printf("   ✅ Multi-source accumulator rule créée: %s\n", ruleID)
 	return nil
 }

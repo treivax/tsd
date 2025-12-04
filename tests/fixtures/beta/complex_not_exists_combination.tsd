@@ -1,0 +1,26 @@
+// Test combinaison NOT + EXISTS avec jointures
+type Student(id: string, name: string, grade: number, active: bool)
+type Course(id: string, title: string, level: string, credits: number)
+type Enrollment(id: string, student_id: string, course_id: string, status: string)
+
+
+// Action definitions
+action qualified_enrolled_student(arg1: string, arg2: string)
+action advanced_course_student(arg1: string, arg2: string)
+action successful_student(arg1: string)
+
+rule r1 : {s: Student, c: Course} / s.active == true AND s.grade >= 60 AND NOT (s.grade < 60) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status == "enrolled") ==> qualified_enrolled_student(s.id, c.id)
+rule r2 : {s: Student, c: Course} / c.level == "advanced" AND c.credits >= 3 AND NOT (c.credits < 3) AND EXISTS (e: Enrollment / e.student_id == s.id AND e.course_id == c.id AND e.status != "dropped") ==> advanced_course_student(s.id, c.id)
+rule r3 : {s: Student} / s.active == true AND s.grade > 0 AND NOT (EXISTS (e: Enrollment / e.student_id == s.id AND e.status == "failed")) ==> successful_student(s.id)
+
+Student(id:S001, name:Alice, grade:85, active:true)
+Student(id:S002, name:Bob, grade:45, active:true)
+Student(id:S003, name:Charlie, grade:92, active:false)
+Student(id:S004, name:Diana, grade:78, active:true)
+Course(id:C001, title:"Advanced Math", level:advanced, credits:4)
+Course(id:C002, title:"Basic Physics", level:beginner, credits:2)
+Course(id:C003, title:"Computer Science", level:advanced, credits:3)
+Enrollment(id:EN001, student_id:S001, course_id:C001, status:enrolled)
+Enrollment(id:EN002, student_id:S002, course_id:C002, status:failed)
+Enrollment(id:EN003, student_id:S003, course_id:C001, status:dropped)
+Enrollment(id:EN004, student_id:S004, course_id:C003, status:enrolled)

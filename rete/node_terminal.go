@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -64,7 +65,7 @@ func (tn *TerminalNode) ActivateRetract(factID string) error {
 	}
 	tn.mutex.Unlock()
 	if len(tokensToRemove) > 0 {
-		fmt.Printf("🗑️  [TERMINAL_%s] Rétractation: %d tokens retirés\n", tn.ID, len(tokensToRemove))
+		tsdio.Printf("🗑️  [TERMINAL_%s] Rétractation: %d tokens retirés\n", tn.ID, len(tokensToRemove))
 	}
 	return nil
 }
@@ -106,30 +107,33 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		actionName = jobs[0].Name
 	}
 
-	fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
+	// Utiliser WithMutex pour opération atomique multi-lignes
+	tsdio.WithMutex(func() {
+		fmt.Printf("🎯 ACTION DISPONIBLE DANS TUPLE-SPACE: %s", actionName)
 
-	// Afficher les faits déclencheurs entre parenthèses
-	if len(token.Facts) > 0 {
-		fmt.Print(" (")
-		for i, fact := range token.Facts {
-			if i > 0 {
-				fmt.Print(", ")
-			}
-			// Format compact : Type(id:value, field:value, ...)
-			fmt.Printf("%s(", fact.Type)
-			fieldCount := 0
-			for key, value := range fact.Fields {
-				if fieldCount > 0 {
+		// Afficher les faits déclencheurs entre parenthèses
+		if len(token.Facts) > 0 {
+			fmt.Print(" (")
+			for i, fact := range token.Facts {
+				if i > 0 {
 					fmt.Print(", ")
 				}
-				fmt.Printf("%s:%v", key, value)
-				fieldCount++
+				// Format compact : Type(id:value, field:value, ...)
+				fmt.Printf("%s(", fact.Type)
+				fieldCount := 0
+				for key, value := range fact.Fields {
+					if fieldCount > 0 {
+						fmt.Print(", ")
+					}
+					fmt.Printf("%s:%v", key, value)
+					fieldCount++
+				}
+				fmt.Print(")")
 			}
 			fmt.Print(")")
 		}
-		fmt.Print(")")
-	}
-	fmt.Println()
+		fmt.Println()
+	})
 
 	// Exécuter réellement l'action avec l'ActionExecutor
 	network := tn.BaseNode.GetNetwork()

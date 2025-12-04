@@ -1,0 +1,20 @@
+type Employee(id: string, name: string, department: string)
+type Performance(id: string, employee_id: string, score: number)
+
+
+// Action definitions
+action PRINT(arg1: string, arg2: string, arg3: string)
+
+rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5 ==> PRINT("Employee ", e.name, " has average performance >= 8.5")
+
+Employee(id:"EMP001", name:"Alice", department:"sales")
+Employee(id:"EMP002", name:"Bob", department:"engineering")
+Employee(id:"EMP003", name:"Charlie", department:"sales")
+
+Performance(id:"PERF001", employee_id:"EMP001", score:9.0)
+Performance(id:"PERF002", employee_id:"EMP001", score:8.5)
+Performance(id:"PERF003", employee_id:"EMP001", score:9.2)
+Performance(id:"PERF004", employee_id:"EMP002", score:7.0)
+Performance(id:"PERF005", employee_id:"EMP002", score:7.5)
+Performance(id:"PERF006", employee_id:"EMP003", score:6.0)
+Performance(id:"PERF007", employee_id:"EMP003", score:7.0)

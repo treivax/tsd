@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -53,7 +54,7 @@ func (an *AlphaNode) ActivateRetract(factID string) error {
 	if !exists {
 		return nil
 	}
-	fmt.Printf("🗑️  [ALPHA_%s] Rétractation du fait: %s\n", an.ID, factID)
+	tsdio.Printf("🗑️  [ALPHA_%s] Rétractation du fait: %s\n", an.ID, factID)
 	return an.PropagateRetractToChildren(factID)
 }
 

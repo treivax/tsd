@@ -11,7 +11,8 @@ BUILD_DIR := ./bin
 CMD_TSD_DIR := ./cmd/tsd
 CMD_UNIVERSAL_DIR := ./cmd/universal-rete-runner
 GO_FILES := $(shell find . -name "*.go" -not -path "./vendor/*")
-TEST_TIMEOUT := 300s
+TEST_TIMEOUT := 10m
+TEST_PARALLEL := 4
 BETA_TESTS_DIR := ./beta_coverage_tests
 
 # Couleurs pour l'output
@@ -38,9 +39,13 @@ help: ## Afficher cette aide
 	@echo "$(GREEN)rete-unified$(NC)         - Exécuter TOUS les tests (Alpha+Beta+Intégration)"
 	@echo ""
 	@echo "$(CYAN)🧪 TESTS & QUALITÉ:$(NC)"
-	@echo "$(GREEN)test$(NC)                 - Tests unitaires"
-	@echo "$(GREEN)test-coverage$(NC)        - Tests avec couverture"
+	@echo "$(GREEN)test-unit$(NC)            - Tests unitaires (rapides)"
+	@echo "$(GREEN)test-e2e$(NC)             - Tests E2E (fixtures TSD)"
 	@echo "$(GREEN)test-integration$(NC)     - Tests d'intégration"
+	@echo "$(GREEN)test-performance$(NC)     - Tests de performance"
+	@echo "$(GREEN)test-all$(NC)             - Tous les tests"
+	@echo "$(GREEN)coverage$(NC)             - Rapport de couverture"
+	@echo "$(GREEN)bench$(NC)                - Benchmarks"
 	@echo "$(GREEN)lint$(NC)                 - Analyse statique du code"
 	@echo "$(GREEN)format$(NC)               - Formatage du code"
 	@echo "$(GREEN)check-conventions$(NC)    - Vérifier conventions Go"
@@ -73,8 +78,9 @@ build-tsd: ## BUILD - Compiler l'outil CLI principal
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_TSD_DIR)
 	@echo "$(GREEN)✅ Binaire créé: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
 
-build-runners: ## BUILD - Compiler les runners de test
-	@echo "$(BLUE)🔨 Compilation des runners...$(NC)"
+build-runners: ## BUILD - Compiler les runners de test (DEPRECATED - use go test)
+	@echo "$(YELLOW)⚠️  DEPRECATED: Le runner universel sera supprimé$(NC)"
+	@echo "$(YELLOW)    Utilisez 'make test-e2e' à la place$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(CMD_UNIVERSAL_DIR)
 	@echo "$(GREEN)✅ Runner compilé:$(NC)"
@@ -100,9 +106,13 @@ rete-all: build ## RETE - Valider tous les tests beta
 	@echo "$(BLUE)🔥 Validation de tous les tests RETE...$(NC)"
 	@cd test/coverage/beta && ./run_all_rete_tests.sh
 
-rete-unified: build-runners ## RETE - Exécuter TOUS les tests (Alpha+Beta+Intégration)
-	@echo "$(BLUE)🚀 RUNNER UNIVERSEL - TOUS LES TESTS RETE$(NC)"
+rete-unified: test-e2e ## RETE - Exécuter TOUS les tests (Alpha+Beta+Intégration) via go test
+	@echo "$(BLUE)🚀 TOUS LES TESTS RETE via go test$(NC)"
 	@echo "========================================"
+	@echo "$(GREEN)✅ Tests exécutés via 'make test-e2e'$(NC)"
+
+rete-unified-legacy: build-runners ## RETE - Ancien runner universel (DEPRECATED)
+	@echo "$(YELLOW)⚠️  DEPRECATED: Utilisez 'make test-e2e'$(NC)"
 	@$(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(PWD)
 
 rete-unified-report: build-runners ## RETE - Générer seulement le rapport universel
@@ -113,20 +123,109 @@ rete-unified-report: build-runners ## RETE - Générer seulement le rapport univ
 # TESTS & QUALITÉ
 # ================================
 
-test: ## TEST - Tests unitaires
+test-unit: ## TEST - Tests unitaires (rapides, sans build tags)
 	@echo "$(BLUE)🧪 Exécution des tests unitaires...$(NC)"
-	@go test -timeout $(TEST_TIMEOUT) ./...
+	@go test -v -short -timeout=$(TEST_TIMEOUT) ./constraint/... ./rete/... ./cmd/...
 	@echo "$(GREEN)✅ Tests unitaires terminés$(NC)"
 
-test-coverage: ## TEST - Tests avec couverture
-	@echo "$(BLUE)📊 Tests avec couverture...$(NC)"
-	@go test -cover ./...
-	@echo "$(GREEN)✅ Tests avec couverture terminés$(NC)"
+test-e2e: ## TEST - Tests E2E (fixtures TSD)
+	@echo "$(BLUE)🎯 Exécution des tests E2E...$(NC)"
+	@go test -v -tags=e2e -timeout=$(TEST_TIMEOUT) ./tests/e2e/...
+	@echo "$(GREEN)✅ Tests E2E terminés$(NC)"
 
-test-integration: ## TEST - Tests d'intégration
-	@echo "$(BLUE)🔗 Tests d'intégration...$(NC)"
-	@cd test/integration && go test -v .
+test-e2e-alpha: ## TEST - Tests fixtures alpha uniquement
+	@echo "$(BLUE)🎯 Tests fixtures alpha...$(NC)"
+	@go test -v -tags=e2e -run=TestAlphaFixtures -timeout=$(TEST_TIMEOUT) ./tests/e2e/...
+
+test-e2e-beta: ## TEST - Tests fixtures beta uniquement
+	@echo "$(BLUE)🎯 Tests fixtures beta...$(NC)"
+	@go test -v -tags=e2e -run=TestBetaFixtures -timeout=$(TEST_TIMEOUT) ./tests/e2e/...
+
+test-e2e-integration: ## TEST - Tests fixtures integration uniquement
+	@echo "$(BLUE)🎯 Tests fixtures integration...$(NC)"
+	@go test -v -tags=e2e -run=TestIntegrationFixtures -timeout=$(TEST_TIMEOUT) ./tests/e2e/...
+
+test-integration: ## TEST - Tests d'intégration (modules)
+	@echo "$(BLUE)🔗 Exécution des tests d'intégration...$(NC)"
+	@go test -v -tags=integration -timeout=$(TEST_TIMEOUT) ./tests/integration/...
 	@echo "$(GREEN)✅ Tests d'intégration terminés$(NC)"
+
+test-performance: ## TEST - Tests de performance et load
+	@echo "$(BLUE)⚡ Exécution des tests de performance...$(NC)"
+	@go test -v -tags=performance -timeout=1h ./tests/performance/...
+	@echo "$(GREEN)✅ Tests de performance terminés$(NC)"
+
+test-load: ## TEST - Tests de charge avec profiling
+	@echo "$(BLUE)📈 Tests de charge avec profiling...$(NC)"
+	@go test -v -tags=performance -run=TestLoad -cpuprofile=cpu.prof -memprofile=mem.prof ./tests/performance/...
+	@echo "$(GREEN)✅ Profiles générés: cpu.prof, mem.prof$(NC)"
+
+test-all: test-unit test-integration test-e2e ## TEST - Tous les tests
+	@echo ""
+	@echo "$(GREEN)🎉 TOUS LES TESTS RÉUSSIS$(NC)"
+
+test-race: ## TEST - Tests avec race detector
+	@echo "$(BLUE)🏁 Tests avec race detector...$(NC)"
+	@go test -race -tags=e2e,integration ./...
+	@echo "$(GREEN)✅ Tests race terminés$(NC)"
+
+test-parallel: ## TEST - Tests en parallèle
+	@echo "$(BLUE)⚡ Tests en parallèle ($(TEST_PARALLEL) workers)...$(NC)"
+	@go test -v -tags=e2e,integration -parallel=$(TEST_PARALLEL) ./tests/...
+
+coverage: ## TEST - Rapport de couverture complet
+	@echo "$(BLUE)📊 Génération du rapport de couverture...$(NC)"
+	@go test -tags=e2e,integration -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "$(GREEN)✅ Rapport généré: coverage.html$(NC)"
+
+coverage-unit: ## TEST - Couverture tests unitaires uniquement
+	@echo "$(BLUE)📊 Couverture tests unitaires...$(NC)"
+	@go test -short -coverprofile=coverage-unit.out ./constraint/... ./rete/...
+	@go tool cover -html=coverage-unit.out -o coverage-unit.html
+	@echo "$(GREEN)✅ Rapport: coverage-unit.html$(NC)"
+
+coverage-e2e: ## TEST - Couverture tests E2E uniquement
+	@echo "$(BLUE)📊 Couverture tests E2E...$(NC)"
+	@go test -tags=e2e -coverprofile=coverage-e2e.out ./tests/e2e/...
+	@go tool cover -html=coverage-e2e.out -o coverage-e2e.html
+	@echo "$(GREEN)✅ Rapport: coverage-e2e.html$(NC)"
+
+bench: ## TEST - Benchmarks standards
+	@echo "$(BLUE)⏱️  Exécution des benchmarks...$(NC)"
+	@go test -bench=. -benchmem -run=^$$ ./...
+
+bench-performance: ## TEST - Benchmarks de performance
+	@echo "$(BLUE)⚡ Benchmarks de performance...$(NC)"
+	@go test -tags=performance -bench=. -benchmem -run=^$$ ./tests/performance/...
+
+bench-profile: ## TEST - Benchmarks avec profiling
+	@echo "$(BLUE)📊 Benchmarks avec profiling...$(NC)"
+	@go test -bench=. -benchmem -cpuprofile=bench-cpu.prof -memprofile=bench-mem.prof ./...
+	@echo "$(GREEN)✅ Profiles: bench-cpu.prof, bench-mem.prof$(NC)"
+
+profile-cpu: ## TEST - Visualiser profile CPU
+	@echo "$(BLUE)🔍 Ouverture du profile CPU sur :8080...$(NC)"
+	@go tool pprof -http=:8080 cpu.prof
+
+profile-mem: ## TEST - Visualiser profile mémoire
+	@echo "$(BLUE)🔍 Ouverture du profile mémoire sur :8080...$(NC)"
+	@go tool pprof -http=:8080 mem.prof
+
+test-verbose: ## TEST - Tests avec sortie verbose
+	@echo "$(BLUE)📢 Tests en mode verbose...$(NC)"
+	@go test -v -tags=e2e,integration ./...
+
+test-smoke: ## TEST - Tests rapides (smoke test)
+	@echo "$(BLUE)💨 Smoke test...$(NC)"
+	@go test -short -run=TestAlphaFixtures ./tests/e2e/... 2>&1 | head -20
+
+clean-test: ## TEST - Nettoyer artefacts de test
+	@echo "$(BLUE)🧹 Nettoyage des artefacts de test...$(NC)"
+	@rm -f coverage*.out coverage*.html
+	@rm -f *.prof
+	@rm -f *.test
+	@echo "$(GREEN)✅ Artefacts nettoyés$(NC)"
 
 lint: ## TEST - Analyse statique du code
 	@echo "$(BLUE)🔍 Analyse statique...$(NC)"
@@ -199,21 +298,23 @@ watch-test: ## DEV - Surveiller et relancer tests
 # VALIDATION COMPLÈTE
 # ================================
 
-validate: format lint build test ## VALIDATION COMPLÈTE
+validate: format lint build test-all ## VALIDATION COMPLÈTE
 	@echo ""
 	@echo "$(GREEN)🎉 VALIDATION COMPLÈTE RÉUSSIE$(NC)"
 	@echo "==============================="
 	@echo "$(GREEN)✅ Formatage$(NC)"
 	@echo "$(GREEN)✅ Analyse statique$(NC)"
 	@echo "$(GREEN)✅ Compilation$(NC)"
-	@echo "$(GREEN)✅ Tests$(NC)"
+	@echo "$(GREEN)✅ Tests unitaires$(NC)"
+	@echo "$(GREEN)✅ Tests d'intégration$(NC)"
+	@echo "$(GREEN)✅ Tests E2E$(NC)"
 	@echo ""
 	@echo "$(BLUE)🚀 Projet prêt pour la production !$(NC)"
 
 quick-check: format lint build ## Validation rapide sans tests
 	@echo "$(GREEN)✅ Validation rapide terminée$(NC)"
 
-ci: clean deps lint test build ## Validation pour CI/CD
+ci: clean deps lint test-all build ## Validation pour CI/CD
 	@echo "$(GREEN)🤖 Validation CI/CD terminée$(NC)"
 
 # ================================

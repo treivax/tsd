@@ -5,6 +5,7 @@
 package constraint
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"encoding/json"
 	"fmt"
 )
@@ -193,7 +194,7 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 					Message: errMsg,
 					Line:    0,
 				})
-				fmt.Printf("⚠️  Skipping duplicate rule ID in %s: %s\n", filename, errMsg)
+				tsdio.Printf("⚠️  Skipping duplicate rule ID in %s: %s\n", filename, errMsg)
 				continue
 			}
 		}
@@ -217,7 +218,7 @@ func (ps *ProgramState) mergeRules(newRules []Expression, filename string) error
 				Message: err.Error(),
 				Line:    0,
 			})
-			fmt.Printf("⚠️  Skipping invalid rule in %s: %v\n", filename, err)
+			tsdio.Printf("⚠️  Skipping invalid rule in %s: %v\n", filename, err)
 			continue
 		}
 
@@ -256,7 +257,7 @@ func (ps *ProgramState) mergeFacts(newFacts []Fact, filename string) error {
 				Message: err.Error(),
 				Line:    0,
 			})
-			fmt.Printf("⚠️  Skipping invalid fact in %s: %v\n", filename, err)
+			tsdio.Printf("⚠️  Skipping invalid fact in %s: %v\n", filename, err)
 			continue
 		}
 

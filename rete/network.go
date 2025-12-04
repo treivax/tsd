@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"log"
 	"sync"
@@ -230,7 +231,7 @@ func (rn *ReteNetwork) ResetChainMetrics() {
 // SubmitFact soumet un nouveau fait au réseau RETE
 // Si une transaction est active, la commande est enregistrée pour rollback
 func (rn *ReteNetwork) SubmitFact(fact *Fact) error {
-	fmt.Printf("🔥 Soumission d'un nouveau fait au réseau RETE: %s\n", fact.String())
+	tsdio.Printf("🔥 Soumission d'un nouveau fait au réseau RETE: %s\n", fact.String())
 
 	// Vérifier si une transaction est active
 	tx := rn.GetTransaction()
@@ -339,7 +340,7 @@ func (rn *ReteNetwork) SubmitFactsFromGrammar(facts []map[string]interface{}) er
 // RetractFact retire un fait du réseau et propage la rétractation
 // factID doit être l'identifiant interne (Type_ID)
 func (rn *ReteNetwork) RetractFact(factID string) error {
-	fmt.Printf("🗑️  Rétractation du fait: %s\n", factID)
+	tsdio.Printf("🗑️  Rétractation du fait: %s\n", factID)
 
 	// Vérifier que le fait existe dans le réseau
 	memory := rn.RootNode.GetMemory()
@@ -355,7 +356,7 @@ func (rn *ReteNetwork) RetractFact(factID string) error {
 // This removes all facts, rules, types, and network nodes.
 // After calling Reset, the network is ready to accept new definitions from scratch.
 func (rn *ReteNetwork) Reset() {
-	fmt.Println("🧹 Réinitialisation complète du réseau RETE")
+	tsdio.Println("🧹 Réinitialisation complète du réseau RETE")
 
 	// Clear all node collections
 	rn.TypeNodes = make(map[string]*TypeNode)
@@ -385,13 +386,13 @@ func (rn *ReteNetwork) Reset() {
 	// Recreate a fresh root node with the existing storage
 	rn.RootNode = NewRootNode(rn.Storage)
 
-	fmt.Println("✅ Réseau RETE réinitialisé avec succès")
+	tsdio.Println("✅ Réseau RETE réinitialisé avec succès")
 }
 
 // ClearMemory efface uniquement les mémoires (faits et tokens) de tous les nœuds
 // sans détruire la structure du réseau
 func (rn *ReteNetwork) ClearMemory() {
-	fmt.Println("🧹 Nettoyage de la mémoire du réseau RETE")
+	tsdio.Println("🧹 Nettoyage de la mémoire du réseau RETE")
 
 	// Clear TypeNode memories
 	for _, typeNode := range rn.TypeNodes {
@@ -425,12 +426,12 @@ func (rn *ReteNetwork) ClearMemory() {
 		terminalNode.mutex.Unlock()
 	}
 
-	fmt.Println("✅ Mémoire du réseau RETE nettoyée avec succès")
+	tsdio.Println("✅ Mémoire du réseau RETE nettoyée avec succès")
 }
 
 // RemoveRule supprime une règle et tous ses nœuds qui ne sont plus utilisés
 func (rn *ReteNetwork) RemoveRule(ruleID string) error {
-	fmt.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
+	tsdio.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
 
 	if rn.LifecycleManager == nil {
 		return fmt.Errorf("LifecycleManager non initialisé")
@@ -442,7 +443,7 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 		return fmt.Errorf("règle %s non trouvée ou aucun nœud associé", ruleID)
 	}
 
-	fmt.Printf("   📊 Nœuds associés à la règle: %d\n", len(nodeIDs))
+	tsdio.Printf("   📊 Nœuds associés à la règle: %d\n", len(nodeIDs))
 
 	// Detect rule type and use appropriate removal strategy
 	hasChain := false
@@ -459,13 +460,13 @@ func (rn *ReteNetwork) RemoveRule(ruleID string) error {
 
 	// Utiliser la suppression optimisée pour les chaînes avec joins
 	if hasJoinNodes {
-		fmt.Printf("   🔗 JoinNodes détectés, utilisation de la suppression avec lifecycle\n")
+		tsdio.Printf("   🔗 JoinNodes détectés, utilisation de la suppression avec lifecycle\n")
 		return rn.removeRuleWithJoins(ruleID, nodeIDs)
 	}
 
 	// Utiliser la suppression optimisée pour les chaînes alpha
 	if hasChain {
-		fmt.Printf("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée\n")
+		tsdio.Printf("   🔗 Chaîne d'AlphaNodes détectée, utilisation de la suppression optimisée\n")
 		return rn.removeAlphaChain(ruleID)
 	}
 
@@ -480,29 +481,29 @@ func (rn *ReteNetwork) removeSimpleRule(ruleID string, nodeIDs []string) error {
 	for _, nodeID := range nodeIDs {
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			fmt.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
 			continue
 		}
 
 		if shouldDelete {
 			nodesToDelete = append(nodesToDelete, nodeID)
-			fmt.Printf("   ✓ Nœud %s marqué pour suppression (plus de références)\n", nodeID)
+			tsdio.Printf("   ✓ Nœud %s marqué pour suppression (plus de références)\n", nodeID)
 		} else {
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
-			fmt.Printf("   ✓ Nœud %s conservé (%d référence(s) restante(s))\n", nodeID, lifecycle.GetRefCount())
+			tsdio.Printf("   ✓ Nœud %s conservé (%d référence(s) restante(s))\n", nodeID, lifecycle.GetRefCount())
 		}
 	}
 
 	// Supprimer les nœuds qui n'ont plus de références
 	for _, nodeID := range nodesToDelete {
 		if err := rn.removeNodeFromNetwork(nodeID); err != nil {
-			fmt.Printf("   ⚠️  Erreur lors de la suppression du nœud %s: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Erreur lors de la suppression du nœud %s: %v\n", nodeID, err)
 		} else {
-			fmt.Printf("   🗑️  Nœud %s supprimé du réseau\n", nodeID)
+			tsdio.Printf("   🗑️  Nœud %s supprimé du réseau\n", nodeID)
 		}
 	}
 
-	fmt.Printf("✅ Règle %s supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, len(nodesToDelete))
+	tsdio.Printf("✅ Règle %s supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, len(nodesToDelete))
 	return nil
 }
 
@@ -538,7 +539,7 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 	if terminalID != "" {
 		if err := rn.removeNodeWithCheck(terminalID, ruleID); err == nil {
 			deletedCount++
-			fmt.Printf("   🗑️  TerminalNode %s supprimé\n", terminalID)
+			tsdio.Printf("   🗑️  TerminalNode %s supprimé\n", terminalID)
 		}
 	}
 
@@ -556,28 +557,28 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 		// Décrémenter RefCount pour tous les nœuds
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			fmt.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Erreur lors de la suppression de la règle du nœud %s: %v\n", nodeID, err)
 			continue
 		}
 
 		if !stopDeletion && shouldDelete {
 			// RefCount == 0, on peut supprimer
 			if err := rn.removeNodeFromNetwork(nodeID); err != nil {
-				fmt.Printf("   ⚠️  Erreur suppression nœud %s: %v\n", nodeID, err)
+				tsdio.Printf("   ⚠️  Erreur suppression nœud %s: %v\n", nodeID, err)
 			} else {
 				deletedCount++
-				fmt.Printf("   🗑️  AlphaNode %s supprimé (position %d dans la chaîne)\n", nodeID, len(orderedAlphaNodes)-i)
+				tsdio.Printf("   🗑️  AlphaNode %s supprimé (position %d dans la chaîne)\n", nodeID, len(orderedAlphaNodes)-i)
 			}
 		} else if !shouldDelete && !stopDeletion {
 			// Premier nœud partagé rencontré - on arrête la suppression mais on continue à décrémenter
 			refCount := lifecycle.GetRefCount()
-			fmt.Printf("   ♻️  AlphaNode %s conservé (%d référence(s) restante(s)) - arrêt des suppressions\n", nodeID, refCount)
-			fmt.Printf("   ℹ️  Décrémentation du RefCount des nœuds parents partagés\n")
+			tsdio.Printf("   ♻️  AlphaNode %s conservé (%d référence(s) restante(s)) - arrêt des suppressions\n", nodeID, refCount)
+			tsdio.Printf("   ℹ️  Décrémentation du RefCount des nœuds parents partagés\n")
 			stopDeletion = true
 		} else if stopDeletion {
 			// Nœuds parents - juste décrémenter le RefCount
 			refCount := lifecycle.GetRefCount()
-			fmt.Printf("   ♻️  AlphaNode %s: RefCount décrémenté (%d référence(s) restante(s))\n", nodeID, refCount)
+			tsdio.Printf("   ♻️  AlphaNode %s: RefCount décrémenté (%d référence(s) restante(s))\n", nodeID, refCount)
 		}
 	}
 
@@ -586,11 +587,11 @@ func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
-			fmt.Printf("   🗑️  %s %s supprimé\n", lifecycle.NodeType, nodeID)
+			tsdio.Printf("   🗑️  %s %s supprimé\n", lifecycle.NodeType, nodeID)
 		}
 	}
 
-	fmt.Printf("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, deletedCount)
+	tsdio.Printf("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))\n", ruleID, deletedCount)
 	return nil
 }
 
@@ -779,7 +780,7 @@ func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
 			parent := rn.getChainParent(alphaNode)
 			if parent != nil {
 				rn.removeChildFromNode(parent, alphaNode)
-				fmt.Printf("   🔗 AlphaNode %s déconnecté de son parent %s\n", nodeID, parent.GetID())
+				tsdio.Printf("   🔗 AlphaNode %s déconnecté de son parent %s\n", nodeID, parent.GetID())
 			}
 
 			delete(rn.AlphaNodes, nodeID)
@@ -789,9 +790,9 @@ func (rn *ReteNetwork) removeNodeFromNetwork(nodeID string) error {
 				// Vérifier si c'est un nœud partagé (les nœuds partagés ont un ID qui commence par "alpha_")
 				if len(nodeID) > 6 && nodeID[:6] == "alpha_" {
 					if err := rn.AlphaSharingManager.RemoveAlphaNode(nodeID); err != nil {
-						fmt.Printf("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v\n", err)
+						tsdio.Printf("   ⚠️  Erreur suppression AlphaNode du registre de partage: %v\n", err)
 					} else {
-						fmt.Printf("   ✓ AlphaNode %s supprimé du AlphaSharingManager\n", nodeID)
+						tsdio.Printf("   ✓ AlphaNode %s supprimé du AlphaSharingManager\n", nodeID)
 					}
 				}
 			}
@@ -908,7 +909,7 @@ func (rn *ReteNetwork) isJoinNode(nodeID string) bool {
 
 // removeRuleWithJoins removes a rule that contains join nodes
 func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) error {
-	fmt.Printf("   🔗 Removing rule with join nodes: %s\n", ruleID)
+	tsdio.Printf("   🔗 Removing rule with join nodes: %s\n", ruleID)
 
 	// Separate nodes by type
 	var terminalNodes []string
@@ -940,7 +941,7 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 	for _, nodeID := range terminalNodes {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
-			fmt.Printf("   🗑️  TerminalNode %s removed\n", nodeID)
+			tsdio.Printf("   🗑️  TerminalNode %s removed\n", nodeID)
 		}
 	}
 
@@ -950,7 +951,7 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 		if rn.BetaSharingRegistry != nil {
 			canDelete, err := rn.BetaSharingRegistry.RemoveRuleFromJoinNode(nodeID, ruleID)
 			if err != nil {
-				fmt.Printf("   ⚠️  Error removing rule from join node %s: %v\n", nodeID, err)
+				tsdio.Printf("   ⚠️  Error removing rule from join node %s: %v\n", nodeID, err)
 				continue
 			}
 
@@ -958,18 +959,18 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 				// No more rules reference this join node - safe to delete
 				if err := rn.removeJoinNodeFromNetwork(nodeID); err == nil {
 					deletedCount++
-					fmt.Printf("   🗑️  JoinNode %s removed (no more references)\n", nodeID)
+					tsdio.Printf("   🗑️  JoinNode %s removed (no more references)\n", nodeID)
 				}
 			} else {
 				// Join node is still shared by other rules
 				refCount := rn.BetaSharingRegistry.GetJoinNodeRefCount(nodeID)
-				fmt.Printf("   ✓ JoinNode %s preserved (%d rule(s) remaining)\n", nodeID, refCount)
+				tsdio.Printf("   ✓ JoinNode %s preserved (%d rule(s) remaining)\n", nodeID, refCount)
 			}
 		} else {
 			// No sharing registry - use lifecycle manager
 			if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 				deletedCount++
-				fmt.Printf("   🗑️  JoinNode %s removed\n", nodeID)
+				tsdio.Printf("   🗑️  JoinNode %s removed\n", nodeID)
 			}
 		}
 	}
@@ -978,11 +979,11 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 	for _, nodeID := range alphaNodes {
 		if err := rn.removeNodeWithCheck(nodeID, ruleID); err == nil {
 			deletedCount++
-			fmt.Printf("   🗑️  AlphaNode %s removed\n", nodeID)
+			tsdio.Printf("   🗑️  AlphaNode %s removed\n", nodeID)
 		} else {
 			lifecycle, _ := rn.LifecycleManager.GetNodeLifecycle(nodeID)
 			if lifecycle != nil && lifecycle.HasReferences() {
-				fmt.Printf("   ✓ AlphaNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+				tsdio.Printf("   ✓ AlphaNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
 			}
 		}
 	}
@@ -996,21 +997,21 @@ func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) erro
 
 		shouldDelete, err := rn.LifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 		if err != nil {
-			fmt.Printf("   ⚠️  Error removing rule from type node %s: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Error removing rule from type node %s: %v\n", nodeID, err)
 			continue
 		}
 
 		if shouldDelete {
 			if err := rn.removeNodeFromNetwork(nodeID); err == nil {
 				deletedCount++
-				fmt.Printf("   🗑️  TypeNode %s removed\n", nodeID)
+				tsdio.Printf("   🗑️  TypeNode %s removed\n", nodeID)
 			}
 		} else {
-			fmt.Printf("   ✓ TypeNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
+			tsdio.Printf("   ✓ TypeNode %s preserved (%d reference(s))\n", nodeID, lifecycle.GetRefCount())
 		}
 	}
 
-	fmt.Printf("✅ Rule %s removed successfully (%d node(s) deleted)\n", ruleID, deletedCount)
+	tsdio.Printf("✅ Rule %s removed successfully (%d node(s) deleted)\n", ruleID, deletedCount)
 	return nil
 }
 
@@ -1023,7 +1024,7 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 		return fmt.Errorf("join node %s not found in network", nodeID)
 	}
 
-	fmt.Printf("   🗑️  Removing join node %s from network\n", nodeID)
+	tsdio.Printf("   🗑️  Removing join node %s from network\n", nodeID)
 
 	// Convert join node to proper type first
 	var node Node
@@ -1048,7 +1049,7 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 
 		if isChild {
 			delete(rn.TerminalNodes, terminalID)
-			fmt.Printf("   🗑️  Removed terminal node %s (child of join node)\n", terminalID)
+			tsdio.Printf("   🗑️  Removed terminal node %s (child of join node)\n", terminalID)
 
 			// Remove from lifecycle manager
 			if rn.LifecycleManager != nil {
@@ -1084,18 +1085,18 @@ func (rn *ReteNetwork) removeJoinNodeFromNetwork(nodeID string) error {
 	// Step 4: Remove from lifecycle manager
 	if rn.LifecycleManager != nil {
 		if err := rn.LifecycleManager.RemoveNode(nodeID); err != nil {
-			fmt.Printf("   ⚠️  Warning: failed to remove join node %s from lifecycle manager: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Warning: failed to remove join node %s from lifecycle manager: %v\n", nodeID, err)
 		}
 	}
 
 	// Step 5: Remove from beta sharing registry
 	if rn.BetaSharingRegistry != nil {
 		if err := rn.BetaSharingRegistry.UnregisterJoinNode(nodeID); err != nil {
-			fmt.Printf("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v\n", nodeID, err)
+			tsdio.Printf("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v\n", nodeID, err)
 		}
 	}
 
-	fmt.Printf("   ✅ Join node %s successfully removed from network\n", nodeID)
+	tsdio.Printf("   ✅ Join node %s successfully removed from network\n", nodeID)
 	return nil
 }
 

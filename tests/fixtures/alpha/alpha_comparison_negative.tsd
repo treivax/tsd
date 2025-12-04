@@ -1,0 +1,12 @@
+// Test comparaison numérique négative
+type Product(id: string, price: number, category: string)
+
+
+// Action definitions
+action affordable_product(arg1: string, arg2: number)
+
+rule r1 : {prod: Product} / NOT(prod.price > 100) ==> affordable_product(prod.id, prod.price)
+
+Product(id:PROD001, price:150, category:electronics)
+Product(id:PROD002, price:50, category:books)
+Product(id:PROD003, price:200, category:electronics)

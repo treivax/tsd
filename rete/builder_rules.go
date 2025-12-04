@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 )
 
@@ -55,7 +56,7 @@ func (rb *RuleBuilder) CreateRuleNodes(network *ReteNetwork, expressions []inter
 			return fmt.Errorf("erreur création règle %s: %w", ruleID, err)
 		}
 
-		fmt.Printf("   ✓ Règle créée: %s\n", ruleID)
+		tsdio.Printf("   ✓ Règle créée: %s\n", ruleID)
 	}
 
 	return nil
@@ -190,7 +191,7 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 	if _, hasPatterns := exprMap["patterns"]; hasPatterns {
 		// Check if this is multi-source aggregation
 		if rb.accumulatorBuilder.IsMultiSourceAggregation(exprMap) {
-			fmt.Printf("   📊 Multi-source aggregation détectée pour: %s\n", ruleID)
+			tsdio.Printf("   📊 Multi-source aggregation détectée pour: %s\n", ruleID)
 			aggInfo, err = pipeline.extractMultiSourceAggregationInfo(exprMap)
 		} else {
 			aggInfo, err = pipeline.extractAggregationInfoFromVariables(exprMap)
@@ -201,7 +202,7 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 	}
 
 	if err != nil {
-		fmt.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
+		tsdio.Printf("   ⚠️  Impossible d'extraire info agrégation: %v, utilisation JoinNode standard\n", err)
 		return rb.joinBuilder.CreateJoinRule(network, ruleID, variableNames, variableTypes, condition, action)
 	}
 

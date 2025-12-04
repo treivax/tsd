@@ -4,7 +4,7 @@
 
 package constraint
 
-import "fmt"
+import "github.com/treivax/tsd/tsdio"
 
 // HasErrors returns true if there are any validation errors
 func (ps *ProgramState) HasErrors() bool {
@@ -27,7 +27,7 @@ func (ps *ProgramState) GetErrors() []ValidationError {
 // PrintErrors prints all validation errors to console
 func (ps *ProgramState) PrintErrors() {
 	for _, err := range ps.Errors {
-		fmt.Printf("⚠️  Error in %s: %s (line %d): %s\n",
+		tsdio.Printf("⚠️  Error in %s: %s (line %d): %s\n",
 			err.File, err.Type, err.Line, err.Message)
 	}
 }

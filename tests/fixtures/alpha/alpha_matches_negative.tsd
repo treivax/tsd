@@ -1,0 +1,12 @@
+// Test opérateur MATCHES (regex) - négation
+type Code(id: string, value: string, active: bool)
+
+
+// Action definitions
+action invalid_code_found(arg1: string, arg2: string)
+
+rule r1 : {c: Code} / NOT(c.value MATCHES "CODE[0-9]+") ==> invalid_code_found(c.id, c.value)
+
+Code(id:"C001", value:"CODE123", active:true)
+Code(id:"C002", value:"INVALID", active:false)
+Code(id:"C003", value:"BADFORMAT", active:true)

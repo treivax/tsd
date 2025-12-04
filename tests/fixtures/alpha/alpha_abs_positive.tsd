@@ -1,0 +1,12 @@
+// Test fonction ABS() (valeur absolue)
+type Balance(id: string, amount: number, type: string)
+
+
+// Action definitions
+action significant_balance_found(arg1: string, arg2: number)
+
+rule r1 : {b: Balance} / ABS(b.amount) > 100 ==> significant_balance_found(b.id, b.amount)
+
+Balance(id:"B001", amount:150.0, type:"credit")
+Balance(id:"B002", amount:-200.0, type:"debit")
+Balance(id:"B003", amount:50.0, type:"credit")

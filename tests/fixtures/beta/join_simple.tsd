@@ -1,0 +1,14 @@
+// Test jointure simple entre deux faits
+type Person(id: string, name: string, age: number)
+type Order(id: string, customer_id: string, amount: number)
+
+
+// Action definitions
+action customer_order_match(arg1: string, arg2: string)
+
+rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> customer_order_match(p.id, o.id)
+
+Person(id:P001, name:Alice, age:25)
+Person(id:P002, name:Bob, age:30)
+Order(id:O001, customer_id:P001, amount:100)
+Order(id:O002, customer_id:P002, amount:200)

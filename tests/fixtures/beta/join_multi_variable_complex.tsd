@@ -1,0 +1,23 @@
+// Test jointures complexes multi-variables
+type User(id: string, name: string, role: string, team_id: string)
+type Team(id: string, name: string, budget: number, manager_id: string)
+type Task(id: string, assignee_id: string, team_id: string, priority: string, effort: number)
+
+
+// Action definitions
+action manager_high_priority_task(arg1: string, arg2: string, arg3: string)
+action affordable_task_assignment(arg1: string, arg2: string, arg3: string)
+action lead_complex_task(arg1: string, arg2: string, arg3: string)
+
+rule r1 : {u: User, t: Team, task: Task} / u.id == t.manager_id AND t.id == task.team_id AND task.priority == "high" ==> manager_high_priority_task(u.id, t.id, task.id)
+rule r2 : {u: User, t: Team, task: Task} / u.team_id == t.id AND u.id == task.assignee_id AND t.budget > task.effort * 100 ==> affordable_task_assignment(u.id, t.id, task.id)
+rule r3 : {u: User, t: Team, task: Task} / u.role == "lead" AND u.team_id == t.id AND task.team_id == t.id AND task.effort >= 40 ==> lead_complex_task(u.id, t.id, task.id)
+
+User(id:U001, name:Alice, role:manager, team_id:T001)
+User(id:U002, name:Bob, role:lead, team_id:T001)
+User(id:U003, name:Carol, role:developer, team_id:T002)
+Team(id:T001, name:Alpha, budget:10000, manager_id:U001)
+Team(id:T002, name:Beta, budget:5000, manager_id:U003)
+Task(id:TASK001, assignee_id:U002, team_id:T001, priority:high, effort:50)
+Task(id:TASK002, assignee_id:U003, team_id:T002, priority:medium, effort:20)
+Task(id:TASK003, assignee_id:U001, team_id:T001, priority:high, effort:30)

@@ -142,16 +142,25 @@ Faits injectés: 10
 ✅ Validation réussie
 ```
 
-### Runner Universel (Tests)
+### Tests
 
-Pour exécuter une suite complète de tests:
+Pour exécuter la suite de tests:
 
 ```bash
-# Exécuter TOUS les tests (Alpha+Beta+Integration)
-./bin/universal-rete-runner
+# Tests unitaires (rapides)
+make test-unit
 
-# Via Makefile
-make rete-unified
+# Tests E2E (fixtures TSD)
+make test-e2e
+
+# Tests d'intégration
+make test-integration
+
+# Tous les tests
+make test-all
+
+# Via Makefile (anciennement rete-unified)
+make rete-unified  # Exécute les tests E2E
 ```
 
 ### Exemple de Règle
@@ -189,55 +198,98 @@ if err != nil {
 tsd/
 ├── cmd/
 │   ├── tsd/                    # CLI principal
-│   └── universal-rete-runner/  # Runner universel (53 tests)
+│   └── add-missing-actions/    # Utilitaires
 ├── constraint/                 # Parser PEG et validation
 │   ├── grammar/                # Grammaire PEG
 │   ├── parser.go               # Parser principal
-│   └── validation_test.go      # Tests de validation
+│   └── *_test.go               # Tests unitaires
 ├── rete/                       # Moteur RETE
-│   ├── rete.go                 # Nœuds RETE (1633 lignes)
+│   ├── rete.go                 # Nœuds RETE
 │   ├── constraint_pipeline.go  # Pipeline complet
 │   ├── evaluator.go            # Évaluation de conditions
 │   ├── network.go              # Réseau RETE
 │   ├── logger.go               # Système de logging
 │   └── *_test.go               # Tests unitaires
-├── test/                       # Tests d'intégration
-├── beta_coverage_tests/        # 47 tests Beta
+├── tests/                      # Suite de tests organisée
+│   ├── e2e/                    # Tests E2E (83 fixtures)
+│   ├── integration/            # Tests d'intégration
+│   ├── performance/            # Tests de performance
+│   ├── fixtures/               # Fixtures TSD (alpha/beta/integration)
+│   └── shared/testutil/        # Utilitaires de test partagés
 └── docs/                       # Documentation
 ```
 
 ## 🧪 Tests
 
-TSD maintient 100% de succès sur 53 tests couvrant toutes les fonctionnalités RETE.
+TSD utilise l'outillage Go standard avec une suite de tests organisée et complète.
+
+### Quick Start
 
 ```bash
-# Tests complets avec runner universel (53 tests)
-make rete-unified
+# Tests unitaires (rapides, <1s par package)
+make test-unit
 
-# Tests unitaires Go uniquement
-make test
+# Tests E2E (83 fixtures TSD)
+make test-e2e
 
-# Tests avec couverture
-make test-coverage
+# Tests d'intégration (modules)
+make test-integration
+
+# Tests de performance
+make test-performance
+
+# Tous les tests
+make test-all
+
+# Rapport de couverture
+make coverage
 ```
+
+### Organisation des Tests
+
+Le projet suit les conventions Go avec des build tags pour organiser les tests :
+
+- **Unit Tests** : Tests rapides co-localisés avec le code (constraint/, rete/, cmd/)
+- **E2E Tests** : 83 fixtures TSD validées (tests/e2e/)
+  - 26 fixtures Alpha (opérations arithmétiques, comparaisons)
+  - 26 fixtures Beta (jointures, patterns complexes)
+  - 31 fixtures Integration (scénarios complets)
+- **Integration Tests** : Interactions entre modules (tests/integration/)
+- **Performance Tests** : Load tests et benchmarks (tests/performance/)
 
 ### Couverture Complète
 
-**✅ 53/53 tests passés (100%)**
+**✅ 83 fixtures TSD validées (100%)**
 
-- **Alpha Tests (6)** : Filtrage simple, conditions, opérateurs
-- **Beta Tests (47)** : Jointures, EXISTS, NOT, agrégations (AVG, SUM, COUNT, MIN, MAX)
-- **Integration Tests** : Pipeline complet avec rétractation de faits
+- **Alpha Tests (26)** : abs, addition, soustraction, multiplication, division, modulo, etc.
+- **Beta Tests (26)** : Jointures, patterns multi-variables, contraintes complexes
+- **Integration Tests (31)** : Pipeline complet, agrégations (AVG, SUM, COUNT, MIN, MAX)
 
-### Agrégations Validées
+### Commandes Avancées
 
-Toutes les fonctions d'agrégation sont **sémantiquement validées** avec des calculs réels :
+```bash
+# Tests par catégorie
+make test-e2e-alpha        # Fixtures alpha uniquement
+make test-e2e-beta         # Fixtures beta uniquement
+make test-e2e-integration  # Fixtures integration uniquement
 
-- ✅ **AVG** : (9.0 + 8.5 + 9.2) / 3 = 8.90 ≥ 8.5
-- ✅ **SUM** : 1200.00 ≥ 1000
-- ✅ **COUNT** : 3 employés ≥ 3
-- ✅ **MAX** : 90000.00 ≥ 80000
-- ✅ **MIN** : Valeur minimale dynamique
+# Performance et profiling
+make test-load             # Tests de charge avec profiling
+make bench                 # Benchmarks
+make bench-performance     # Benchmarks de performance
+
+# Couverture par type
+make coverage-unit         # Couverture tests unitaires
+make coverage-e2e          # Couverture tests E2E
+
+# Tests avec race detector
+make test-race
+
+# Tests parallèles (configurable)
+TEST_PARALLEL=8 make test-parallel
+```
+
+📖 **Documentation complète des tests** : [tests/README.md](tests/README.md)
 
 ## 📖 Documentation
 

@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"math"
 	"sync"
@@ -60,7 +61,7 @@ func (an *AccumulatorNode) Activate(fact *Fact, token *Token) error {
 	// Si c'est un fait principal, stocker et calculer l'agrégation
 	if fact.Type == an.MainType {
 		an.MainFacts[fact.ID] = fact
-		fmt.Printf("📊 ACCUMULATOR[%s]: Fait principal reçu %s\n", an.ID, fact.ID)
+		tsdio.Printf("📊 ACCUMULATOR[%s]: Fait principal reçu %s\n", an.ID, fact.ID)
 
 		// Calculer l'agrégation pour ce fait principal
 		return an.processMainFact(fact)
@@ -68,11 +69,11 @@ func (an *AccumulatorNode) Activate(fact *Fact, token *Token) error {
 
 	// Si c'est un fait à agréger, recalculer pour tous les faits principaux
 	if fact.Type == an.AggType {
-		fmt.Printf("📊 ACCUMULATOR[%s]: Fait agrégé reçu %s\n", an.ID, fact.ID)
+		tsdio.Printf("📊 ACCUMULATOR[%s]: Fait agrégé reçu %s\n", an.ID, fact.ID)
 		// Recalculer pour tous les faits principaux existants
 		for _, mainFact := range an.MainFacts {
 			if err := an.processMainFact(mainFact); err != nil {
-				fmt.Printf("⚠️  ACCUMULATOR[%s]: Erreur recalcul pour %s: %v\n", an.ID, mainFact.ID, err)
+				tsdio.Printf("⚠️  ACCUMULATOR[%s]: Erreur recalcul pour %s: %v\n", an.ID, mainFact.ID, err)
 			}
 		}
 	}
@@ -85,7 +86,7 @@ func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
 	// Collecter les faits à agréger qui correspondent à ce fait principal
 	aggregatedFacts := an.collectAggregatedFacts(mainFact)
 
-	fmt.Printf("📊 ACCUMULATOR[%s]: %d faits agrégés trouvés pour %s\n", an.ID, len(aggregatedFacts), mainFact.ID)
+	tsdio.Printf("📊 ACCUMULATOR[%s]: %d faits agrégés trouvés pour %s\n", an.ID, len(aggregatedFacts), mainFact.ID)
 
 	// Calculer l'agrégation
 	aggregatedValue, err := an.calculateAggregateForFacts(aggregatedFacts)
@@ -93,7 +94,7 @@ func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
 		return fmt.Errorf("erreur calcul agrégation: %w", err)
 	}
 
-	fmt.Printf("📊 ACCUMULATOR[%s]: Valeur agrégée = %.2f pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+	tsdio.Printf("📊 ACCUMULATOR[%s]: Valeur agrégée = %.2f pour %s\n", an.ID, aggregatedValue, mainFact.ID)
 
 	// Évaluer la condition
 	satisfied, err := an.evaluateCondition(aggregatedValue)
@@ -102,7 +103,7 @@ func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
 	}
 
 	if satisfied {
-		fmt.Printf("✅ ACCUMULATOR[%s]: Condition satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+		tsdio.Printf("✅ ACCUMULATOR[%s]: Condition satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
 
 		// Créer un token avec le fait et le résultat de l'agrégation
 		newToken := &Token{
@@ -116,7 +117,7 @@ func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
 		// car TerminalNode ne veut que des tokens
 		return an.PropagateToChildren(nil, newToken)
 	} else {
-		fmt.Printf("❌ ACCUMULATOR[%s]: Condition NON satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
+		tsdio.Printf("❌ ACCUMULATOR[%s]: Condition NON satisfaite (%.2f) pour %s\n", an.ID, aggregatedValue, mainFact.ID)
 	}
 
 	return nil
@@ -133,7 +134,7 @@ func (an *AccumulatorNode) collectAggregatedFacts(mainFact *Fact) []*Fact {
 		if an.MainField == "id" {
 			mainValue = mainFact.ID
 		} else {
-			fmt.Printf("⚠️  ACCUMULATOR[%s]: Champ principal %s non trouvé dans %s\n", an.ID, an.MainField, mainFact.ID)
+			tsdio.Printf("⚠️  ACCUMULATOR[%s]: Champ principal %s non trouvé dans %s\n", an.ID, an.MainField, mainFact.ID)
 			return collected
 		}
 	}
@@ -314,6 +315,6 @@ func (an *AccumulatorNode) ActivateRetract(factID string) error {
 	// Retirer des tokens
 	an.Memory.RemoveToken(factID)
 
-	fmt.Printf("🗑️  [ACCUMULATOR_%s] Rétractation: fait %s retiré\n", an.ID, factID)
+	tsdio.Printf("🗑️  [ACCUMULATOR_%s] Rétractation: fait %s retiré\n", an.ID, factID)
 	return an.PropagateRetractToChildren(factID)
 }

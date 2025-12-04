@@ -5,6 +5,7 @@
 package constraint
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"encoding/json"
 	"fmt"
 )
@@ -498,7 +499,7 @@ func ValidateProgram(result interface{}) error {
 		return err
 	}
 
-	fmt.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
+	tsdio.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
 	return nil
 }
 

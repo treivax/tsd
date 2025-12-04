@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"time"
 
@@ -88,8 +89,8 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 // ingestFileWithMetrics est l'implémentation interne avec support optionnel des métriques
 // IMPORTANT: Gère les transactions automatiquement (TOUJOURS activées)
 func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *ReteNetwork, storage Storage, metrics *MetricsCollector) (*ReteNetwork, error) {
-	fmt.Printf("========================================\n")
-	fmt.Printf("📁 Ingestion incrémentale: %s\n", filename)
+	tsdio.Printf("========================================\n")
+	tsdio.Printf("📁 Ingestion incrémentale: %s\n", filename)
 
 	// ÉTAPE 1: Parsing du fichier
 	parsingStart := time.Now()
@@ -100,7 +101,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if metrics != nil {
 		metrics.RecordParsingDuration(time.Since(parsingStart))
 	}
-	fmt.Printf("✅ Parsing réussi\n")
+	tsdio.Printf("✅ Parsing réussi\n")
 
 	// ÉTAPE 2: Vérifier la présence d'une commande reset
 	resultMap, ok := parsedAST.(map[string]interface{})
@@ -112,22 +113,22 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if resetsData, exists := resultMap["resets"]; exists {
 		if resets, ok := resetsData.([]interface{}); ok && len(resets) > 0 {
 			hasResets = true
-			fmt.Printf("🔄 Commande reset détectée - Réinitialisation complète du réseau\n")
+			tsdio.Printf("🔄 Commande reset détectée - Réinitialisation complète du réseau\n")
 		}
 	}
 
 	// Si reset détecté, faire un GC de l'ancien réseau puis créer un nouveau
 	if hasResets {
-		fmt.Printf("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau\n")
+		tsdio.Printf("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau\n")
 
 		// OPTIMISATION 2: Garbage Collection automatique après reset
 		if network != nil {
-			fmt.Printf("🗑️  GC du réseau existant...\n")
+			tsdio.Printf("🗑️  GC du réseau existant...\n")
 			network.GarbageCollect()
-			fmt.Printf("✅ GC terminé\n")
+			tsdio.Printf("✅ GC terminé\n")
 		}
 
-		fmt.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		tsdio.Printf("🆕 Création d'un nouveau réseau RETE\n")
 		network = NewReteNetwork(storage)
 		if metrics != nil {
 			metrics.SetWasReset(true)
@@ -139,7 +140,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if network != nil {
 		tx = network.BeginTransaction()
 		network.SetTransaction(tx)
-		fmt.Printf("🔒 Transaction démarrée automatiquement: %s\n", tx.ID)
+		tsdio.Printf("🔒 Transaction démarrée automatiquement: %s\n", tx.ID)
 	}
 
 	// Fonction de rollback en cas d'erreur
@@ -147,10 +148,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if tx != nil && tx.IsActive {
 			rollbackErr := tx.Rollback()
 			if rollbackErr != nil {
-				fmt.Printf("❌ Erreur rollback: %v\n", rollbackErr)
+				tsdio.Printf("❌ Erreur rollback: %v\n", rollbackErr)
 				return network, fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
 			}
-			fmt.Printf("🔙 Rollback automatique effectué\n")
+			tsdio.Printf("🔙 Rollback automatique effectué\n")
 		}
 		return network, err
 	}
@@ -164,20 +165,20 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation sémantique: %w", err))
 		}
-		fmt.Printf("✅ Validation sémantique réussie\n")
+		tsdio.Printf("✅ Validation sémantique réussie\n")
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
 		}
 	} else {
 		// Validation incrémentale avec contexte du réseau existant
-		fmt.Printf("🔍 Validation sémantique incrémentale avec contexte...\n")
+		tsdio.Printf("🔍 Validation sémantique incrémentale avec contexte...\n")
 		validator := NewIncrementalValidator(network)
 		err = validator.ValidateWithContext(parsedAST)
 		if err != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur validation incrémentale: %w", err))
 		}
-		fmt.Printf("✅ Validation incrémentale réussie (%d types en contexte)\n", len(network.Types))
+		tsdio.Printf("✅ Validation incrémentale réussie (%d types en contexte)\n", len(network.Types))
 		if metrics != nil {
 			metrics.RecordValidationDuration(time.Since(validationStart))
 			metrics.SetValidationSkipped(false)
@@ -193,10 +194,10 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 
 	// ÉTAPE 4: Créer ou étendre le réseau
 	if network == nil {
-		fmt.Printf("🆕 Création d'un nouveau réseau RETE\n")
+		tsdio.Printf("🆕 Création d'un nouveau réseau RETE\n")
 		network = NewReteNetwork(storage)
 	} else if !hasResets {
-		fmt.Printf("🔄 Extension du réseau RETE existant\n")
+		tsdio.Printf("🔄 Extension du réseau RETE existant\n")
 	}
 
 	// Convertir au format RETE
@@ -211,7 +212,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur extraction composants: %w", err)
 	}
-	fmt.Printf("✅ Trouvé %d types et %d expressions dans le fichier\n", len(types), len(expressions))
+	tsdio.Printf("✅ Trouvé %d types et %d expressions dans le fichier\n", len(types), len(expressions))
 
 	// Ajouter les types au réseau (évite les doublons automatiquement)
 	typeCreationStart := time.Now()
@@ -220,7 +221,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout types: %w", err)
 		}
-		fmt.Printf("✅ Types ajoutés/mis à jour dans le réseau\n")
+		tsdio.Printf("✅ Types ajoutés/mis à jour dans le réseau\n")
 		if metrics != nil {
 			metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
 			metrics.SetTypesAdded(len(types))
@@ -241,13 +242,13 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if !hasResets {
 		existingFacts = cp.collectExistingFacts(network)
 		existingFactsByType = cp.organizeFactsByType(existingFacts)
-		fmt.Printf("📊 Faits préexistants dans le réseau: %d\n", len(existingFacts))
+		tsdio.Printf("📊 Faits préexistants dans le réseau: %d\n", len(existingFacts))
 		if metrics != nil {
 			metrics.RecordFactCollectionDuration(time.Since(collectionStart))
 			metrics.SetExistingFactsCollected(len(existingFacts))
 		}
 	} else {
-		fmt.Printf("📊 Réseau réinitialisé - pas de faits préexistants\n")
+		tsdio.Printf("📊 Réseau réinitialisé - pas de faits préexistants\n")
 	}
 
 	// ÉTAPE 7: Identifier les terminaux existants avant l'ajout de règles
@@ -263,7 +264,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 		if err != nil {
 			return nil, fmt.Errorf("❌ Erreur ajout règles: %w", err)
 		}
-		fmt.Printf("✅ Règles ajoutées au réseau\n")
+		tsdio.Printf("✅ Règles ajoutées au réseau\n")
 		if metrics != nil {
 			metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
 			metrics.SetRulesAdded(len(expressions))
@@ -280,7 +281,7 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	newTerminals := cp.identifyNewTerminals(network, existingTerminals)
 
 	if len(newTerminals) > 0 && len(existingFacts) > 0 {
-		fmt.Printf("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)\n", len(newTerminals))
+		tsdio.Printf("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)\n", len(newTerminals))
 
 		// Propager de manière ciblée pour chaque nouveau terminal
 		propagationStart := time.Now()
@@ -293,20 +294,20 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 			metrics.SetPropagationTargets(len(newTerminals))
 		}
 
-		fmt.Printf("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))\n", propagatedCount)
+		tsdio.Printf("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))\n", propagatedCount)
 	}
 
 	// ÉTAPE 10: Soumettre les nouveaux faits du fichier
 	if len(program.Facts) > 0 {
 		factsForRete := constraint.ConvertFactsToReteFormat(*program)
-		fmt.Printf("📥 Soumission de %d nouveaux faits\n", len(factsForRete))
+		tsdio.Printf("📥 Soumission de %d nouveaux faits\n", len(factsForRete))
 
 		submissionStart := time.Now()
 		err := network.SubmitFactsFromGrammar(factsForRete)
 		if err != nil {
-			fmt.Printf("⚠️ Erreur soumission faits: %v\n", err)
+			tsdio.Printf("⚠️ Erreur soumission faits: %v\n", err)
 		} else {
-			fmt.Printf("✅ Nouveaux faits soumis\n")
+			tsdio.Printf("✅ Nouveaux faits soumis\n")
 		}
 		if metrics != nil {
 			metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
@@ -319,27 +320,27 @@ func (cp *ConstraintPipeline) ingestFileWithMetrics(filename string, network *Re
 	if err != nil {
 		return nil, fmt.Errorf("❌ Erreur validation réseau: %w", err)
 	}
-	fmt.Printf("✅ Validation réussie\n")
+	tsdio.Printf("✅ Validation réussie\n")
 
 	// Enregistrer l'état final du réseau dans les métriques
 	if metrics != nil {
 		metrics.RecordNetworkState(network)
 	}
 
-	fmt.Printf("🎯 INGESTION INCRÉMENTALE TERMINÉE\n")
-	fmt.Printf("   - Total TypeNodes: %d\n", len(network.TypeNodes))
-	fmt.Printf("   - Total TerminalNodes: %d\n", len(network.TerminalNodes))
+	tsdio.Printf("🎯 INGESTION INCRÉMENTALE TERMINÉE\n")
+	tsdio.Printf("   - Total TypeNodes: %d\n", len(network.TypeNodes))
+	tsdio.Printf("   - Total TerminalNodes: %d\n", len(network.TerminalNodes))
 	// ÉTAPE 9: Commit de la transaction (OBLIGATOIRE)
 	if tx != nil && tx.IsActive {
 		commitErr := tx.Commit()
 		if commitErr != nil {
 			return rollbackOnError(fmt.Errorf("❌ Erreur commit transaction: %w", commitErr))
 		}
-		fmt.Printf("✅ Transaction committée: %d changements\n", tx.GetCommandCount())
+		tsdio.Printf("✅ Transaction committée: %d changements\n", tx.GetCommandCount())
 	}
 
-	fmt.Printf("🎯 INGESTION TERMINÉE\n")
-	fmt.Printf("========================================\n\n")
+	tsdio.Printf("🎯 INGESTION TERMINÉE\n")
+	tsdio.Printf("========================================\n\n")
 
 	return network, nil
 }
@@ -563,32 +564,32 @@ func (cp *ConstraintPipeline) processRuleRemovals(network *ReteNetwork, resultMa
 		return nil // Pas de suppressions de règles
 	}
 
-	fmt.Printf("🗑️  Traitement de %d suppression(s) de règles\n", len(ruleRemovals))
+	tsdio.Printf("🗑️  Traitement de %d suppression(s) de règles\n", len(ruleRemovals))
 
 	// Traiter chaque suppression de règle
 	for _, removalData := range ruleRemovals {
 		removalMap, ok := removalData.(map[string]interface{})
 		if !ok {
-			fmt.Printf("⚠️  Format de suppression invalide: %v\n", removalData)
+			tsdio.Printf("⚠️  Format de suppression invalide: %v\n", removalData)
 			continue
 		}
 
 		ruleID, ok := removalMap["ruleID"].(string)
 		if !ok || ruleID == "" {
-			fmt.Printf("⚠️  Identifiant de règle manquant ou invalide: %v\n", removalMap)
+			tsdio.Printf("⚠️  Identifiant de règle manquant ou invalide: %v\n", removalMap)
 			continue
 		}
 
 		// Supprimer la règle du réseau
-		fmt.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
+		tsdio.Printf("🗑️  Suppression de la règle: %s\n", ruleID)
 		err := network.RemoveRule(ruleID)
 		if err != nil {
 			// Logger l'erreur mais continuer avec les autres suppressions
-			fmt.Printf("⚠️  Erreur lors de la suppression de la règle %s: %v\n", ruleID, err)
+			tsdio.Printf("⚠️  Erreur lors de la suppression de la règle %s: %v\n", ruleID, err)
 			continue
 		}
 
-		fmt.Printf("✅ Règle %s supprimée avec succès\n", ruleID)
+		tsdio.Printf("✅ Règle %s supprimée avec succès\n", ruleID)
 	}
 
 	return nil

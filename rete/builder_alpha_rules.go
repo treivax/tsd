@@ -5,8 +5,8 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
-	"log"
 )
 
 // AlphaRuleBuilder handles the creation of alpha rules
@@ -39,7 +39,7 @@ func (arb *AlphaRuleBuilder) CreateAlphaRule(
 	shouldUseChain, actualCondition := arb.shouldBuildAsChain(condition)
 
 	if shouldUseChain {
-		log.Printf("   🔗 Multi-condition AND detected for rule %s, using AlphaChainBuilder", ruleID)
+		tsdio.LogPrintf("   🔗 Multi-condition AND detected for rule %s, using AlphaChainBuilder", ruleID)
 		return arb.createAlphaChainWithTerminal(
 			network,
 			ruleID,
@@ -141,11 +141,11 @@ func (arb *AlphaRuleBuilder) createAlphaChainWithTerminal(
 		return fmt.Errorf("erreur extraction conditions: %w", err)
 	}
 
-	log.Printf("   🔗 Décomposition en chaîne: %d conditions détectées (opérateur: %s)", len(conditions), opType)
+	tsdio.LogPrintf("   🔗 Décomposition en chaîne: %d conditions détectées (opérateur: %s)", len(conditions), opType)
 
 	// Normalize the conditions
 	normalizedConditions := NormalizeConditions(conditions, opType)
-	log.Printf("   📋 Conditions normalisées: %d condition(s)", len(normalizedConditions))
+	tsdio.LogPrintf("   📋 Conditions normalisées: %d condition(s)", len(normalizedConditions))
 
 	// Find the TypeNode parent to connect the chain
 	var parentNode Node
@@ -189,14 +189,14 @@ func (arb *AlphaRuleBuilder) createAlphaChainWithTerminal(
 	}
 
 	// Display construction statistics
-	log.Printf("   ✅ Chaîne construite: %d nœud(s), %d partagé(s)", len(chain.Nodes), sharedCount)
+	tsdio.LogPrintf("   ✅ Chaîne construite: %d nœud(s), %d partagé(s)", len(chain.Nodes), sharedCount)
 
 	// Log details for each node
 	for i, node := range chain.Nodes {
 		if i < sharedCount {
-			log.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)", node.ID, chain.Hashes[i])
+			tsdio.LogPrintf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)", node.ID, chain.Hashes[i])
 		} else {
-			log.Printf("   ✨ Nouveau AlphaNode créé: %s (hash: %s)", node.ID, chain.Hashes[i])
+			tsdio.LogPrintf("   ✨ Nouveau AlphaNode créé: %s (hash: %s)", node.ID, chain.Hashes[i])
 		}
 	}
 
@@ -210,8 +210,8 @@ func (arb *AlphaRuleBuilder) createAlphaChainWithTerminal(
 		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 	}
 
-	log.Printf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne", terminalNode.ID, chain.FinalNode.ID)
-	fmt.Printf("   ✓ Règle alpha avec chaîne créée pour: %s\n", ruleID)
+	tsdio.LogPrintf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne", terminalNode.ID, chain.FinalNode.ID)
+	tsdio.Printf("   ✓ Règle alpha avec chaîne créée pour: %s\n", ruleID)
 
 	return nil
 }
@@ -247,9 +247,9 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 	}
 
 	if wasShared {
-		fmt.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+		tsdio.Printf("   ♻️  AlphaNode partagé réutilisé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
 	} else {
-		fmt.Printf("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
+		tsdio.Printf("   ✨ Nouveau AlphaNode partageable créé: %s (hash: %s)\n", alphaNode.ID, alphaHash)
 
 		// Connect TypeNode -> AlphaNode (only for new nodes)
 		typeNode.AddChild(alphaNode)
@@ -276,8 +276,8 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 	}
 
-	fmt.Printf("   ✓ Règle alpha simple créée pour: %s\n", ruleID)
-	fmt.Printf("   ✓ %s -> AlphaNode[%s] -> TerminalNode[%s]\n",
+	tsdio.Printf("   ✓ Règle alpha simple créée pour: %s\n", ruleID)
+	tsdio.Printf("   ✓ %s -> AlphaNode[%s] -> TerminalNode[%s]\n",
 		variableType, alphaNode.ID, terminalNode.ID)
 
 	return nil

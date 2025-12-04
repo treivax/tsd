@@ -1,0 +1,19 @@
+type Department(id: string, name: string, budget: number)
+type Employee(id: string, name: string, department: string, salary: number)
+
+
+// Action definitions
+action PRINT(arg1: string, arg2: string, arg3: string)
+
+rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3 ==> PRINT("Department ", d.name, " has >= 3 employees")
+
+Department(id:"DEPT001", name:"sales", budget:500000)
+Department(id:"DEPT002", name:"engineering", budget:1000000)
+Department(id:"DEPT003", name:"hr", budget:200000)
+
+Employee(id:"EMP001", name:"Alice", department:"sales", salary:60000)
+Employee(id:"EMP002", name:"Bob", department:"sales", salary:65000)
+Employee(id:"EMP003", name:"Charlie", department:"sales", salary:70000)
+Employee(id:"EMP004", name:"David", department:"engineering", salary:80000)
+Employee(id:"EMP005", name:"Eve", department:"engineering", salary:85000)
+Employee(id:"EMP006", name:"Frank", department:"hr", salary:55000)

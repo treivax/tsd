@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
 	"io"
 	"log"
@@ -116,7 +117,7 @@ func (l *Logger) log(level string, format string, args ...interface{}) {
 	message := fmt.Sprintf(format, args...)
 	log.SetOutput(l.output)
 	log.SetFlags(0) // Pas de timestamp par défaut pour compatibilité avec les tests
-	log.Printf("%s", message)
+	tsdio.LogPrintf("%s", message)
 }
 
 // SetGlobalLogLevel change le niveau du logger global

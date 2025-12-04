@@ -46,6 +46,7 @@ Critères de succès:
 - CanonicalString est déterministe (même condition → même string)
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
 
 ================================================================================
 PROMPT 2 - Normalisation Canonique (Jour 2)
@@ -86,6 +87,8 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 3 - Constructeur de Chaînes (Jours 3-4)
@@ -143,6 +146,8 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 4 - Analyse d'Expressions (Jour 5)
@@ -190,6 +195,7 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
 
 ================================================================================
 PROMPT 5 - Intégration Pipeline (Jours 6-7)
@@ -235,6 +241,8 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 6 - Lifecycle Management (Jours 8-9)
@@ -281,6 +289,8 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 7 - Tests End-to-End (Jours 10-11)
@@ -351,6 +361,8 @@ Critères de succès:
 - Propagation de faits correcte
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 8 - Gestion Opérateurs OR (Jour 12)
@@ -388,6 +400,8 @@ Critères de succès:
 - Tous les tests passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 9 - Optimisation Performances (Jour 13)
@@ -436,6 +450,8 @@ Critères de succès:
 - Benchmarks passent
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 10 - Documentation Complète (Jour 14)
@@ -484,6 +500,8 @@ Critères de succès:
 - Guide de migration détaillé
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 PROMPT 11 - Tests de Régression (BONUS)
@@ -517,6 +535,8 @@ Critères de succès:
 - Backward compatible confirmé
 
 Utilise le prompt add-feature pour implémenter cette fonctionnalité.
+Assure toi que le code produit est compatible avec la license MIT utilisée par tsd
+
 
 ================================================================================
 FIN - VALIDATION FINALE

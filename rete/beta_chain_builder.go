@@ -5,8 +5,8 @@
 package rete
 
 import (
+	"github.com/treivax/tsd/tsdio"
 	"fmt"
-	"log"
 	"sort"
 	"sync"
 	"time"
@@ -382,7 +382,7 @@ func (bcb *BetaChainBuilder) BuildChain(
 		optimizedPatterns = bcb.optimizeJoinOrder(patterns)
 		if !bcb.patternsEqual(patterns, optimizedPatterns) {
 			optimizationApplied = true
-			log.Printf("⚡ [BetaChainBuilder] Optimisation de l'ordre appliquée (%d patterns réordonnés) pour règle %s",
+			tsdio.LogPrintf("⚡ [BetaChainBuilder] Optimisation de l'ordre appliquée (%d patterns réordonnés) pour règle %s",
 				len(patterns), ruleID)
 		}
 	}
@@ -398,7 +398,7 @@ func (bcb *BetaChainBuilder) BuildChain(
 			currentParent = prefixNode
 			startPatternIndex = prefixLen
 			nodesReused += prefixLen
-			log.Printf("♻️  [BetaChainBuilder] Préfixe de chaîne réutilisé (%d nœuds) pour règle %s",
+			tsdio.LogPrintf("♻️  [BetaChainBuilder] Préfixe de chaîne réutilisé (%d nœuds) pour règle %s",
 				prefixLen, ruleID)
 		}
 	}
@@ -446,7 +446,7 @@ func (bcb *BetaChainBuilder) BuildChain(
 		// Register rule with beta sharing registry for join node tracking
 		if bcb.betaSharingRegistry != nil {
 			if err := bcb.betaSharingRegistry.RegisterRuleForJoinNode(hash, ruleID); err != nil {
-				log.Printf("⚠️  [BetaChainBuilder] Warning: failed to register rule %s for join node %s: %v",
+				tsdio.LogPrintf("⚠️  [BetaChainBuilder] Warning: failed to register rule %s for join node %s: %v",
 					ruleID, hash, err)
 			}
 		}
@@ -458,16 +458,16 @@ func (bcb *BetaChainBuilder) BuildChain(
 
 		if reused {
 			nodesReused++
-			log.Printf("♻️  [BetaChainBuilder] Réutilisation du JoinNode %s pour la règle %s (pattern %d/%d)",
+			tsdio.LogPrintf("♻️  [BetaChainBuilder] Réutilisation du JoinNode %s pour la règle %s (pattern %d/%d)",
 				joinNode.ID, ruleID, i+1, len(optimizedPatterns))
 
 			// Nœud réutilisé - vérifier la connexion si on a un parent
 			if currentParent != nil && !bcb.isAlreadyConnectedCached(currentParent, joinNode) {
 				currentParent.AddChild(joinNode)
-				log.Printf("🔗 [BetaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
+				tsdio.LogPrintf("🔗 [BetaChainBuilder] Connexion du nœud réutilisé %s au parent %s",
 					joinNode.ID, currentParent.GetID())
 			} else if currentParent != nil {
-				log.Printf("✓  [BetaChainBuilder] Nœud %s déjà connecté au parent %s",
+				tsdio.LogPrintf("✓  [BetaChainBuilder] Nœud %s déjà connecté au parent %s",
 					joinNode.ID, currentParent.GetID())
 			}
 		} else {
@@ -481,10 +481,10 @@ func (bcb *BetaChainBuilder) BuildChain(
 				bcb.updateConnectionCache(currentParent.GetID(), joinNode.ID, true)
 			}
 
-			log.Printf("🆕 [BetaChainBuilder] Nouveau JoinNode %s créé pour la règle %s (pattern %d/%d)",
+			tsdio.LogPrintf("🆕 [BetaChainBuilder] Nouveau JoinNode %s créé pour la règle %s (pattern %d/%d)",
 				joinNode.ID, ruleID, i+1, len(optimizedPatterns))
 			if currentParent != nil {
-				log.Printf("🔗 [BetaChainBuilder] Connexion du nœud %s au parent %s",
+				tsdio.LogPrintf("🔗 [BetaChainBuilder] Connexion du nœud %s au parent %s",
 					joinNode.ID, currentParent.GetID())
 			}
 		}
@@ -494,7 +494,7 @@ func (bcb *BetaChainBuilder) BuildChain(
 		lifecycle.AddRuleReference(ruleID, "") // RuleName peut être ajouté plus tard si nécessaire
 
 		if reused {
-			log.Printf("📊 [BetaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
+			tsdio.LogPrintf("📊 [BetaChainBuilder] Nœud %s maintenant utilisé par %d règle(s)",
 				joinNode.ID, lifecycle.GetRefCount())
 		}
 
@@ -514,7 +514,7 @@ func (bcb *BetaChainBuilder) BuildChain(
 	}
 
 	buildTime := time.Since(startTime)
-	log.Printf("✅ [BetaChainBuilder] Chaîne beta complète construite pour la règle %s: %d nœud(s) (créés: %d, réutilisés: %d) en %v",
+	tsdio.LogPrintf("✅ [BetaChainBuilder] Chaîne beta complète construite pour la règle %s: %d nœud(s) (créés: %d, réutilisés: %d) en %v",
 		ruleID, len(chain.Nodes), nodesCreated, nodesReused, buildTime)
 
 	// Record metrics
@@ -754,7 +754,7 @@ func (bcb *BetaChainBuilder) ClearConnectionCache() {
 	bcb.mutex.Lock()
 	defer bcb.mutex.Unlock()
 	bcb.connectionCache = make(map[string]bool)
-	log.Printf("🧹 [BetaChainBuilder] Cache de connexions vidé")
+	tsdio.LogPrintf("🧹 [BetaChainBuilder] Cache de connexions vidé")
 }
 
 // ClearPrefixCache vide le cache de préfixes.
@@ -767,7 +767,7 @@ func (bcb *BetaChainBuilder) ClearPrefixCache() {
 	bcb.mutex.Lock()
 	defer bcb.mutex.Unlock()
 	bcb.prefixCache = make(map[string]*JoinNode)
-	log.Printf("🧹 [BetaChainBuilder] Cache de préfixes vidé")
+	tsdio.LogPrintf("🧹 [BetaChainBuilder] Cache de préfixes vidé")
 }
 
 // GetConnectionCacheSize retourne la taille actuelle du cache de connexions.
@@ -837,7 +837,7 @@ func (bcb *BetaChainBuilder) SetOptimizationEnabled(enabled bool) {
 	bcb.mutex.Lock()
 	defer bcb.mutex.Unlock()
 	bcb.enableOptimization = enabled
-	log.Printf("⚙️  [BetaChainBuilder] Optimisation de l'ordre: %v", enabled)
+	tsdio.LogPrintf("⚙️  [BetaChainBuilder] Optimisation de l'ordre: %v", enabled)
 }
 
 // SetPrefixSharingEnabled active/désactive le partage de préfixes.
@@ -851,7 +851,7 @@ func (bcb *BetaChainBuilder) SetPrefixSharingEnabled(enabled bool) {
 	bcb.mutex.Lock()
 	defer bcb.mutex.Unlock()
 	bcb.enablePrefixSharing = enabled
-	log.Printf("⚙️  [BetaChainBuilder] Partage de préfixes: %v", enabled)
+	tsdio.LogPrintf("⚙️  [BetaChainBuilder] Partage de préfixes: %v", enabled)
 }
 
 // GetChainInfo retourne des informations détaillées sur une chaîne beta.
@@ -897,7 +897,7 @@ func (bc *BetaChain) GetChainInfo() map[string]interface{} {
 // Exemple:
 //
 //	if err := chain.ValidateChain(); err != nil {
-//	    log.Printf("Chaîne invalide: %v", err)
+//	    tsdio.LogPrintf("Chaîne invalide: %v", err)
 //	}
 func (bc *BetaChain) ValidateChain() error {
 	if len(bc.Nodes) != len(bc.Hashes) {

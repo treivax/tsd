@@ -8,8 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-
-	grammar "github.com/treivax/tsd/constraint/grammar"
 )
 
 // ReadFileContent reads the entire content of a file as a string
@@ -30,7 +28,7 @@ func ReadFileContent(filename string) (string, error) {
 //	content, _ := os.ReadFile("rules.constraint")
 //	ast, err := ParseConstraint("rules.constraint", content)
 func ParseConstraint(filename string, input []byte) (interface{}, error) {
-	return grammar.Parse(filename, input)
+	return Parse(filename, input)
 }
 
 // ValidateConstraintProgram validates a parsed constraint program AST.
@@ -65,7 +63,7 @@ func ValidateConstraintProgram(result interface{}) error {
 //
 //	ast, err := ParseConstraintFile("rules.constraint")
 func ParseConstraintFile(filename string) (interface{}, error) {
-	return grammar.ParseFile(filename)
+	return ParseFile(filename)
 }
 
 // ParseFactsFile parses a .facts file using the constraint grammar.
@@ -76,7 +74,7 @@ func ParseConstraintFile(filename string) (interface{}, error) {
 //
 //	facts, err := ParseFactsFile("data.facts")
 func ParseFactsFile(filename string) (interface{}, error) {
-	return grammar.ParseFile(filename)
+	return ParseFile(filename)
 }
 
 // ExtractFactsFromProgram extrait les faits d'un programme parsé et les convertit au format RETE
