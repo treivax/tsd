@@ -432,12 +432,16 @@ TEST_PARALLEL=8 make test-parallel
 
 ## 📖 Documentation
 
+- [🗺️ **Index de Navigation**](DOCUMENTATION_INDEX.md) - **Guide complet pour naviguer dans la documentation**
 - [📋 Guide Complet](docs/README.md) - Documentation complète
-- [🏷️ Identifiants de Règles](docs/rule_identifiers.md) - **NOUVEAU** Guide complet sur les identifiants
-- [🧪 Tests Alpha](docs/alpha_tests_detailed.md) - Tests détaillés par opérateur
-- [✅ Rapport de Validation](docs/validation_report.md) - Validation des expressions complexes
+- [🎓 Tutoriel](docs/TUTORIAL.md) - Guide pas à pas de zéro à héros
+- [✨ Fonctionnalités](docs/FEATURES.md) - Toutes les fonctionnalités du projet
+- [⚡ Optimisations](docs/OPTIMIZATIONS.md) - Guide complet des optimisations
+- [📚 API Reference](docs/API_REFERENCE.md) - Référence complète de l'API
+- [📝 Guide de Logging](LOGGING_GUIDE.md) - Système de logging thread-safe
 - [🔧 Guide Développeur](docs/development_guidelines.md) - Standards et bonnes pratiques
-- [📝 Guide de Logging](LOGGING_GUIDE.md) - **NOUVEAU** Guide complet du système de logging
+
+> **Note** : Les rapports générés par l'assistant IA sont stockés dans `REPORTS/` (non versionné).
 
 ## 📝 Logging
 
