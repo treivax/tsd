@@ -192,6 +192,145 @@ if err != nil {
 }
 ```
 
+## 🔒 Strong Mode - Cohérence Garantie
+
+TSD utilise le **Strong Mode** par défaut pour garantir une cohérence stricte des données. Toutes les lectures reflètent les écritures les plus récentes avec vérification synchrone.
+
+### Utilisation de Base (Configuration par Défaut)
+
+```go
+import "github.com/treivax/tsd/rete"
+
+// Créer un réseau RETE
+network := rete.NewReteNetwork(storage, logger)
+
+// Utiliser la configuration par défaut (Strong mode)
+tx := network.BeginTransaction()
+defer tx.Rollback()
+
+// Ajouter des faits
+tx.AddFact("User", map[string]interface{}{
+    "id": "user-123",
+    "name": "Alice",
+    "age": 30,
+})
+
+// Commit avec vérification automatique
+err := tx.Commit()
+if err != nil {
+    log.Fatal("Transaction failed:", err)
+}
+```
+
+### Configuration Personnalisée
+
+```go
+import (
+    "time"
+    "github.com/treivax/tsd/rete"
+)
+
+// Créer des options personnalisées
+opts := rete.DefaultTransactionOptions()
+opts.SubmissionTimeout = 15 * time.Second      // Timeout pour la soumission
+opts.VerifyRetryDelay = 20 * time.Millisecond  // Délai entre les retries
+opts.MaxVerifyRetries = 5                       // Nombre max de retries
+opts.VerifyOnCommit = true                      // Vérifier au commit
+
+// Utiliser la configuration personnalisée
+tx := network.BeginTransactionWithOptions(opts)
+defer tx.Rollback()
+
+// ... ajouter des faits ...
+
+err := tx.Commit()
+```
+
+### Configurations Optimisées par Type de Storage
+
+#### PostgreSQL / MySQL (Rapide et Cohérent)
+```go
+opts := &rete.TransactionOptions{
+    SubmissionTimeout: 10 * time.Second,
+    VerifyRetryDelay:  10 * time.Millisecond,
+    MaxVerifyRetries:  5,
+    VerifyOnCommit:    true,
+}
+```
+
+#### Redis (Ultra-rapide)
+```go
+opts := &rete.TransactionOptions{
+    SubmissionTimeout: 5 * time.Second,
+    VerifyRetryDelay:  5 * time.Millisecond,
+    MaxVerifyRetries:  3,
+    VerifyOnCommit:    false,  // Optionnel pour Redis
+}
+```
+
+#### Cassandra / DynamoDB (Cohérence Éventuelle)
+```go
+opts := &rete.TransactionOptions{
+    SubmissionTimeout: 45 * time.Second,
+    VerifyRetryDelay:  100 * time.Millisecond,
+    MaxVerifyRetries:  12,
+    VerifyOnCommit:    true,
+}
+```
+
+### Monitoring de Performance
+
+```go
+import "github.com/treivax/tsd/rete"
+
+// Créer un collecteur de métriques
+perfMetrics := rete.NewStrongModePerformanceMetrics()
+
+// Pour chaque transaction
+start := time.Now()
+tx := network.BeginTransaction()
+// ... opérations ...
+err := tx.Commit()
+duration := time.Since(start)
+
+// Enregistrer les métriques
+coherenceMetrics := tx.GetCoherenceMetrics()
+perfMetrics.RecordTransaction(duration, factCount, err == nil, coherenceMetrics)
+
+// Générer un rapport
+fmt.Println(perfMetrics.GetReport())
+
+// Vérifier la santé du système
+if !perfMetrics.IsHealthy {
+    log.Warn("Strong mode needs tuning")
+    for _, rec := range perfMetrics.Recommendations {
+        log.Info("Recommendation:", rec)
+    }
+}
+```
+
+### Garanties du Strong Mode
+
+✅ **Cohérence Lecture-après-Écriture**: Toute lecture reflète les écritures les plus récentes  
+✅ **Vérification Synchrone**: Chaque fait est vérifié avant de continuer  
+✅ **Mécanisme de Retry**: Tentatives automatiques avec backoff exponentiel  
+✅ **Transactions Atomiques**: Tous les faits sont persistés ou aucun  
+✅ **Aucune Perte de Données**: Les échecs de stockage causent des échecs de transaction  
+
+### Performances Attendues
+
+- **PostgreSQL/MySQL**: ~1,000-5,000 faits/sec
+- **Redis**: ~5,000-10,000 faits/sec
+- **Cassandra/DynamoDB**: ~500-2,000 faits/sec
+- **Latence moyenne**: 10-100ms par transaction
+
+### Documentation Complète
+
+Pour un guide complet de tuning et d'optimisation, consultez:
+- 📖 **Guide de Tuning**: [`docs/STRONG_MODE_TUNING_GUIDE.md`](docs/STRONG_MODE_TUNING_GUIDE.md)
+- 📊 **Design Document**: [`docs/PHASE4_COHERENCE_STRONG_MODE.md`](docs/PHASE4_COHERENCE_STRONG_MODE.md)
+- ✅ **Completion Report**: [`docs/PHASE4_STRONG_MODE_COMPLETION.md`](docs/PHASE4_STRONG_MODE_COMPLETION.md)
+
 ## 🏗️ Architecture
 
 ```
