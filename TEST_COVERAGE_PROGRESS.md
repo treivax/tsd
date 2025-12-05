@@ -6,16 +6,16 @@
 ## État Actuel de la Couverture
 
 ### Résumé Global
-- **Couverture totale:** 72.8% (amélioration de +0.2%)
+- **Couverture totale:** 73.2% (amélioration de +0.6%)
 - **Avant:** 72.6%
-- **Après:** 72.8%
+- **Après:** 73.2%
 
 ### Couverture par Package
 
 | Package | Avant | Après | Objectif | Progression |
 |---------|-------|-------|----------|-------------|
-| `constraint/` | 67.1% | 70.2% | 80% | ✅ +3.1% |
-| `rete/` | 72.6% | 73.4% | 80% | ✅ +0.8% |
+| `constraint/` | 67.1% | 70.7% | 80% | ✅ +3.6% |
+| `rete/` | 72.6% | 73.8% | 80% | ✅ +1.2% |
 | `rete/pkg/nodes/` | 71.6% | 71.6% | 80% | ⏳ 0% |
 
 ## Tests Ajoutés
@@ -94,36 +94,100 @@
 
 **Total:** 467 lignes de tests ajoutées
 
+### 4. `constraint/action_validator_test.go` (Nouveau fichier)
+
+**Fonctions testées:**
+- ✅ `inferFunctionReturnType()` - 0% → 100%
+  - Tests pour toutes les fonctions (LENGTH, SUBSTRING, UPPER, LOWER, TRIM, ABS, ROUND, FLOOR, CEIL)
+  - Test de fonctions inconnues (défaut à string)
+  - Support majuscules et minuscules
+  
+- ✅ `GetActionDefinition()` - 0% → 100%
+  - Test récupération actions existantes
+  - Test actions non-existantes
+  - Test sensibilité à la casse
+  - Test validator vide
+  
+- ✅ `GetTypeDefinition()` - 0% → 100%
+  - Test récupération types existants
+  - Test types non-existants
+  - Test sensibilité à la casse
+  - Test validator vide
+  - Test types multiples
+
+**Total:** 358 lignes de tests ajoutées
+
+### 5. `rete/evaluator_test.go` (Nouveau fichier)
+
+**Fonctions testées:**
+- ✅ `evaluateConstraint()` - Tests complets
+  - Contraintes d'égalité
+  - Comparaisons numériques
+  - Contraintes d'inégalité
+  - Comparaisons <=, >=, <, >
+  
+- ✅ `evaluateExpression()` - ~57% → ~80%
+  - Boolean literals
+  - Binary operations
+  - Logical expressions (AND, OR)
+  - Negation et NOT constraints
+  - Exists constraints
+  - Tests de types non supportés
+  
+- ✅ `evaluateValue()` - ~57% → ~80%
+  - Tous les types de literals (string, number, boolean)
+  - Field access (tous types)
+  - Valeurs directes
+  - Types constraint (StringLiteral, NumberLiteral, etc.)
+  - Edge cases et erreurs
+  
+- ✅ `evaluateLogicalExpression()` - Tests complets
+  - AND avec différentes combinaisons
+  - OR avec différentes combinaisons
+  - Opérations multiples
+  - Opérations mixtes AND/OR
+  
+- ✅ `evaluateConstraintMap()` - Tests complets
+  - Contraintes avec indirection
+  - Types spéciaux (simple, passthrough, exists)
+  - Contraintes directes
+  - Cas d'erreur
+  
+- ✅ `evaluateBinaryOperation()` - Tests complets
+  - Toutes les comparaisons (==, !=, <, >)
+
+**Total:** 788 lignes de tests ajoutées
+
 ## Métriques d'Amélioration
 
 ### Lignes de Tests Ajoutées
-- **Total:** 1,458 lignes
-- **Nouveaux fichiers:** 2
+- **Total:** 2,604 lignes
+- **Nouveaux fichiers:** 4
 - **Fichiers modifiés:** 1
 
 ### Fonctions Couvertes
 - **Avant:** ~1074 fonctions à 0%
-- **Après:** ~1056 fonctions à 0% (18 fonctions maintenant couvertes)
+- **Après:** ~1040 fonctions à 0% (34+ fonctions maintenant couvertes)
 
 ## Prochaines Étapes pour Atteindre 80%
 
 ### Priorité Haute (Impact Important)
 
-#### `constraint/` (70.2% → 80%, +9.8% requis)
-1. **action_validator.go**
-   - `inferFunctionReturnType()` - 0%
-   - `GetActionDefinition()` - 0%
-   - `GetTypeDefinition()` - 0%
+#### `constraint/` (70.7% → 80%, +9.3% requis)
+1. **action_validator.go** ✅ **Complété**
+   - `inferFunctionReturnType()` - ✅ 100%
+   - `GetActionDefinition()` - ✅ 100%
+   - `GetTypeDefinition()` - ✅ 100%
 
 2. **Parser callbacks** (si testable)
    - Créer tests qui exercent les callbacks du parser
    - Tests d'intégration pour le parsing complet
 
-#### `rete/` (73.4% → 80%, +6.6% requis)
-1. **evaluator_*.go**
-   - `evaluateConstraint()` - 0%
-   - `evaluateExpression()` - 57.1%
-   - `evaluateValue()` - 57.1%
+#### `rete/` (73.8% → 80%, +6.2% requis)
+1. **evaluator_*.go** ✅ **Amélioré**
+   - `evaluateConstraint()` - ✅ Bien couvert
+   - `evaluateExpression()` - ✅ ~80% (amélioration de 57.1%)
+   - `evaluateValue()` - ✅ ~80% (amélioration de 57.1%)
 
 2. **converter.go**
    - `NewASTConverter()` - 0%
@@ -158,6 +222,13 @@
 - **e7fc4fb** - test: amélioration couverture - ajout tests pour action_executor, alpha_builder et constraint/api
   - Pushed to origin/main
   - All tests passing ✅
+  - +1,458 lignes de tests
+
+- **e8dd79d** - test: amélioration couverture - ajout tests action_validator et evaluators
+  - Pushed to origin/main
+  - All tests passing ✅
+  - +1,146 lignes de tests
+  - Couverture: constraint 70.2% → 70.7%, rete 73.4% → 73.8%
 
 ## Notes Techniques
 
@@ -181,4 +252,25 @@ go test -cover ./constraint ./rete ./rete/pkg/nodes
 
 ---
 
-**Prochain cycle:** Continuer avec les fonctions prioritaires listées ci-dessus pour progresser vers l'objectif de 80%.
+## Résumé des Réalisations
+
+### Tests Ajoutés (Total: 2,604 lignes)
+1. ✅ `rete/action_executor_test.go` - 327 lignes
+2. ✅ `rete/alpha_builder_test.go` - 664 lignes (nouveau)
+3. ✅ `constraint/api_test.go` - 467 lignes (nouveau)
+4. ✅ `constraint/action_validator_test.go` - 358 lignes (nouveau)
+5. ✅ `rete/evaluator_test.go` - 788 lignes (nouveau)
+
+### Progression vers 80%
+- **constraint:** 67.1% → 70.7% (manque: 9.3%)
+- **rete:** 72.6% → 73.8% (manque: 6.2%)
+- **rete/pkg/nodes:** 71.6% → 71.6% (manque: 8.4%)
+
+### Prochaines Priorités
+Pour atteindre 80%, il faut cibler:
+1. **converter.go** (rete) - NewASTConverter, ConvertProgram - 0%
+2. **constraint_pipeline_*.go** (rete) - buildNetwork, validateNetwork - 0-66%
+3. **rete/pkg/nodes** - Tests nodes spécifiques (join, exists, accumulate)
+4. **constraint** - Parser callbacks et fonctions de validation avancées
+
+**Prochain cycle:** Continuer avec converter.go et constraint_pipeline pour atteindre l'objectif de 80%.
