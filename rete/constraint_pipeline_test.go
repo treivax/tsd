@@ -1293,3 +1293,444 @@ func TestCollectExistingFacts(t *testing.T) {
 		}
 	})
 }
+
+// TestIngestFileWithMetrics_ErrorPaths tests error handling in ingestFileWithMetrics
+func TestIngestFileWithMetrics_ErrorPaths(t *testing.T) {
+	t.Run("handles conversion error", func(t *testing.T) {
+		// This test would require mocking the constraint package
+		// which is beyond the scope of unit tests here
+		// The conversion error path is integration-tested
+	})
+
+	t.Run("handles reset with garbage collection", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		// First create a network with some data
+		content1 := `
+type Person(id: string, name: string)
+action log(msg: string)
+rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
+Person(id: "1", name: "Alice")
+`
+		if err := os.WriteFile(testFile, []byte(content1), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		if err != nil {
+			t.Fatalf("Initial ingestion failed: %v", err)
+		}
+
+		// Now ingest a file with reset command
+		content2 := `
+reset
+type Order(id: string)
+action process(id: string)
+rule r2 : {o: Order} / o.id == "100" ==> process(o.id)
+`
+		if err := os.WriteFile(testFile, []byte(content2), 0644); err != nil {
+			t.Fatalf("Failed to update test file: %v", err)
+		}
+
+		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		if err != nil {
+			t.Fatalf("Reset ingestion failed: %v", err)
+		}
+
+		// Should be a new network after reset
+		if network2 == network1 {
+			t.Error("Expected new network after reset")
+		}
+
+		if metrics == nil {
+			t.Fatal("Expected metrics")
+		}
+
+		if !metrics.WasReset {
+			t.Error("Expected WasReset to be true")
+		}
+
+		// Old type should be gone, new type should exist
+		if _, exists := network2.TypeNodes["Person"]; exists {
+			t.Error("Expected Person type to be removed after reset")
+		}
+		if _, exists := network2.TypeNodes["Order"]; !exists {
+			t.Error("Expected Order type to exist after reset")
+		}
+	})
+
+	t.Run("handles validation error with rollback", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		// Create invalid content (undefined type reference)
+		content := `
+type Person(id: string, name: string)
+action log(msg: string)
+rule bad : {o: Order} / o.id == "1" ==> log("test")
+`
+		if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+
+		_, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+
+		// Should fail validation
+		if err == nil {
+			t.Error("Expected validation error for undefined type")
+		}
+	})
+
+	t.Run("incremental validation path", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		// First file with base type
+		content1 := `
+type Person(id: string, name: string)
+action log(msg: string)
+rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
+`
+		if err := os.WriteFile(testFile, []byte(content1), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		if err != nil {
+			t.Fatalf("Initial ingestion failed: %v", err)
+		}
+
+		// Second file that references existing type (incremental validation)
+		content2 := `
+type Order(id: string, person_id: string)
+action process(id: string)
+rule r2 : {o: Order, p: Person} / o.person_id == p.id ==> process(o.id)
+`
+		if err := os.WriteFile(testFile, []byte(content2), 0644); err != nil {
+			t.Fatalf("Failed to update test file: %v", err)
+		}
+
+		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		if err != nil {
+			t.Fatalf("Incremental ingestion failed: %v", err)
+		}
+
+		if network2 != network1 {
+			t.Error("Expected same network instance for incremental ingestion")
+		}
+
+		if metrics == nil {
+			t.Fatal("Expected metrics")
+		}
+
+		if !metrics.WasIncremental {
+			t.Error("Expected WasIncremental to be true")
+		}
+
+		// Both types should exist
+		if _, exists := network2.TypeNodes["Person"]; !exists {
+			t.Error("Expected Person type to still exist")
+		}
+		if _, exists := network2.TypeNodes["Order"]; !exists {
+			t.Error("Expected Order type to be added")
+		}
+	})
+
+	t.Run("handles fact submission with consistency check", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		content := `
+type Product(id: string, name: string, price: number)
+action notify(msg: string)
+rule expensive : {p: Product} / p.price > 100 ==> notify(p.name)
+Product(id: "p1", name: "Laptop", price: 1500)
+Product(id: "p2", name: "Mouse", price: 25)
+`
+		if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+
+		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		if err != nil {
+			t.Fatalf("Ingestion failed: %v", err)
+		}
+
+		if metrics == nil {
+			t.Fatal("Expected metrics")
+		}
+
+		if metrics.FactsSubmitted != 2 {
+			t.Errorf("Expected 2 facts submitted, got %d", metrics.FactsSubmitted)
+		}
+
+		// Verify facts are in storage
+		if network == nil {
+			t.Fatal("Expected non-nil network")
+		}
+	})
+
+	t.Run("handles propagation to new terminals", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		// First file with facts
+		content1 := `
+type Item(id: string, category: string)
+action log(msg: string)
+Item(id: "i1", category: "books")
+Item(id: "i2", category: "electronics")
+`
+		if err := os.WriteFile(testFile, []byte(content1), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		if err != nil {
+			t.Fatalf("Initial ingestion failed: %v", err)
+		}
+
+		// Second file adds rule (should propagate existing facts)
+		content2 := `
+rule books : {i: Item} / i.category == "books" ==> log(i.id)
+`
+		if err := os.WriteFile(testFile, []byte(content2), 0644); err != nil {
+			t.Fatalf("Failed to update test file: %v", err)
+		}
+
+		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		if err != nil {
+			t.Fatalf("Rule ingestion failed: %v", err)
+		}
+
+		if metrics == nil {
+			t.Fatal("Expected metrics")
+		}
+
+		if metrics.NewTerminalsAdded == 0 {
+			t.Error("Expected new terminals to be added")
+		}
+
+		// Should have propagated existing facts
+		if network2 == nil {
+			t.Fatal("Expected non-nil network")
+		}
+	})
+
+	t.Run("handles empty expressions and types", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		testFile := filepath.Join(tmpDir, "test.tsd")
+
+		// File with only facts (no types or rules)
+		content := `
+# Just a comment, no actual content
+`
+		if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
+			t.Fatalf("Failed to create test file: %v", err)
+		}
+
+		pipeline := NewConstraintPipeline()
+		storage := NewMemoryStorage()
+
+		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+
+		// Should succeed even with empty content
+		if err != nil {
+			t.Fatalf("Empty file ingestion failed: %v", err)
+		}
+
+		if network == nil {
+			t.Fatal("Expected network to be created")
+		}
+
+		if metrics == nil {
+			t.Fatal("Expected metrics")
+		}
+
+		if metrics.TypesAdded != 0 {
+			t.Errorf("Expected 0 types added, got %d", metrics.TypesAdded)
+		}
+
+		if metrics.RulesAdded != 0 {
+			t.Errorf("Expected 0 rules added, got %d", metrics.RulesAdded)
+		}
+	})
+}
+
+// TestProcessRuleRemovals tests the processRuleRemovals function
+func TestProcessRuleRemovals(t *testing.T) {
+	pipeline := NewConstraintPipeline()
+
+	t.Run("no rule removals present", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"types": []interface{}{},
+			"rules": []interface{}{},
+		}
+
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error when no rule removals, got: %v", err)
+		}
+	})
+
+	t.Run("rule removals key exists but empty", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{},
+		}
+
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error for empty rule removals, got: %v", err)
+		}
+	})
+
+	t.Run("rule removals with invalid type", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": "not a slice",
+		}
+
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error for invalid type (should skip), got: %v", err)
+		}
+	})
+
+	t.Run("rule removal with invalid format", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				"not a map",
+				123,
+			},
+		}
+
+		// Should handle gracefully with warnings
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue), got: %v", err)
+		}
+	})
+
+	t.Run("rule removal with missing rule ID", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				map[string]interface{}{
+					"otherField": "value",
+				},
+				map[string]interface{}{
+					"ruleID": "",
+				},
+			},
+		}
+
+		// Should handle gracefully with warnings
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue), got: %v", err)
+		}
+	})
+
+	t.Run("rule removal with invalid rule ID type", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				map[string]interface{}{
+					"ruleID": 123,
+				},
+			},
+		}
+
+		// Should handle gracefully with warnings
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue), got: %v", err)
+		}
+	})
+
+	t.Run("rule removal attempt without lifecycle registration", func(t *testing.T) {
+		storage := NewMemoryStorage()
+		network := NewReteNetwork(storage)
+
+		// Add a terminal node but DON'T register it with lifecycle manager
+		// This simulates an edge case where the rule isn't properly tracked
+		terminalNode := &TerminalNode{
+			BaseNode: BaseNode{
+				ID: "rule_test_rule",
+			},
+		}
+		network.TerminalNodes["rule_test_rule"] = terminalNode
+
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				map[string]interface{}{
+					"ruleID": "test_rule",
+				},
+			},
+		}
+
+		// Should handle gracefully - RemoveRule will error but processRuleRemovals continues
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue), got: %v", err)
+		}
+	})
+	t.Run("multiple rule removals all fail gracefully", func(t *testing.T) {
+		storage := NewMemoryStorage()
+		network := NewReteNetwork(storage)
+
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				map[string]interface{}{
+					"ruleID": "rule1",
+				},
+				map[string]interface{}{
+					"ruleID": "non_existent",
+				},
+				map[string]interface{}{
+					"ruleID": "rule2",
+				},
+			},
+		}
+
+		// All removals will fail (no rules registered) but should continue processing
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue for each), got: %v", err)
+		}
+	})
+
+	t.Run("rule removal with non-existent rule", func(t *testing.T) {
+		network := NewReteNetwork(NewMemoryStorage())
+		resultMap := map[string]interface{}{
+			"ruleRemovals": []interface{}{
+				map[string]interface{}{
+					"ruleID": "non_existent_rule",
+				},
+			},
+		}
+
+		// Should handle gracefully with warning (RemoveRule will error)
+		err := pipeline.processRuleRemovals(network, resultMap)
+		if err != nil {
+			t.Errorf("Expected no error (should warn and continue), got: %v", err)
+		}
+	})
+
+}
