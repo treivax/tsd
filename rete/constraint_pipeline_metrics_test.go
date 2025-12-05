@@ -426,3 +426,305 @@ func TestMetricsCollector_AllSetters(t *testing.T) {
 	assert.True(t, metrics.WasIncremental)
 	assert.True(t, metrics.ValidationSkipped)
 }
+
+// TestMetricsCollector_RecordNetworkState tests recording network state
+func TestMetricsCollector_RecordNetworkState(t *testing.T) {
+	collector := NewMetricsCollector()
+	storage := NewMemoryStorage()
+	network := NewReteNetwork(storage)
+
+	// Add some nodes to the network
+	network.TypeNodes["Person"] = NewTypeNode("Person", TypeDefinition{Name: "Person"}, storage)
+	network.TypeNodes["Order"] = NewTypeNode("Order", TypeDefinition{Name: "Order"}, storage)
+
+	network.TerminalNodes["term1"] = NewTerminalNode("term1", nil, storage)
+	network.TerminalNodes["term2"] = NewTerminalNode("term2", nil, storage)
+	network.TerminalNodes["term3"] = NewTerminalNode("term3", nil, storage)
+
+	alphaNode := NewAlphaNode("alpha1", nil, "var", storage)
+	network.AlphaNodes["alpha1"] = alphaNode
+
+	joinNode := NewJoinNode("join1", nil, []string{}, []string{}, map[string]string{}, storage)
+	network.BetaNodes["beta1"] = joinNode
+	network.BetaNodes["beta2"] = joinNode // Add duplicate to test count
+
+	// Record network state
+	collector.RecordNetworkState(network)
+	metrics := collector.Finalize()
+
+	// Verify counts
+	assert.Equal(t, 2, metrics.TotalTypeNodes, "Should have 2 type nodes")
+	assert.Equal(t, 3, metrics.TotalTerminalNodes, "Should have 3 terminal nodes")
+	assert.Equal(t, 1, metrics.TotalAlphaNodes, "Should have 1 alpha node")
+	assert.Equal(t, 2, metrics.TotalBetaNodes, "Should have 2 beta nodes")
+}
+
+// TestMetricsCollector_GetMetrics tests getting a copy of current metrics
+func TestMetricsCollector_GetMetrics(t *testing.T) {
+	collector := NewMetricsCollector()
+
+	collector.SetTypesAdded(5)
+	collector.SetRulesAdded(10)
+	collector.RecordParsingDuration(100 * time.Millisecond)
+
+	// Get metrics before finalization
+	metrics := collector.GetMetrics()
+
+	require.NotNil(t, metrics, "GetMetrics should return non-nil")
+	assert.Equal(t, 5, metrics.TypesAdded)
+	assert.Equal(t, 10, metrics.RulesAdded)
+	assert.Equal(t, 100*time.Millisecond, metrics.ParsingDuration)
+
+	// Modify returned metrics - should not affect collector
+	metrics.TypesAdded = 999
+
+	// Get again and verify original value preserved
+	metrics2 := collector.GetMetrics()
+	assert.Equal(t, 5, metrics2.TypesAdded, "Original value should be preserved")
+}
+
+// TestIngestionMetrics_String tests the String method
+func TestIngestionMetrics_String(t *testing.T) {
+	metrics := &IngestionMetrics{
+		ParsingDuration:        100 * time.Millisecond,
+		ValidationDuration:     50 * time.Millisecond,
+		TypeCreationDuration:   75 * time.Millisecond,
+		RuleCreationDuration:   150 * time.Millisecond,
+		FactCollectionDuration: 80 * time.Millisecond,
+		PropagationDuration:    200 * time.Millisecond,
+		FactSubmissionDuration: 120 * time.Millisecond,
+		TotalDuration:          775 * time.Millisecond,
+		TypesAdded:             3,
+		RulesAdded:             7,
+		FactsSubmitted:         50,
+		ExistingFactsCollected: 40,
+		FactsPropagated:        30,
+		NewTerminalsAdded:      5,
+		PropagationTargets:     20,
+		TotalTypeNodes:         10,
+		TotalTerminalNodes:     15,
+		TotalAlphaNodes:        25,
+		TotalBetaNodes:         12,
+		WasReset:               false,
+		WasIncremental:         true,
+		ValidationSkipped:      false,
+	}
+
+	str := metrics.String()
+
+	// Verify string contains key information
+	assert.Contains(t, str, "100ms", "Should contain parsing duration")
+	assert.Contains(t, str, "775ms", "Should contain total duration")
+	assert.Contains(t, str, "Types ajoutés", "Should contain types label")
+	assert.Contains(t, str, "3", "Should contain types count")
+	assert.Contains(t, str, "7", "Should contain rules count")
+	assert.Contains(t, str, "50", "Should contain facts submitted")
+	assert.Contains(t, str, "true", "Should contain incremental flag")
+	assert.NotEmpty(t, str, "String should not be empty")
+}
+
+// TestIngestionMetrics_Summary tests the Summary method
+func TestIngestionMetrics_Summary(t *testing.T) {
+	metrics := &IngestionMetrics{
+		TotalDuration:     500 * time.Millisecond,
+		TypesAdded:        2,
+		RulesAdded:        5,
+		FactsSubmitted:    100,
+		FactsPropagated:   75,
+		NewTerminalsAdded: 3,
+	}
+
+	summary := metrics.Summary()
+
+	// Verify summary contains key information
+	assert.Contains(t, summary, "500ms", "Should contain total duration")
+	assert.Contains(t, summary, "2", "Should contain types count")
+	assert.Contains(t, summary, "5", "Should contain rules count")
+	assert.Contains(t, summary, "100", "Should contain facts submitted")
+	assert.Contains(t, summary, "75", "Should contain facts propagated")
+	assert.Contains(t, summary, "3", "Should contain new terminals")
+	assert.NotEmpty(t, summary, "Summary should not be empty")
+}
+
+// TestIngestionMetrics_IsEfficient tests the IsEfficient method
+func TestIngestionMetrics_IsEfficient(t *testing.T) {
+	tests := []struct {
+		name              string
+		metrics           *IngestionMetrics
+		expectedEfficient bool
+		description       string
+	}{
+		{
+			name: "efficient with targeted propagation",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      2,
+				ExistingFactsCollected: 10,
+				FactsPropagated:        15, // Less than 10 * 2 = 20
+				PropagationDuration:    50 * time.Millisecond,
+				TotalDuration:          500 * time.Millisecond, // 10% ratio
+			},
+			expectedEfficient: true,
+			description:       "Should be efficient with targeted propagation and good ratio",
+		},
+		{
+			name: "inefficient with too many propagations",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      2,
+				ExistingFactsCollected: 10,
+				FactsPropagated:        25, // More than 10 * 2 = 20
+				PropagationDuration:    50 * time.Millisecond,
+				TotalDuration:          500 * time.Millisecond,
+			},
+			expectedEfficient: false,
+			description:       "Should be inefficient when too many propagations occur",
+		},
+		{
+			name: "inefficient with high propagation ratio",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      2,
+				ExistingFactsCollected: 10,
+				FactsPropagated:        15,
+				PropagationDuration:    200 * time.Millisecond, // 40% of total
+				TotalDuration:          500 * time.Millisecond,
+			},
+			expectedEfficient: false,
+			description:       "Should be inefficient when propagation takes too much time",
+		},
+		{
+			name: "efficient with no new terminals",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      0,
+				ExistingFactsCollected: 10,
+				FactsPropagated:        0,
+				PropagationDuration:    0,
+				TotalDuration:          100 * time.Millisecond,
+			},
+			expectedEfficient: true,
+			description:       "Should be efficient with no propagation needed",
+		},
+		{
+			name: "efficient with small duration",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      1,
+				ExistingFactsCollected: 5,
+				FactsPropagated:        4,
+				PropagationDuration:    500 * time.Microsecond, // < 1ms
+				TotalDuration:          1 * time.Millisecond,
+			},
+			expectedEfficient: true,
+			description:       "Should ignore ratio for very small durations",
+		},
+		{
+			name: "efficient with no existing facts",
+			metrics: &IngestionMetrics{
+				NewTerminalsAdded:      5,
+				ExistingFactsCollected: 0,
+				FactsPropagated:        0,
+				PropagationDuration:    0,
+				TotalDuration:          100 * time.Millisecond,
+			},
+			expectedEfficient: true,
+			description:       "Should be efficient when no existing facts to propagate",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.metrics.IsEfficient()
+			assert.Equal(t, tt.expectedEfficient, result, tt.description)
+		})
+	}
+}
+
+// TestIngestionMetrics_GetBottleneck tests the GetBottleneck method
+func TestIngestionMetrics_GetBottleneck(t *testing.T) {
+	tests := []struct {
+		name                  string
+		metrics               *IngestionMetrics
+		expectedBottleneckKey string
+		description           string
+	}{
+		{
+			name: "parsing is bottleneck",
+			metrics: &IngestionMetrics{
+				ParsingDuration:        500 * time.Millisecond,
+				ValidationDuration:     50 * time.Millisecond,
+				TypeCreationDuration:   30 * time.Millisecond,
+				RuleCreationDuration:   40 * time.Millisecond,
+				FactCollectionDuration: 20 * time.Millisecond,
+				PropagationDuration:    60 * time.Millisecond,
+				FactSubmissionDuration: 30 * time.Millisecond,
+				TotalDuration:          730 * time.Millisecond,
+			},
+			expectedBottleneckKey: "Parsing",
+			description:           "Parsing should be identified as bottleneck",
+		},
+		{
+			name: "propagation is bottleneck",
+			metrics: &IngestionMetrics{
+				ParsingDuration:        50 * time.Millisecond,
+				ValidationDuration:     30 * time.Millisecond,
+				TypeCreationDuration:   20 * time.Millisecond,
+				RuleCreationDuration:   40 * time.Millisecond,
+				FactCollectionDuration: 25 * time.Millisecond,
+				PropagationDuration:    800 * time.Millisecond,
+				FactSubmissionDuration: 35 * time.Millisecond,
+				TotalDuration:          1000 * time.Millisecond,
+			},
+			expectedBottleneckKey: "Propagation",
+			description:           "Propagation should be identified as bottleneck",
+		},
+		{
+			name: "rule creation is bottleneck",
+			metrics: &IngestionMetrics{
+				ParsingDuration:        30 * time.Millisecond,
+				ValidationDuration:     20 * time.Millisecond,
+				TypeCreationDuration:   15 * time.Millisecond,
+				RuleCreationDuration:   600 * time.Millisecond,
+				FactCollectionDuration: 25 * time.Millisecond,
+				PropagationDuration:    50 * time.Millisecond,
+				FactSubmissionDuration: 40 * time.Millisecond,
+				TotalDuration:          780 * time.Millisecond,
+			},
+			expectedBottleneckKey: "Création règles",
+			description:           "Rule creation should be identified as bottleneck",
+		},
+		{
+			name: "fact submission is bottleneck",
+			metrics: &IngestionMetrics{
+				ParsingDuration:        20 * time.Millisecond,
+				ValidationDuration:     15 * time.Millisecond,
+				TypeCreationDuration:   10 * time.Millisecond,
+				RuleCreationDuration:   30 * time.Millisecond,
+				FactCollectionDuration: 25 * time.Millisecond,
+				PropagationDuration:    40 * time.Millisecond,
+				FactSubmissionDuration: 700 * time.Millisecond,
+				TotalDuration:          840 * time.Millisecond,
+			},
+			expectedBottleneckKey: "Soumission faits",
+			description:           "Fact submission should be identified as bottleneck",
+		},
+		{
+			name: "all zero durations",
+			metrics: &IngestionMetrics{
+				ParsingDuration:        0,
+				ValidationDuration:     0,
+				TypeCreationDuration:   0,
+				RuleCreationDuration:   0,
+				FactCollectionDuration: 0,
+				PropagationDuration:    0,
+				FactSubmissionDuration: 0,
+				TotalDuration:          0,
+			},
+			expectedBottleneckKey: "Aucun goulot",
+			description:           "Should return no bottleneck message when all durations are zero",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bottleneck := tt.metrics.GetBottleneck()
+			assert.Contains(t, bottleneck, tt.expectedBottleneckKey, tt.description)
+		})
+	}
+}
