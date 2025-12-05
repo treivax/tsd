@@ -255,6 +255,34 @@ func TestCommandError(t *testing.T) {
 	t.Log("✅ Command error handling works correctly")
 }
 
+// TestCommandError_Unwrap tests the Unwrap method
+func TestCommandError_Unwrap(t *testing.T) {
+	t.Log("🔍 TEST : CommandError Unwrap")
+
+	t.Run("unwrap with underlying error", func(t *testing.T) {
+		underlyingErr := NewCommandError("InnerCommand", "Undo", nil)
+		outerErr := NewCommandError("OuterCommand", "Execute", underlyingErr)
+
+		unwrapped := outerErr.Unwrap()
+		if unwrapped == nil {
+			t.Fatal("Unwrap returned nil")
+		}
+		if unwrapped != underlyingErr {
+			t.Error("Unwrap did not return the correct underlying error")
+		}
+	})
+
+	t.Run("unwrap with nil error", func(t *testing.T) {
+		err := NewCommandError("TestCommand", "Execute", nil)
+		unwrapped := err.Unwrap()
+		if unwrapped != nil {
+			t.Errorf("Expected nil from Unwrap, got %v", unwrapped)
+		}
+	})
+
+	t.Log("✅ CommandError Unwrap works correctly")
+}
+
 // BenchmarkAddFactCommand benchmarks AddFact command execution
 func BenchmarkAddFactCommand(b *testing.B) {
 	storage := NewMemoryStorage()
