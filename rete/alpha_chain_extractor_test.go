@@ -7,6 +7,7 @@ package rete
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
 )
 
@@ -665,6 +666,509 @@ func findSubstring(s, substr string) bool {
 	return false
 }
 
+// TestExtractFromMap_Coverage tests various map expression types
+func TestExtractFromMap_Coverage(t *testing.T) {
+	tests := []struct {
+		name          string
+		expr          map[string]interface{}
+		expectError   bool
+		errorContains string
+		expectCount   int
+		expectOpType  string
+	}{
+		{
+			name: "missing type field",
+			expr: map[string]interface{}{
+				"left": "value",
+			},
+			expectError:   true,
+			errorContains: "type d'expression manquant",
+		},
+		{
+			name: "binary operation with operator",
+			expr: map[string]interface{}{
+				"type":     "binaryOperation",
+				"left":     "left_value",
+				"operator": "+",
+				"right":    "right_value",
+			},
+			expectCount:  1,
+			expectOpType: "SINGLE",
+		},
+		{
+			name: "binary operation with op field",
+			expr: map[string]interface{}{
+				"type":  "binary_op",
+				"left":  "left_value",
+				"op":    "-",
+				"right": "right_value",
+			},
+			expectCount:  1,
+			expectOpType: "SINGLE",
+		},
+		{
+			name: "comparison type",
+			expr: map[string]interface{}{
+				"type":     "comparison",
+				"left":     "a",
+				"operator": ">",
+				"right":    "b",
+			},
+			expectCount:  1,
+			expectOpType: "SINGLE",
+		},
+		{
+			name: "binary operation missing operator",
+			expr: map[string]interface{}{
+				"type":  "binaryOperation",
+				"left":  "value",
+				"right": "value",
+			},
+			expectError:   true,
+			errorContains: "opérateur manquant",
+		},
+		{
+			name: "constraint with left/operator/right",
+			expr: map[string]interface{}{
+				"type":     "constraint",
+				"left":     "x",
+				"operator": "==",
+				"right":    "y",
+			},
+			expectCount:  1,
+			expectOpType: "SINGLE",
+		},
+		{
+			name: "constraint without left - returns empty",
+			expr: map[string]interface{}{
+				"type": "constraint",
+			},
+			expectCount:  0,
+			expectOpType: "NONE",
+		},
+		{
+			name: "fieldAccess - returns empty",
+			expr: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "age",
+			},
+			expectCount:  0,
+			expectOpType: "NONE",
+		},
+		{
+			name: "literal - returns empty",
+			expr: map[string]interface{}{
+				"type":  "numberLiteral",
+				"value": 42,
+			},
+			expectCount:  0,
+			expectOpType: "NONE",
+		},
+		{
+			name: "stringLiteral - returns empty",
+			expr: map[string]interface{}{
+				"type":  "stringLiteral",
+				"value": "hello",
+			},
+			expectCount:  0,
+			expectOpType: "NONE",
+		},
+		{
+			name: "booleanLiteral - returns empty",
+			expr: map[string]interface{}{
+				"type":  "booleanLiteral",
+				"value": true,
+			},
+			expectCount:  0,
+			expectOpType: "NONE",
+		},
+		{
+			name: "unsupported type",
+			expr: map[string]interface{}{
+				"type": "unknownType",
+			},
+			expectError:   true,
+			errorContains: "type d'expression map non supporté",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions, opType, err := extractFromMap(tt.expr)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorContains != "" {
+					require.Contains(t, err.Error(), tt.errorContains)
+				}
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectCount, len(conditions), "condition count mismatch")
+				require.Equal(t, tt.expectOpType, opType, "operator type mismatch")
+			}
+		})
+	}
+}
+
+// TestExtractFromLogicalExpressionMap_Coverage tests logical expression map extraction
+func TestExtractFromLogicalExpressionMap_Coverage(t *testing.T) {
+	tests := []struct {
+		name          string
+		expr          map[string]interface{}
+		expectError   bool
+		errorContains string
+		minConditions int
+		expectOpType  string
+	}{
+		{
+			name: "missing left field",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+			},
+			expectError:   true,
+			errorContains: "left manquant",
+		},
+		{
+			name: "left only - no operations",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+			},
+			minConditions: 1,
+			expectOpType:  "SINGLE",
+		},
+		{
+			name: "with operations as []map[string]interface{}",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []map[string]interface{}{
+					{
+						"op": "AND",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "c",
+							"operator": "<",
+							"right":    "d",
+						},
+					},
+				},
+			},
+			minConditions: 2,
+			expectOpType:  "AND",
+		},
+		{
+			name: "operations as []interface{}",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []interface{}{
+					map[string]interface{}{
+						"op": "OR",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "x",
+							"operator": "==",
+							"right":    "y",
+						},
+					},
+				},
+			},
+			minConditions: 2,
+			expectOpType:  "OR",
+		},
+		{
+			name: "operation missing op field",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []map[string]interface{}{
+					{
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "c",
+							"operator": "<",
+							"right":    "d",
+						},
+					},
+				},
+			},
+			expectError:   true,
+			errorContains: "op manquant",
+		},
+		{
+			name: "operation missing right field",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []map[string]interface{}{
+					{
+						"op": "AND",
+					},
+				},
+			},
+			expectError:   true,
+			errorContains: "right manquant",
+		},
+		{
+			name: "multiple operations - same operator",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []interface{}{
+					map[string]interface{}{
+						"op": "AND",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "c",
+							"operator": "<",
+							"right":    "d",
+						},
+					},
+					map[string]interface{}{
+						"op": "AND",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "e",
+							"operator": ">=",
+							"right":    "f",
+						},
+					},
+				},
+			},
+			minConditions: 3,
+			expectOpType:  "AND",
+		},
+		{
+			name: "mixed operators",
+			expr: map[string]interface{}{
+				"type": "logicalExpr",
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"left":     "a",
+					"operator": ">",
+					"right":    "b",
+				},
+				"operations": []interface{}{
+					map[string]interface{}{
+						"op": "AND",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "c",
+							"operator": "<",
+							"right":    "d",
+						},
+					},
+					map[string]interface{}{
+						"op": "OR",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"left":     "e",
+							"operator": "==",
+							"right":    "f",
+						},
+					},
+				},
+			},
+			minConditions: 3,
+			expectOpType:  "MIXED",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions, opType, err := extractFromLogicalExpressionMap(tt.expr)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorContains != "" {
+					require.Contains(t, err.Error(), tt.errorContains)
+				}
+			} else {
+				require.NoError(t, err)
+				require.GreaterOrEqual(t, len(conditions), tt.minConditions, "not enough conditions")
+				require.Equal(t, tt.expectOpType, opType, "operator type mismatch")
+			}
+		})
+	}
+}
+
+// TestCanonicalMap_Coverage tests canonical representation of map values
+func TestCanonicalMap_Coverage(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]interface{}
+		expected string
+	}{
+		{
+			name:     "empty map",
+			input:    map[string]interface{}{},
+			expected: "map{}",
+		},
+		{
+			name: "single string value",
+			input: map[string]interface{}{
+				"key": "value",
+			},
+			expected: `map{key:string(value)}`,
+		},
+		{
+			name: "multiple values - sorted by key",
+			input: map[string]interface{}{
+				"z": "last",
+				"a": "first",
+				"m": "middle",
+			},
+			expected: `map{a:string(first),m:string(middle),z:string(last)}`,
+		},
+		{
+			name: "numeric values",
+			input: map[string]interface{}{
+				"num": float64(42),
+			},
+			expected: `map{num:float(42)}`,
+		},
+		{
+			name: "boolean values",
+			input: map[string]interface{}{
+				"bool": true,
+			},
+			expected: `map{bool:bool(true)}`,
+		},
+		{
+			name: "fieldAccess type",
+			input: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "age",
+			},
+			expected: `fieldAccess(p,age)`,
+		},
+		{
+			name: "numberLiteral type",
+			input: map[string]interface{}{
+				"type":  "numberLiteral",
+				"value": float64(42),
+			},
+			expected: `literal(42)`,
+		},
+		{
+			name: "binaryOperation type",
+			input: map[string]interface{}{
+				"type":     "binaryOperation",
+				"left":     "a",
+				"operator": "+",
+				"right":    "b",
+			},
+			expected: `binaryOp(string(a),+,string(b))`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := canonicalMap(tt.input)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestCanonicalValue_Coverage tests canonical representation of various value types
+func TestCanonicalValue_Coverage(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected string
+	}{
+		{
+			name:     "nil",
+			input:    nil,
+			expected: "nil",
+		},
+		{
+			name:     "string",
+			input:    "hello",
+			expected: `string(hello)`,
+		},
+		{
+			name:     "int",
+			input:    42,
+			expected: "int(42)",
+		},
+		{
+			name:     "int64",
+			input:    int64(123),
+			expected: "int(123)",
+		},
+		{
+			name:     "float64",
+			input:    3.14159,
+			expected: "float(3.14159)",
+		},
+		{
+			name:     "bool true",
+			input:    true,
+			expected: "bool(true)",
+		},
+		{
+			name:     "bool false",
+			input:    false,
+			expected: "bool(false)",
+		},
+		{
+			name:     "map with string",
+			input:    map[string]interface{}{"a": "b"},
+			expected: `map{a:string(b)}`,
+		},
+		{
+			name: "map with fieldAccess type",
+			input: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "name",
+			},
+			expected: `fieldAccess(p,name)`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := canonicalValue(tt.input)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // TestExtractFromNOTConstraint tests extraction from NOT constraints
 func TestExtractFromNOTConstraint(t *testing.T) {
 	expr := constraint.NotConstraint{
@@ -838,96 +1342,6 @@ func TestNormalizeORExpressionMap(t *testing.T) {
 				}
 				if result == nil {
 					t.Error("Expected non-nil result")
-				}
-			}
-		})
-	}
-}
-
-// TestExtractFromMap_Coverage tests extractFromMap edge cases
-func TestExtractFromMap_Coverage(t *testing.T) {
-	tests := []struct {
-		name         string
-		expr         map[string]interface{}
-		expectError  bool
-		expectedType string
-	}{
-		{
-			name: "comparison type",
-			expr: map[string]interface{}{
-				"type":     "comparison",
-				"operator": "==",
-				"left":     map[string]interface{}{"type": "number", "value": 1},
-				"right":    map[string]interface{}{"type": "number", "value": 1},
-			},
-			expectError:  false,
-			expectedType: "SINGLE",
-		},
-		{
-			name: "binaryOperation type",
-			expr: map[string]interface{}{
-				"type":     "binaryOperation",
-				"operator": "+",
-				"left":     map[string]interface{}{"type": "number", "value": 1},
-				"right":    map[string]interface{}{"type": "number", "value": 2},
-			},
-			expectError:  false,
-			expectedType: "SINGLE",
-		},
-		{
-			name: "notConstraint type - unsupported",
-			expr: map[string]interface{}{
-				"type": "notConstraint",
-				"expression": map[string]interface{}{
-					"type":     "comparison",
-					"operator": "==",
-					"left":     map[string]interface{}{"type": "bool", "value": true},
-					"right":    map[string]interface{}{"type": "bool", "value": false},
-				},
-			},
-			expectError: true,
-		},
-		{
-			name: "existsConstraint type - unsupported",
-			expr: map[string]interface{}{
-				"type":       "existsConstraint",
-				"variable":   "x",
-				"objectType": "Person",
-				"constraints": map[string]interface{}{
-					"type":     "comparison",
-					"operator": ">",
-					"left":     map[string]interface{}{"type": "fieldAccess", "object": "x", "field": "age"},
-					"right":    map[string]interface{}{"type": "number", "value": 18},
-				},
-			},
-			expectError: true,
-		},
-		{
-			name: "unknown type - unsupported",
-			expr: map[string]interface{}{
-				"type": "unknownType",
-			},
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			conditions, opType, err := extractFromMap(tt.expr)
-
-			if tt.expectError {
-				if err == nil {
-					t.Error("Expected error but got none")
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
-				if opType != tt.expectedType {
-					t.Errorf("Expected opType='%s', got '%s'", tt.expectedType, opType)
-				}
-				if tt.expectedType != "NONE" && len(conditions) == 0 {
-					t.Error("Expected at least one condition")
 				}
 			}
 		})
