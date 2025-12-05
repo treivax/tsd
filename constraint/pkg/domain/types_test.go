@@ -356,6 +356,83 @@ func TestNewAction(t *testing.T) {
 	}
 }
 
+func TestAction_GetJobs(t *testing.T) {
+	tests := []struct {
+		name     string
+		action   Action
+		wantLen  int
+		wantJobs []JobCall
+	}{
+		{
+			name: "Jobs field populated",
+			action: Action{
+				Jobs: []JobCall{
+					{Name: "job1", Args: []interface{}{"arg1"}},
+					{Name: "job2", Args: []interface{}{"arg2"}},
+				},
+			},
+			wantLen: 2,
+			wantJobs: []JobCall{
+				{Name: "job1", Args: []interface{}{"arg1"}},
+				{Name: "job2", Args: []interface{}{"arg2"}},
+			},
+		},
+		{
+			name: "Job field populated (legacy single job)",
+			action: Action{
+				Job: &JobCall{
+					Name: "single_job",
+					Args: []interface{}{"arg1", "arg2"},
+				},
+			},
+			wantLen: 1,
+			wantJobs: []JobCall{
+				{Name: "single_job", Args: []interface{}{"arg1", "arg2"}},
+			},
+		},
+		{
+			name:     "empty action - no jobs",
+			action:   Action{},
+			wantLen:  0,
+			wantJobs: []JobCall{},
+		},
+		{
+			name: "Jobs field takes precedence over Job",
+			action: Action{
+				Jobs: []JobCall{
+					{Name: "job1", Args: []interface{}{"arg1"}},
+				},
+				Job: &JobCall{
+					Name: "ignored_job",
+					Args: []interface{}{"ignored"},
+				},
+			},
+			wantLen: 1,
+			wantJobs: []JobCall{
+				{Name: "job1", Args: []interface{}{"arg1"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.action.GetJobs()
+			if len(got) != tt.wantLen {
+				t.Errorf("Action.GetJobs() returned %d jobs, want %d", len(got), tt.wantLen)
+			}
+			for i, job := range got {
+				if i >= len(tt.wantJobs) {
+					t.Errorf("Unexpected extra job at index %d: %+v", i, job)
+					continue
+				}
+				if job.Name != tt.wantJobs[i].Name {
+					t.Errorf("Job[%d].Name = %v, want %v", i, job.Name, tt.wantJobs[i].Name)
+				}
+			}
+		})
+	}
+}
+
 // ===== Validation Helper Tests =====
 
 func TestIsValidOperator(t *testing.T) {
