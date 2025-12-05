@@ -167,3 +167,228 @@ func TestProgramStateTypeValidation(t *testing.T) {
 		t.Logf("Correctly detected %d validation error(s)", ps.GetErrorCount())
 	}
 }
+
+func TestProgramState_ParseAndMergeContent(t *testing.T) {
+	tests := []struct {
+		name        string
+		content     string
+		filename    string
+		expectError bool
+		checkFunc   func(*testing.T, *ProgramState)
+	}{
+		{
+			name:     "parse type from content",
+			content:  `type Person(id: string, name: string, age: number)`,
+			filename: "test.tsd",
+			checkFunc: func(t *testing.T, ps *ProgramState) {
+				if len(ps.Types) != 1 {
+					t.Errorf("Expected 1 type, got %d", len(ps.Types))
+				}
+				if _, exists := ps.Types["Person"]; !exists {
+					t.Error("Person type not found")
+				}
+			},
+		},
+		{
+			name: "parse rule from content",
+			content: `type Person(id: string, age: number)
+rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)`,
+			filename: "test.tsd",
+			checkFunc: func(t *testing.T, ps *ProgramState) {
+				if len(ps.Rules) != 1 {
+					t.Errorf("Expected 1 rule, got %d", len(ps.Rules))
+				}
+			},
+		},
+		{
+			name: "parse fact from content",
+			content: `type Person(id: string)
+Person(id: "P001")`,
+			filename: "test.tsd",
+			checkFunc: func(t *testing.T, ps *ProgramState) {
+				if len(ps.Facts) != 1 {
+					t.Errorf("Expected 1 fact, got %d", len(ps.Facts))
+				}
+			},
+		},
+		{
+			name:        "invalid syntax",
+			content:     `this is not valid TSD syntax {{{}}}`,
+			filename:    "invalid.tsd",
+			expectError: true,
+		},
+		{
+			name:        "empty content",
+			content:     ``,
+			filename:    "empty.tsd",
+			expectError: true,
+		},
+		{
+			name: "multiple types in content",
+			content: `type Person(id: string)
+type Company(id: string, name: string)`,
+			filename: "multi.tsd",
+			checkFunc: func(t *testing.T, ps *ProgramState) {
+				if len(ps.Types) != 2 {
+					t.Errorf("Expected 2 types, got %d", len(ps.Types))
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ps := NewProgramState()
+			err := ps.ParseAndMergeContent(tt.content, tt.filename)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if tt.checkFunc != nil {
+					tt.checkFunc(t, ps)
+				}
+			}
+		})
+	}
+}
+
+func TestProgramState_ErrorHandling(t *testing.T) {
+	ps := NewProgramState()
+
+	// Test initial state
+	if ps.HasErrors() {
+		t.Error("New ProgramState should have no errors")
+	}
+	if ps.GetErrorCount() != 0 {
+		t.Errorf("Expected 0 errors, got %d", ps.GetErrorCount())
+	}
+
+	// Add an error
+	ps.AddError(ValidationError{Message: "test error 1", File: "test.tsd", Type: "test"})
+	if !ps.HasErrors() {
+		t.Error("ProgramState should have errors after AddError")
+	}
+	if ps.GetErrorCount() != 1 {
+		t.Errorf("Expected 1 error, got %d", ps.GetErrorCount())
+	}
+
+	// Add another error
+	ps.AddError(ValidationError{Message: "test error 2", File: "test.tsd", Type: "test"})
+	if ps.GetErrorCount() != 2 {
+		t.Errorf("Expected 2 errors, got %d", ps.GetErrorCount())
+	}
+
+	// Get errors
+	errors := ps.GetErrors()
+	if len(errors) != 2 {
+		t.Errorf("Expected 2 errors in list, got %d", len(errors))
+	}
+
+	// Clear errors
+	ps.ClearErrors()
+	if ps.HasErrors() {
+		t.Error("ProgramState should have no errors after ClearErrors")
+	}
+	if ps.GetErrorCount() != 0 {
+		t.Errorf("Expected 0 errors after clear, got %d", ps.GetErrorCount())
+	}
+}
+
+func TestProgramState_Reset(t *testing.T) {
+	ps := NewProgramState()
+
+	// Add some data
+	ps.ParseAndMergeContent(`type Person(id: string)`, "test.tsd")
+	ps.ParseAndMergeContent(`Person(id: "P001")`, "test.tsd")
+	ps.AddError(ValidationError{Message: "test error", File: "test.tsd", Type: "test"})
+
+	// Verify data exists
+	if len(ps.Types) == 0 || len(ps.Facts) == 0 || !ps.HasErrors() {
+		t.Fatal("Setup failed - expected some data in ProgramState")
+	}
+
+	// Reset
+	ps.Reset()
+
+	// Verify everything is cleared
+	if len(ps.Types) != 0 {
+		t.Errorf("Expected 0 types after reset, got %d", len(ps.Types))
+	}
+	if len(ps.Rules) != 0 {
+		t.Errorf("Expected 0 rules after reset, got %d", len(ps.Rules))
+	}
+	if len(ps.Facts) != 0 {
+		t.Errorf("Expected 0 facts after reset, got %d", len(ps.Facts))
+	}
+	if ps.HasErrors() {
+		t.Error("Expected no errors after reset")
+	}
+}
+
+func TestProgramState_MergeConflicts(t *testing.T) {
+	ps := NewProgramState()
+
+	// Parse first type definition
+	content1 := `type Person(id: string, name: string)`
+	err := ps.ParseAndMergeContent(content1, "file1.tsd")
+	if err != nil {
+		t.Fatalf("Failed to parse first content: %v", err)
+	}
+
+	// Try to parse conflicting type definition with same name
+	content2 := `type Person(id: string, age: number)`
+	err = ps.ParseAndMergeContent(content2, "file2.tsd")
+	// This might succeed or fail depending on merge logic
+	// Just verify no crash occurs
+	if err != nil {
+		t.Logf("Merge conflict detected (expected): %v", err)
+	}
+
+	// Verify at least one Person type exists
+	if _, exists := ps.Types["Person"]; !exists {
+		t.Error("Person type should exist after merge")
+	}
+}
+
+func TestProgramState_ToProgram(t *testing.T) {
+	ps := NewProgramState()
+
+	// Add types and rules
+	content := `type Person(id: string, age: number)
+rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)
+Person(id: "P001", age: 25)`
+
+	err := ps.ParseAndMergeContent(content, "test.tsd")
+	if err != nil {
+		t.Fatalf("Failed to parse content: %v", err)
+	}
+
+	// Convert to Program
+	program := ps.ToProgram()
+
+	// Verify program structure
+	if len(program.Types) != 1 {
+		t.Errorf("Expected 1 type in program, got %d", len(program.Types))
+	}
+	if len(program.Expressions) != 1 {
+		t.Errorf("Expected 1 expression in program, got %d", len(program.Expressions))
+	}
+	if len(program.Facts) != 1 {
+		t.Errorf("Expected 1 fact in program, got %d", len(program.Facts))
+	}
+}
+
+func TestProgramState_ParseNonExistentFile(t *testing.T) {
+	ps := NewProgramState()
+
+	// Try to parse a file that doesn't exist
+	err := ps.ParseAndMerge("/nonexistent/path/to/file.tsd")
+	if err == nil {
+		t.Error("Expected error when parsing non-existent file")
+	}
+}

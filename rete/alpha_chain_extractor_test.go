@@ -664,3 +664,272 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+// TestExtractFromNOTConstraint tests extraction from NOT constraints
+func TestExtractFromNOTConstraint(t *testing.T) {
+	expr := constraint.NotConstraint{
+		Type: "notConstraint",
+		Expression: map[string]interface{}{
+			"type":     "binaryOperation",
+			"operator": "==",
+			"left": map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "active",
+			},
+			"right": map[string]interface{}{
+				"type":  "bool",
+				"value": true,
+			},
+		},
+	}
+
+	conditions, opType, err := extractFromNOTConstraint(expr)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if opType != "NOT" {
+		t.Errorf("Expected opType='NOT', got '%s'", opType)
+	}
+
+	if len(conditions) != 1 {
+		t.Fatalf("Expected 1 condition, got %d", len(conditions))
+	}
+
+	cond := conditions[0]
+	if cond.Type != "not" {
+		t.Errorf("Expected type='not', got '%s'", cond.Type)
+	}
+	if cond.Operator != "NOT" {
+		t.Errorf("Expected operator='NOT', got '%s'", cond.Operator)
+	}
+}
+
+// TestExtractFromNOTConstraintMap tests extraction from NOT constraint maps
+func TestExtractFromNOTConstraintMap(t *testing.T) {
+	tests := []struct {
+		name        string
+		expr        map[string]interface{}
+		expectError bool
+	}{
+		{
+			name: "valid NOT constraint with expression",
+			expr: map[string]interface{}{
+				"expression": map[string]interface{}{
+					"type":     "binaryOperation",
+					"operator": ">",
+					"left": map[string]interface{}{
+						"type":   "fieldAccess",
+						"object": "p",
+						"field":  "age",
+					},
+					"right": map[string]interface{}{
+						"type":  "number",
+						"value": 18,
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name:        "missing expression field",
+			expr:        map[string]interface{}{},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions, opType, err := extractFromNOTConstraintMap(tt.expr)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if opType != "NOT" {
+					t.Errorf("Expected opType='NOT', got '%s'", opType)
+				}
+				if len(conditions) != 1 {
+					t.Fatalf("Expected 1 condition, got %d", len(conditions))
+				}
+				if conditions[0].Operator != "NOT" {
+					t.Errorf("Expected operator='NOT', got '%s'", conditions[0].Operator)
+				}
+			}
+		})
+	}
+}
+
+// TestNormalizeORExpressionMap tests normalization of OR expression maps
+func TestNormalizeORExpressionMap(t *testing.T) {
+	tests := []struct {
+		name        string
+		expr        map[string]interface{}
+		expectError bool
+	}{
+		{
+			name: "OR expression with left and operations",
+			expr: map[string]interface{}{
+				"left": map[string]interface{}{
+					"type":     "comparison",
+					"operator": "==",
+					"left":     map[string]interface{}{"type": "fieldAccess", "object": "p", "field": "status"},
+					"right":    map[string]interface{}{"type": "string", "value": "active"},
+				},
+				"operations": []interface{}{
+					map[string]interface{}{
+						"op": "OR",
+						"right": map[string]interface{}{
+							"type":     "comparison",
+							"operator": "==",
+							"left":     map[string]interface{}{"type": "fieldAccess", "object": "p", "field": "status"},
+							"right":    map[string]interface{}{"type": "string", "value": "pending"},
+						},
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "OR expression with || operator",
+			expr: map[string]interface{}{
+				"left": map[string]interface{}{
+					"type":  "number",
+					"value": 1,
+				},
+				"operations": []interface{}{
+					map[string]interface{}{
+						"op": "||",
+						"right": map[string]interface{}{
+							"type":  "number",
+							"value": 2,
+						},
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "empty expression - no terms",
+			expr: map[string]interface{}{
+				"operations": []interface{}{},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := normalizeORExpressionMap(tt.expr)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if result == nil {
+					t.Error("Expected non-nil result")
+				}
+			}
+		})
+	}
+}
+
+// TestExtractFromMap_Coverage tests extractFromMap edge cases
+func TestExtractFromMap_Coverage(t *testing.T) {
+	tests := []struct {
+		name         string
+		expr         map[string]interface{}
+		expectError  bool
+		expectedType string
+	}{
+		{
+			name: "comparison type",
+			expr: map[string]interface{}{
+				"type":     "comparison",
+				"operator": "==",
+				"left":     map[string]interface{}{"type": "number", "value": 1},
+				"right":    map[string]interface{}{"type": "number", "value": 1},
+			},
+			expectError:  false,
+			expectedType: "SINGLE",
+		},
+		{
+			name: "binaryOperation type",
+			expr: map[string]interface{}{
+				"type":     "binaryOperation",
+				"operator": "+",
+				"left":     map[string]interface{}{"type": "number", "value": 1},
+				"right":    map[string]interface{}{"type": "number", "value": 2},
+			},
+			expectError:  false,
+			expectedType: "SINGLE",
+		},
+		{
+			name: "notConstraint type - unsupported",
+			expr: map[string]interface{}{
+				"type": "notConstraint",
+				"expression": map[string]interface{}{
+					"type":     "comparison",
+					"operator": "==",
+					"left":     map[string]interface{}{"type": "bool", "value": true},
+					"right":    map[string]interface{}{"type": "bool", "value": false},
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "existsConstraint type - unsupported",
+			expr: map[string]interface{}{
+				"type":       "existsConstraint",
+				"variable":   "x",
+				"objectType": "Person",
+				"constraints": map[string]interface{}{
+					"type":     "comparison",
+					"operator": ">",
+					"left":     map[string]interface{}{"type": "fieldAccess", "object": "x", "field": "age"},
+					"right":    map[string]interface{}{"type": "number", "value": 18},
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "unknown type - unsupported",
+			expr: map[string]interface{}{
+				"type": "unknownType",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conditions, opType, err := extractFromMap(tt.expr)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if opType != tt.expectedType {
+					t.Errorf("Expected opType='%s', got '%s'", tt.expectedType, opType)
+				}
+				if tt.expectedType != "NONE" && len(conditions) == 0 {
+					t.Error("Expected at least one condition")
+				}
+			}
+		})
+	}
+}
