@@ -373,6 +373,84 @@ func TestJoinRuleBuilder_CreateJoinRule(t *testing.T) {
 	})
 }
 
+func TestJoinRuleBuilder_SetDecompositionEnabled(t *testing.T) {
+	storage := NewMemoryStorage()
+	utils := NewBuilderUtils(storage)
+	jrb := NewJoinRuleBuilder(utils)
+
+	t.Run("enable decomposition", func(t *testing.T) {
+		jrb.SetDecompositionEnabled(true)
+		if !jrb.enableDecomposition {
+			t.Error("enableDecomposition should be true")
+		}
+	})
+
+	t.Run("disable decomposition", func(t *testing.T) {
+		jrb.SetDecompositionEnabled(false)
+		if jrb.enableDecomposition {
+			t.Error("enableDecomposition should be false")
+		}
+	})
+
+	t.Run("toggle decomposition multiple times", func(t *testing.T) {
+		jrb.SetDecompositionEnabled(true)
+		if !jrb.enableDecomposition {
+			t.Error("enableDecomposition should be true after first enable")
+		}
+
+		jrb.SetDecompositionEnabled(false)
+		if jrb.enableDecomposition {
+			t.Error("enableDecomposition should be false after disable")
+		}
+
+		jrb.SetDecompositionEnabled(true)
+		if !jrb.enableDecomposition {
+			t.Error("enableDecomposition should be true after second enable")
+		}
+	})
+}
+
+func TestJoinRuleBuilder_SetDecompositionComplexity(t *testing.T) {
+	storage := NewMemoryStorage()
+	utils := NewBuilderUtils(storage)
+	jrb := NewJoinRuleBuilder(utils)
+
+	t.Run("set complexity to 1", func(t *testing.T) {
+		jrb.SetDecompositionComplexity(1)
+		if jrb.decompositionComplexity != 1 {
+			t.Errorf("decompositionComplexity = %d, want 1", jrb.decompositionComplexity)
+		}
+	})
+
+	t.Run("set complexity to 5", func(t *testing.T) {
+		jrb.SetDecompositionComplexity(5)
+		if jrb.decompositionComplexity != 5 {
+			t.Errorf("decompositionComplexity = %d, want 5", jrb.decompositionComplexity)
+		}
+	})
+
+	t.Run("set complexity to 0", func(t *testing.T) {
+		jrb.SetDecompositionComplexity(0)
+		if jrb.decompositionComplexity != 0 {
+			t.Errorf("decompositionComplexity = %d, want 0", jrb.decompositionComplexity)
+		}
+	})
+
+	t.Run("set complexity to negative value", func(t *testing.T) {
+		jrb.SetDecompositionComplexity(-1)
+		if jrb.decompositionComplexity != -1 {
+			t.Errorf("decompositionComplexity = %d, want -1", jrb.decompositionComplexity)
+		}
+	})
+
+	t.Run("set complexity to large value", func(t *testing.T) {
+		jrb.SetDecompositionComplexity(10000)
+		if jrb.decompositionComplexity != 10000 {
+			t.Errorf("decompositionComplexity = %d, want 10000", jrb.decompositionComplexity)
+		}
+	})
+}
+
 func TestJoinRuleBuilder_Integration(t *testing.T) {
 	// Integration test: Create multiple join rules and verify network structure
 	storage := NewMemoryStorage()

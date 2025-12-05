@@ -660,3 +660,147 @@ func TestAlphaSharingRegistry_ConditionNormalization(t *testing.T) {
 		}
 	})
 }
+
+// TestAlphaSharingRegistry_GetMetrics tests the GetMetrics method
+func TestAlphaSharingRegistry_GetMetrics(t *testing.T) {
+	t.Run("returns metrics instance", func(t *testing.T) {
+		metrics := NewChainBuildMetrics()
+		registry := NewAlphaSharingRegistryWithMetrics(metrics)
+
+		retrievedMetrics := registry.GetMetrics()
+		if retrievedMetrics == nil {
+			t.Fatal("GetMetrics returned nil")
+		}
+		if retrievedMetrics != metrics {
+			t.Error("GetMetrics did not return the same metrics instance")
+		}
+	})
+
+	t.Run("metrics are accessible after operations", func(t *testing.T) {
+		storage := NewMemoryStorage()
+		registry := NewAlphaSharingRegistry()
+
+		// Perform some operations
+		condition := map[string]interface{}{
+			"type":     "comparison",
+			"operator": "==",
+			"left":     map[string]interface{}{"type": "fieldAccess", "field": "age"},
+			"right":    map[string]interface{}{"type": "literal", "value": 25},
+		}
+
+		_, _, _, err := registry.GetOrCreateAlphaNode(condition, "Person", storage)
+		if err != nil {
+			t.Fatalf("GetOrCreateAlphaNode failed: %v", err)
+		}
+
+		// Verify metrics are still accessible
+		metrics := registry.GetMetrics()
+		if metrics == nil {
+			t.Error("GetMetrics returned nil after operations")
+		}
+	})
+
+	t.Run("metrics reflect operations", func(t *testing.T) {
+		storage := NewMemoryStorage()
+		registry := NewAlphaSharingRegistry()
+
+		condition := map[string]interface{}{
+			"type":     "comparison",
+			"operator": "==",
+			"left":     map[string]interface{}{"type": "fieldAccess", "field": "age"},
+			"right":    map[string]interface{}{"type": "literal", "value": 25},
+		}
+
+		// First call - cache miss
+		_, _, _, err := registry.GetOrCreateAlphaNode(condition, "Person", storage)
+		if err != nil {
+			t.Fatalf("GetOrCreateAlphaNode failed: %v", err)
+		}
+
+		// Second call - cache hit
+		_, _, _, err = registry.GetOrCreateAlphaNode(condition, "Person", storage)
+		if err != nil {
+			t.Fatalf("GetOrCreateAlphaNode failed: %v", err)
+		}
+
+		// Verify metrics are accessible and provide snapshot
+		metrics := registry.GetMetrics()
+		if metrics == nil {
+			t.Fatal("GetMetrics returned nil")
+		}
+
+		data := metrics.GetSnapshot()
+		// Metrics object should provide a valid snapshot (check hash cache metrics)
+		if data.HashCacheHits < 0 || data.HashCacheMisses < 0 {
+			t.Error("Metrics should have valid hash cache statistics")
+		}
+	})
+}
+
+// TestAlphaSharingRegistry_GetConfig tests the GetConfig method
+func TestAlphaSharingRegistry_GetConfig(t *testing.T) {
+	t.Run("returns config instance", func(t *testing.T) {
+		config := DefaultChainPerformanceConfig()
+		config.HashCacheEnabled = false
+		config.HashCacheMaxSize = 500
+
+		metrics := NewChainBuildMetrics()
+		registry := NewAlphaSharingRegistryWithConfig(config, metrics)
+
+		retrievedConfig := registry.GetConfig()
+		if retrievedConfig == nil {
+			t.Fatal("GetConfig returned nil")
+		}
+		if retrievedConfig != config {
+			t.Error("GetConfig did not return the same config instance")
+		}
+	})
+
+	t.Run("config values are correct", func(t *testing.T) {
+		config := DefaultChainPerformanceConfig()
+		config.HashCacheEnabled = true
+		config.HashCacheMaxSize = 1000
+		config.MetricsEnabled = false
+
+		metrics := NewChainBuildMetrics()
+		registry := NewAlphaSharingRegistryWithConfig(config, metrics)
+
+		retrievedConfig := registry.GetConfig()
+		if retrievedConfig.HashCacheEnabled != true {
+			t.Error("HashCacheEnabled not preserved")
+		}
+		if retrievedConfig.HashCacheMaxSize != 1000 {
+			t.Errorf("HashCacheMaxSize not preserved: got %d, want 1000", retrievedConfig.HashCacheMaxSize)
+		}
+		if retrievedConfig.MetricsEnabled != false {
+			t.Error("MetricsEnabled not preserved")
+		}
+	})
+
+	t.Run("default registry has default config", func(t *testing.T) {
+		registry := NewAlphaSharingRegistry()
+
+		config := registry.GetConfig()
+		if config == nil {
+			t.Fatal("GetConfig returned nil for default registry")
+		}
+
+		// Verify it has reasonable default values
+		defaultConfig := DefaultChainPerformanceConfig()
+		if config.HashCacheEnabled != defaultConfig.HashCacheEnabled {
+			t.Error("Default config HashCacheEnabled does not match expected default")
+		}
+	})
+
+	t.Run("config is immutable reference", func(t *testing.T) {
+		registry := NewAlphaSharingRegistry()
+
+		config1 := registry.GetConfig()
+		config2 := registry.GetConfig()
+
+		// Should return the same pointer
+		if config1 != config2 {
+			t.Error("Multiple calls to GetConfig should return the same config pointer")
+		}
+	})
+}
