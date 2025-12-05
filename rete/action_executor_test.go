@@ -1702,23 +1702,24 @@ func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "missing optional field - valid",
+			name: "missing required field - error",
 			fields: map[string]interface{}{
 				"id":   "P001",
 				"name": "Alice",
 				"age":  float64(30),
 			},
-			expectError: false,
+			expectError: true,
 		},
 		{
-			name: "extra field not in type - valid",
+			name: "extra field not in type - error",
 			fields: map[string]interface{}{
-				"id":    "P001",
-				"name":  "Alice",
-				"age":   float64(30),
-				"extra": "ignored",
+				"id":     "P001",
+				"name":   "Alice",
+				"age":    float64(30),
+				"active": true,
+				"extra":  "ignored",
 			},
-			expectError: false,
+			expectError: true,
 		},
 		{
 			name: "invalid field type - string expected",
@@ -1741,6 +1742,8 @@ func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 			name: "invalid field type - bool expected",
 			fields: map[string]interface{}{
 				"id":     "P001",
+				"name":   "Alice",
+				"age":    float64(30),
 				"active": "not a bool",
 			},
 			expectError: true,
