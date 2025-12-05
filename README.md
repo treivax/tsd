@@ -395,8 +395,12 @@ Pour un guide complet de tuning et d'optimisation, consultez:
 ```
 tsd/
 ├── cmd/
-│   ├── tsd/                    # CLI principal
-│   └── add-missing-actions/    # Utilitaires
+│   └── tsd/                    # CLI principal (binaire unique)
+├── internal/                   # Packages internes
+│   ├── compilercmd/            # Compilateur/Runner
+│   ├── authcmd/                # Gestion d'authentification
+│   ├── clientcmd/              # Client HTTP
+│   └── servercmd/              # Serveur HTTP
 ├── constraint/                 # Parser PEG et validation
 │   ├── grammar/                # Grammaire PEG
 │   ├── parser.go               # Parser principal

@@ -123,21 +123,7 @@ Cette version marque une **refactorisation complète** du système de tests univ
 
 #### ✨ Nouveaux Outils
 
-##### cmd/add-missing-actions (411 lignes)
-Outil utilitaire pour automatiser l'ajout de définitions d'actions :
-- 🤖 **Analyse automatique** des fichiers `.tsd`
-- 🧠 **Inférence intelligente** des types de paramètres :
-  - Détecte les expressions arithmétiques (`a + b` → `number`)
-  - Analyse les accès aux champs (`p.age` → type du champ)
-  - Reconnaît les fonctions (ABS, ROUND, UPPER, LOWER, etc.)
-  - Gère les parenthèses imbriquées dans les appels complexes
-- 📊 Support complet des expressions arithmétiques complexes
-- 🎯 95% de précision sur l'inférence automatique
 
-```bash
-# Utilisation
-go run ./cmd/add-missing-actions/main.go path/to/test.tsd
-```
 
 #### 📝 Modifications des Fichiers de Test
 
@@ -241,8 +227,7 @@ Aucune migration nécessaire pour les utilisateurs - tous les changements sont i
 
 Pour les contributeurs :
 - Nouveaux tests `.tsd` doivent inclure les définitions d'actions
-- Utiliser `cmd/add-missing-actions` pour automatiser l'ajout
-- Toujours vérifier les types générés automatiquement
+- Toujours vérifier les types d'actions
 
 #### 💡 Notes Techniques
 
