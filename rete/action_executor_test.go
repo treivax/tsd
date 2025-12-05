@@ -974,3 +974,444 @@ func TestActionExecutor_CustomLogger(t *testing.T) {
 	// not to TestEnvironment buffer. The important thing is no errors occurred.
 	env.AssertNoErrors(t)
 }
+
+func TestActionExecutor_RegisterDefaultActions(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	// Get registry before registering defaults
+	registry := env.Network.ActionExecutor.GetRegistry()
+	require.NotNil(t, registry, "Registry should not be nil")
+
+	// Register default actions
+	env.Network.ActionExecutor.RegisterDefaultActions()
+
+	// Verify print action is registered
+	handler := registry.Get("print")
+	require.NotNil(t, handler, "Print action should be registered")
+
+	// Test that we can execute the print action
+	fact := &Fact{
+		ID:   "f1",
+		Type: "TestFact",
+		Fields: map[string]interface{}{
+			"value": "test",
+		},
+	}
+
+	token := &Token{
+		ID:    "t1",
+		Facts: []*Fact{fact},
+		Bindings: map[string]*Fact{
+			"f": fact,
+		},
+	}
+
+	action := &Action{
+		Type: "action",
+		Job: &JobCall{
+			Type: "jobCall",
+			Name: "print",
+			Args: []interface{}{
+				map[string]interface{}{
+					"type":  "string",
+					"value": "test message",
+				},
+			},
+		},
+	}
+
+	err := env.Network.ActionExecutor.ExecuteAction(action, token)
+	require.NoError(t, err, "Print action should execute successfully")
+}
+
+func TestActionExecutor_EvaluateBinaryOperation_Coverage(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	tests := []struct {
+		name      string
+		argMap    map[string]interface{}
+		expectErr bool
+	}{
+		{
+			name: "addition with numbers",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left":     float64(5),
+				"right":    float64(3),
+			},
+		},
+		{
+			name: "subtraction",
+			argMap: map[string]interface{}{
+				"operator": "-",
+				"left":     float64(10),
+				"right":    float64(4),
+			},
+		},
+		{
+			name: "multiplication",
+			argMap: map[string]interface{}{
+				"operator": "*",
+				"left":     float64(6),
+				"right":    float64(7),
+			},
+		},
+		{
+			name: "division",
+			argMap: map[string]interface{}{
+				"operator": "/",
+				"left":     float64(15),
+				"right":    float64(3),
+			},
+		},
+		{
+			name: "modulo",
+			argMap: map[string]interface{}{
+				"operator": "%",
+				"left":     float64(17),
+				"right":    float64(5),
+			},
+		},
+		{
+			name: "comparison equals",
+			argMap: map[string]interface{}{
+				"operator": "==",
+				"left":     float64(5),
+				"right":    float64(5),
+			},
+		},
+		{
+			name: "comparison less than",
+			argMap: map[string]interface{}{
+				"operator": "<",
+				"left":     float64(3),
+				"right":    float64(5),
+			},
+		},
+		{
+			name: "invalid left operand type",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left":     "not a number",
+				"right":    float64(5),
+			},
+			expectErr: true,
+		},
+		{
+			name: "invalid right operand type",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left":     float64(5),
+				"right":    "not a number",
+			},
+			expectErr: true,
+		},
+		{
+			name: "unknown operator",
+			argMap: map[string]interface{}{
+				"operator": "??",
+				"left":     float64(5),
+				"right":    float64(3),
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := NewExecutionContext(&Token{}, env.Network)
+			result, err := env.Network.ActionExecutor.evaluateBinaryOperation(tt.argMap, ctx)
+
+			if tt.expectErr {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+				require.NotNil(t, result, "Result should not be nil")
+			}
+		})
+	}
+}
+
+func TestActionExecutor_ValidateFieldType_Coverage(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	personType := TypeDefinition{
+		Type: "typeDefinition",
+		Name: "Person",
+		Fields: []Field{
+			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
+			{Name: "active", Type: "bool"},
+		},
+	}
+	env.Network.Types = append(env.Network.Types, personType)
+
+	tests := []struct {
+		name        string
+		value       interface{}
+		expectedTyp string
+		expectErr   bool
+	}{
+		{
+			name:        "string value",
+			value:       "test",
+			expectedTyp: "string",
+			expectErr:   false,
+		},
+		{
+			name:        "int value as number",
+			value:       42,
+			expectedTyp: "number",
+			expectErr:   false,
+		},
+		{
+			name:        "int64 value as number",
+			value:       int64(100),
+			expectedTyp: "number",
+			expectErr:   false,
+		},
+		{
+			name:        "float64 value as number",
+			value:       3.14,
+			expectedTyp: "number",
+			expectErr:   false,
+		},
+		{
+			name:        "bool value",
+			value:       true,
+			expectedTyp: "bool",
+			expectErr:   false,
+		},
+		{
+			name:        "string value expecting number - type mismatch",
+			value:       "not a number",
+			expectedTyp: "number",
+			expectErr:   true,
+		},
+		{
+			name:        "number value expecting string - type mismatch",
+			value:       42,
+			expectedTyp: "string",
+			expectErr:   true,
+		},
+		{
+			name:        "bool value expecting string - type mismatch",
+			value:       true,
+			expectedTyp: "string",
+			expectErr:   true,
+		},
+		{
+			name:        "unsupported type",
+			value:       []interface{}{1, 2, 3},
+			expectedTyp: "string",
+			expectErr:   true,
+		},
+		{
+			name:        "nil value",
+			value:       nil,
+			expectedTyp: "string",
+			expectErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := env.Network.ActionExecutor.validateFieldType(tt.expectedTyp, tt.value)
+
+			if tt.expectErr {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+			}
+		})
+	}
+}
+
+func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	personType := TypeDefinition{
+		Type: "typeDefinition",
+		Name: "Person",
+		Fields: []Field{
+			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
+		},
+	}
+	env.Network.Types = append(env.Network.Types, personType)
+
+	fact := &Fact{
+		ID:   "p1",
+		Type: "Person",
+		Fields: map[string]interface{}{
+			"name": "Alice",
+			"age":  float64(30),
+		},
+	}
+
+	token := &Token{
+		ID:    "t1",
+		Facts: []*Fact{fact},
+		Bindings: map[string]*Fact{
+			"p": fact,
+		},
+	}
+
+	ctx := NewExecutionContext(token, env.Network)
+
+	tests := []struct {
+		name      string
+		arg       interface{}
+		expectErr bool
+	}{
+		{
+			name: "string literal",
+			arg: map[string]interface{}{
+				"type":  "string",
+				"value": "hello",
+			},
+			expectErr: false,
+		},
+		{
+			name: "number literal",
+			arg: map[string]interface{}{
+				"type":  "number",
+				"value": 42,
+			},
+			expectErr: false,
+		},
+		{
+			name: "boolean literal",
+			arg: map[string]interface{}{
+				"type":  "bool",
+				"value": true,
+			},
+			expectErr: false,
+		},
+		{
+			name: "variable reference",
+			arg: map[string]interface{}{
+				"type": "variable",
+				"name": "p",
+			},
+			expectErr: false,
+		},
+		{
+			name: "field access",
+			arg: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "name",
+			},
+			expectErr: false,
+		},
+		{
+			name: "binary operation",
+			arg: map[string]interface{}{
+				"type":     "binaryOp",
+				"operator": "+",
+				"left": map[string]interface{}{
+					"type":  "number",
+					"value": 10,
+				},
+				"right": map[string]interface{}{
+					"type":  "number",
+					"value": 5,
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "invalid variable",
+			arg: map[string]interface{}{
+				"type": "variable",
+				"name": "unknown",
+			},
+			expectErr: true,
+		},
+		{
+			name: "invalid field access",
+			arg: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "unknownField",
+			},
+			expectErr: true,
+		},
+		{
+			name: "unknown type - returns as-is",
+			arg: map[string]interface{}{
+				"type": "unknownType",
+			},
+			expectErr: false,
+		},
+		{
+			name:      "plain string (not a map)",
+			arg:       "plain value",
+			expectErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := env.Network.ActionExecutor.evaluateArgument(tt.arg, ctx)
+
+			if tt.expectErr {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+				require.NotNil(t, result, "Result should not be nil")
+			}
+		})
+	}
+}
+
+func TestActionExecutor_RegisterAction(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	// Create a custom action handler
+	customHandler := &mockActionHandler{
+		name: "customAction",
+	}
+
+	// Register the custom action
+	err := env.Network.ActionExecutor.RegisterAction(customHandler)
+	require.NoError(t, err, "Should register custom action")
+
+	// Verify it's registered
+	handler := env.Network.ActionExecutor.GetRegistry().Get("customAction")
+	require.NotNil(t, handler, "Custom action should be in registry")
+	require.Equal(t, "customAction", handler.GetName(), "Handler name should match")
+}
+
+// mockActionHandler is a simple mock for testing
+type mockActionHandler struct {
+	name string
+}
+
+func (m *mockActionHandler) GetName() string {
+	return m.name
+}
+
+func (m *mockActionHandler) Execute(args []interface{}, ctx *ExecutionContext) error {
+	return nil
+}
+
+func (m *mockActionHandler) Validate(args []interface{}) error {
+	return nil
+}
