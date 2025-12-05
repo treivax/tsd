@@ -1415,3 +1415,347 @@ func (m *mockActionHandler) Execute(args []interface{}, ctx *ExecutionContext) e
 func (m *mockActionHandler) Validate(args []interface{}) error {
 	return nil
 }
+
+func TestActionExecutor_EvaluateFactCreation_Coverage(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	personType := TypeDefinition{
+		Type: "typeDefinition",
+		Name: "Person",
+		Fields: []Field{
+			{Name: "id", Type: "string"},
+			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
+		},
+	}
+	env.Network.Types = append(env.Network.Types, personType)
+
+	token := &Token{
+		ID:    "t1",
+		Facts: []*Fact{},
+	}
+
+	ctx := NewExecutionContext(token, env.Network)
+
+	tests := []struct {
+		name        string
+		argMap      map[string]interface{}
+		expectError bool
+	}{
+		{
+			name: "valid fact creation with all fields",
+			argMap: map[string]interface{}{
+				"typeName": "Person",
+				"fields": map[string]interface{}{
+					"id": map[string]interface{}{
+						"type":  "string",
+						"value": "P001",
+					},
+					"name": map[string]interface{}{
+						"type":  "string",
+						"value": "Alice",
+					},
+					"age": map[string]interface{}{
+						"type":  "number",
+						"value": 30,
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "missing typeName",
+			argMap: map[string]interface{}{
+				"fields": map[string]interface{}{
+					"id": "test",
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "undefined type",
+			argMap: map[string]interface{}{
+				"typeName": "UnknownType",
+				"fields": map[string]interface{}{
+					"id": "test",
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "missing fields",
+			argMap: map[string]interface{}{
+				"typeName": "Person",
+			},
+			expectError: true,
+		},
+		{
+			name: "error in field evaluation",
+			argMap: map[string]interface{}{
+				"typeName": "Person",
+				"fields": map[string]interface{}{
+					"id": map[string]interface{}{
+						"type": "variable",
+						"name": "unknownVar",
+					},
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := env.Network.ActionExecutor.evaluateFactCreation(tt.argMap, ctx)
+
+			if tt.expectError {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+				require.NotNil(t, result, "Result should not be nil")
+				fact, ok := result.(*Fact)
+				require.True(t, ok, "Result should be a Fact")
+				require.Equal(t, "Person", fact.Type)
+			}
+		})
+	}
+}
+
+func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	personType := TypeDefinition{
+		Type: "typeDefinition",
+		Name: "Person",
+		Fields: []Field{
+			{Name: "id", Type: "string"},
+			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
+			{Name: "active", Type: "bool"},
+		},
+	}
+	env.Network.Types = append(env.Network.Types, personType)
+
+	fact := &Fact{
+		ID:   "p1",
+		Type: "Person",
+		Fields: map[string]interface{}{
+			"id":     "P001",
+			"name":   "Alice",
+			"age":    float64(30),
+			"active": true,
+		},
+	}
+
+	token := &Token{
+		ID:    "t1",
+		Facts: []*Fact{fact},
+		Bindings: map[string]*Fact{
+			"p": fact,
+		},
+	}
+
+	ctx := NewExecutionContext(token, env.Network)
+
+	tests := []struct {
+		name        string
+		argMap      map[string]interface{}
+		expectError bool
+	}{
+		{
+			name: "valid field modification",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"field":    "name",
+				"value": map[string]interface{}{
+					"type":  "string",
+					"value": "Bob",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "modify number field",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"field":    "age",
+				"value": map[string]interface{}{
+					"type":  "number",
+					"value": 31,
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "modify bool field",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"field":    "active",
+				"value": map[string]interface{}{
+					"type":  "bool",
+					"value": false,
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "missing variable",
+			argMap: map[string]interface{}{
+				"field": "name",
+				"value": "test",
+			},
+			expectError: true,
+		},
+		{
+			name: "missing field",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"value":    "test",
+			},
+			expectError: true,
+		},
+		{
+			name: "missing value",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"field":    "name",
+			},
+			expectError: true,
+		},
+		{
+			name: "variable not found",
+			argMap: map[string]interface{}{
+				"variable": "unknown",
+				"field":    "name",
+				"value":    "test",
+			},
+			expectError: true,
+		},
+		{
+			name: "error evaluating value",
+			argMap: map[string]interface{}{
+				"variable": "p",
+				"field":    "name",
+				"value": map[string]interface{}{
+					"type": "variable",
+					"name": "unknownVar",
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := env.Network.ActionExecutor.evaluateFactModification(tt.argMap, ctx)
+
+			if tt.expectError {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+				require.NotNil(t, result, "Result should not be nil")
+				modifiedFact, ok := result.(*Fact)
+				require.True(t, ok, "Result should be a Fact")
+				require.Equal(t, "Person", modifiedFact.Type)
+				require.Equal(t, "p1", modifiedFact.ID, "Should preserve fact ID")
+			}
+		})
+	}
+}
+
+func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	personType := TypeDefinition{
+		Type: "typeDefinition",
+		Name: "Person",
+		Fields: []Field{
+			{Name: "id", Type: "string"},
+			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
+			{Name: "active", Type: "bool"},
+		},
+	}
+
+	tests := []struct {
+		name        string
+		fields      map[string]interface{}
+		expectError bool
+	}{
+		{
+			name: "all valid fields",
+			fields: map[string]interface{}{
+				"id":     "P001",
+				"name":   "Alice",
+				"age":    float64(30),
+				"active": true,
+			},
+			expectError: false,
+		},
+		{
+			name: "missing optional field - valid",
+			fields: map[string]interface{}{
+				"id":   "P001",
+				"name": "Alice",
+				"age":  float64(30),
+			},
+			expectError: false,
+		},
+		{
+			name: "extra field not in type - valid",
+			fields: map[string]interface{}{
+				"id":    "P001",
+				"name":  "Alice",
+				"age":   float64(30),
+				"extra": "ignored",
+			},
+			expectError: false,
+		},
+		{
+			name: "invalid field type - string expected",
+			fields: map[string]interface{}{
+				"id":   123,
+				"name": "Alice",
+			},
+			expectError: true,
+		},
+		{
+			name: "invalid field type - number expected",
+			fields: map[string]interface{}{
+				"id":   "P001",
+				"name": "Alice",
+				"age":  "not a number",
+			},
+			expectError: true,
+		},
+		{
+			name: "invalid field type - bool expected",
+			fields: map[string]interface{}{
+				"id":     "P001",
+				"active": "not a bool",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := env.Network.ActionExecutor.validateFactFields(&personType, tt.fields)
+
+			if tt.expectError {
+				require.Error(t, err, "Expected error for %s", tt.name)
+			} else {
+				require.NoError(t, err, "Should not error for %s", tt.name)
+			}
+		})
+	}
+}

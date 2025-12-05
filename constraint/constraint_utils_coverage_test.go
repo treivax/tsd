@@ -1035,6 +1035,457 @@ func TestValidateFieldAccessInLogicalExpr_Coverage(t *testing.T) {
 	}
 }
 
+func TestValidateAction_Coverage(t *testing.T) {
+	tests := []struct {
+		name        string
+		program     Program
+		action      Action
+		exprIndex   int
+		expectError bool
+	}{
+		{
+			name: "invalid expression index",
+			program: Program{
+				Expressions: []Expression{},
+			},
+			action: Action{
+				Type: "action",
+			},
+			exprIndex:   99,
+			expectError: true,
+		},
+		{
+			name: "multiple jobs with valid variables",
+			program: Program{
+				Types: []TypeDefinition{
+					{
+						Name: "Person",
+						Fields: []Field{
+							{Name: "id", Type: "string"},
+							{Name: "name", Type: "string"},
+						},
+					},
+				},
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "p", DataType: "Person"},
+								{Name: "count", DataType: "number"},
+							},
+						},
+					},
+				},
+			},
+			action: Action{
+				Type: "action",
+				Jobs: []JobCall{
+					{
+						Type: "jobCall",
+						Name: "job1",
+						Args: []interface{}{
+							"p",
+							"count",
+						},
+					},
+					{
+						Type: "jobCall",
+						Name: "job2",
+						Args: []interface{}{
+							map[string]interface{}{
+								"type":   "fieldAccess",
+								"object": "p",
+								"field":  "id",
+							},
+						},
+					},
+				},
+			},
+			exprIndex:   0,
+			expectError: false,
+		},
+		{
+			name: "job with invalid variable",
+			program: Program{
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "p", DataType: "Person"},
+							},
+						},
+					},
+				},
+			},
+			action: Action{
+				Type: "action",
+				Job: &JobCall{
+					Type: "jobCall",
+					Name: "testJob",
+					Args: []interface{}{"unknownVar"},
+				},
+			},
+			exprIndex:   0,
+			expectError: true,
+		},
+		{
+			name: "action with string literal args - valid",
+			program: Program{
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "x", DataType: "number"},
+							},
+						},
+					},
+				},
+			},
+			action: Action{
+				Type: "action",
+				Job: &JobCall{
+					Type: "jobCall",
+					Name: "testJob",
+					Args: []interface{}{
+						map[string]interface{}{
+							"type":  "string",
+							"value": "test",
+						},
+					},
+				},
+			},
+			exprIndex:   0,
+			expectError: false,
+		},
+		{
+			name: "action with number literal args - valid",
+			program: Program{
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "x", DataType: "number"},
+							},
+						},
+					},
+				},
+			},
+			action: Action{
+				Type: "action",
+				Job: &JobCall{
+					Type: "jobCall",
+					Name: "testJob",
+					Args: []interface{}{
+						map[string]interface{}{
+							"type":  "number",
+							"value": 42,
+						},
+					},
+				},
+			},
+			exprIndex:   0,
+			expectError: false,
+		},
+		{
+			name: "variables from patterns (multi-pattern syntax)",
+			program: Program{
+				Expressions: []Expression{
+					{
+						Patterns: []Set{
+							{
+								Variables: []TypedVariable{
+									{Name: "p1", DataType: "Person"},
+								},
+							},
+							{
+								Variables: []TypedVariable{
+									{Name: "p2", DataType: "Person"},
+								},
+							},
+						},
+					},
+				},
+			},
+			action: Action{
+				Type: "action",
+				Job: &JobCall{
+					Type: "jobCall",
+					Name: "testJob",
+					Args: []interface{}{"p1", "p2"},
+				},
+			},
+			exprIndex:   0,
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateAction(tt.program, tt.action, tt.exprIndex)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetFieldType_Coverage(t *testing.T) {
+	program := Program{
+		Types: []TypeDefinition{
+			{
+				Name: "Person",
+				Fields: []Field{
+					{Name: "id", Type: "string"},
+					{Name: "name", Type: "string"},
+					{Name: "age", Type: "number"},
+				},
+			},
+			{
+				Name: "Order",
+				Fields: []Field{
+					{Name: "id", Type: "string"},
+					{Name: "total", Type: "number"},
+				},
+			},
+		},
+		Expressions: []Expression{
+			{
+				Set: Set{
+					Variables: []TypedVariable{
+						{Name: "p", DataType: "Person"},
+					},
+				},
+			},
+			{
+				Patterns: []Set{
+					{
+						Variables: []TypedVariable{
+							{Name: "o", DataType: "Order"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name         string
+		object       string
+		field        string
+		exprIndex    int
+		expectedType string
+		expectError  bool
+	}{
+		{
+			name:         "valid field in old syntax",
+			object:       "p",
+			field:        "name",
+			exprIndex:    0,
+			expectedType: "string",
+			expectError:  false,
+		},
+		{
+			name:         "valid field number type",
+			object:       "p",
+			field:        "age",
+			exprIndex:    0,
+			expectedType: "number",
+			expectError:  false,
+		},
+		{
+			name:         "valid field in new pattern syntax",
+			object:       "o",
+			field:        "total",
+			exprIndex:    1,
+			expectedType: "number",
+			expectError:  false,
+		},
+		{
+			name:        "invalid expression index",
+			object:      "p",
+			field:       "name",
+			exprIndex:   99,
+			expectError: true,
+		},
+		{
+			name:        "variable not found",
+			object:      "unknownVar",
+			field:       "name",
+			exprIndex:   0,
+			expectError: true,
+		},
+		{
+			name:        "field not found in type",
+			object:      "p",
+			field:       "unknownField",
+			exprIndex:   0,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fieldType, err := GetFieldType(program, tt.object, tt.field, tt.exprIndex)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+				if fieldType != tt.expectedType {
+					t.Errorf("Expected type %q, got %q", tt.expectedType, fieldType)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateProgram_Coverage(t *testing.T) {
+	tests := []struct {
+		name        string
+		program     Program
+		expectError bool
+	}{
+		{
+			name: "valid complete program",
+			program: Program{
+				Types: []TypeDefinition{
+					{
+						Name: "Person",
+						Fields: []Field{
+							{Name: "id", Type: "string"},
+							{Name: "age", Type: "number"},
+						},
+					},
+				},
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "p", DataType: "Person"},
+							},
+						},
+						Constraints: map[string]interface{}{
+							"type": ConstraintTypeComparison,
+							"left": map[string]interface{}{
+								"type":   ConstraintTypeFieldAccess,
+								"object": "p",
+								"field":  "age",
+							},
+							"right": map[string]interface{}{
+								"type":  "number",
+								"value": 18,
+							},
+							"operator": ">",
+						},
+						Action: &Action{
+							Type: "action",
+							Job: &JobCall{
+								Type: "jobCall",
+								Name: "approve",
+								Args: []interface{}{},
+							},
+						},
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "program with constraint validation error",
+			program: Program{
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "p", DataType: "Person"},
+							},
+						},
+						Constraints: map[string]interface{}{
+							"type": ConstraintTypeComparison,
+							"left": map[string]interface{}{
+								"type":   ConstraintTypeFieldAccess,
+								"object": "unknownVar",
+								"field":  "age",
+							},
+							"right": map[string]interface{}{
+								"type":  "number",
+								"value": 18,
+							},
+						},
+						Action: &Action{
+							Type: "action",
+							Job: &JobCall{
+								Type: "jobCall",
+								Name: "test",
+								Args: []interface{}{},
+							},
+						},
+					},
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "program with action validation error",
+			program: Program{
+				Types: []TypeDefinition{
+					{
+						Name: "Person",
+						Fields: []Field{
+							{Name: "id", Type: "string"},
+						},
+					},
+				},
+				Expressions: []Expression{
+					{
+						Set: Set{
+							Variables: []TypedVariable{
+								{Name: "p", DataType: "Person"},
+							},
+						},
+						Action: &Action{
+							Type: "action",
+							Job: &JobCall{
+								Type: "jobCall",
+								Name: "test",
+								Args: []interface{}{"invalidVar"},
+							},
+						},
+					},
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateProgram(tt.program)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
 // Helper function for string contains check
 func stringContains(s, substr string) bool {
 	return len(s) >= len(substr) && stringContainsAt(s, substr)
