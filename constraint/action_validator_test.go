@@ -299,6 +299,382 @@ func TestActionValidator_GetTypeDefinition(t *testing.T) {
 	})
 }
 
+func TestActionValidator_inferArgumentType(t *testing.T) {
+	types := []TypeDefinition{
+		{
+			Name: "Person",
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+				{Name: "age", Type: "number"},
+			},
+		},
+		{
+			Name: "Address",
+			Fields: []Field{
+				{Name: "street", Type: "string"},
+				{Name: "city", Type: "string"},
+			},
+		},
+	}
+
+	av := NewActionValidator(nil, types)
+
+	tests := []struct {
+		name         string
+		arg          interface{}
+		vars         map[string]string
+		expectedType string
+		expectError  bool
+		description  string
+	}{
+		{
+			name: "string literal",
+			arg: map[string]interface{}{
+				"type":  "stringLiteral",
+				"value": "hello",
+			},
+			vars:         map[string]string{},
+			expectedType: "string",
+			expectError:  false,
+			description:  "String literal should return string type",
+		},
+		{
+			name: "number literal",
+			arg: map[string]interface{}{
+				"type":  "numberLiteral",
+				"value": 42.0,
+			},
+			vars:         map[string]string{},
+			expectedType: "number",
+			expectError:  false,
+			description:  "Number literal should return number type",
+		},
+		{
+			name: "bool literal",
+			arg: map[string]interface{}{
+				"type":  "bool",
+				"value": true,
+			},
+			vars:         map[string]string{},
+			expectedType: "bool",
+			expectError:  false,
+			description:  "Bool literal should return bool type",
+		},
+		{
+			name: "variable reference with known type",
+			arg: map[string]interface{}{
+				"type": "variable",
+				"name": "myVar",
+			},
+			vars:         map[string]string{"myVar": "number"},
+			expectedType: "number",
+			expectError:  false,
+			description:  "Variable with known type should return that type",
+		},
+		{
+			name: "variable reference unknown",
+			arg: map[string]interface{}{
+				"type": "variable",
+				"name": "unknownVar",
+			},
+			vars:         map[string]string{},
+			expectedType: "",
+			expectError:  true,
+			description:  "Unknown variable should return error",
+		},
+		{
+			name: "field access",
+			arg: map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "person",
+				"field":  "name",
+			},
+			vars:         map[string]string{"person": "Person"},
+			expectedType: "string",
+			expectError:  false,
+			description:  "Field access should return field type",
+		},
+		{
+			name: "function call LENGTH",
+			arg: map[string]interface{}{
+				"type": "functionCall",
+				"name": "LENGTH",
+				"args": []interface{}{},
+			},
+			vars:         map[string]string{},
+			expectedType: "number",
+			expectError:  false,
+			description:  "LENGTH function should return number",
+		},
+		{
+			name: "function call UPPER",
+			arg: map[string]interface{}{
+				"type": "functionCall",
+				"name": "UPPER",
+				"args": []interface{}{},
+			},
+			vars:         map[string]string{},
+			expectedType: "string",
+			expectError:  false,
+			description:  "UPPER function should return string",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := av.inferArgumentType(tt.arg, tt.vars)
+			if tt.expectError {
+				assert.Error(t, err, tt.description)
+			} else {
+				assert.NoError(t, err, tt.description)
+				assert.Equal(t, tt.expectedType, result, tt.description)
+			}
+		})
+	}
+}
+
+func TestActionValidator_inferDefaultValueType(t *testing.T) {
+	types := []TypeDefinition{
+		{
+			Name: "Person",
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+				{Name: "age", Type: "number"},
+			},
+		},
+	}
+
+	av := NewActionValidator(nil, types)
+
+	tests := []struct {
+		name         string
+		defaultValue interface{}
+		expectedType string
+		description  string
+	}{
+		{
+			name:         "string default value",
+			defaultValue: "default text",
+			expectedType: "string",
+			description:  "String default should return string type",
+		},
+		{
+			name:         "empty string default",
+			defaultValue: "",
+			expectedType: "string",
+			description:  "Empty string default should return string type",
+		},
+		{
+			name:         "int default value",
+			defaultValue: 42,
+			expectedType: "number",
+			description:  "Int default should return number type",
+		},
+		{
+			name:         "zero int default",
+			defaultValue: 0,
+			expectedType: "number",
+			description:  "Zero int default should return number type",
+		},
+		{
+			name:         "negative int default",
+			defaultValue: -100,
+			expectedType: "number",
+			description:  "Negative int default should return number type",
+		},
+		{
+			name:         "float64 default value",
+			defaultValue: 3.14,
+			expectedType: "number",
+			description:  "Float64 default should return number type",
+		},
+		{
+			name:         "zero float64 default",
+			defaultValue: 0.0,
+			expectedType: "number",
+			description:  "Zero float64 default should return number type",
+		},
+		{
+			name:         "negative float64 default",
+			defaultValue: -99.99,
+			expectedType: "number",
+			description:  "Negative float64 default should return number type",
+		},
+		{
+			name:         "bool true default",
+			defaultValue: true,
+			expectedType: "bool",
+			description:  "Bool true default should return bool type",
+		},
+		{
+			name:         "bool false default",
+			defaultValue: false,
+			expectedType: "bool",
+			description:  "Bool false default should return bool type",
+		},
+		{
+			name:         "map default value",
+			defaultValue: map[string]interface{}{"key": "value"},
+			expectedType: "unknown",
+			description:  "Map default should return unknown type",
+		},
+		{
+			name:         "empty map default",
+			defaultValue: map[string]interface{}{},
+			expectedType: "unknown",
+			description:  "Empty map default should return unknown type",
+		},
+		{
+			name:         "slice default value",
+			defaultValue: []interface{}{1, 2, 3},
+			expectedType: "unknown",
+			description:  "Slice default should return unknown type",
+		},
+		{
+			name:         "empty slice default",
+			defaultValue: []interface{}{},
+			expectedType: "unknown",
+			description:  "Empty slice default should return unknown type",
+		},
+		{
+			name:         "nil default value",
+			defaultValue: nil,
+			expectedType: "unknown",
+			description:  "Nil default should return unknown type",
+		},
+		{
+			name:         "struct default value",
+			defaultValue: struct{ Name string }{Name: "test"},
+			expectedType: "unknown",
+			description:  "Struct default should return unknown type",
+		},
+		{
+			name:         "int64 default value",
+			defaultValue: int64(9999999999),
+			expectedType: "number",
+			description:  "Int64 default should return number type",
+		},
+		{
+			name:         "int32 default value",
+			defaultValue: int32(12345),
+			expectedType: "unknown",
+			description:  "Int32 default should return unknown type (not supported)",
+		},
+		{
+			name:         "float32 default value",
+			defaultValue: float32(2.5),
+			expectedType: "unknown",
+			description:  "Float32 default should return unknown type (not supported)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := av.inferDefaultValueType(tt.defaultValue)
+			assert.Equal(t, tt.expectedType, result, tt.description)
+		})
+	}
+}
+
+func TestActionValidator_isTypeCompatible(t *testing.T) {
+	types := []TypeDefinition{
+		{
+			Name: "Person",
+			Fields: []Field{
+				{Name: "name", Type: "string"},
+			},
+		},
+	}
+
+	av := NewActionValidator(nil, types)
+
+	tests := []struct {
+		name        string
+		expected    string
+		actual      string
+		shouldMatch bool
+		description string
+	}{
+		{
+			name:        "exact string match",
+			expected:    "string",
+			actual:      "string",
+			shouldMatch: true,
+			description: "Same type should be compatible",
+		},
+		{
+			name:        "exact number match",
+			expected:    "number",
+			actual:      "number",
+			shouldMatch: true,
+			description: "Same type should be compatible",
+		},
+		{
+			name:        "exact bool match",
+			expected:    "bool",
+			actual:      "bool",
+			shouldMatch: true,
+			description: "Same type should be compatible",
+		},
+		{
+			name:        "string vs number",
+			expected:    "string",
+			actual:      "number",
+			shouldMatch: false,
+			description: "Different primitive types should not be compatible",
+		},
+		{
+			name:        "number vs bool",
+			expected:    "number",
+			actual:      "bool",
+			shouldMatch: false,
+			description: "Different primitive types should not be compatible",
+		},
+		{
+			name:        "custom type match",
+			expected:    "Person",
+			actual:      "Person",
+			shouldMatch: true,
+			description: "Same custom type should be compatible",
+		},
+		{
+			name:        "custom type vs primitive",
+			expected:    "Person",
+			actual:      "string",
+			shouldMatch: false,
+			description: "Custom type and primitive should not be compatible",
+		},
+		{
+			name:        "empty expected type",
+			expected:    "",
+			actual:      "string",
+			shouldMatch: false,
+			description: "Empty expected type should not match",
+		},
+		{
+			name:        "empty actual type",
+			expected:    "string",
+			actual:      "",
+			shouldMatch: false,
+			description: "Empty actual type should not match",
+		},
+		{
+			name:        "both empty",
+			expected:    "",
+			actual:      "",
+			shouldMatch: true,
+			description: "Both empty should match",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := av.isTypeCompatible(tt.expected, tt.actual)
+			assert.Equal(t, tt.shouldMatch, result, tt.description)
+		})
+	}
+}
+
 func TestActionValidator_Integration(t *testing.T) {
 	t.Run("validator with both types and actions", func(t *testing.T) {
 		types := []TypeDefinition{
