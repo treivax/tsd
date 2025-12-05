@@ -23,10 +23,10 @@ pip install PyJWT
 
 ```bash
 cd ../..  # Retour à la racine du projet
-go build -o bin/tsd-server ./cmd/tsd-server
-go build -o bin/tsd-client ./cmd/tsd-client
-go build -o bin/tsd-auth ./cmd/tsd-auth
+go build -o bin/tsd ./cmd/tsd
 ```
+
+Le binaire unique `tsd` gère tous les rôles (serveur, client, authentification) via des sous-commandes.
 
 ### 2. Authentification par Clé API
 
@@ -34,10 +34,10 @@ go build -o bin/tsd-auth ./cmd/tsd-auth
 
 ```bash
 # Générer une clé API
-export TSD_AUTH_KEYS=$(bin/tsd-auth generate-key -format json | jq -r '.keys[0]')
+export TSD_AUTH_KEYS=$(bin/tsd auth generate-key -format json | jq -r '.keys[0]')
 
 # Démarrer le serveur
-bin/tsd-server -auth key -v
+bin/tsd server -auth key -v
 ```
 
 #### Terminal 2 : Exécuter l'exemple Python
@@ -62,7 +62,7 @@ python3 examples/auth/client_auth_key.py --example 1
 export TSD_JWT_SECRET=$(openssl rand -base64 32)
 
 # Démarrer le serveur
-bin/tsd-server -auth jwt -v
+bin/tsd server -auth jwt -v
 ```
 
 #### Terminal 2 : Générer un JWT et exécuter l'exemple
@@ -70,7 +70,7 @@ bin/tsd-server -auth jwt -v
 ```bash
 # Générer un JWT
 export TSD_JWT_SECRET="meme-secret-que-le-serveur"
-export TSD_AUTH_TOKEN=$(bin/tsd-auth generate-jwt \
+export TSD_AUTH_TOKEN=$(bin/tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "alice" \
   -roles "admin,developer" \
@@ -327,8 +327,8 @@ curl -H "Authorization: Bearer $TSD_AUTH_TOKEN" http://localhost:8080/health
 # Installer PyJWT (nécessaire pour client_jwt.py avec --generate)
 pip install PyJWT
 
-# Ou utiliser tsd-auth pour générer les JWT
-bin/tsd-auth generate-jwt -secret "votre-secret" -username alice
+# Ou utiliser tsd auth pour générer les JWT
+bin/tsd auth generate-jwt -secret "votre-secret" -username alice
 ```
 
 ## 📖 Documentation
@@ -379,7 +379,7 @@ Pour plus d'informations, consultez :
 
 ## 🔒 Sécurité
 
-- **Auth Key** : Utilisez des clés longues (générées par `tsd-auth generate-key`)
+- **Auth Key** : Utilisez des clés longues (générées par `tsd auth generate-key`)
 - **JWT Secret** : Minimum 32 caractères, aléatoire, jamais commité dans git
 - **Rotation** : Changez régulièrement les clés et secrets
 - **HTTPS** : Toujours en production pour éviter l'interception

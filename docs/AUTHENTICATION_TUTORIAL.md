@@ -42,32 +42,32 @@ Le serveur TSD supporte trois modes d'authentification :
 
 ### 2.1. Compilation des outils
 
-Compilez les trois outils nécessaires :
+Compilez le binaire unique TSD :
 
 ```bash
 # Se placer dans le répertoire du projet
 cd tsd
 
-# Compiler le serveur TSD
-go build -o bin/tsd-server ./cmd/tsd-server
-
-# Compiler le client TSD
-go build -o bin/tsd-client ./cmd/tsd-client
-
-# Compiler l'outil d'authentification
-go build -o bin/tsd-auth ./cmd/tsd-auth
+# Compiler le binaire unique TSD
+go build -o bin/tsd ./cmd/tsd
 
 # Ajouter au PATH (optionnel)
 export PATH=$PATH:$(pwd)/bin
 ```
 
+Le binaire unique `tsd` gère tous les rôles (serveur, client, authentification) via des sous-commandes.
+
 ### 2.2. Vérification de l'installation
 
 ```bash
-# Vérifier les versions
-tsd-server -h
-tsd-client -h
-tsd-auth version
+# Vérifier la version et l'aide
+tsd -h
+tsd version
+
+# Voir l'aide pour chaque sous-commande
+tsd server -h
+tsd client -h
+tsd auth -h
 ```
 
 ---
@@ -82,7 +82,7 @@ L'authentification par clé API utilise des tokens statiques pré-partagés. C'e
 
 ```bash
 # Générer une clé API
-tsd-auth generate-key
+tsd auth generate-key
 ```
 
 **Sortie :**
@@ -99,10 +99,10 @@ Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k
 
 ```bash
 # Générer 3 clés (pour différents clients/services)
-tsd-auth generate-key -count 3
+tsd auth generate-key -count 3
 
 # Format JSON pour intégration
-tsd-auth generate-key -count 3 -format json > keys.json
+tsd auth generate-key -count 3 -format json > keys.json
 ```
 
 #### Étape 3 : Démarrer le serveur avec Auth Key
@@ -110,7 +110,7 @@ tsd-auth generate-key -count 3 -format json > keys.json
 **Option A : Via ligne de commande**
 
 ```bash
-tsd-server \
+tsd server \
   -auth key \
   -auth-keys "Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k"
 ```
@@ -122,14 +122,14 @@ tsd-server \
 export TSD_AUTH_KEYS="Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k"
 
 # Démarrer le serveur
-tsd-server -auth key
+tsd server -auth jwt
 ```
 
 **Option C : Plusieurs clés (séparées par des virgules)**
 
 ```bash
 export TSD_AUTH_KEYS="key1_xxxxxxx,key2_yyyyyyy,key3_zzzzzzz"
-tsd-server -auth key
+tsd server -auth key
 ```
 
 **Sortie du serveur :**
@@ -148,8 +148,8 @@ tsd-server -auth key
 #### Test de connexion sans authentification
 
 ```bash
-# Ceci échouera car le serveur requiert une authentification
-tsd-client -health
+# Essayer sans token (devrait échouer)
+tsd client health
 ```
 
 **Sortie :**
@@ -162,7 +162,7 @@ tsd-client -health
 **Option A : Via flag**
 
 ```bash
-tsd-client -health -token "Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k"
+tsd client health -token "Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k"
 ```
 
 **Option B : Via variable d'environnement (recommandé)**
@@ -172,7 +172,7 @@ tsd-client -health -token "Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3b
 export TSD_AUTH_TOKEN="Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k"
 
 # Utiliser le client (le token sera automatiquement utilisé)
-tsd-client -health
+tsd client health
 ```
 
 **Sortie :**
@@ -200,7 +200,7 @@ EOF
 
 # Exécuter avec authentification
 export TSD_AUTH_TOKEN="votre-cle-api"
-tsd-client example.tsd -v
+tsd client execute example.tsd -v
 ```
 
 **Sortie :**
@@ -365,8 +365,8 @@ Le secret JWT doit être une chaîne aléatoire sécurisée d'au moins 32 caract
 # Générer un secret aléatoire (Linux/macOS)
 openssl rand -base64 32
 
-# Ou utiliser tsd-auth pour générer une clé sécurisée
-tsd-auth generate-key
+# Ou utiliser tsd auth pour générer une clé sécurisée
+tsd auth generate-key
 ```
 
 **Exemple de secret :**
@@ -381,13 +381,13 @@ bW9uLXNlY3JldC1zdXBlci1zZWN1cmlzZS1kZS0zMi1jaGFyYWN0ZXJlcy1taW5pbXVt
 export TSD_JWT_SECRET="bW9uLXNlY3JldC1zdXBlci1zZWN1cmlzZS1kZS0zMi1jaGFyYWN0ZXJlcy1taW5pbXVt"
 
 # Démarrer le serveur en mode JWT
-tsd-server -auth jwt
+tsd server -auth jwt
 
 # Avec expiration personnalisée (défaut: 24h)
-tsd-server -auth jwt -jwt-expiration 48h
+tsd server -auth jwt -jwt-expiration 48h
 
 # Avec émetteur personnalisé
-tsd-server -auth jwt -jwt-issuer "my-company-tsd"
+tsd server -auth jwt -jwt-issuer "my-company-tsd"
 ```
 
 **Sortie du serveur :**
@@ -405,7 +405,7 @@ tsd-server -auth jwt -jwt-issuer "my-company-tsd"
 **Option A : Ligne de commande**
 
 ```bash
-tsd-auth generate-jwt \
+tsd auth generate-jwt \
   -secret "bW9uLXNlY3JldC1zdXBlci1zZWN1cmlzZS1kZS0zMi1jaGFyYWN0ZXJlcy1taW5pbXVt" \
   -username "alice" \
   -roles "admin,user" \
@@ -415,7 +415,7 @@ tsd-auth generate-jwt \
 **Option B : Mode interactif (recommandé pour ne pas exposer le secret)**
 
 ```bash
-tsd-auth generate-jwt -i -username alice
+tsd auth generate-jwt -i -username alice
 # Le système vous demandera le secret de manière sécurisée
 ```
 
@@ -438,13 +438,13 @@ Expire le: 2025-01-16T11:00:00+01:00
 
 ```bash
 # Valider le token
-tsd-auth validate \
+tsd auth validate \
   -type jwt \
   -token "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -secret "bW9uLXNlY3JldC1zdXBlci1zZWN1cmlzZS1kZS0zMi1jaGFyYWN0ZXJlcy1taW5pbXVt"
 
 # Mode interactif
-tsd-auth validate -i
+tsd auth validate -i
 ```
 
 **Sortie si valide :**
@@ -462,10 +462,10 @@ Rôles: admin, user
 export TSD_AUTH_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # Tester la connexion
-tsd-client -health
+tsd client health
 
 # Exécuter un programme
-tsd-client example.tsd -v
+tsd client execute example.tsd
 ```
 
 ### 4.3. Utilisation avec Python
@@ -560,7 +560,7 @@ def generate_jwt_python(secret, username, roles=None, expiration_hours=24):
         return token
     except ImportError:
         print("⚠️  PyJWT non installé. Utilisez: pip install PyJWT")
-        print("   Ou générez le JWT avec: tsd-auth generate-jwt")
+        print("   Ou générez le JWT avec: tsd auth generate-jwt")
         return None
 
 # Exemple d'utilisation
@@ -629,7 +629,7 @@ pip install PyJWT
 
 ```bash
 # Générer un JWT
-JWT_TOKEN=$(tsd-auth generate-jwt \
+JWT_TOKEN=$(tsd auth generate-jwt \
   -secret "bW9uLXNlY3JldC1zdXBlci1zZWN1cmlzZS1kZS0zMi1jaGFyYWN0ZXJlcy1taW5pbXVt" \
   -username "alice" \
   -format json | jq -r .token)
@@ -651,12 +651,12 @@ python3 tsd_jwt_client.py
 
 ```bash
 # Générer une clé API
-export MY_API_KEY=$(tsd-auth generate-key -format json | jq -r '.keys[0]')
+export MY_API_KEY=$(tsd auth generate-key -format json | jq -r '.keys[0]')
 echo "Clé API: $MY_API_KEY"
 
 # Démarrer le serveur
 export TSD_AUTH_KEYS="$MY_API_KEY"
-tsd-server -auth key -v
+tsd server -auth key -v
 ```
 
 #### Terminal 2 : Client CLI
@@ -666,7 +666,7 @@ tsd-server -auth key -v
 export TSD_AUTH_TOKEN="votre-cle-generee"
 
 # Test de connexion
-tsd-client -health
+tsd client health
 
 # Créer un programme TSD
 cat > inventory.tsd << 'EOF'
@@ -691,10 +691,10 @@ Order("p2", 5)
 EOF
 
 # Exécuter le programme
-tsd-client inventory.tsd -v
+tsd client execute inventory.tsd -v
 
 # Format JSON pour intégration
-tsd-client inventory.tsd -format json > result.json
+tsd client execute inventory.tsd -format json > result.json
 cat result.json | jq .
 ```
 
@@ -746,7 +746,7 @@ export TSD_JWT_SECRET=$(openssl rand -base64 32)
 echo "Secret JWT: $TSD_JWT_SECRET"
 
 # Démarrer le serveur avec JWT
-tsd-server -auth jwt -jwt-expiration 1h -v
+tsd server -auth jwt -jwt-expiration 1h -v
 ```
 
 #### Terminal 2 : Génération et utilisation de tokens
@@ -756,7 +756,7 @@ tsd-server -auth jwt -jwt-expiration 1h -v
 export TSD_JWT_SECRET="le-meme-secret-que-le-serveur"
 
 # Générer un JWT pour Alice (admin)
-ALICE_TOKEN=$(tsd-auth generate-jwt \
+ALICE_TOKEN=$(tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "alice" \
   -roles "admin,developer" \
@@ -766,7 +766,7 @@ ALICE_TOKEN=$(tsd-auth generate-jwt \
 echo "Token Alice: $ALICE_TOKEN"
 
 # Générer un JWT pour Bob (utilisateur standard)
-BOB_TOKEN=$(tsd-auth generate-jwt \
+BOB_TOKEN=$(tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "bob" \
   -roles "user" \
@@ -777,16 +777,16 @@ echo "Token Bob: $BOB_TOKEN"
 
 # Utiliser le token d'Alice
 export TSD_AUTH_TOKEN="$ALICE_TOKEN"
-tsd-client -health
-tsd-client example.tsd -v
+tsd client health
+tsd client execute example.tsd -v
 
 # Changer pour le token de Bob
 export TSD_AUTH_TOKEN="$BOB_TOKEN"
-tsd-client -health
+tsd client health
 
 # Attendre l'expiration (30min pour Bob)
 sleep 1800
-tsd-client -health  # Échouera avec "token expiré"
+tsd client health  # Échouera avec "token expiré"
 ```
 
 ### 5.3. Session multi-utilisateurs avec JWT
@@ -794,34 +794,34 @@ tsd-client -health  # Échouera avec "token expiré"
 ```bash
 # Serveur avec JWT
 export TSD_JWT_SECRET="my-super-secret-jwt-key-32-chars-min"
-tsd-server -auth jwt -v
+tsd server -auth jwt -v
 
 # Terminal Alice (admin)
-export TSD_AUTH_TOKEN=$(tsd-auth generate-jwt \
+export TSD_AUTH_TOKEN=$(tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "alice" \
   -roles "admin" \
   -format json | jq -r .token)
 
-tsd-client example.tsd -v
+tsd client execute example.tsd -v
 
 # Terminal Bob (developer)
-export TSD_AUTH_TOKEN=$(tsd-auth generate-jwt \
+export TSD_AUTH_TOKEN=$(tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "bob" \
   -roles "developer" \
   -format json | jq -r .token)
 
-tsd-client example.tsd -v
+tsd client execute example.tsd -v
 
 # Terminal Charlie (lecture seule)
-export TSD_AUTH_TOKEN=$(tsd-auth generate-jwt \
+export TSD_AUTH_TOKEN=$(tsd auth generate-jwt \
   -secret "$TSD_JWT_SECRET" \
   -username "charlie" \
   -roles "readonly" \
   -format json | jq -r .token)
 
-tsd-client example.tsd -v
+tsd client execute example.tsd -v
 ```
 
 ---
@@ -841,7 +841,7 @@ echo "TSD_JWT_SECRET=my-secret" >> config.yaml
 echo "Secret: $TSD_JWT_SECRET"
 
 # NE JAMAIS passer en ligne de commande visible
-ps aux | grep tsd-server  # Les arguments sont visibles!
+ps aux | grep tsd  # Les arguments sont visibles!
 ```
 
 #### ✅ Bonnes pratiques
@@ -870,11 +870,11 @@ source .env
 
 ```bash
 # Générer de nouvelles clés
-NEW_KEY=$(tsd-auth generate-key -format json | jq -r '.keys[0]')
+NEW_KEY=$(tsd auth generate-key -format json | jq -r '.keys[0]')
 
 # Période de transition : autoriser les deux clés
 export TSD_AUTH_KEYS="$OLD_KEY,$NEW_KEY"
-tsd-server -auth key
+tsd server -auth key
 
 # Après migration des clients, retirer l'ancienne clé
 export TSD_AUTH_KEYS="$NEW_KEY"
@@ -890,7 +890,7 @@ export TSD_AUTH_KEYS="$NEW_KEY"
 # 3. Demander aux utilisateurs de se reconnecter
 
 # Alternative : utiliser un délai de grâce court
-tsd-server -auth jwt -jwt-expiration 1h
+tsd server -auth jwt -jwt-expiration 1h
 ```
 
 ### 6.3. Sécurité réseau
@@ -915,7 +915,7 @@ server {
 }
 
 # Client avec HTTPS
-tsd-client -server https://tsd.example.com example.tsd
+tsd client execute -server https://tsd.example.com example.tsd
 ```
 
 ### 6.4. Limitation du taux (Rate Limiting)
@@ -938,10 +938,10 @@ server {
 
 ```bash
 # Activer les logs verbeux
-tsd-server -auth jwt -v
+tsd server -auth jwt -v
 
 # Rediriger vers un fichier
-tsd-server -auth jwt -v 2>&1 | tee /var/log/tsd/server.log
+tsd server -auth jwt -v 2>&1 | tee /var/log/tsd/server.log
 
 # Analyser les tentatives d'authentification échouées
 grep "Authentification échouée" /var/log/tsd/server.log
@@ -955,10 +955,10 @@ grep "Authentification échouée" /var/log/tsd/server.log
 
 ```bash
 # Vérifier que le token est correct
-tsd-auth validate -type key -token "votre-token" -keys "cle-attendue"
+tsd auth validate -type key -token "votre-token" -keys "cle-attendue"
 
 # Pour JWT, vérifier le secret
-tsd-auth validate -type jwt -token "votre-jwt" -secret "votre-secret"
+tsd auth validate -type jwt -token "votre-jwt" -secret "votre-secret"
 
 # Vérifier les espaces/newlines
 echo -n "votre-token" | wc -c  # Pas de caractères parasites
@@ -972,22 +972,22 @@ echo -n "votre-token" | wc -c  # Pas de caractères parasites
 echo "eyJhbGciOi..." | cut -d. -f2 | base64 -d | jq .
 
 # Régénérer un nouveau JWT
-tsd-auth generate-jwt -secret "$TSD_JWT_SECRET" -username alice
+tsd auth generate-jwt -secret "$TSD_JWT_SECRET" -username alice
 ```
 
 ### Problème : Serveur ne démarre pas avec authentification
 
 ```bash
 # Vérifier la configuration
-tsd-server -auth key  # Erreur: "au moins une clé API doit être configurée"
+tsd server -auth key  # Erreur: "au moins une clé API doit être configurée"
 
 # Solution
 export TSD_AUTH_KEYS="une-cle-valide"
-tsd-server -auth key
+tsd server -auth key
 
 # Pour JWT
 export TSD_JWT_SECRET="secret-au-moins-32-caracteres-long"
-tsd-server -auth jwt
+tsd server -auth jwt
 ```
 
 ### Problème : Client ne peut pas se connecter
@@ -1021,7 +1021,7 @@ echo "votre-jwt" | cut -d. -f1 | base64 -d | jq .
 ```bash
 # Activer tous les logs
 export TSD_DEBUG=1
-tsd-server -auth key -v
+tsd server -auth key -v
 
 # Utiliser curl pour tester
 curl -v \
@@ -1035,7 +1035,7 @@ env | grep TSD
 
 # Tester avec un token minimal
 export TSD_AUTH_TOKEN="test"
-tsd-client -health  # Devrait échouer avec "token invalide"
+tsd client health  # Devrait échouer avec "token invalide"
 ```
 
 ---
@@ -1056,7 +1056,7 @@ Pour toute question ou problème :
 
 1. Vérifiez les logs du serveur avec `-v`
 2. Testez avec `curl` pour isoler le problème
-3. Utilisez `tsd-auth validate` pour vérifier vos tokens
+3. Utilisez `tsd auth validate` pour vérifier vos tokens
 4. Consultez la section [Dépannage](#7-dépannage)
 
 ---

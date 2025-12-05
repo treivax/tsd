@@ -16,7 +16,7 @@ Un exemple simple démontrant les fonctionnalités de base:
 
 ```bash
 # Avec le client TSD
-tsd-client simple.tsd
+tsd client execute simple.tsd
 
 # Avec curl
 curl -X POST http://localhost:8080/api/v1/execute \
@@ -47,13 +47,13 @@ Un exemple plus complexe avec plusieurs types et relations:
 
 ```bash
 # Avec le client TSD
-tsd-client multiple_activations.tsd
+tsd client execute multiple_activations.tsd
 
 # En mode verbeux pour voir les détails
-tsd-client -v multiple_activations.tsd
+tsd client execute -v multiple_activations.tsd
 
 # Format JSON pour intégration
-tsd-client -format json multiple_activations.tsd
+tsd client execute -format json multiple_activations.tsd
 ```
 
 **Résultat attendu:**
@@ -71,8 +71,8 @@ tsd-client -format json multiple_activations.tsd
 
 ```bash
 # Depuis la racine du projet
-go build -o bin/tsd-server ./cmd/tsd-server
-./bin/tsd-server
+go build -o bin/tsd ./cmd/tsd
+./bin/tsd server
 ```
 
 Le serveur démarre sur http://localhost:8080
@@ -80,7 +80,8 @@ Le serveur démarre sur http://localhost:8080
 2. **Compiler le client:**
 
 ```bash
-go build -o bin/tsd-client ./cmd/tsd-client
+# Le binaire unique gère aussi le client
+go build -o bin/tsd ./cmd/tsd
 ```
 
 ### Exécution
@@ -89,16 +90,16 @@ go build -o bin/tsd-client ./cmd/tsd-client
 
 ```bash
 # Test de santé du serveur
-./bin/tsd-client -health
+./bin/tsd client health
 
 # Exécuter un exemple
-./bin/tsd-client examples/server/simple.tsd
+./bin/tsd client execute examples/server/simple.tsd
 ```
 
 #### Mode verbeux
 
 ```bash
-./bin/tsd-client -v examples/server/simple.tsd
+./bin/tsd client execute -v examples/server/simple.tsd
 ```
 
 Affiche:
@@ -109,7 +110,7 @@ Affiche:
 #### Format JSON
 
 ```bash
-./bin/tsd-client -format json examples/server/simple.tsd
+./bin/tsd client execute -format json examples/server/simple.tsd
 ```
 
 Retourne la réponse complète en JSON, utile pour l'intégration avec d'autres outils.
@@ -117,13 +118,13 @@ Retourne la réponse complète en JSON, utile pour l'intégration avec d'autres 
 #### Avec stdin
 
 ```bash
-cat examples/server/simple.tsd | ./bin/tsd-client -stdin
+cat examples/server/simple.tsd | ./bin/tsd client execute -stdin
 ```
 
 #### Serveur distant
 
 ```bash
-./bin/tsd-client -server http://remote-server:8080 examples/server/simple.tsd
+./bin/tsd client execute -server http://remote-server:8080 examples/server/simple.tsd
 ```
 
 ## Script de test automatique
@@ -292,24 +293,24 @@ curl -X POST http://localhost:8080/api/v1/execute \
 curl http://localhost:8080/health
 
 # Vérifier les logs
-tail -f /tmp/tsd-server.log
+tail -f /tmp/tsd.log
 ```
 
 ### Erreurs de parsing
 
 ```bash
 # Valider le programme localement
-./bin/tsd examples/server/simple.tsd
+./bin/tsd compile examples/server/simple.tsd
 
 # Utiliser le mode verbeux
-./bin/tsd-client -v examples/server/simple.tsd
+./bin/tsd client execute -v examples/server/simple.tsd
 ```
 
 ### Timeout
 
 ```bash
 # Augmenter le timeout
-./bin/tsd-client -timeout 60s examples/server/simple.tsd
+./bin/tsd client execute -timeout 60s examples/server/simple.tsd
 ```
 
 ## Licence
