@@ -1669,6 +1669,115 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 	}
 }
 
+func TestActionExecutor_EvaluateArithmetic_ErrorPaths(t *testing.T) {
+	t.Parallel()
+
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	ctx := &ExecutionContext{
+		network:  env.Network,
+		varCache: map[string]*Fact{},
+	}
+
+	tests := []struct {
+		name          string
+		argMap        map[string]interface{}
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name: "missing operator",
+			argMap: map[string]interface{}{
+				"left":  10.0,
+				"right": 5.0,
+			},
+			expectError:   true,
+			errorContains: "opérateur manquant",
+		},
+		{
+			name: "invalid left operand",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left": map[string]interface{}{
+					"type":   "fieldAccess",
+					"object": "nonexistent",
+					"field":  "value",
+				},
+				"right": 5.0,
+			},
+			expectError:   true,
+			errorContains: "erreur évaluation left",
+		},
+		{
+			name: "invalid right operand",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left":     10.0,
+				"right": map[string]interface{}{
+					"type":   "fieldAccess",
+					"object": "nonexistent",
+					"field":  "value",
+				},
+			},
+			expectError:   true,
+			errorContains: "erreur évaluation right",
+		},
+		{
+			name: "valid addition",
+			argMap: map[string]interface{}{
+				"operator": "+",
+				"left":     10.0,
+				"right":    5.0,
+			},
+			expectError: false,
+		},
+		{
+			name: "valid subtraction",
+			argMap: map[string]interface{}{
+				"operator": "-",
+				"left":     10.0,
+				"right":    3.0,
+			},
+			expectError: false,
+		},
+		{
+			name: "valid multiplication",
+			argMap: map[string]interface{}{
+				"operator": "*",
+				"left":     4.0,
+				"right":    5.0,
+			},
+			expectError: false,
+		},
+		{
+			name: "valid division",
+			argMap: map[string]interface{}{
+				"operator": "/",
+				"left":     20.0,
+				"right":    4.0,
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := env.Network.ActionExecutor.evaluateArithmetic(tt.argMap, ctx)
+
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errorContains != "" {
+					require.Contains(t, err.Error(), tt.errorContains)
+				}
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, result)
+			}
+		})
+	}
+}
+
 func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 	t.Parallel()
 
