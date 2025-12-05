@@ -5,6 +5,7 @@
 package servercmd
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -34,6 +36,15 @@ const (
 
 	// MaxRequestSize est la taille maximale d'une requête (10MB)
 	MaxRequestSize = 10 * 1024 * 1024
+
+	// DefaultCertDir est le répertoire par défaut des certificats
+	DefaultCertDir = "./certs"
+
+	// DefaultCertFile est le fichier de certificat par défaut
+	DefaultCertFile = "server.crt"
+
+	// DefaultKeyFile est le fichier de clé privée par défaut
+	DefaultKeyFile = "server.key"
 )
 
 var (
@@ -51,6 +62,9 @@ type Config struct {
 	JWTSecret     string
 	JWTExpiration time.Duration
 	JWTIssuer     string
+	TLSCertFile   string
+	TLSKeyFile    string
+	Insecure      bool
 }
 
 // Server représente le serveur HTTP TSD
@@ -67,15 +81,32 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	logger := log.New(stdout, "[TSD-SERVER] ", log.LstdFlags)
 
-	server, err := NewServer(config, logger)
-	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur initialisation serveur: %v\n", err)
+	server, initErr := NewServer(config, logger)
+	if initErr != nil {
+		fmt.Fprintf(stderr, "❌ Erreur initialisation serveur: %v\n", initErr)
 		return 1
 	}
 
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
-	logger.Printf("🚀 Démarrage du serveur TSD sur %s", addr)
+
+	// Déterminer le protocole
+	protocol := "https"
+	if config.Insecure {
+		protocol = "http"
+	}
+
+	logger.Printf("🚀 Démarrage du serveur TSD sur %s://%s", protocol, addr)
 	logger.Printf("📊 Version: %s", Version)
+
+	// Afficher le statut TLS
+	if config.Insecure {
+		logger.Printf("⚠️  TLS: désactivé (mode HTTP non sécurisé)")
+		logger.Printf("⚠️  AVERTISSEMENT: Ne pas utiliser en production!")
+	} else {
+		logger.Printf("🔒 TLS: activé")
+		logger.Printf("   Certificat: %s", config.TLSCertFile)
+		logger.Printf("   Clé: %s", config.TLSKeyFile)
+	}
 
 	// Afficher le statut d'authentification
 	if server.authManager.IsEnabled() {
@@ -85,11 +116,38 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	logger.Printf("🔗 Endpoints disponibles:")
-	logger.Printf("   POST http://%s/api/v1/execute - Exécuter un programme TSD", addr)
-	logger.Printf("   GET  http://%s/health - Health check", addr)
-	logger.Printf("   GET  http://%s/api/v1/version - Version info", addr)
+	logger.Printf("   POST %s://%s/api/v1/execute - Exécuter un programme TSD", protocol, addr)
+	logger.Printf("   GET  %s://%s/health - Health check", protocol, addr)
+	logger.Printf("   GET  %s://%s/api/v1/version - Version info", protocol, addr)
 
-	if err := http.ListenAndServe(addr, server.mux); err != nil {
+	// Démarrer le serveur
+	var err error
+	if config.Insecure {
+		// Mode HTTP non sécurisé
+		err = http.ListenAndServe(addr, server.mux)
+	} else {
+		// Mode HTTPS avec TLS
+		tlsConfig := &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			},
+			PreferServerCipherSuites: true,
+		}
+
+		httpServer := &http.Server{
+			Addr:      addr,
+			Handler:   server.mux,
+			TLSConfig: tlsConfig,
+		}
+
+		err = httpServer.ListenAndServeTLS(config.TLSCertFile, config.TLSKeyFile)
+	}
+
+	if err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur démarrage serveur: %v\n", err)
 		return 1
 	}
@@ -106,6 +164,13 @@ func parseFlags(args []string) *Config {
 	fs.IntVar(&config.Port, "port", DefaultPort, "Port du serveur")
 	fs.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
 
+	// TLS
+	defaultCertPath := filepath.Join(DefaultCertDir, DefaultCertFile)
+	defaultKeyPath := filepath.Join(DefaultCertDir, DefaultKeyFile)
+	fs.StringVar(&config.TLSCertFile, "tls-cert", defaultCertPath, "Chemin vers le certificat TLS")
+	fs.StringVar(&config.TLSKeyFile, "tls-key", defaultKeyPath, "Chemin vers la clé privée TLS")
+	fs.BoolVar(&config.Insecure, "insecure", false, "Désactiver TLS (mode HTTP non sécurisé)")
+
 	// Authentification
 	fs.StringVar(&config.AuthType, "auth", "none", "Type d'authentification: none, key, jwt")
 	authKeysStr := fs.String("auth-keys", "", "Clés API (séparées par des virgules)")
@@ -114,6 +179,37 @@ func parseFlags(args []string) *Config {
 	fs.StringVar(&config.JWTIssuer, "jwt-issuer", "tsd-server", "Émetteur JWT")
 
 	fs.Parse(args)
+
+	// Variables d'environnement pour TLS
+	if envCert := os.Getenv("TSD_TLS_CERT"); envCert != "" {
+		config.TLSCertFile = envCert
+	}
+	if envKey := os.Getenv("TSD_TLS_KEY"); envKey != "" {
+		config.TLSKeyFile = envKey
+	}
+	if os.Getenv("TSD_INSECURE") == "true" {
+		config.Insecure = true
+	}
+
+	// Vérifier que les certificats existent si TLS est activé
+	if !config.Insecure {
+		if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "❌ Certificat TLS non trouvé: %s\n", config.TLSCertFile)
+			fmt.Fprintf(os.Stderr, "\n💡 Solutions:\n")
+			fmt.Fprintf(os.Stderr, "   1. Générer des certificats: tsd auth generate-cert\n")
+			fmt.Fprintf(os.Stderr, "   2. Spécifier un certificat: --tls-cert /path/to/cert.crt\n")
+			fmt.Fprintf(os.Stderr, "   3. Démarrer en mode non sécurisé: --insecure (déconseillé en production)\n")
+			os.Exit(1)
+		}
+		if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "❌ Clé privée TLS non trouvée: %s\n", config.TLSKeyFile)
+			fmt.Fprintf(os.Stderr, "\n💡 Solutions:\n")
+			fmt.Fprintf(os.Stderr, "   1. Générer des certificats: tsd auth generate-cert\n")
+			fmt.Fprintf(os.Stderr, "   2. Spécifier une clé: --tls-key /path/to/key.key\n")
+			fmt.Fprintf(os.Stderr, "   3. Démarrer en mode non sécurisé: --insecure (déconseillé en production)\n")
+			os.Exit(1)
+		}
+	}
 
 	// Parser les clés API depuis la variable d'environnement ou le flag
 	if *authKeysStr == "" {

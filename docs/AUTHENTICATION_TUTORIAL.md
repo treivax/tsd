@@ -70,6 +70,91 @@ tsd client -h
 tsd auth -h
 ```
 
+### 2.3. Configuration TLS/HTTPS (Requis)
+
+⚠️ **Important** : TSD utilise HTTPS par défaut pour sécuriser les communications. Vous devez générer des certificats avant de démarrer le serveur.
+
+#### Étape 1 : Générer des certificats pour le développement
+
+```bash
+# Générer des certificats auto-signés
+tsd auth generate-cert
+
+# Sortie :
+# 🔐 Certificats TLS générés avec succès!
+# =====================================
+# 
+# 📁 Répertoire: ./certs
+# 
+# 📄 Fichiers générés:
+#    - ./certs/server.crt (certificat serveur)
+#    - ./certs/server.key (clé privée serveur)
+#    - ./certs/ca.crt (certificat CA pour clients)
+```
+
+⚠️ **Sécurité** : 
+- Ne JAMAIS committer les certificats dans Git
+- Ces certificats sont auto-signés (développement uniquement)
+- En production, utilisez des certificats signés (Let's Encrypt, etc.)
+
+#### Étape 2 : Options avancées de génération
+
+```bash
+# Personnaliser les hôtes autorisés
+tsd auth generate-cert -hosts "localhost,127.0.0.1,192.168.1.100,myserver.local"
+
+# Personnaliser la durée de validité
+tsd auth generate-cert -valid-days 730
+
+# Répertoire de sortie personnalisé
+tsd auth generate-cert -output-dir ./my-certs
+
+# Tout personnalisé
+tsd auth generate-cert \
+  -hosts "localhost,127.0.0.1" \
+  -valid-days 365 \
+  -org "My Company" \
+  -output-dir ./certs
+```
+
+#### Étape 3 : Vérifier les certificats générés
+
+```bash
+# Lister les fichiers
+ls -lh certs/
+
+# Afficher les détails du certificat
+openssl x509 -in certs/server.crt -text -noout
+```
+
+#### Configuration pour la Production
+
+Pour un environnement de production, utilisez des certificats signés par une autorité de certification reconnue :
+
+```bash
+# Exemple avec Let's Encrypt (certbot)
+sudo certbot certonly --standalone -d tsd.example.com
+
+# Démarrer le serveur avec ces certificats
+tsd server \
+  --tls-cert /etc/letsencrypt/live/tsd.example.com/fullchain.pem \
+  --tls-key /etc/letsencrypt/live/tsd.example.com/privkey.pem
+```
+
+#### Mode HTTP non sécurisé (Déconseillé)
+
+Pour désactiver TLS en développement (NON recommandé) :
+
+```bash
+# Serveur en HTTP simple
+tsd server --insecure
+
+# Client vers serveur HTTP
+tsd client program.tsd -server http://localhost:8080
+```
+
+⚠️ **Avertissement** : N'utilisez JAMAIS `--insecure` en production !
+
 ---
 
 ## 3. Authentification par Clé API (Auth Key)
@@ -78,11 +163,30 @@ L'authentification par clé API utilise des tokens statiques pré-partagés. C'e
 
 ### 3.1. Configuration du serveur avec Auth Key
 
-#### Étape 1 : Générer des clés API
+#### Étape 1 : Générer des certificats TLS (si pas déjà fait)
 
 ```bash
-# Générer une clé API
-tsd auth generate-key
+# Générer les certificats pour HTTPS
+tsd auth generate-cert
+```
+
+#### Étape 2 : Générer des clés API
+
+```bash
+# 1. Générer les certificats TLS
+$ tsd auth generate-cert
+🔐 Certificats TLS générés avec succès!
+=====================================
+
+📁 Répertoire: ./certs
+
+📄 Fichiers générés:
+   - ./certs/server.crt (certificat serveur)
+   - ./certs/server.key (clé privée serveur)
+   - ./certs/ca.crt (certificat CA pour clients)
+
+# 2. Générer une clé API
+$ tsd auth generate-key
 ```
 
 **Sortie :**
@@ -95,8 +199,6 @@ Xj8KpL9mN2qR5sT7vW0yZ3bC6dF8gH1jK4lM7nP0qS2uV5xY8zA3bD6eG9hJ2k
 
 ⚠️ **Important** : Sauvegardez cette clé dans un endroit sûr ! Elle ne peut pas être récupérée.
 
-#### Étape 2 : Générer plusieurs clés (optionnel)
-
 ```bash
 # Générer 3 clés (pour différents clients/services)
 tsd auth generate-key -count 3
@@ -105,7 +207,7 @@ tsd auth generate-key -count 3
 tsd auth generate-key -count 3 -format json > keys.json
 ```
 
-#### Étape 3 : Démarrer le serveur avec Auth Key
+#### Étape 4 : Démarrer le serveur avec JWT (HTTPS)
 
 **Option A : Via ligne de commande**
 
@@ -134,13 +236,16 @@ tsd server -auth key
 
 **Sortie du serveur :**
 ```
-[TSD-SERVER] 2025/01/15 10:30:45 🚀 Démarrage du serveur TSD sur 0.0.0.0:8080
-[TSD-SERVER] 2025/01/15 10:30:45 📊 Version: 1.0.0
-[TSD-SERVER] 2025/01/15 10:30:45 🔒 Authentification: activée (key)
-[TSD-SERVER] 2025/01/15 10:30:45 🔗 Endpoints disponibles:
-[TSD-SERVER] 2025/01/15 10:30:45    POST http://0.0.0.0:8080/api/v1/execute - Exécuter un programme TSD
-[TSD-SERVER] 2025/01/15 10:30:45    GET  http://0.0.0.0:8080/health - Health check
-[TSD-SERVER] 2025/01/15 10:30:45    GET  http://0.0.0.0:8080/api/v1/version - Version info
+[TSD-SERVER] 2025/01/15 10:00:00 🚀 Démarrage du serveur TSD sur https://0.0.0.0:8080
+[TSD-SERVER] 2025/01/15 10:00:00 📊 Version: 1.0.0
+[TSD-SERVER] 2025/01/15 10:00:00 🔒 TLS: activé
+[TSD-SERVER] 2025/01/15 10:00:00    Certificat: ./certs/server.crt
+[TSD-SERVER] 2025/01/15 10:00:00    Clé: ./certs/server.key
+[TSD-SERVER] 2025/01/15 10:00:00 🔒 Authentification: activée (key)
+[TSD-SERVER] 2025/01/15 10:00:00 🔗 Endpoints disponibles:
+[TSD-SERVER] 2025/01/15 10:00:00    POST https://0.0.0.0:8080/api/v1/execute - Exécuter un programme TSD
+[TSD-SERVER] 2025/01/15 10:00:00    GET  https://0.0.0.0:8080/health - Health check
+[TSD-SERVER] 2025/01/15 10:00:00    GET  https://0.0.0.0:8080/api/v1/version - Version info
 ```
 
 ### 3.2. Utilisation avec le CLI
@@ -357,7 +462,14 @@ L'authentification JWT est plus avancée et permet d'inclure des métadonnées u
 
 ### 4.1. Configuration du serveur avec JWT
 
-#### Étape 1 : Générer un secret JWT
+#### Étape 1 : Générer des certificats TLS (si pas déjà fait)
+
+```bash
+# Générer les certificats pour HTTPS
+tsd auth generate-cert
+```
+
+#### Étape 2 : Générer un secret JWT
 
 Le secret JWT doit être une chaîne aléatoire sécurisée d'au moins 32 caractères.
 
@@ -391,11 +503,14 @@ tsd server -auth jwt -jwt-issuer "my-company-tsd"
 ```
 
 **Sortie du serveur :**
+**Sortie :**
 ```
-[TSD-SERVER] 2025/01/15 11:00:00 🚀 Démarrage du serveur TSD sur 0.0.0.0:8080
-[TSD-SERVER] 2025/01/15 11:00:00 📊 Version: 1.0.0
-[TSD-SERVER] 2025/01/15 11:00:00 🔒 Authentification: activée (jwt)
-[TSD-SERVER] 2025/01/15 11:00:00 🔗 Endpoints disponibles:
+[TSD-SERVER] 2025/01/15 10:30:00 🚀 Démarrage du serveur TSD sur https://0.0.0.0:8080
+[TSD-SERVER] 2025/01/15 10:30:00 📊 Version: 1.0.0
+[TSD-SERVER] 2025/01/15 10:30:00 🔒 TLS: activé
+[TSD-SERVER] 2025/01/15 10:30:00    Certificat: ./certs/server.crt
+[TSD-SERVER] 2025/01/15 10:30:00    Clé: ./certs/server.key
+[TSD-SERVER] 2025/01/15 10:30:00 🔒 Authentification: activée (jwt)
 ```
 
 ### 4.2. Utilisation avec le CLI

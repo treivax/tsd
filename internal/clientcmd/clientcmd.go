@@ -6,6 +6,8 @@ package clientcmd
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -19,10 +21,13 @@ import (
 
 const (
 	// DefaultServerURL est l'URL par défaut du serveur
-	DefaultServerURL = "http://localhost:8080"
+	DefaultServerURL = "https://localhost:8080"
 
 	// DefaultTimeout est le timeout par défaut des requêtes
 	DefaultTimeout = 30 * time.Second
+
+	// DefaultCAFile est le fichier CA par défaut
+	DefaultCAFile = "./certs/ca.crt"
 )
 
 // Config contient la configuration du client
@@ -38,12 +43,15 @@ type Config struct {
 	ShowHealth bool
 	AuthToken  string
 	AuthType   string
+	TLSCAFile  string
+	Insecure   bool
 }
 
 // Client représente le client HTTP TSD
 type Client struct {
 	config     *Config
 	httpClient *http.Client
+	tlsConfig  *tls.Config
 }
 
 // Run exécute le client avec les arguments donnés et retourne un code de sortie
@@ -116,6 +124,11 @@ func parseFlags(args []string) (*Config, error) {
 	flagSet.StringVar(&config.AuthToken, "token", "", "Token d'authentification (clé API ou JWT)")
 	flagSet.StringVar(&config.AuthType, "auth-type", "", "Type d'authentification: key ou jwt (optionnel)")
 
+	// TLS
+	defaultCAPath := DefaultCAFile
+	flagSet.StringVar(&config.TLSCAFile, "tls-ca", defaultCAPath, "Chemin vers le certificat CA pour vérifier le serveur")
+	flagSet.BoolVar(&config.Insecure, "insecure", false, "Désactiver la vérification TLS (développement uniquement)")
+
 	if err := flagSet.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			config.ShowHelp = true
@@ -132,6 +145,14 @@ func parseFlags(args []string) (*Config, error) {
 	// Récupérer le token depuis la variable d'environnement si non fourni
 	if config.AuthToken == "" {
 		config.AuthToken = os.Getenv("TSD_AUTH_TOKEN")
+	}
+
+	// Variables d'environnement pour TLS
+	if envCA := os.Getenv("TSD_TLS_CA"); envCA != "" {
+		config.TLSCAFile = envCA
+	}
+	if os.Getenv("TSD_CLIENT_INSECURE") == "true" {
+		config.Insecure = true
 	}
 
 	return config, nil
@@ -196,10 +217,39 @@ func readSource(config *Config, stdin io.Reader) (string, string, error) {
 
 // NewClient crée un nouveau client TSD
 func NewClient(config *Config) *Client {
+	// Configurer TLS
+	tlsConfig := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
+
+	// Si mode insecure, désactiver la vérification
+	if config.Insecure {
+		tlsConfig.InsecureSkipVerify = true
+	} else {
+		// Charger le CA si fourni et fichier existe
+		if config.TLSCAFile != "" {
+			if _, err := os.Stat(config.TLSCAFile); err == nil {
+				caCert, err := os.ReadFile(config.TLSCAFile)
+				if err == nil {
+					caCertPool := x509.NewCertPool()
+					if caCertPool.AppendCertsFromPEM(caCert) {
+						tlsConfig.RootCAs = caCertPool
+					}
+				}
+			}
+		}
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
 	return &Client{
-		config: config,
+		config:    config,
+		tlsConfig: tlsConfig,
 		httpClient: &http.Client{
-			Timeout: config.Timeout,
+			Timeout:   config.Timeout,
+			Transport: transport,
 		},
 	}
 }
@@ -238,6 +288,9 @@ func (c *Client) Execute(source, sourceName string) (*tsdio.ExecuteResponse, err
 		fmt.Printf("📤 Envoi requête à %s...\n", url)
 		if c.config.AuthToken != "" {
 			fmt.Printf("🔒 Authentification: activée\n")
+		}
+		if c.config.Insecure {
+			fmt.Printf("⚠️  TLS: vérification désactivée (mode insecure)\n")
 		}
 	}
 
@@ -394,7 +447,7 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  echo \"<tsd code>\" | tsd client -stdin")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "OPTIONS:")
-	fmt.Fprintln(w, "  -server <url>       URL du serveur TSD (défaut: http://localhost:8080)")
+	fmt.Fprintln(w, "  -server <url>       URL du serveur TSD (défaut: https://localhost:8080)")
 	fmt.Fprintln(w, "  -file <file>        Fichier TSD (.tsd)")
 	fmt.Fprintln(w, "  -text <text>        Code TSD directement")
 	fmt.Fprintln(w, "  -stdin              Lire depuis l'entrée standard")
@@ -404,15 +457,25 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  -health             Vérifier la santé du serveur")
 	fmt.Fprintln(w, "  -token <token>      Token d'authentification (clé API ou JWT)")
 	fmt.Fprintln(w, "  -auth-type <type>   Type d'authentification: key ou jwt (optionnel)")
+	fmt.Fprintln(w, "  -tls-ca <file>      Certificat CA pour vérifier le serveur (défaut: ./certs/ca.crt)")
+	fmt.Fprintln(w, "  -insecure           Désactiver la vérification TLS (⚠️  développement uniquement)")
 	fmt.Fprintln(w, "  -help               Afficher cette aide")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "AUTHENTIFICATION:")
 	fmt.Fprintln(w, "  Le token peut être fourni via -token ou la variable d'environnement TSD_AUTH_TOKEN")
 	fmt.Fprintln(w, "  export TSD_AUTH_TOKEN=\"votre-token-ici\"")
 	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "TLS/HTTPS:")
+	fmt.Fprintln(w, "  Par défaut, le client utilise HTTPS et vérifie le certificat du serveur.")
+	fmt.Fprintln(w, "  Pour les certificats auto-signés (développement):")
+	fmt.Fprintln(w, "    - Option 1: Utiliser le CA généré: -tls-ca ./certs/ca.crt")
+	fmt.Fprintln(w, "    - Option 2: Désactiver la vérification: -insecure (⚠️  non sécurisé)")
+	fmt.Fprintln(w, "  Variables d'environnement: TSD_TLS_CA, TSD_CLIENT_INSECURE")
+	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "EXEMPLES:")
-	fmt.Fprintln(w, "  # Vérifier la santé du serveur")
+	fmt.Fprintln(w, "  # Vérifier la santé du serveur (HTTPS par défaut)")
 	fmt.Fprintln(w, "  tsd client -health")
+	fmt.Fprintln(w, "  tsd client -health -server https://tsd.example.com:8080")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Exécuter un fichier TSD")
 	fmt.Fprintln(w, "  tsd client program.tsd")
@@ -425,8 +488,15 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  echo 'type Person : <id: string>' | tsd client -stdin")
 	fmt.Fprintln(w, "  cat program.tsd | tsd client -stdin -v")
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "  # Utiliser un serveur distant")
-	fmt.Fprintln(w, "  tsd client -server http://tsd.example.com:8080 program.tsd")
+	fmt.Fprintln(w, "  # Utiliser un serveur distant (HTTPS)")
+	fmt.Fprintln(w, "  tsd client -server https://tsd.example.com:8080 program.tsd")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "  # Utiliser un serveur avec certificat auto-signé (développement)")
+	fmt.Fprintln(w, "  tsd client program.tsd -tls-ca ./certs/ca.crt")
+	fmt.Fprintln(w, "  tsd client program.tsd -insecure")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "  # Utiliser un serveur en HTTP non sécurisé")
+	fmt.Fprintln(w, "  tsd client -server http://localhost:8080 program.tsd")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Format JSON pour intégration")
 	fmt.Fprintln(w, "  tsd client program.tsd -format json")
@@ -438,4 +508,9 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Avec authentification JWT")
 	fmt.Fprintln(w, "  tsd client program.tsd -token \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "NOTES:")
+	fmt.Fprintln(w, "  - Le serveur utilise HTTPS par défaut (port 8080)")
+	fmt.Fprintln(w, "  - Les certificats auto-signés nécessitent -tls-ca ou -insecure")
+	fmt.Fprintln(w, "  - En production, utilisez toujours des certificats valides (Let's Encrypt, etc.)")
 }

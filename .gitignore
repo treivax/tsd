@@ -7,6 +7,13 @@ REPORTS/*
 # AI prompts (not versioned)
 .github/prompts/
 
+# TLS Certificates (never commit private keys!)
+certs/
+*.crt
+*.key
+*.pem
+*.csr
+
 # Binaries
 bin/
 *.exe

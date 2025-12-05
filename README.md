@@ -20,7 +20,8 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🔗 **Beta Sharing System** - Partage intelligent des nœuds (60-80% réduction mémoire)
 - 📈 **Agrégations multi-sources** - AVG, SUM, COUNT, MIN, MAX sur jointures complexes
 - 🔒 **Authentification** - Support Auth Key et JWT pour sécuriser l'accès au serveur
-- 🌐 **Architecture Client/Serveur** - Serveur HTTP et client pour exécution distante
+- 🔐 **TLS/HTTPS par défaut** - Communication sécurisée avec génération de certificats
+- 🌐 **Architecture Client/Serveur** - Serveur HTTPS et client pour exécution distante
 - 🔧 **Binaire unique** - Un seul binaire `tsd` pour tous les rôles (compiler, auth, client, server)
 
 ## 📝 Syntaxe des Règles
@@ -73,9 +74,9 @@ make build
 
 Le binaire unique `tsd` sera créé dans `./bin/tsd` et supporte tous les rôles :
 - **Compilateur/Runner** (comportement par défaut)
-- **Authentification** (`tsd auth ...`)
-- **Client HTTP** (`tsd client ...`)
-- **Serveur HTTP** (`tsd server ...`)
+- **Authentification** (`tsd auth ...`) - Inclut génération de certificats TLS
+- **Client HTTPS** (`tsd client ...`)
+- **Serveur HTTPS** (`tsd server ...`)
 
 ### Commandes Disponibles
 
@@ -96,6 +97,92 @@ make format lint
 make validate
 ```
 
+## 🔐 TLS/HTTPS (Nouveau)
+
+TSD utilise **HTTPS par défaut** pour toutes les communications client-serveur. Pour commencer :
+
+### 1. Générer des Certificats (Développement)
+
+```bash
+# Générer des certificats auto-signés pour développement
+tsd auth generate-cert
+
+# Génère automatiquement dans ./certs/ :
+# - server.crt (certificat serveur)
+# - server.key (clé privée serveur)
+# - ca.crt (certificat CA pour les clients)
+```
+
+Options avancées :
+```bash
+# Personnaliser les hôtes
+tsd auth generate-cert -hosts "localhost,127.0.0.1,192.168.1.100"
+
+# Personnaliser la durée de validité
+tsd auth generate-cert -valid-days 730
+
+# Répertoire personnalisé
+tsd auth generate-cert -output-dir ./my-certs
+```
+
+### 2. Démarrer le Serveur (HTTPS)
+
+```bash
+# Mode sécurisé (par défaut, cherche ./certs/server.{crt,key})
+tsd server
+
+# Certificats personnalisés
+tsd server --tls-cert /path/to/cert.crt --tls-key /path/to/key.key
+
+# Mode HTTP non sécurisé (développement uniquement, déconseillé)
+tsd server --insecure
+```
+
+Variables d'environnement :
+```bash
+export TSD_TLS_CERT=/path/to/cert.crt
+export TSD_TLS_KEY=/path/to/key.key
+export TSD_INSECURE=true  # pour mode HTTP
+```
+
+### 3. Utiliser le Client (HTTPS)
+
+```bash
+# HTTPS par défaut (avec certificat auto-signé)
+tsd client program.tsd -insecure
+
+# Ou avec vérification du CA
+tsd client program.tsd -tls-ca ./certs/ca.crt
+
+# Serveur distant avec certificat valide
+tsd client program.tsd -server https://tsd.example.com:8080
+```
+
+Variables d'environnement :
+```bash
+export TSD_TLS_CA=./certs/ca.crt
+export TSD_CLIENT_INSECURE=true  # désactive la vérification TLS
+```
+
+### ⚠️ Important - Sécurité
+
+- **Développement** : Utilisez les certificats auto-signés générés par `tsd auth generate-cert`
+- **Production** : Utilisez des certificats signés par une CA reconnue (Let's Encrypt, etc.)
+- **Ne JAMAIS committer** les certificats/clés dans Git (déjà dans `.gitignore`)
+- Le flag `--insecure` ne doit être utilisé qu'en développement
+
+### Production avec Let's Encrypt
+
+```bash
+# Obtenir un certificat Let's Encrypt (exemple avec certbot)
+sudo certbot certonly --standalone -d tsd.example.com
+
+# Démarrer le serveur avec le certificat
+tsd server \
+  --tls-cert /etc/letsencrypt/live/tsd.example.com/fullchain.pem \
+  --tls-key /etc/letsencrypt/live/tsd.example.com/privkey.pem
+```
+
 ## 📋 Usage
 
 ### Binaire Unique TSD
@@ -113,18 +200,22 @@ tsd --version
 tsd program.tsd
 tsd -file program.tsd -v
 
-# Gestion d'authentification
+# Gestion d'authentification et certificats
 tsd auth generate-key
 tsd auth generate-jwt -secret "mon-secret" -username alice
 tsd auth validate -type jwt -token "..." -secret "mon-secret"
+tsd auth generate-cert  # Générer certificats TLS
 
-# Client HTTP
-tsd client program.tsd -server http://localhost:8080
-tsd client -health
+# Client HTTPS (par défaut)
+tsd client program.tsd
+tsd client program.tsd -insecure  # dev avec certificats auto-signés
+tsd client -health -server https://tsd.example.com:8080
 
-# Serveur HTTP
-tsd server -port 8080
-tsd server -auth jwt -jwt-secret "mon-secret"
+# Serveur HTTPS (par défaut)
+tsd auth generate-cert  # d'abord générer les certificats
+tsd server
+tsd server -port 8443 -auth jwt -jwt-secret "mon-secret"
+tsd server --insecure  # HTTP non sécurisé (déconseillé)
 ```
 
 ### Aide Spécifique par Rôle
