@@ -36,6 +36,8 @@ type Config struct {
 	Timeout    time.Duration
 	ShowHelp   bool
 	ShowHealth bool
+	AuthToken  string
+	AuthType   string
 }
 
 // Client représente le client HTTP TSD
@@ -116,6 +118,8 @@ func parseFlags(args []string) (*Config, error) {
 	flagSet.DurationVar(&config.Timeout, "timeout", DefaultTimeout, "Timeout des requêtes")
 	flagSet.BoolVar(&config.ShowHelp, "h", false, "Afficher l'aide")
 	flagSet.BoolVar(&config.ShowHealth, "health", false, "Vérifier la santé du serveur")
+	flagSet.StringVar(&config.AuthToken, "token", "", "Token d'authentification (clé API ou JWT)")
+	flagSet.StringVar(&config.AuthType, "auth-type", "", "Type d'authentification: key ou jwt (optionnel)")
 
 	if err := flagSet.Parse(args); err != nil {
 		return nil, err
@@ -124,6 +128,11 @@ func parseFlags(args []string) (*Config, error) {
 	// Gérer l'argument positionnel comme fichier
 	if config.File == "" && len(flagSet.Args()) > 0 {
 		config.File = flagSet.Args()[0]
+	}
+
+	// Récupérer le token depuis la variable d'environnement si non fourni
+	if config.AuthToken == "" {
+		config.AuthToken = os.Getenv("TSD_AUTH_TOKEN")
 	}
 
 	return config, nil
@@ -220,9 +229,17 @@ func (c *Client) Execute(source, sourceName string) (*tsdio.ExecuteResponse, err
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
+	// Ajouter le token d'authentification si fourni
+	if c.config.AuthToken != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.config.AuthToken)
+	}
+
 	// Envoyer la requête
 	if c.config.Verbose {
 		fmt.Printf("📤 Envoi requête à %s...\n", url)
+		if c.config.AuthToken != "" {
+			fmt.Printf("🔒 Authentification: activée\n")
+		}
 	}
 
 	resp, err := c.httpClient.Do(httpReq)
@@ -386,7 +403,13 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  -format <format>    Format de sortie: text ou json (défaut: text)")
 	fmt.Fprintln(w, "  -timeout <duration> Timeout des requêtes (défaut: 30s)")
 	fmt.Fprintln(w, "  -health             Vérifier la santé du serveur")
+	fmt.Fprintln(w, "  -token <token>      Token d'authentification (clé API ou JWT)")
+	fmt.Fprintln(w, "  -auth-type <type>   Type d'authentification: key ou jwt (optionnel)")
 	fmt.Fprintln(w, "  -h                  Afficher cette aide")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "AUTHENTIFICATION:")
+	fmt.Fprintln(w, "  Le token peut être fourni via -token ou la variable d'environnement TSD_AUTH_TOKEN")
+	fmt.Fprintln(w, "  export TSD_AUTH_TOKEN=\"votre-token-ici\"")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "EXEMPLES:")
 	fmt.Fprintln(w, "  # Vérifier la santé du serveur")
@@ -408,4 +431,12 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Format JSON pour intégration")
 	fmt.Fprintln(w, "  tsd-client program.tsd -format json")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "  # Avec authentification par clé API")
+	fmt.Fprintln(w, "  tsd-client program.tsd -token \"votre-cle-api\"")
+	fmt.Fprintln(w, "  export TSD_AUTH_TOKEN=\"votre-cle-api\"")
+	fmt.Fprintln(w, "  tsd-client program.tsd")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "  # Avec authentification JWT")
+	fmt.Fprintln(w, "  tsd-client program.tsd -token \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"")
 }

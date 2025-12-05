@@ -3,6 +3,52 @@
 ## [Unreleased]
 
 ### Added
+- **Authentication System** - Système d'authentification complet pour sécuriser le serveur TSD
+  - Support de trois modes d'authentification :
+    - `none` : Sans authentification (développement)
+    - `key` : Authentification par clé API statique
+    - `jwt` : Authentification JWT avec expiration et métadonnées utilisateur
+  - Package d'authentification (`auth/auth.go`)
+    - Gestion centralisée des tokens (Auth Key et JWT)
+    - Validation sécurisée avec protection contre les timing attacks
+    - Génération de JWT avec claims personnalisés (username, roles)
+    - Support de l'expiration automatique pour JWT
+  - Outil CLI de gestion (`cmd/tsd-auth/`)
+    - Commande `generate-key` : Génération de clés API sécurisées (256 bits)
+    - Commande `generate-jwt` : Génération de JWT avec configuration complète
+    - Commande `validate` : Validation de tokens (Auth Key ou JWT)
+    - Mode interactif pour éviter l'exposition des secrets
+    - Format de sortie JSON et texte
+  - Serveur TSD sécurisé (`cmd/tsd-server/`)
+    - Middleware d'authentification automatique sur tous les endpoints
+    - Configuration via flags ou variables d'environnement
+    - Support de plusieurs clés API simultanées
+    - Configuration JWT avancée (expiration, émetteur, secret)
+  - Client TSD avec authentification (`cmd/tsd-client/`)
+    - Support automatique des tokens via header `Authorization: Bearer`
+    - Configuration via flag `-token` ou variable `TSD_AUTH_TOKEN`
+    - Compatible Auth Key et JWT de manière transparente
+  - Documentation complète
+    - `docs/AUTHENTICATION.md` - Vue d'ensemble et index (324 lignes)
+    - `docs/AUTHENTICATION_TUTORIAL.md` - Tutoriel détaillé (1064 lignes)
+    - `docs/AUTHENTICATION_QUICKSTART.md` - Guide de démarrage rapide (411 lignes)
+    - Couvre tous les cas d'usage : CLI, Python, CI/CD, Docker, Kubernetes
+    - Section complète sur les bonnes pratiques de sécurité
+    - Guide de dépannage exhaustif
+  - Exemples Python (`examples/auth/`)
+    - `client_auth_key.py` : Client complet avec Auth Key (368 lignes)
+    - `client_jwt.py` : Client complet avec JWT (623 lignes)
+    - Support de génération JWT en Python (via PyJWT)
+    - Gestion automatique de l'expiration et du rafraîchissement
+    - 4 exemples par fichier couvrant tous les scénarios
+  - Tests et validation
+    - Script de test complet `scripts/test_auth.sh` (422 lignes)
+    - Tests unitaires du package auth
+    - Tests d'intégration serveur/client
+    - Validation des scénarios d'erreur
+  - Dépendances
+    - `github.com/golang-jwt/jwt/v5` pour la gestion des JWT
+
 - **TSD Server & Client** - Serveur HTTP et client CLI pour exécution distante de programmes TSD
   - Serveur HTTP avec API REST (`cmd/tsd-server/`)
     - Endpoint `POST /api/v1/execute` pour exécuter des programmes TSD
@@ -22,6 +68,13 @@
     - `examples/server/` - Exemples de programmes TSD
     - Script de test automatisé `scripts/test_server_client.sh`
   - Intégration programmatique avec exemples Go, Python, JavaScript, cURL
+
+### Security
+- Protection contre les timing attacks dans la validation des clés API
+- Secrets JWT configurables uniquement via variables d'environnement
+- Validation stricte de la longueur minimale des secrets (32 caractères)
+- Support HTTPS recommandé en production
+- Documentation complète des bonnes pratiques de sécurité
 
 ## [1.0.0-runner-simplified] - 2025-12-03
 

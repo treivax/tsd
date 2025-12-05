@@ -12,8 +12,10 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/treivax/tsd/auth"
 	"github.com/treivax/tsd/constraint"
 	"github.com/treivax/tsd/rete"
 	"github.com/treivax/tsd/tsdio"
@@ -40,16 +42,22 @@ var (
 
 // Config contient la configuration du serveur
 type Config struct {
-	Host    string
-	Port    int
-	Verbose bool
+	Host          string
+	Port          int
+	Verbose       bool
+	AuthType      string
+	AuthKeys      []string
+	JWTSecret     string
+	JWTExpiration time.Duration
+	JWTIssuer     string
 }
 
 // Server représente le serveur HTTP TSD
 type Server struct {
-	config *Config
-	logger *log.Logger
-	mux    *http.ServeMux
+	config      *Config
+	logger      *log.Logger
+	mux         *http.ServeMux
+	authManager *auth.Manager
 }
 
 func main() {
@@ -57,11 +65,22 @@ func main() {
 
 	logger := log.New(os.Stdout, "[TSD-SERVER] ", log.LstdFlags)
 
-	server := NewServer(config, logger)
+	server, err := NewServer(config, logger)
+	if err != nil {
+		logger.Fatalf("❌ Erreur initialisation serveur: %v", err)
+	}
 
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	logger.Printf("🚀 Démarrage du serveur TSD sur %s", addr)
 	logger.Printf("📊 Version: %s", Version)
+
+	// Afficher le statut d'authentification
+	if server.authManager.IsEnabled() {
+		logger.Printf("🔒 Authentification: activée (%s)", server.authManager.GetAuthType())
+	} else {
+		logger.Printf("⚠️  Authentification: désactivée (mode développement)")
+	}
+
 	logger.Printf("🔗 Endpoints disponibles:")
 	logger.Printf("   POST http://%s/api/v1/execute - Exécuter un programme TSD", addr)
 	logger.Printf("   GET  http://%s/health - Health check", addr)
@@ -80,23 +99,61 @@ func parseFlags() *Config {
 	flag.IntVar(&config.Port, "port", DefaultPort, "Port du serveur")
 	flag.BoolVar(&config.Verbose, "v", false, "Mode verbeux")
 
+	// Authentification
+	flag.StringVar(&config.AuthType, "auth", "none", "Type d'authentification: none, key, jwt")
+	authKeysStr := flag.String("auth-keys", "", "Clés API (séparées par des virgules)")
+	flag.StringVar(&config.JWTSecret, "jwt-secret", "", "Secret pour JWT")
+	flag.DurationVar(&config.JWTExpiration, "jwt-expiration", 24*time.Hour, "Durée de validité JWT")
+	flag.StringVar(&config.JWTIssuer, "jwt-issuer", "tsd-server", "Émetteur JWT")
+
 	flag.Parse()
+
+	// Parser les clés API depuis la variable d'environnement ou le flag
+	if *authKeysStr == "" {
+		*authKeysStr = os.Getenv("TSD_AUTH_KEYS")
+	}
+	if *authKeysStr != "" {
+		config.AuthKeys = strings.Split(*authKeysStr, ",")
+		for i, key := range config.AuthKeys {
+			config.AuthKeys[i] = strings.TrimSpace(key)
+		}
+	}
+
+	// Récupérer le secret JWT depuis la variable d'environnement si non fourni
+	if config.JWTSecret == "" {
+		config.JWTSecret = os.Getenv("TSD_JWT_SECRET")
+	}
 
 	return config
 }
 
 // NewServer crée un nouveau serveur TSD
-func NewServer(config *Config, logger *log.Logger) *Server {
+func NewServer(config *Config, logger *log.Logger) (*Server, error) {
+	// Créer le gestionnaire d'authentification
+	authConfig := &auth.Config{
+		Type:          config.AuthType,
+		AuthKeys:      config.AuthKeys,
+		JWTSecret:     config.JWTSecret,
+		JWTExpiration: config.JWTExpiration,
+		JWTIssuer:     config.JWTIssuer,
+	}
+
+	authManager, err := auth.NewManager(authConfig)
+	if err != nil {
+		return nil, fmt.Errorf("erreur initialisation authentification: %w", err)
+	}
+
 	s := &Server{
-		config: config,
-		logger: logger,
-		mux:    http.NewServeMux(),
+		config:      config,
+		logger:      logger,
+		mux:         http.NewServeMux(),
+		authManager: authManager,
 	}
 
 	// Enregistrer les routes
 	s.registerRoutes()
 
-	return s
+	return s, nil
 }
 
 // registerRoutes enregistre les routes HTTP
@@ -113,6 +170,12 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 	// Vérifier la méthode HTTP
 	if r.Method != http.MethodPost {
 		s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, startTime)
+		return
+	}
+
+	// Authentification
+	if err := s.authenticate(r); err != nil {
+		s.writeError(w, tsdio.ErrorTypeServerError, "Authentification échouée: "+err.Error(), http.StatusUnauthorized, startTime)
 		return
 	}
 
@@ -325,6 +388,24 @@ func (s *Server) extractAttributes(fact *rete.Fact) map[string]interface{} {
 	}
 
 	return attrs
+}
+
+// authenticate vérifie l'authentification de la requête
+func (s *Server) authenticate(r *http.Request) error {
+	if !s.authManager.IsEnabled() {
+		return nil
+	}
+
+	// Extraire le token du header Authorization
+	authHeader := r.Header.Get("Authorization")
+	token := auth.ExtractTokenFromHeader(authHeader)
+
+	// Valider le token
+	if err := s.authManager.ValidateToken(token); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // handleHealth gère les requêtes de health check
