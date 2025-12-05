@@ -1,0 +1,36 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// Exemple simple pour tester le serveur TSD
+// Ce fichier démontre les fonctionnalités de base du système
+
+// Définition du type Person
+type Person(id: string, name: string, age: number)
+
+// Définition du type Order
+type Order(id: string, customer_id: string, amount: number)
+
+// Définition des actions
+action notify(message: string)
+action process_order(order_id: string, amount: number)
+action send_welcome(name: string)
+
+// Règle 1: Notifier les personnes nommées "Alice"
+rule alice_rule : {p: Person} / p.name == "Alice" ==> notify(p.id)
+
+// Règle 2: Traiter les commandes supérieures à 100
+rule high_value_order : {o: Order} / o.amount > 100 ==> process_order(o.id, o.amount)
+
+// Règle 3: Envoyer un message de bienvenue aux nouveaux clients
+rule welcome_rule : {p: Person} / p.age < 30 ==> send_welcome(p.name)
+
+// Faits - Personnes
+Person("p1", "Alice", 25)
+Person("p2", "Bob", 35)
+Person("p3", "Charlie", 28)
+
+// Faits - Commandes
+Order("o1", "p1", 150)
+Order("o2", "p2", 50)
+Order("o3", "p3", 200)

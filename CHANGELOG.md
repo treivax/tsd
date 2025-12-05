@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Added
+- **TSD Server & Client** - Serveur HTTP et client CLI pour exécution distante de programmes TSD
+  - Serveur HTTP avec API REST (`cmd/tsd-server/`)
+    - Endpoint `POST /api/v1/execute` pour exécuter des programmes TSD
+    - Endpoint `GET /health` pour health check
+    - Endpoint `GET /api/v1/version` pour informations de version
+    - Support du mode verbeux et limitation de taille des requêtes
+  - Client CLI (`cmd/tsd-client/`)
+    - Soumission de fichiers TSD, code direct ou via stdin
+    - Formats de sortie texte et JSON
+    - Mode verbeux avec détails des faits déclencheurs
+    - Configuration serveur distant et timeout
+  - Structures API partagées (`tsdio/api.go`)
+    - Types pour requêtes/réponses avec gestion des erreurs
+    - Support des activations, arguments et faits déclencheurs
+  - Documentation complète
+    - `docs/TSD_SERVER_CLIENT.md` - Guide complet d'utilisation (627 lignes)
+    - `examples/server/` - Exemples de programmes TSD
+    - Script de test automatisé `scripts/test_server_client.sh`
+  - Intégration programmatique avec exemples Go, Python, JavaScript, cURL
+
 ## [1.0.0-runner-simplified] - 2025-12-03
 
 ### 🎉 Refactorisation Majeure du Runner de Tests

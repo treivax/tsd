@@ -1,0 +1,48 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// Exemple avec plusieurs activations
+// Ce fichier démontre comment plusieurs faits peuvent déclencher plusieurs actions
+
+// Définition des types
+type Employee(id: string, name: string, department: string, salary: number)
+type Project(id: string, name: string, budget: number)
+type Assignment(employee_id: string, project_id: string)
+
+// Définition des actions
+action alert_high_salary(employee_name: string, salary: number)
+action approve_project(project_name: string, budget: number)
+action assign_task(employee: string, project: string)
+
+// Règle 1: Alerter pour les salaires élevés (> 80000)
+rule high_salary_alert : {e: Employee} / e.salary > 80000 ==> alert_high_salary(e.name, e.salary)
+
+// Règle 2: Approuver les projets avec budget > 100000
+rule project_approval : {p: Project} / p.budget > 100000 ==> approve_project(p.name, p.budget)
+
+// Règle 3: Assigner les tâches en fonction des assignments
+rule task_assignment :
+  {e: Employee, a: Assignment, p: Project} /
+  e.id == a.employee_id && p.id == a.project_id
+  ==> assign_task(e.name, p.name)
+
+// Faits - Employés
+Employee("e1", "Alice", "Engineering", 95000)
+Employee("e2", "Bob", "Engineering", 75000)
+Employee("e3", "Charlie", "Sales", 85000)
+Employee("e4", "Diana", "Marketing", 70000)
+Employee("e5", "Eve", "Engineering", 120000)
+
+// Faits - Projets
+Project("p1", "Cloud Migration", 150000)
+Project("p2", "Mobile App", 80000)
+Project("p3", "Data Analytics", 200000)
+Project("p4", "Website Redesign", 50000)
+
+// Faits - Assignments
+Assignment("e1", "p1")
+Assignment("e3", "p2")
+Assignment("e5", "p3")
+Assignment("e2", "p4")
+Assignment("e4", "p2")
