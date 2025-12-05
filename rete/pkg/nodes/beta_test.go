@@ -653,3 +653,474 @@ func BenchmarkBetaMemory_Size(b *testing.B) {
 		_, _ = memory.Size()
 	}
 }
+
+// mockJoinCondition implémente l'interface JoinCondition pour les tests
+type mockJoinCondition struct {
+	leftField  string
+	rightField string
+	operator   string
+	evalResult bool
+}
+
+func (m *mockJoinCondition) Evaluate(token *domain.Token, fact *domain.Fact) bool {
+	return m.evalResult
+}
+
+func (m *mockJoinCondition) GetLeftField() string {
+	return m.leftField
+}
+
+func (m *mockJoinCondition) GetRightField() string {
+	return m.rightField
+}
+
+func (m *mockJoinCondition) GetOperator() string {
+	return m.operator
+}
+
+// Tests pour BaseBetaNode.ProcessFact
+func TestBaseBetaNode_ProcessFact(t *testing.T) {
+	logger := newMockLogger()
+	node := NewBaseBetaNode("beta-1", "BetaNode", logger)
+
+	fact := &domain.Fact{
+		ID:   "fact-1",
+		Type: "Customer",
+		Fields: map[string]interface{}{
+			"name": "Alice",
+		},
+	}
+
+	err := node.ProcessFact(fact)
+	if err != nil {
+		t.Errorf("ProcessFact failed: %v", err)
+	}
+
+	// Vérifier que le fait a été stocké
+	rightFacts := node.GetRightMemory()
+	if len(rightFacts) != 1 {
+		t.Errorf("Expected 1 fact in right memory, got %d", len(rightFacts))
+	}
+}
+
+// Tests pour BaseBetaNode.ProcessRightFact
+func TestBaseBetaNode_ProcessRightFact(t *testing.T) {
+	logger := newMockLogger()
+	node := NewBaseBetaNode("beta-1", "BetaNode", logger)
+
+	// Ajouter un token dans la mémoire gauche
+	token := &domain.Token{
+		ID: "token-1",
+		Facts: []*domain.Fact{
+			{ID: "fact-1", Type: "Customer"},
+		},
+	}
+	node.betaMemory.StoreToken(token)
+
+	// Traiter un fait du côté droit
+	fact := &domain.Fact{
+		ID:   "fact-2",
+		Type: "Order",
+		Fields: map[string]interface{}{
+			"amount": 100,
+		},
+	}
+
+	err := node.ProcessRightFact(fact)
+	if err != nil {
+		t.Errorf("ProcessRightFact failed: %v", err)
+	}
+
+	// Vérifier que le fait a été stocké
+	rightFacts := node.GetRightMemory()
+	if len(rightFacts) != 1 {
+		t.Errorf("Expected 1 fact in right memory, got %d", len(rightFacts))
+	}
+}
+
+// Tests pour BaseBetaNode.tryJoin
+func TestBaseBetaNode_tryJoin(t *testing.T) {
+	logger := newMockLogger()
+	node := NewBaseBetaNode("beta-1", "BetaNode", logger)
+
+	// Créer un mock child node pour capturer la propagation
+	mockChild := &MockBetaNode{
+		id:     "child-1",
+		tokens: make([]*domain.Token, 0),
+	}
+	node.AddChild(mockChild)
+
+	token := &domain.Token{
+		ID: "token-1",
+		Facts: []*domain.Fact{
+			{ID: "fact-1", Type: "Customer"},
+		},
+	}
+
+	fact := &domain.Fact{
+		ID:   "fact-2",
+		Type: "Order",
+	}
+
+	err := node.tryJoin(token, fact)
+	if err != nil {
+		t.Errorf("tryJoin failed: %v", err)
+	}
+
+	// Vérifier que le token a été propagé à l'enfant
+	// Note: BaseBetaNode.tryJoin calls propagateTokenToChildren which checks if child is BetaNode
+	// Since MockBetaNode implements ProcessLeftToken, it should receive the token
+	if len(mockChild.tokens) != 1 {
+		// Check children to debug
+		children := node.GetChildren()
+		t.Logf("Node has %d children", len(children))
+		if len(children) > 0 {
+			_, isBeta := children[0].(domain.BetaNode)
+			t.Logf("First child is BetaNode: %v", isBeta)
+		}
+		t.Errorf("Expected 1 token propagated to child, got %d", len(mockChild.tokens))
+	} else {
+		// Vérifier que le nouveau token contient les deux faits
+		newToken := mockChild.tokens[0]
+		if len(newToken.Facts) != 2 {
+			t.Errorf("Expected 2 facts in new token, got %d", len(newToken.Facts))
+		}
+	}
+}
+
+// Tests pour BaseBetaNode.ClearMemory
+func TestBaseBetaNode_ClearMemory(t *testing.T) {
+	logger := newMockLogger()
+	node := NewBaseBetaNode("beta-1", "BetaNode", logger)
+
+	// Ajouter des tokens et des faits
+	token := &domain.Token{ID: "token-1"}
+	fact := &domain.Fact{ID: "fact-1", Type: "Customer"}
+
+	node.betaMemory.StoreToken(token)
+	node.betaMemory.StoreFact(fact)
+
+	// Vérifier qu'ils sont présents
+	tokens, facts := node.betaMemory.Size()
+	if tokens != 1 || facts != 1 {
+		t.Errorf("Expected 1 token and 1 fact, got %d tokens and %d facts", tokens, facts)
+	}
+
+	// Vider la mémoire
+	node.ClearMemory()
+
+	// Vérifier que la mémoire est vide
+	tokens, facts = node.betaMemory.Size()
+	if tokens != 0 || facts != 0 {
+		t.Errorf("Expected empty memory, got %d tokens and %d facts", tokens, facts)
+	}
+}
+
+// Tests pour NewJoinNode
+func TestNewJoinNode(t *testing.T) {
+	logger := newMockLogger()
+	node := NewJoinNode("join-1", logger)
+
+	if node == nil {
+		t.Fatal("NewJoinNode returned nil")
+	}
+
+	if node.ID() != "join-1" {
+		t.Errorf("Expected ID 'join-1', got '%s'", node.ID())
+	}
+
+	if node.Type() != "JoinNode" {
+		t.Errorf("Expected type 'JoinNode', got '%s'", node.Type())
+	}
+
+	// Vérifier que les conditions de jointure sont initialisées
+	conditions := node.GetJoinConditions()
+	if len(conditions) != 0 {
+		t.Errorf("Expected 0 join conditions, got %d", len(conditions))
+	}
+}
+
+// Tests pour SetJoinConditions et GetJoinConditions
+func TestJoinNode_SetAndGetJoinConditions(t *testing.T) {
+	logger := newMockLogger()
+	node := NewJoinNode("join-1", logger)
+
+	conditions := []domain.JoinCondition{
+		&mockJoinCondition{
+			leftField:  "customerId",
+			rightField: "customerId",
+			operator:   "==",
+			evalResult: true,
+		},
+		&mockJoinCondition{
+			leftField:  "status",
+			rightField: "status",
+			operator:   "==",
+			evalResult: true,
+		},
+	}
+
+	node.SetJoinConditions(conditions)
+
+	retrieved := node.GetJoinConditions()
+	if len(retrieved) != 2 {
+		t.Errorf("Expected 2 conditions, got %d", len(retrieved))
+	}
+
+	if retrieved[0].GetLeftField() != "customerId" {
+		t.Errorf("Expected LeftField 'customerId', got '%s'", retrieved[0].GetLeftField())
+	}
+
+	if retrieved[1].GetOperator() != "==" {
+		t.Errorf("Expected Operator '==', got '%s'", retrieved[1].GetOperator())
+	}
+}
+
+// Tests pour EvaluateJoin
+func TestJoinNode_EvaluateJoin(t *testing.T) {
+	logger := newMockLogger()
+	node := NewJoinNode("join-1", logger)
+
+	t.Run("no conditions - always true", func(t *testing.T) {
+		token := &domain.Token{
+			ID: "token-1",
+			Facts: []*domain.Fact{
+				{
+					ID:   "fact-1",
+					Type: "Customer",
+					Fields: map[string]interface{}{
+						"id": "C1",
+					},
+				},
+			},
+		}
+
+		fact := &domain.Fact{
+			ID:   "fact-2",
+			Type: "Order",
+			Fields: map[string]interface{}{
+				"customerId": "C1",
+			},
+		}
+
+		result := node.EvaluateJoin(token, fact)
+		if !result {
+			t.Error("Expected EvaluateJoin to return true with no conditions")
+		}
+	})
+
+	t.Run("with matching conditions", func(t *testing.T) {
+		conditions := []domain.JoinCondition{
+			&mockJoinCondition{
+				leftField:  "id",
+				rightField: "customerId",
+				operator:   "==",
+				evalResult: true,
+			},
+		}
+		node.SetJoinConditions(conditions)
+
+		token := &domain.Token{
+			ID: "token-1",
+			Facts: []*domain.Fact{
+				{
+					ID:   "fact-1",
+					Type: "Customer",
+					Fields: map[string]interface{}{
+						"id": "C1",
+					},
+				},
+			},
+		}
+
+		fact := &domain.Fact{
+			ID:   "fact-2",
+			Type: "Order",
+			Fields: map[string]interface{}{
+				"customerId": "C1",
+			},
+		}
+
+		result := node.EvaluateJoin(token, fact)
+		if !result {
+			t.Error("Expected EvaluateJoin to return true with matching conditions")
+		}
+	})
+
+	t.Run("with non-matching conditions", func(t *testing.T) {
+		conditions := []domain.JoinCondition{
+			&mockJoinCondition{
+				leftField:  "id",
+				rightField: "customerId",
+				operator:   "==",
+				evalResult: false,
+			},
+		}
+		node.SetJoinConditions(conditions)
+
+		token := &domain.Token{
+			ID: "token-1",
+			Facts: []*domain.Fact{
+				{
+					ID:   "fact-1",
+					Type: "Customer",
+					Fields: map[string]interface{}{
+						"id": "C1",
+					},
+				},
+			},
+		}
+
+		fact := &domain.Fact{
+			ID:   "fact-2",
+			Type: "Order",
+			Fields: map[string]interface{}{
+				"customerId": "C2",
+			},
+		}
+
+		result := node.EvaluateJoin(token, fact)
+		if result {
+			t.Error("Expected EvaluateJoin to return false with non-matching conditions")
+		}
+	})
+}
+
+// Tests pour ProcessLeftToken dans JoinNode
+func TestJoinNode_ProcessLeftToken(t *testing.T) {
+	logger := newMockLogger()
+	node := NewJoinNode("join-1", logger)
+
+	// Ajouter un fait dans la mémoire droite
+	rightFact := &domain.Fact{
+		ID:   "fact-2",
+		Type: "Order",
+		Fields: map[string]interface{}{
+			"customerId": "C1",
+		},
+	}
+	node.betaMemory.StoreFact(rightFact)
+
+	// Créer un token
+	token := &domain.Token{
+		ID: "token-1",
+		Facts: []*domain.Fact{
+			{
+				ID:   "fact-1",
+				Type: "Customer",
+				Fields: map[string]interface{}{
+					"id": "C1",
+				},
+			},
+		},
+	}
+
+	err := node.ProcessLeftToken(token)
+	if err != nil {
+		t.Errorf("ProcessLeftToken failed: %v", err)
+	}
+
+	// Vérifier que le token a été stocké
+	leftTokens := node.GetLeftMemory()
+	if len(leftTokens) != 1 {
+		t.Errorf("Expected 1 token in left memory, got %d", len(leftTokens))
+	}
+}
+
+// Tests pour ProcessRightFact dans JoinNode
+func TestJoinNode_ProcessRightFact(t *testing.T) {
+	logger := newMockLogger()
+	node := NewJoinNode("join-1", logger)
+
+	// Ajouter un token dans la mémoire gauche
+	token := &domain.Token{
+		ID: "token-1",
+		Facts: []*domain.Fact{
+			{
+				ID:   "fact-1",
+				Type: "Customer",
+				Fields: map[string]interface{}{
+					"id": "C1",
+				},
+			},
+		},
+	}
+	node.betaMemory.StoreToken(token)
+
+	// Traiter un fait
+	fact := &domain.Fact{
+		ID:   "fact-2",
+		Type: "Order",
+		Fields: map[string]interface{}{
+			"customerId": "C1",
+		},
+	}
+
+	err := node.ProcessRightFact(fact)
+	if err != nil {
+		t.Errorf("ProcessRightFact failed: %v", err)
+	}
+
+	// Vérifier que le fait a été stocké
+	rightFacts := node.GetRightMemory()
+	if len(rightFacts) != 1 {
+		t.Errorf("Expected 1 fact in right memory, got %d", len(rightFacts))
+	}
+}
+
+// MockBetaNode pour les tests
+type MockBetaNode struct {
+	id     string
+	tokens []*domain.Token
+	mu     sync.Mutex
+}
+
+func (m *MockBetaNode) ID() string {
+	return m.id
+}
+
+func (m *MockBetaNode) Type() string {
+	return "MockBetaNode"
+}
+
+func (m *MockBetaNode) ProcessFact(fact *domain.Fact) error {
+	return nil
+}
+
+func (m *MockBetaNode) ProcessLeftToken(token *domain.Token) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.tokens = append(m.tokens, token)
+	return nil
+}
+
+func (m *MockBetaNode) ProcessRightFact(fact *domain.Fact) error {
+	return nil
+}
+
+func (m *MockBetaNode) GetMemory() *domain.WorkingMemory {
+	return nil
+}
+
+func (m *MockBetaNode) GetChildren() []domain.Node {
+	return nil
+}
+
+func (m *MockBetaNode) AddChild(child domain.Node) {
+}
+
+func (m *MockBetaNode) RemoveChild(childID string) bool {
+	return false
+}
+
+func (m *MockBetaNode) GetLeftMemory() []*domain.Token {
+	return nil
+}
+
+func (m *MockBetaNode) GetRightMemory() []*domain.Fact {
+	return nil
+}
+
+func (m *MockBetaNode) ClearMemory() {
+	// No-op for mock
+}
