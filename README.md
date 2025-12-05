@@ -4,9 +4,9 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-100%25-brightgreen.svg)](#tests)
 
-**Moteur de règles haute performance basé sur l'algorithme RETE**
+**Moteur de règles haute performance basé sur l'algorithme RETE avec système d'authentification**
 
-TSD est un système de règles métier moderne qui permet l'évaluation efficace de conditions complexes sur des flux de données. Il supporte les expressions de négation, les fonctions avancées et les patterns de correspondance.
+TSD est un système de règles métier moderne qui permet l'évaluation efficace de conditions complexes sur des flux de données. Il supporte les expressions de négation, les fonctions avancées et les patterns de correspondance. TSD inclut également un serveur HTTP avec authentification (Auth Key + JWT) et un client HTTP pour l'exécution distante.
 
 ## ✨ Fonctionnalités
 
@@ -19,6 +19,9 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🏷️ **Identifiants de règles** - Gestion fine des règles avec identifiants obligatoires
 - 🔗 **Beta Sharing System** - Partage intelligent des nœuds (60-80% réduction mémoire)
 - 📈 **Agrégations multi-sources** - AVG, SUM, COUNT, MIN, MAX sur jointures complexes
+- 🔒 **Authentification** - Support Auth Key et JWT pour sécuriser l'accès au serveur
+- 🌐 **Architecture Client/Serveur** - Serveur HTTP et client pour exécution distante
+- 🔧 **Binaire unique** - Un seul binaire `tsd` pour tous les rôles (compiler, auth, client, server)
 
 ## 📝 Syntaxe des Règles
 
@@ -68,17 +71,17 @@ make install
 make build
 ```
 
+Le binaire unique `tsd` sera créé dans `./bin/tsd` et supporte tous les rôles :
+- **Compilateur/Runner** (comportement par défaut)
+- **Authentification** (`tsd auth ...`)
+- **Client HTTP** (`tsd client ...`)
+- **Serveur HTTP** (`tsd server ...`)
+
 ### Commandes Disponibles
 
 ```bash
-# Construire tous les binaires
+# Construire le binaire unique TSD
 make build
-
-# Construire CLI principal
-make build-tsd
-
-# Construire runners de test
-make build-runners
 
 # Exécuter tous les tests (53 tests Alpha+Beta+Integration)
 make rete-unified
@@ -94,6 +97,62 @@ make validate
 ```
 
 ## 📋 Usage
+
+### Binaire Unique TSD
+
+Le binaire `tsd` est multifonction et change de comportement selon son premier argument :
+
+```bash
+# Afficher l'aide globale
+tsd --help
+
+# Afficher la version
+tsd --version
+
+# Compiler/exécuter un programme (comportement par défaut)
+tsd program.tsd
+tsd -file program.tsd -v
+
+# Gestion d'authentification
+tsd auth generate-key
+tsd auth generate-jwt -secret "mon-secret" -username alice
+tsd auth validate -type jwt -token "..." -secret "mon-secret"
+
+# Client HTTP
+tsd client program.tsd -server http://localhost:8080
+tsd client -health
+
+# Serveur HTTP
+tsd server -port 8080
+tsd server -auth jwt -jwt-secret "mon-secret"
+```
+
+### Aide Spécifique par Rôle
+
+```bash
+tsd --help          # Aide globale
+tsd auth --help     # Aide pour l'authentification
+tsd client --help   # Aide pour le client HTTP
+tsd server --help   # Aide pour le serveur HTTP
+```
+
+### Compilateur/Runner (Mode par Défaut)
+
+Lorsqu'aucun rôle n'est spécifié, `tsd` fonctionne comme compilateur et runner :
+
+```bash
+# Compiler et valider un fichier TSD
+tsd program.tsd
+
+# Mode verbeux
+tsd program.tsd -v
+
+# Lire depuis stdin
+cat program.tsd | tsd -stdin
+
+# Code TSD directement
+tsd -text 'type Person : <id: string, name: string>'
+```
 
 ### Format de Fichier Unifié
 

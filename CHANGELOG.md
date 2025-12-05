@@ -3,6 +3,26 @@
 ## [Unreleased]
 
 ### Added
+- **Binaire Unique TSD** - Refactorisation majeure vers un binaire unique multifonction
+  - Un seul binaire `tsd` remplace les 4 binaires séparés (`tsd`, `tsd-auth`, `tsd-client`, `tsd-server`)
+  - Dispatch automatique selon le premier argument :
+    - `tsd [fichier]` : Compilateur/Runner TSD (comportement par défaut)
+    - `tsd auth ...` : Gestion d'authentification (génération clés, JWT, validation)
+    - `tsd client ...` : Client HTTP pour communiquer avec le serveur
+    - `tsd server ...` : Serveur HTTP TSD avec authentification
+  - Aide globale avec `tsd --help` et aide spécifique par rôle
+  - Version globale avec `tsd --version`
+  - Packages internes réutilisables :
+    - `internal/compilercmd/` : Logique du compilateur/runner
+    - `internal/authcmd/` : Logique de gestion d'authentification
+    - `internal/clientcmd/` : Logique du client HTTP
+    - `internal/servercmd/` : Logique du serveur HTTP
+  - Taille optimisée : 12MB (vs 31MB pour les 4 binaires séparés)
+  - Suppression des binaires séparés (`cmd/tsd-auth`, `cmd/tsd-client`, `cmd/tsd-server`)
+  - Documentation mise à jour (README.md, exemples, tutoriels)
+  - Makefile simplifié avec une seule cible `build`
+  - Compatibilité totale : toutes les fonctionnalités préservées
+
 - **Authentication System** - Système d'authentification complet pour sécuriser le serveur TSD
   - Support de trois modes d'authentification :
     - `none` : Sans authentification (développement)

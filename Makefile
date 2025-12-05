@@ -28,8 +28,8 @@ help: ## Afficher cette aide
 	@echo "================================="
 	@echo ""
 	@echo "$(CYAN)🏗️  BUILD & INSTALL:$(NC)"
-	@echo "$(GREEN)build$(NC)                - Compiler tous les binaires"
-	@echo "$(GREEN)build-tsd$(NC)            - Compiler l'outil CLI principal"
+	@echo "$(GREEN)build$(NC)                - Compiler le binaire TSD unique"
+	@echo "$(GREEN)build-tsd$(NC)            - Compiler le binaire TSD unique"
 	@echo "$(GREEN)build-runners$(NC)        - Compiler les runners de test"
 	@echo "$(GREEN)install$(NC)              - Installation complète"
 	@echo "$(GREEN)clean$(NC)                - Nettoyer les artefacts"
@@ -70,26 +70,27 @@ help: ## Afficher cette aide
 # BUILD & COMPILATION
 # ================================
 
-build: build-tsd build-runners ## BUILD - Compiler tous les binaires
+build: build-tsd ## BUILD - Compiler le binaire TSD unique
 
-build-tsd: ## BUILD - Compiler l'outil CLI principal
-	@echo "$(BLUE)🔨 Compilation de TSD CLI...$(NC)"
+build-tsd: ## BUILD - Compiler le binaire TSD unique
+	@echo "$(BLUE)🔨 Compilation de TSD (binaire unifié)...$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_TSD_DIR)
-	@echo "$(GREEN)✅ Binaire créé: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
+	@echo "$(GREEN)✅ Binaire unifié créé: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
+	@echo "   Rôles disponibles: auth, client, server, compilateur (défaut)"
 
 build-runners: ## BUILD - Compiler les runners de test (DEPRECATED - use go test)
-	@echo "$(YELLOW)⚠️  DEPRECATED: Le runner universel sera supprimé$(NC)"
+	@echo "$(YELLOW)⚠️  DEPRECATED: Le runner universel n'existe plus$(NC)"
 	@echo "$(YELLOW)    Utilisez 'make test-e2e' à la place$(NC)"
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(UNIVERSAL_RUNNER) $(CMD_UNIVERSAL_DIR)
-	@echo "$(GREEN)✅ Runner compilé:$(NC)"
-	@echo "   - $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
 
 install: deps build ## BUILD - Installation complète
 	@echo "$(GREEN)🚀 Installation terminée$(NC)"
-	@echo "   TSD CLI: $(BUILD_DIR)/$(BINARY_NAME)"
-	@echo "   Test Runner: $(BUILD_DIR)/$(UNIVERSAL_RUNNER)"
+	@echo "   Binaire unifié TSD: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "   Rôles disponibles:"
+	@echo "     - tsd [fichier]      : Compilateur/Runner (défaut)"
+	@echo "     - tsd auth ...       : Gestion authentification"
+	@echo "     - tsd client ...     : Client HTTP"
+	@echo "     - tsd server ...     : Serveur HTTP"
 
 clean: ## BUILD - Nettoyer les artefacts
 	@echo "$(BLUE)🧹 Nettoyage...$(NC)"

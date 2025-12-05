@@ -39,6 +39,7 @@ Effectuer un audit complet du projet et nettoyer systématiquement :
 3. **FICHIERS** :
    - ❌ AUCUN fichier inutilisé ou en double
    - ❌ AUCUN fichier temporaire ou de backup
+   - ❌ AUCUN fichier de rapport en dehors du dossier `tsd/REPORTS`
    - ✅ Organisation claire et logique
    - ✅ Nommage cohérent
 
