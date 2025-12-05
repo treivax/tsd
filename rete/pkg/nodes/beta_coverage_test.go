@@ -697,89 +697,137 @@ func TestJoinNode_TryJoin(t *testing.T) {
 	}
 }
 
-// TODO: These tests need investigation - callback mechanism doesn't capture propagation as expected
 // TestJoinNode_TryJoin_WithPropagation tests join with actual propagation to children
-// func TestJoinNode_TryJoin_WithPropagation(t *testing.T) {
-// 	logger := newMockLogger()
-//
-// 	t.Run("successful join propagates to children", func(t *testing.T) {
-// 		joinNode := NewJoinNode("join1", logger)
-// 		conditions := []domain.JoinCondition{
-// 			&mockJoinCondition{
-// 				leftField:  "id",
-// 				rightField: "id",
-// 				operator:   "==",
-// 				evalResult: true,
-// 			},
-// 		}
-// 		joinNode.SetJoinConditions(conditions)
-//
-// 		// Add a child to verify propagation
-// 		childReceived := false
-// 		mockChild := &mockBetaNodeWithCallback{
-// 			id: "child1",
-// 			onProcessLeftToken: func(token *domain.Token) error {
-// 				childReceived = true
-// 				if len(token.Facts) != 2 {
-// 					return fmt.Errorf("expected 2 facts in joined token, got %d", len(token.Facts))
-// 				}
-// 				return nil
-// 			},
-// 		}
-// 		joinNode.AddChild(mockChild)
-//
-// 		token := domain.NewToken("t1", "node1", []*domain.Fact{
-// 			domain.NewFact("f1", "Test", map[string]interface{}{"id": 100}),
-// 		})
-// 		fact := domain.NewFact("f2", "Test", map[string]interface{}{"id": 100})
-//
-// 		err := joinNode.tryJoin(token, fact)
-// 		if err != nil {
-// 			t.Errorf("tryJoin() unexpected error: %v", err)
-// 		}
-//
-// 		if !childReceived {
-// 			t.Error("Expected child to receive propagated token")
-// 		}
-// 	})
-//
-// 	t.Run("failed join does not propagate", func(t *testing.T) {
-// 		joinNode := NewJoinNode("join1", logger)
-// 		conditions := []domain.JoinCondition{
-// 			&mockJoinCondition{
-// 				leftField:  "id",
-// 				rightField: "id",
-// 				operator:   "==",
-// 				evalResult: false,
-// 			},
-// 		}
-// 		joinNode.SetJoinConditions(conditions)
-//
-// 		childReceived := false
-// 		mockChild := &mockBetaNodeWithCallback{
-// 			id: "child1",
-// 			onProcessLeftToken: func(token *domain.Token) error {
-// 				childReceived = true
-// 				return nil
-// 			},
-// 		}
-// 		joinNode.AddChild(mockChild)
-//
-// 		token := domain.NewToken("t1", "node1", []*domain.Fact{
-// 			domain.NewFact("f1", "Test", map[string]interface{}{"id": 100}),
-// 		})
-// 		fact := domain.NewFact("f2", "Test", map[string]interface{}{"id": 200})
-//
-// 		err := joinNode.tryJoin(token, fact)
-// 		if err != nil {
-// 			t.Errorf("tryJoin() unexpected error: %v", err)
-// 		}
-//
-// 		if childReceived {
-// 			t.Error("Child should not receive token when join fails")
-// 		}
-// 	})
-// }
+func TestJoinNode_TryJoin_WithPropagation(t *testing.T) {
+	logger := newMockLogger()
+
+	t.Run("successful join propagates to children", func(t *testing.T) {
+		joinNode := NewJoinNode("join1", logger)
+		conditions := []domain.JoinCondition{
+			&mockJoinCondition{
+				leftField:  "id",
+				rightField: "id",
+				operator:   "==",
+				evalResult: true,
+			},
+		}
+		joinNode.SetJoinConditions(conditions)
+
+		// Add a child beta node to verify propagation
+		childLogger := newMockLogger()
+		childNode := NewBaseBetaNode("child1", "BetaNode", childLogger)
+		joinNode.AddChild(childNode)
+
+		// Create token and fact with matching IDs
+		token := domain.NewToken("t1", "node1", []*domain.Fact{
+			domain.NewFact("f1", "Test", map[string]interface{}{"id": 100}),
+		})
+		fact := domain.NewFact("f2", "Test", map[string]interface{}{"id": 100})
+
+		// Perform the join
+		err := joinNode.ProcessLeftToken(token)
+		if err != nil {
+			t.Fatalf("ProcessLeftToken() unexpected error: %v", err)
+		}
+
+		// Submit the right fact
+		err = joinNode.ProcessRightFact(fact)
+		if err != nil {
+			t.Fatalf("ProcessRightFact() unexpected error: %v", err)
+		}
+
+		// Verify propagation: child should have received the joined token in its left memory
+		childLeftMemory := childNode.GetLeftMemory()
+		if len(childLeftMemory) != 1 {
+			t.Errorf("Expected 1 token in child's left memory, got %d", len(childLeftMemory))
+		} else {
+			// Verify the token contains both facts (from token + new fact)
+			joinedToken := childLeftMemory[0]
+			if len(joinedToken.Facts) != 2 {
+				t.Errorf("Expected joined token to have 2 facts, got %d", len(joinedToken.Facts))
+			}
+		}
+	})
+
+	t.Run("failed join does not propagate", func(t *testing.T) {
+		joinNode := NewJoinNode("join1", logger)
+		conditions := []domain.JoinCondition{
+			&mockJoinCondition{
+				leftField:  "id",
+				rightField: "id",
+				operator:   "==",
+				evalResult: false,
+			},
+		}
+		joinNode.SetJoinConditions(conditions)
+
+		// Add a child beta node
+		childLogger := newMockLogger()
+		childNode := NewBaseBetaNode("child1", "BetaNode", childLogger)
+		joinNode.AddChild(childNode)
+
+		// Create token and fact with mismatched IDs (join should fail)
+		token := domain.NewToken("t1", "node1", []*domain.Fact{
+			domain.NewFact("f1", "Test", map[string]interface{}{"id": 100}),
+		})
+		fact := domain.NewFact("f2", "Test", map[string]interface{}{"id": 200})
+
+		// Process left token and right fact
+		err := joinNode.ProcessLeftToken(token)
+		if err != nil {
+			t.Fatalf("ProcessLeftToken() unexpected error: %v", err)
+		}
+
+		err = joinNode.ProcessRightFact(fact)
+		if err != nil {
+			t.Fatalf("ProcessRightFact() unexpected error: %v", err)
+		}
+
+		// Verify no propagation: child should have empty left memory
+		childLeftMemory := childNode.GetLeftMemory()
+		if len(childLeftMemory) != 0 {
+			t.Errorf("Expected 0 tokens in child's left memory (join failed), got %d", len(childLeftMemory))
+		}
+	})
+
+	t.Run("error from child node is propagated", func(t *testing.T) {
+		joinNode := NewJoinNode("join1", logger)
+		conditions := []domain.JoinCondition{
+			&mockJoinCondition{
+				leftField:  "id",
+				rightField: "id",
+				operator:   "==",
+				evalResult: true,
+			},
+		}
+		joinNode.SetJoinConditions(conditions)
+
+		token := domain.NewToken("t1", "node1", []*domain.Fact{
+			domain.NewFact("f1", "Test", map[string]interface{}{"id": 100}),
+		})
+		fact := domain.NewFact("f2", "Test", map[string]interface{}{"id": 100})
+
+		// Add a mock child that returns an error
+		mockChild := &mockErrorBetaNode{id: "error_child"}
+		joinNode.AddChild(mockChild)
+
+		// First, store the fact in right memory
+		err := joinNode.ProcessRightFact(fact)
+		if err != nil {
+			t.Fatalf("ProcessRightFact() unexpected error before join: %v", err)
+		}
+
+		// Now process left token - should trigger join with stored right fact
+		// The join condition evaluates to true, so propagation should happen
+		// and the mockErrorBetaNode should return an error
+		err = joinNode.ProcessLeftToken(token)
+		if err == nil {
+			t.Error("Expected error to be propagated from child node")
+		} else if err.Error() != "mock error from beta node" {
+			t.Errorf("Expected 'mock error from beta node', got: %v", err)
+		}
+	})
+}
 
 // Mock nodes for testing
 
@@ -804,6 +852,7 @@ func (m *mockErrorBetaNode) ProcessFact(fact *domain.Fact) error { return nil }
 func (m *mockErrorBetaNode) GetChildren() []domain.Node          { return nil }
 func (m *mockErrorBetaNode) AddChild(child domain.Node)          {}
 func (m *mockErrorBetaNode) RemoveChild(childID string) bool     { return false }
+func (m *mockErrorBetaNode) GetMemory() *domain.WorkingMemory    { return nil }
 func (m *mockErrorBetaNode) ProcessLeftToken(token *domain.Token) error {
 	return fmt.Errorf("mock error from beta node")
 }
