@@ -12,6 +12,333 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestActionExecutor_evaluateComparison(t *testing.T) {
+	executor := NewActionExecutor(nil, nil)
+
+	tests := []struct {
+		name      string
+		left      interface{}
+		operator  string
+		right     interface{}
+		expected  interface{}
+		wantError bool
+	}{
+		// Equality tests
+		{
+			name:     "equal integers",
+			left:     5,
+			operator: "==",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "not equal integers",
+			left:     5,
+			operator: "==",
+			right:    10,
+			expected: false,
+		},
+		{
+			name:     "equal strings",
+			left:     "hello",
+			operator: "==",
+			right:    "hello",
+			expected: true,
+		},
+		{
+			name:     "not equal strings",
+			left:     "hello",
+			operator: "==",
+			right:    "world",
+			expected: false,
+		},
+		{
+			name:     "equal float and int",
+			left:     5.0,
+			operator: "==",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "equal int64 and int",
+			left:     int64(5),
+			operator: "==",
+			right:    5,
+			expected: true,
+		},
+		// Inequality tests
+		{
+			name:     "not equal operator - true",
+			left:     5,
+			operator: "!=",
+			right:    10,
+			expected: true,
+		},
+		{
+			name:     "not equal operator - false",
+			left:     5,
+			operator: "!=",
+			right:    5,
+			expected: false,
+		},
+		// Less than tests
+		{
+			name:     "less than - true",
+			left:     5,
+			operator: "<",
+			right:    10,
+			expected: true,
+		},
+		{
+			name:     "less than - false",
+			left:     10,
+			operator: "<",
+			right:    5,
+			expected: false,
+		},
+		{
+			name:     "less than float",
+			left:     5.5,
+			operator: "<",
+			right:    10.2,
+			expected: true,
+		},
+		// Less than or equal tests
+		{
+			name:     "less than or equal - true (less)",
+			left:     5,
+			operator: "<=",
+			right:    10,
+			expected: true,
+		},
+		{
+			name:     "less than or equal - true (equal)",
+			left:     5,
+			operator: "<=",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "less than or equal - false",
+			left:     10,
+			operator: "<=",
+			right:    5,
+			expected: false,
+		},
+		// Greater than tests
+		{
+			name:     "greater than - true",
+			left:     10,
+			operator: ">",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "greater than - false",
+			left:     5,
+			operator: ">",
+			right:    10,
+			expected: false,
+		},
+		{
+			name:     "greater than float",
+			left:     10.5,
+			operator: ">",
+			right:    5.2,
+			expected: true,
+		},
+		// Greater than or equal tests
+		{
+			name:     "greater than or equal - true (greater)",
+			left:     10,
+			operator: ">=",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "greater than or equal - true (equal)",
+			left:     5,
+			operator: ">=",
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "greater than or equal - false",
+			left:     5,
+			operator: ">=",
+			right:    10,
+			expected: false,
+		},
+		// Error cases
+		{
+			name:      "numeric comparison with string left",
+			left:      "hello",
+			operator:  "<",
+			right:     5,
+			wantError: true,
+		},
+		{
+			name:      "numeric comparison with string right",
+			left:      5,
+			operator:  ">",
+			right:     "hello",
+			wantError: true,
+		},
+		{
+			name:      "unknown operator",
+			left:      5,
+			operator:  "???",
+			right:     10,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := executor.evaluateComparison(tt.left, tt.operator, tt.right)
+
+			if tt.wantError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestActionExecutor_areEqual(t *testing.T) {
+	executor := NewActionExecutor(nil, nil)
+
+	tests := []struct {
+		name     string
+		left     interface{}
+		right    interface{}
+		expected bool
+	}{
+		// Numeric equality
+		{
+			name:     "equal integers",
+			left:     5,
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "not equal integers",
+			left:     5,
+			right:    10,
+			expected: false,
+		},
+		{
+			name:     "equal floats",
+			left:     5.5,
+			right:    5.5,
+			expected: true,
+		},
+		{
+			name:     "equal int and float",
+			left:     5,
+			right:    5.0,
+			expected: true,
+		},
+		{
+			name:     "equal float and int",
+			left:     5.0,
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "equal int64 and int",
+			left:     int64(5),
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "equal int and int64",
+			left:     5,
+			right:    int64(5),
+			expected: true,
+		},
+		{
+			name:     "equal int32 and int",
+			left:     int32(5),
+			right:    5,
+			expected: true,
+		},
+		{
+			name:     "not equal different numeric values",
+			left:     5.5,
+			right:    10.2,
+			expected: false,
+		},
+		// String equality
+		{
+			name:     "equal strings",
+			left:     "hello",
+			right:    "hello",
+			expected: true,
+		},
+		{
+			name:     "not equal strings",
+			left:     "hello",
+			right:    "world",
+			expected: false,
+		},
+		// Boolean equality
+		{
+			name:     "equal booleans true",
+			left:     true,
+			right:    true,
+			expected: true,
+		},
+		{
+			name:     "equal booleans false",
+			left:     false,
+			right:    false,
+			expected: true,
+		},
+		{
+			name:     "not equal booleans",
+			left:     true,
+			right:    false,
+			expected: false,
+		},
+		// Mixed type comparisons (non-numeric)
+		{
+			name:     "string vs int",
+			left:     "5",
+			right:    5,
+			expected: false,
+		},
+		{
+			name:     "bool vs int",
+			left:     true,
+			right:    1,
+			expected: false,
+		},
+		// Nil comparisons
+		{
+			name:     "nil equals nil",
+			left:     nil,
+			right:    nil,
+			expected: true,
+		},
+		{
+			name:     "nil not equals int",
+			left:     nil,
+			right:    5,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := executor.areEqual(tt.left, tt.right)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 // TestActionExecutor_BasicExecution teste l'exécution basique d'une action
 func TestActionExecutor_BasicExecution(t *testing.T) {
 	t.Parallel()
