@@ -3,6 +3,37 @@
 ## [Unreleased]
 
 ### Added
+- **Amélioration Couverture de Tests** - Ajout de 112 nouveaux cas de test pour le package constraint
+  - Nouveaux fichiers de test :
+    - `constraint/api_edge_cases_test.go` : Tests edge cases pour l'API publique (9 fonctions)
+    - `constraint/program_state_edge_cases_test.go` : Tests edge cases pour gestion d'état (7 fonctions)
+    - `auth/auth_test.go` : Tests pour le package auth
+    - `internal/authcmd/authcmd_test.go` : Tests pour commandes auth
+    - `internal/clientcmd/clientcmd_test.go` : Tests pour client HTTP
+    - `internal/servercmd/servercmd_test.go` : Tests pour serveur HTTP
+    - `internal/compilercmd/compilercmd_test.go` : Tests pour compilateur
+    - `tsdio/api_test.go` et `tsdio/logger_test.go` : Tests pour IO
+  - Couverture améliorée :
+    - Package `constraint` : 83.6% → 83.9%
+    - Fonction `ParseAndMerge` : 78.9% → 84.2% (+5.3%)
+    - Fonction `ParseAndMergeContent` : 80.0% → 84.0% (+4.0%)
+    - Couverture globale maintenue à 74.7%
+  - Types de tests ajoutés :
+    - Edge cases (entrées vides, valeurs extrêmes, formats spéciaux)
+    - Error handling (parsing, validation, récupération d'erreur)
+    - Integration tests (multi-fichiers, merge, reset, accès concurrent)
+  - Tous les tests suivent les directives du prompt `.github/prompts/add-test.md`
+  - Documentation complète dans `REPORTS/TEST_COVERAGE_CONSTRAINT_2025-01-07.md`
+
+### Changed
+- **Nettoyage Approfondi** - Deep clean suivant `.github/prompts/deep-clean.md`
+  - Suppression de tous les fichiers de couverture temporaires (coverage*.out, coverage*.html)
+  - Suppression du fichier coverage_report_cmds.txt
+  - Suppression des dossiers vides (constraint/test/coverage/)
+  - Mise à jour du .gitignore pour ignorer les fichiers coverage_report*.txt
+  - Formatage du code avec `go fmt`
+  - Validation complète : tous les tests passent (74.7% couverture)
+
 - **Opérateurs de Casting de Types** - Conversion explicite entre types de base
   - Syntaxe : `(type)expression` avec support pour `(number)`, `(string)`, `(bool)`
   - Conversions supportées :
