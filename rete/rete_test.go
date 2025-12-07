@@ -426,7 +426,7 @@ func TestIncrementalPropagation(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
+	network, _, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}

@@ -60,7 +60,7 @@ type Department(id: string, name: string, budget: number)
 	writeFile(typesFile, typesContent)
 
 	fmt.Println("  → Chargement des types...")
-	network, err := pipeline.IngestFile(typesFile, nil, storage)
+	network, _, err := pipeline.IngestFile(typesFile, nil, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -77,7 +77,7 @@ rule department_budget: {d: Department} / d.budget < 50000 ==> print(d.name)
 	writeFile(rulesFile, rulesContent)
 
 	fmt.Println("  → Chargement des règles avec validation incrémentale...")
-	network, err = pipeline.IngestFile(rulesFile, network, storage)
+	network, _, err = pipeline.IngestFile(rulesFile, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -91,7 +91,7 @@ rule invalid_rule: {p: Product} / p.price > 100 ==> print("Expensive product")
 	writeFile(invalidRulesFile, invalidRulesContent)
 
 	fmt.Println("  → Tentative de chargement d'une règle invalide...")
-	_, err = pipeline.IngestFile(invalidRulesFile, network, storage)
+	_, _, err = pipeline.IngestFile(invalidRulesFile, network, storage)
 	if err != nil {
 		fmt.Printf("  ✅ Erreur détectée comme attendu : %v\n", err)
 	} else {
@@ -119,7 +119,7 @@ Person(id: "p2", name: "Bob", age: 15)
 	writeFile(session1File, session1Content)
 
 	fmt.Println("  → Session 1 : Création d'un réseau...")
-	network, err := pipeline.IngestFile(session1File, nil, storage)
+	network, _, err := pipeline.IngestFile(session1File, nil, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -139,7 +139,7 @@ rule luxury_car: {v: Vehicle} / v.brand == "BMW" ==> print("Luxury vehicle")
 	writeFile(session2File, session2Content)
 
 	fmt.Println("  → Session 2 : Reset avec GC automatique...")
-	network, err = pipeline.IngestFile(session2File, network, storage)
+	network, _, err = pipeline.IngestFile(session2File, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -163,7 +163,7 @@ Book(id: "b1", title: "Go Programming", author: "John Doe", pages: 300)
 	writeFile(initialFile, initialContent)
 
 	network := rete.NewReteNetwork(storage)
-	network, err := pipeline.IngestFile(initialFile, network, storage)
+	network, _, err := pipeline.IngestFile(initialFile, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -180,7 +180,7 @@ rule long_book: {b: Book} / b.pages > 200 ==> print(b.title)
 	writeFile(validFile, validContent)
 
 	fmt.Println("  → Transaction 1 : Ingestion valide (transaction automatique)...")
-	network, err = pipeline.IngestFile(validFile, network, storage)
+	network, _, err = pipeline.IngestFile(validFile, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur inattendue : %v", err)
 	}
@@ -196,7 +196,7 @@ rule invalid_rule: {m: Magazine} / m.pages > 50 ==> print("Magazine found")
 	fmt.Println("  → Transaction 2 : Tentative d'ingestion invalide (rollback automatique)...")
 	typesBeforeTx2 := len(network.Types)
 
-	_, err = pipeline.IngestFile(invalidFile, network, storage)
+	_, _, err = pipeline.IngestFile(invalidFile, network, storage)
 	if err != nil {
 		fmt.Printf("  ⚠️  Erreur détectée : %v\n", err)
 		fmt.Printf("  ✅ Rollback automatique effectué\n")
@@ -223,7 +223,7 @@ type Student(id: string, name: string, grade: number)
 	writeFile(file1, file1Content)
 
 	fmt.Println("  → Ingestion avec collecte de métriques...")
-	network, metrics, err := pipeline.IngestFileWithMetrics(file1, nil, storage)
+	network, metrics, err := pipeline.IngestFile(file1, nil, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -254,7 +254,7 @@ Student(id: "s2", name: "Bob", grade: 55)
 	writeFile(file2, file2Content)
 
 	fmt.Println("\n  → Ingestion incrémentale avec métriques...")
-	network, metrics, err = pipeline.IngestFileWithMetrics(file2, network, storage)
+	network, metrics, err = pipeline.IngestFile(file2, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
@@ -281,7 +281,7 @@ Course(id: "c1", name: "Advanced Algorithms", credits: 4)
 	writeFile(file3, file3Content)
 
 	fmt.Println("\n  → Reset avec GC et métriques...")
-	network, metrics, err = pipeline.IngestFileWithMetrics(file3, network, storage)
+	network, metrics, err = pipeline.IngestFile(file3, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}

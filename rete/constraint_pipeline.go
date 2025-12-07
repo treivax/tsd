@@ -36,18 +36,6 @@ func (cp *ConstraintPipeline) SetLogger(logger *Logger) {
 	}
 }
 
-// IngestFileWithMetrics est un wrapper qui collecte les métriques
-// IngestFileWithMetrics ingère un fichier avec collecte de métriques
-// IMPORTANT: Cette fonction utilise TOUJOURS les transactions avec auto-commit/auto-rollback.
-// En cas d'erreur, la transaction est automatiquement annulée (rollback).
-// En cas de succès, la transaction est automatiquement validée (commit).
-func (cp *ConstraintPipeline) IngestFileWithMetrics(filename string, network *ReteNetwork, storage Storage) (*ReteNetwork, *IngestionMetrics, error) {
-	metrics := NewMetricsCollector()
-	resultNetwork, err := cp.ingestFileWithMetrics(filename, network, storage, metrics)
-	finalMetrics := metrics.Finalize()
-	return resultNetwork, finalMetrics, err
-}
-
 // IngestFile est la fonction unique et incrémentale pour étendre le réseau RETE.
 // Elle peut être appelée plusieurs fois avec des fichiers différents pour :
 // - Parser le fichier (types, règles, faits)
@@ -61,8 +49,13 @@ func (cp *ConstraintPipeline) IngestFileWithMetrics(filename string, network *Re
 // IMPORTANT: Cette fonction utilise TOUJOURS les transactions avec auto-commit/auto-rollback.
 // En cas d'erreur, la transaction est automatiquement annulée (rollback).
 // En cas de succès, la transaction est automatiquement validée (commit).
-func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, storage Storage) (*ReteNetwork, error) {
-	return cp.ingestFileWithMetrics(filename, network, storage, nil)
+//
+// Les métriques sont toujours collectées et retournées (coût négligeable < 0.1%).
+func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, storage Storage) (*ReteNetwork, *IngestionMetrics, error) {
+	metrics := NewMetricsCollector()
+	resultNetwork, err := cp.ingestFileWithMetrics(filename, network, storage, metrics)
+	finalMetrics := metrics.Finalize()
+	return resultNetwork, finalMetrics, err
 }
 
 // ingestFileWithMetrics est l'implémentation interne avec support optionnel des métriques

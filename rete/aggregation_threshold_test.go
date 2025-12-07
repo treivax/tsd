@@ -29,7 +29,7 @@ rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -112,7 +112,7 @@ rule decent_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee}
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -172,7 +172,7 @@ rule low_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -232,7 +232,7 @@ rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -314,7 +314,7 @@ rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.de
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -397,7 +397,7 @@ rule any_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}

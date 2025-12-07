@@ -36,7 +36,7 @@ Person(name:"Bob", age:15)
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpfile.Name(), nil, storage)
+	network, _, err := pipeline.IngestFile(tmpfile.Name(), nil, storage)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return

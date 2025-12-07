@@ -63,7 +63,7 @@ rule expensive_bulk : {p: Product, o: Order} /
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}
@@ -481,7 +481,7 @@ rule cheap_2 : {i: Item} / i.value * 0.5 < 50 ==> log("Cheap 2")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Failed to build network: %v", err)
 	}

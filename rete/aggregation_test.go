@@ -29,7 +29,7 @@ rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) 
 	// Construire le réseau via le pipeline
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -66,7 +66,7 @@ rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 10
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -100,7 +100,7 @@ rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -136,7 +136,7 @@ rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -170,7 +170,7 @@ rule r1 : {d: Department} / MAX(e: Employee / e.department == d.name ; e.salary)
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(constraintFile, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}

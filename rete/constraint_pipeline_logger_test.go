@@ -38,7 +38,7 @@ rule Adults : {p: Person} / p.age >= 18 ==> print(p.name)
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
 	// Ingest with silent logging
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 	require.NoError(t, err)
 
 	// Assert no output was produced
@@ -67,7 +67,7 @@ rule TestRule : {p: Person} / p.age > 20 ==> print(p.name)
 
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -103,7 +103,7 @@ rule HighEarners : {e: Employee} / e.salary > 100000 ==> print(e.name)
 
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -148,7 +148,7 @@ rule ExpensiveProducts : {p: Product} / p.price > 50 ==> print(p.name)
 
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -211,7 +211,7 @@ rule Adults : {p: Person} / p.age >= 18 ==> print(p.name)
 `
 
 	tmpFile1 := createTempLoggerTestFile(t, file1Content)
-	_, err := pipeline.IngestFile(tmpFile1, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile1, network, storage)
 	require.NoError(t, err)
 
 	// Second file (extending network)
@@ -221,7 +221,7 @@ rule AllEmployees : {e: Employee} / e.salary > 0 ==> print(e.name)
 `
 
 	tmpFile2 := createTempLoggerTestFile(t, file2Content)
-	_, err = pipeline.IngestFile(tmpFile2, network, storage)
+	_, _, err = pipeline.IngestFile(tmpFile2, network, storage)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -270,11 +270,11 @@ rule AllItems : {i: Item} / i.id > 0 ==> print("Item found")
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
 	// Process with pipeline1
-	_, err := pipeline1.IngestFile(tmpFile, network1, storage)
+	_, _, err := pipeline1.IngestFile(tmpFile, network1, storage)
 	require.NoError(t, err)
 
 	// Process with pipeline2
-	_, err = pipeline2.IngestFile(tmpFile, network2, storage)
+	_, _, err = pipeline2.IngestFile(tmpFile, network2, storage)
 	require.NoError(t, err)
 
 	output1 := buf1.String()
@@ -310,7 +310,7 @@ rule InvalidRule : {p: Person} / p.age >= 18 AND p.name == ==> print("Missing op
 	tmpFile := createTempLoggerTestFile(t, invalidContent)
 
 	// This should produce an error
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 
 	// We expect an error
 	assert.Error(t, err, "Invalid syntax should produce error")
@@ -350,7 +350,7 @@ rule AllEvents : {e: Event} / e.id > 0 ==> print("Event found")
 
 	tmpFile := createTempLoggerTestFile(t, constraintContent)
 
-	_, err := pipeline.IngestFile(tmpFile, network, storage)
+	_, _, err := pipeline.IngestFile(tmpFile, network, storage)
 	require.NoError(t, err)
 
 	output := buf.String()

@@ -31,7 +31,7 @@ rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_o
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
+	network, _, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -207,7 +207,7 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 			pipeline := NewConstraintPipeline()
 			storage := NewMemoryStorage()
 
-			network, err := pipeline.IngestFile(tmpFile, nil, storage)
+			network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 			if err != nil {
 				t.Fatalf("❌ Failed to build network: %v", err)
 			}
@@ -272,7 +272,7 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -349,7 +349,7 @@ func TestJoinNodeCascade_Retraction(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}

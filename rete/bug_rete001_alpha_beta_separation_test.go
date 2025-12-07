@@ -37,7 +37,7 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -182,7 +182,7 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestBugRETE001_PerformanceImpact(t *testing.T) {
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction: %v", err)
 	}

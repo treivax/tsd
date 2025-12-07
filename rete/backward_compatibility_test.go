@@ -35,7 +35,7 @@ rule young : {p: Person} / p.age < 18 ==> print("Young person")
 	// Construire le réseau
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -105,7 +105,7 @@ rule vip_customer : {c: Customer} / c.vip == 1 ==> print("VIP customer")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -255,7 +255,7 @@ rule active_account : {a: Account} / a.active == 1 ==> print("Active")`,
 
 			storage := NewMemoryStorage()
 			pipeline := NewConstraintPipeline()
-			network, err := pipeline.IngestFile(tsdFile, nil, storage)
+			network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 			if err != nil {
 				t.Fatalf("Erreur construction réseau: %v", err)
 			}
@@ -330,7 +330,7 @@ rule r4 : {p: Person} / p.name == 'Alice' ==> print("R4")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -454,7 +454,7 @@ rule teenager : {p: Person} / p.age >= 13 AND p.age < 18 ==> print("Teen")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -524,7 +524,7 @@ rule r5 : {p: Person} / p.age > 30 AND p.name == 'Alice' ==> print("R5")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}

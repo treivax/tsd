@@ -32,7 +32,7 @@ rule r2 : {p: Person} / p.name == 'toto' AND p.age > 18 ==> print("B")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -123,7 +123,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -191,7 +191,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	// Créer un nouveau réseau pour ce test
 	storage2 := NewMemoryStorage()
 	pipeline2 := NewConstraintPipeline()
-	network2, err := pipeline2.IngestFile(tsdFile, nil, storage2)
+	network2, _, err := pipeline2.IngestFile(tsdFile, nil, storage2)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau2: %v", err)
 	}
@@ -228,7 +228,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	// Créer un nouveau réseau pour ce test
 	storage3 := NewMemoryStorage()
 	pipeline3 := NewConstraintPipeline()
-	network3, err := pipeline3.IngestFile(tsdFile, nil, storage3)
+	network3, _, err := pipeline3.IngestFile(tsdFile, nil, storage3)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau3: %v", err)
 	}
@@ -284,7 +284,7 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -346,7 +346,7 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 	// Créer un nouveau réseau pour ce test
 	storage2 := NewMemoryStorage()
 	pipeline2 := NewConstraintPipeline()
-	network2, err := pipeline2.IngestFile(tsdFile, nil, storage2)
+	network2, _, err := pipeline2.IngestFile(tsdFile, nil, storage2)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau2: %v", err)
 	}
@@ -404,7 +404,7 @@ rule r3 : {p: Person} / p.age > 18 ==> print("C")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -508,7 +508,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -693,7 +693,7 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -743,7 +743,7 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 	// Créer un nouveau réseau pour ce test
 	storage2 := NewMemoryStorage()
 	pipeline2 := NewConstraintPipeline()
-	network2, err := pipeline2.IngestFile(tsdFile, nil, storage2)
+	network2, _, err := pipeline2.IngestFile(tsdFile, nil, storage2)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau2: %v", err)
 	}
@@ -778,7 +778,7 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 	// Créer un nouveau réseau pour ce test
 	storage3 := NewMemoryStorage()
 	pipeline3 := NewConstraintPipeline()
-	network3, err := pipeline3.IngestFile(tsdFile, nil, storage3)
+	network3, _, err := pipeline3.IngestFile(tsdFile, nil, storage3)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau3: %v", err)
 	}
@@ -836,7 +836,7 @@ rule r5 : {p: Person} / p.age > 21 AND p.salary > 2000 ==> print("R5")
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}
@@ -974,7 +974,7 @@ rule chain3 : {p: Person} / p.salary > 1000 AND p.city == 'Paris' ==> print("C3"
 
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction réseau: %v", err)
 	}

@@ -205,7 +205,7 @@ func benchmarkMultiSourceAggregation(b *testing.B, config BenchmarkConfig) {
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}
@@ -286,7 +286,7 @@ func benchmarkMultiSourceAggregationWithThresholds(b *testing.B, config Benchmar
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}
@@ -341,7 +341,7 @@ func benchmarkMultiSourceAggregationRetraction(b *testing.B, config BenchmarkCon
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}
@@ -401,7 +401,7 @@ func benchmarkMultiSourceAggregationIncremental(b *testing.B, config BenchmarkCo
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}
@@ -453,7 +453,7 @@ func benchmarkMultiSourceAggregationMemory(b *testing.B, config BenchmarkConfig)
 	storage := NewMemoryStorage()
 	pipeline := NewConstraintPipeline()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		b.Fatalf("Failed to build network: %v", err)
 	}

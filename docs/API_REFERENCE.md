@@ -23,24 +23,26 @@ Ce document liste toutes les fonctions publiques disponibles pour utiliser le pi
 
 ### `IngestFile()`
 
-**Fonction recommandée** pour la majorité des cas d'usage.
+**Fonction UNIQUE** pour tous les cas d'usage. C'est la seule fonction d'ingestion.
 
 ```go
 func (cp *ConstraintPipeline) IngestFile(
     filename string,
     network *ReteNetwork,
     storage Storage,
-) (*ReteNetwork, error)
+) (*ReteNetwork, *IngestionMetrics, error)
 ```
 
 **Description** :  
-Ingère un fichier de contraintes TSD dans le réseau RETE avec **transaction automatique obligatoire**.
+Ingère un fichier de contraintes TSD dans le réseau RETE avec **transaction automatique obligatoire**.  
+**Les métriques sont toujours collectées** (coût négligeable < 0.1%).
 
 **Caractéristiques** :
 - ✅ **Transaction automatique** : Créée, committée ou rollbackée automatiquement
 - ✅ **Validation incrémentale** : Utilise le contexte du réseau existant
 - ✅ **GC automatique** : Après détection d'une commande `reset`
 - ✅ **Propagation de faits** : Les faits existants sont propagés aux nouvelles règles
+- ✅ **Métriques incluses** : Toujours retournées sans impact sur les performances
 
 **Paramètres** :
 - `filename` : Chemin vers le fichier `.tsd` à ingérer
@@ -49,6 +51,7 @@ Ingère un fichier de contraintes TSD dans le réseau RETE avec **transaction au
 
 **Retour** :
 - `*ReteNetwork` : Le réseau RETE mis à jour
+- `*IngestionMetrics` : Métriques détaillées de l'ingestion (toujours collectées)
 - `error` : Erreur en cas d'échec (rollback automatique effectué)
 
 **Exemple** :
@@ -56,50 +59,32 @@ Ingère un fichier de contraintes TSD dans le réseau RETE avec **transaction au
 storage := rete.NewMemoryStorage()
 pipeline := rete.NewConstraintPipeline()
 
-network, err := pipeline.IngestFile("rules.tsd", nil, storage)
+network, metrics, err := pipeline.IngestFile("rules.tsd", nil, storage)
 if err != nil {
     // ✅ Rollback automatique déjà effectué
     log.Fatalf("Erreur : %v", err)
 }
 // ✅ Commit automatique déjà effectué
-fmt.Println("Ingestion réussie !")
+fmt.Printf("Ingestion réussie en %v\n", metrics.TotalDuration)
+fmt.Printf("Types: %d, Règles: %d, Faits: %d\n", 
+    metrics.TypesAdded, metrics.RulesAdded, metrics.FactsSubmitted)
 ```
 
 **Complexité** :
 - Parsing : O(n) où n = taille du fichier
 - Validation : O(m) où m = nombre de types/règles
 - Transaction : O(1) pour begin, O(k) pour commit/rollback où k = nombre de commandes
+- **Collecte de métriques** : O(1) - coût négligeable
 
 ---
 
-## Fonctions avec Métriques
+## Métriques d'Ingestion
 
-### `IngestFileWithMetrics()`
+### Structure `IngestionMetrics`
 
-Pour les cas où vous avez besoin de métriques détaillées sur l'ingestion.
+Les métriques sont **toujours retournées** par `IngestFile()` sans impact sur les performances (< 0.1%).
 
-```go
-func (cp *ConstraintPipeline) IngestFileWithMetrics(
-    filename string,
-    network *ReteNetwork,
-    storage Storage,
-) (*ReteNetwork, *IngestionMetrics, error)
-```
-
-**Description** :  
-Identique à `IngestFile()` mais retourne également des métriques détaillées.
-
-**Caractéristiques** :
-- ✅ **Toutes les fonctionnalités de `IngestFile()`**
-- ✅ **Métriques détaillées** : Temps de parsing, validation, construction, etc.
-- ✅ **Transaction automatique** : Comme `IngestFile()`
-
-**Retour** :
-- `*ReteNetwork` : Le réseau RETE mis à jour
-- `*IngestionMetrics` : Métriques détaillées de l'ingestion
-- `error` : Erreur en cas d'échec
-
-**Métriques Disponibles** :
+**Métriques disponibles** :
 ```go
 type IngestionMetrics struct {
     ParsingDuration      time.Duration
@@ -183,21 +168,22 @@ type IngestionMetrics struct {
 
 ### Quelle fonction utiliser ?
 
-| Besoin | Fonction Recommandée |
-|--------|---------------------|
-| **Cas général** | `IngestFile()` |
-| **Besoin de métriques** | `IngestFileWithMetrics()` |
+**Il n'y a qu'UNE SEULE fonction** : `IngestFile()`
+
+| Besoin | Solution |
+|--------|----------|
+| **Tous les cas** | `IngestFile()` - retourne toujours les métriques |
 | **Plusieurs fichiers** | Appels successifs à `IngestFile()` |
+| **Ignorer les métriques** | Utiliser `_` : `network, _, err := pipeline.IngestFile(...)` |
+| **Utiliser les métriques** | Capturer : `network, metrics, err := pipeline.IngestFile(...)` |
 
-### Fonctionnalités
+### Fonctionnalités (toutes incluses)
 
-Les deux fonctions offrent les mêmes fonctionnalités :
 - ✅ **Transaction automatique** : Créée, committée ou rollbackée automatiquement
 - ✅ **Validation incrémentale** : Utilise le contexte du réseau existant
 - ✅ **GC après reset** : Nettoyage automatique après commande `reset`
 - ✅ **Propagation de faits** : Les faits existants sont propagés aux nouvelles règles
-
-La seule différence : `IngestFileWithMetrics()` retourne des métriques détaillées.
+- ✅ **Métriques incluses** : Toujours collectées, coût négligeable (< 0.1%)
 
 ---
 
@@ -218,7 +204,8 @@ func main() {
     storage := rete.NewMemoryStorage()
     pipeline := rete.NewConstraintPipeline()
     
-    network, err := pipeline.IngestFile("rules.tsd", nil, storage)
+    // Les métriques sont toujours retournées
+    network, metrics, err := pipeline.IngestFile("rules.tsd", nil, storage)
     if err != nil {
         log.Fatalf("Erreur : %v", err)
     }
@@ -226,10 +213,11 @@ func main() {
     fmt.Println("Ingestion réussie !")
     fmt.Printf("Types : %d\n", len(network.Types))
     fmt.Printf("Règles : %d\n", len(network.TerminalNodes))
+    fmt.Printf("Durée totale : %v\n", metrics.TotalDuration)
 }
 ```
 
-### Exemple 2 : Avec Métriques
+### Exemple 2 : Utiliser les Métriques pour le Monitoring
 
 ```go
 package main
@@ -244,25 +232,51 @@ func main() {
     storage := rete.NewMemoryStorage()
     pipeline := rete.NewConstraintPipeline()
     
-    network, metrics, err := pipeline.IngestFileWithMetrics("rules.tsd", nil, storage)
+    **Exemple d'utilisation des métriques** :
+    ```go
+    network, metrics, err := pipeline.IngestFile("rules.tsd", nil, storage)
     if err != nil {
         log.Fatalf("Erreur : %v", err)
     }
-    
-    fmt.Printf("Parsing : %v\n", metrics.ParsingDuration)
-    fmt.Printf("Validation : %v\n", metrics.ValidationDuration)
-    fmt.Printf("Construction réseau : %v\n", metrics.NetworkBuildDuration)
-    fmt.Printf("Total : %v\n", metrics.TotalDuration)
-    fmt.Printf("Types ajoutés : %d\n", metrics.TypesAdded)
-    fmt.Printf("Règles ajoutées : %d\n", metrics.RulesAdded)
-    fmt.Printf("Faits soumis : %d\n", metrics.FactsSubmitted)
-    
-    if metrics.ResetDetected {
-        fmt.Printf("Reset détecté - GC effectué : %d nœuds en %v\n", 
-            metrics.NodesCollected, metrics.GCDuration)
+
+    // Afficher les métriques de performance
+    fmt.Printf("⏱️  Durées:\n")
+    fmt.Printf("  Parsing : %v\n", metrics.ParsingDuration)
+    fmt.Printf("  Validation : %v\n", metrics.ValidationDuration)
+    fmt.Printf("  Création types : %v\n", metrics.TypeCreationDuration)
+    fmt.Printf("  Création règles : %v\n", metrics.RuleCreationDuration)
+    fmt.Printf("  Total : %v\n", metrics.TotalDuration)
+
+    fmt.Printf("\n📊 Compteurs:\n")
+    fmt.Printf("  Types ajoutés : %d\n", metrics.TypesAdded)
+    fmt.Printf("  Règles ajoutées : %d\n", metrics.RulesAdded)
+    fmt.Printf("  Faits soumis : %d\n", metrics.FactsSubmitted)
+    fmt.Printf("  Faits propagés : %d\n", metrics.FactsPropagated)
+
+    if metrics.WasReset {
+        fmt.Printf("\n🔄 Reset détecté - Ancien réseau nettoyé\n")
     }
-}
-```
+
+    // Identifier les goulots d'étranglement
+    fmt.Printf("\n🎯 Goulot : %s\n", metrics.GetBottleneck())
+    ```
+
+    **Méthodes utiles** :
+    ```go
+    // Affichage formaté complet
+    fmt.Println(metrics.String())
+
+    // Résumé court
+    fmt.Println(metrics.Summary())
+
+    // Vérifier l'efficacité
+    if metrics.IsEfficient() {
+        fmt.Println("✅ Ingestion efficace")
+    }
+
+    // Identifier le goulot d'étranglement
+    bottleneck := metrics.GetBottleneck()
+    ```
 
 ### Exemple 3 : Ingestion Incrémentale Multi-Fichiers
 
@@ -280,26 +294,29 @@ func main() {
     pipeline := rete.NewConstraintPipeline()
     
     // Charger les types
-    network, err := pipeline.IngestFile("types.tsd", nil, storage)
+    network, metrics1, err := pipeline.IngestFile("types.tsd", nil, storage)
     if err != nil {
         log.Fatalf("Erreur types : %v", err)
     }
-    fmt.Printf("Types chargés : %d\n", len(network.Types))
+    fmt.Printf("Types chargés : %d (en %v)\n", 
+        len(network.Types), metrics1.TotalDuration)
     
     // Charger les règles (validation incrémentale)
-    network, err = pipeline.IngestFile("rules.tsd", network, storage)
+    network, metrics2, err := pipeline.IngestFile("rules.tsd", network, storage)
     if err != nil {
         log.Fatalf("Erreur règles : %v", err)
     }
-    fmt.Printf("Règles chargées : %d\n", len(network.TerminalNodes))
+    fmt.Printf("Règles chargées : %d (en %v)\n", 
+        len(network.TerminalNodes), metrics2.TotalDuration)
     
     // Charger les faits
-    network, err = pipeline.IngestFile("facts.tsd", network, storage)
+    network, metrics3, err := pipeline.IngestFile("facts.tsd", network, storage)
     if err != nil {
         log.Fatalf("Erreur faits : %v", err)
     }
     
-    fmt.Println("Ingestion multi-fichiers réussie !")
+    totalTime := metrics1.TotalDuration + metrics2.TotalDuration + metrics3.TotalDuration
+    fmt.Printf("\n✅ Ingestion multi-fichiers réussie en %v\n", totalTime)
 }
 ```
 
@@ -332,7 +349,12 @@ func main() {
 
 Les fonctions suivantes ont été **SUPPRIMÉES** dans la version 2.0.0 :
 
-### Fonctions de Transaction (supprimées)
+### Fonctions Supprimées (v2.0.0+)
+
+**Fonctions d'ingestion multiples (supprimées)** :
+- ❌ `IngestFileWithMetrics()` : Fusionnée dans `IngestFile()` qui retourne toujours les métriques
+- ❌ `IngestFileWithAdvancedFeatures()` : Remplacée par `IngestFile()`
+- ❌ `IngestFileTransactionalSafe()` : Remplacée par `IngestFile()`
 - ❌ `IngestFileTransactional()` : Remplacée par `IngestFile()`
 - ❌ `IngestFileWithTransaction()` : Remplacée par `IngestFile()`
 
@@ -342,19 +364,19 @@ Les fonctions suivantes ont été **SUPPRIMÉES** dans la version 2.0.0 :
 - ❌ `BuildNetworkFromIterativeParser()` : Remplacée par `IngestFile()`
 - ❌ `BuildNetworkFromConstraintFileWithFacts()` : Remplacée par deux appels à `IngestFile()`
 
-**Migration** : Utilisez simplement `IngestFile()` pour tous les cas d'usage.
+**Migration** : Utilisez simplement `IngestFile()` qui retourne toujours `(network, metrics, error)`.
 
 **Exemple - Plusieurs fichiers** :
 ```go
 // Avant
 network, err := pipeline.BuildNetworkFromMultipleFiles([]string{"types.tsd", "rules.tsd"}, storage)
 
-// Après
-network, err := pipeline.IngestFile("types.tsd", nil, storage)
+// Après (noter le retour de metrics)
+network, _, err := pipeline.IngestFile("types.tsd", nil, storage)
 if err != nil {
     return err
 }
-network, err = pipeline.IngestFile("rules.tsd", network, storage)
+network, _, err = pipeline.IngestFile("rules.tsd", network, storage)
 ```
 
 **Exemple - Contraintes + Faits** :
@@ -362,12 +384,12 @@ network, err = pipeline.IngestFile("rules.tsd", network, storage)
 // Avant
 network, facts, err := pipeline.BuildNetworkFromConstraintFileWithFacts("rules.tsd", "facts.tsd", storage)
 
-// Après
-network, err := pipeline.IngestFile("rules.tsd", nil, storage)
+// Après (noter le retour de metrics)
+network, _, err := pipeline.IngestFile("rules.tsd", nil, storage)
 if err != nil {
     return err
 }
-network, err = pipeline.IngestFile("facts.tsd", network, storage)
+network, _, err = pipeline.IngestFile("facts.tsd", network, storage)
 facts := storage.GetAllFacts()
 ```
 

@@ -28,7 +28,7 @@ func main() {
     age: number
 }`), 0644)
 
-	network, err := pipeline.IngestFile(typesFile, nil, storage)
+	network, _, err := pipeline.IngestFile(typesFile, nil, storage)
 	if err != nil {
 		fmt.Printf("   ❌ Erreur: %v\n", err)
 		return
@@ -46,7 +46,7 @@ func main() {
     }
 }`), 0644)
 
-	network, err = pipeline.IngestFile(rulesFile, network, storage)
+	network, _, err = pipeline.IngestFile(rulesFile, network, storage)
 	if err != nil {
 		fmt.Printf("   ❌ Erreur: %v\n", err)
 		return
@@ -64,7 +64,7 @@ func main() {
     }
 }`), 0644)
 
-	_, err = pipeline.IngestFile(invalidFile, network, storage)
+	_, _, err = pipeline.IngestFile(invalidFile, network, storage)
 	if err != nil {
 		fmt.Println("   ✅ Erreur détectée (comme attendu)")
 	} else {
@@ -86,7 +86,7 @@ type Vehicle {
     brand: string
 }`), 0644)
 
-	network, err = pipeline.IngestFile(resetFile, network, storage)
+	network, _, err = pipeline.IngestFile(resetFile, network, storage)
 	if err != nil {
 		fmt.Printf("   ❌ Erreur: %v\n", err)
 		return
