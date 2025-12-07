@@ -10,8 +10,28 @@ import (
 	"strings"
 )
 
-// evaluateArithmeticOperation évalue une opération arithmétique et retourne la valeur résultante
+// evaluateArithmeticOperation évalue une opération arithmétique ou une concaténation de strings
 func (e *AlphaConditionEvaluator) evaluateArithmeticOperation(left interface{}, operator string, right interface{}) (interface{}, error) {
+	// Cas spécial pour l'opérateur + : si LES DEUX opérandes sont des strings, faire une concaténation
+	if operator == "+" {
+		leftVal := e.normalizeValue(left)
+		rightVal := e.normalizeValue(right)
+
+		leftStr, leftIsString := leftVal.(string)
+		rightStr, rightIsString := rightVal.(string)
+
+		// Si les deux sont des strings, concaténer
+		if leftIsString && rightIsString {
+			return leftStr + rightStr, nil
+		}
+
+		// Si un seul est une string, c'est une erreur - utiliser un cast explicite
+		if leftIsString || rightIsString {
+			return nil, fmt.Errorf("opération + avec types mixtes string/non-string (reçu: %T, %T). Utilisez un cast explicite: (string)valeur", leftVal, rightVal)
+		}
+	}
+
+	// Pour tous les autres opérateurs (et + avec deux nombres), faire une opération arithmétique
 	// Normaliser les valeurs numériques
 	leftVal := e.normalizeValue(left)
 	rightVal := e.normalizeValue(right)

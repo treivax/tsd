@@ -125,6 +125,10 @@ func (e *AlphaConditionEvaluator) evaluateValueFromMap(val map[string]interface{
 		}
 		return evaluatedElements, nil
 
+	case "cast":
+		// Support des expressions de cast
+		return e.evaluateCastExpression(val)
+
 	case "binaryOp", "binary_operation", "binaryOperation":
 		// Support des opérations binaires
 		// Extraire et normaliser l'opérateur en utilisant l'utilitaire centralisé
