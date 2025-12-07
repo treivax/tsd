@@ -25,6 +25,22 @@ Cette règle garantit :
 | `CLEANUP_SUMMARY_2024-12-07.md` | 2024-12-07 | Résumé spécifique du nettoyage du 2024-12-07 |
 | `CLEANUP_TEST_DIRECTORY.md` | - | Nettoyage du répertoire de tests |
 
+### 📊 Rapports d'Analyse
+| Fichier | Date | Description |
+|---------|------|-------------|
+| `CODE_STATS_2025-12-07.md` | 2025-12-07 | 📊 Statistiques complètes du code (lignes, modules, qualité) |
+| `GIT_PUSH_SUMMARY_2025-12-07.md` | 2025-12-07 | Récapitulatif du push Git (11 commits) |
+
+### 🔄 Rapports de Refactoring
+| Fichier | Date | Description |
+|---------|------|-------------|
+| `REFACTORING_ADVANCED_BETA_2025-12-07.md` | 2025-12-07 | Refactoring de `advanced_beta.go` - Décomposition en modules |
+| `REFACTORING_NETWORK_OPTIMIZER_2025-12-07.md` | 2025-12-07 | Refactoring de `network_optimizer.go` - Séparation des stratégies |
+| `REFACTORING_CONSTRAINT_PIPELINE_2025-12-07.md` | 2025-12-07 | Refactoring de `ingestFileWithMetrics()` - Décomposition en orchestration modulaire |
+| `REFACTORING_ALPHA_AND_BINARY_JOIN_2025-12-07.md` | 2025-12-07 | Refactoring de `createAlphaNodeWithTerminal()` et `createBinaryJoinRule()` - Extract Method + Context Object |
+| `REFACTORING_BETA_CHAIN_AND_AGGREGATION_2025-12-07.md` | 2025-12-07 | Refactoring de `BuildChain()` et `extractMultiSourceAggregationInfo()` - Extract Method + Context Object |
+| `REFACTORING_SESSION_SUMMARY_2025-12-07.md` | 2025-12-07 | Résumé de session refactoring - 4 fonctions refactorisées |
+
 ### 📊 Statuts de Projet
 | Fichier | Date | Description |
 |---------|------|-------------|
@@ -53,9 +69,11 @@ Cette règle garantit :
 
 ## 📊 Statistiques
 
-- **Total de rapports** : 18
+- **Total de rapports** : 26
 - **Dernière mise à jour** : 2025-12-07
-- **Rapports de nettoyage** : 6
+- **Rapports de nettoyage** : 7
+- **Rapports d'analyse** : 2
+- **Rapports de refactoring** : 6
 - **Rapports de statut** : 2
 - **Résumés de sessions** : 2
 - **Rapports d'architecture** : 2
@@ -79,6 +97,9 @@ Documentation des migrations architecturales majeures (ex: passage à in-memory 
 
 ### Rapports de Fonctionnalités (Feature Reports)
 Documentation détaillée de l'implémentation de nouvelles fonctionnalités.
+
+### Rapports de Refactoring (REFACTORING)
+Documentation des opérations de refactoring majeur : amélioration de la structure du code, séparation des responsabilités, application de patterns de conception.
 
 ## 📚 Distinction avec `docs/`
 
@@ -109,6 +130,9 @@ Si non versionné (via `.gitignore`) :
 ### 📊 Vue d'Ensemble Complète
 → `DASHBOARD_2025-12-07.md` ⭐ **RECOMMANDÉ - Commencez ici !**
 
+### 📊 Statistiques du Code
+→ `CODE_STATS_2025-12-07.md` ⭐ **ANALYSE DÉTAILLÉE - 43,949 lignes analysées**
+
 ### Consulter le Dernier Statut
 → `PROJECT_STATUS_2025-12-07_POST_DEEP_CLEAN.md`
 
@@ -120,6 +144,14 @@ Si non versionné (via `.gitignore`) :
 
 ### Historique des Sessions
 → `SESSION_SUMMARY_2024-12-07.md` et `SESSION_SUMMARY_2024-12-07_PART2.md`
+
+### Rapports de Refactoring
+→ `REFACTORING_ADVANCED_BETA_2025-12-07.md` - Décomposition de `advanced_beta.go`
+→ `REFACTORING_NETWORK_OPTIMIZER_2025-12-07.md` - Séparation des stratégies d'optimisation
+→ `REFACTORING_CONSTRAINT_PIPELINE_2025-12-07.md` - Décomposition orchestration pipeline
+→ `REFACTORING_ALPHA_AND_BINARY_JOIN_2025-12-07.md` - Alpha & Binary Join refactoring
+→ `REFACTORING_BETA_CHAIN_AND_AGGREGATION_2025-12-07.md` - Beta Chain & Aggregation refactoring ⭐ **NOUVEAU**
+→ `REFACTORING_SESSION_SUMMARY_2025-12-07.md` - Session summary (4 functions refactored)
 
 ## 🛠️ Maintenance
 
@@ -135,6 +167,6 @@ Les anciens rapports peuvent être déplacés dans un sous-répertoire `archive/
 
 ---
 
-**Dernière mise à jour** : 2025-12-07 10:34 CET  
+**Dernière mise à jour** : 2025-12-07 12:15 CET
 **Maintenu par** : Assistant IA + Équipe TSD  
 **Règle** : Tous les SUMMARY et STATUS vont ici, sans exception.
