@@ -13,10 +13,9 @@ Ce document liste toutes les fonctions publiques disponibles pour utiliser le pi
 
 1. [Fonction Principale](#fonction-principale)
 2. [Fonctions avec Métriques](#fonctions-avec-métriques)
-3. [Fonctions Avancées](#fonctions-avancées)
-4. [Fonctions de Construction](#fonctions-de-construction)
-5. [Configuration](#configuration)
-6. [Types et Structures](#types-et-structures)
+3. [Fonctions de Construction](#fonctions-de-construction)
+4. [Configuration](#configuration)
+5. [Types et Structures](#types-et-structures)
 
 ---
 
@@ -106,10 +105,18 @@ type IngestionMetrics struct {
     ParsingDuration      time.Duration
     ValidationDuration   time.Duration
     NetworkBuildDuration time.Duration
+    FactSubmissionDuration time.Duration
     TotalDuration        time.Duration
-    FactsPropagated      int
-    WasReset             bool
-    ValidationSkipped    bool
+    
+    TypesAdded       int
+    RulesAdded       int
+    FactsSubmitted   int
+    TokensGenerated  int
+    ActivationsProduced int
+    
+    ResetDetected    bool
+    NodesCollected   int
+    GCDuration       time.Duration
 }
 ```
 
@@ -127,143 +134,7 @@ fmt.Printf("Total : %v\n", metrics.TotalDuration)
 
 ---
 
-## Fonctions Avancées
-
-### `IngestFileWithAdvancedFeatures()`
-
-Pour les cas nécessitant un contrôle fin de la configuration.
-
-```go
-func (cp *ConstraintPipeline) IngestFileWithAdvancedFeatures(
-    filename string,
-    network *ReteNetwork,
-    storage Storage,
-    config *AdvancedPipelineConfig,
-) (*ReteNetwork, *AdvancedMetrics, error)
-```
-
-**Description** :  
-Ingestion avec configuration avancée et métriques étendues incluant les transactions.
-
-**Caractéristiques** :
-- ✅ **Configuration fine** : Timeout, taille max, auto-commit, etc.
-- ✅ **Métriques avancées** : Validation, GC, transactions
-- ✅ **Transaction automatique** : Toujours activée (non désactivable)
-
-**Configuration** :
-```go
-type AdvancedPipelineConfig struct {
-    // Transactions (toujours activées)
-    TransactionTimeout  time.Duration  // Timeout de la transaction
-    MaxTransactionSize  int64          // Taille max de l'empreinte mémoire
-    AutoCommit          bool           // Commit automatique
-    AutoRollbackOnError bool           // Rollback automatique sur erreur
-}
-```
-
-**Métriques Avancées** :
-```go
-type AdvancedMetrics struct {
-    // Validation incrémentale
-    ValidationWithContextDuration time.Duration
-    TypesFoundInContext           int
-    ValidationErrors              []string
-    
-    // Garbage Collection
-    GCDuration     time.Duration
-    NodesCollected int
-    MemoryFreed    int64
-    GCPerformed    bool
-    
-    // Transaction (toujours présente)
-    TransactionID        string
-    TransactionFootprint int64
-    ChangesTracked       int
-    RollbackPerformed    bool
-    RollbackDuration     time.Duration
-    TransactionDuration  time.Duration
-}
-```
-
-**Exemple** :
-```go
-config := rete.DefaultAdvancedPipelineConfig()
-config.TransactionTimeout = 60 * time.Second
-config.MaxTransactionSize = 200 * 1024 * 1024 // 200 MB
-config.AutoCommit = true
-
-network, metrics, err := pipeline.IngestFileWithAdvancedFeatures(
-    "rules.tsd", nil, storage, config,
-)
-
-if err != nil {
-    log.Fatalf("Erreur : %v", err)
-}
-
-// Afficher les métriques avancées
-rete.PrintAdvancedMetrics(metrics)
-```
-
-### `IngestFileTransactionalSafe()`
-
-Pour obtenir un accès à la transaction (usage avancé).
-
-```go
-func (cp *ConstraintPipeline) IngestFileTransactionalSafe(
-    filename string,
-    network *ReteNetwork,
-    storage Storage,
-) (*ReteNetwork, *Transaction, error)
-```
-
-**Description** :  
-Ingestion avec accès à l'objet transaction pour inspection (sans commit automatique).
-
-**Caractéristiques** :
-- ✅ **Transaction accessible** : Retourne l'objet `Transaction`
-- ✅ **Pas de commit automatique** : Permet inspection avant commit
-- ✅ **Rollback automatique** : En cas d'erreur
-
-**Note** : Cette fonction est pour des cas d'usage très spécifiques. Préférez `IngestFile()` ou `IngestFileWithAdvancedFeatures()`.
-
-**Exemple** :
-```go
-network, tx, err := pipeline.IngestFileTransactionalSafe("rules.tsd", nil, storage)
-if err != nil {
-    log.Fatalf("Erreur : %v", err)
-}
-
-// Inspecter la transaction
-fmt.Printf("Transaction ID : %s\n", tx.ID)
-fmt.Printf("Commandes : %d\n", tx.GetCommandCount())
-
-// Commit manuel
-tx.Commit()
-```
-
----
-
-
-
-## Configuration
-
-### `DefaultAdvancedPipelineConfig()`
-
-Retourne une configuration par défaut pour le pipeline avancé.
-
-```go
-func DefaultAdvancedPipelineConfig() *AdvancedPipelineConfig
-```
-
-**Valeurs par défaut** :
-```go
-&AdvancedPipelineConfig{
-    TransactionTimeout:  30 * time.Second,
-    MaxTransactionSize:  100 * 1024 * 1024, // 100 MB
-    AutoCommit:          false,
-    AutoRollbackOnError: true,
-}
-```
+## Fonctions de Construction
 
 ### `NewConstraintPipeline()`
 
@@ -282,147 +153,51 @@ pipeline := rete.NewConstraintPipeline()
 
 ## Types et Structures
 
-### `ConstraintPipeline`
-
-Structure principale du pipeline.
-
-```go
-type ConstraintPipeline struct {
-    // Champs internes (privés)
-}
-```
-
 ### `IngestionMetrics`
 
-Métriques basiques d'ingestion.
+Structure contenant les métriques d'une ingestion avec `IngestFileWithMetrics()`.
 
 ```go
 type IngestionMetrics struct {
-    ParsingDuration      time.Duration
-    ValidationDuration   time.Duration
-    NetworkBuildDuration time.Duration
-    TotalDuration        time.Duration
-    FactsPropagated      int
-    WasReset             bool
-    ValidationSkipped    bool
-}
-```
-
-### `AdvancedMetrics`
-
-Métriques avancées incluant validation, GC et transactions.
-
-```go
-type AdvancedMetrics struct {
-    // Validation incrémentale
-    ValidationWithContextDuration time.Duration
-    TypesFoundInContext           int
-    ValidationErrors              []string
+    ParsingDuration        time.Duration
+    ValidationDuration     time.Duration
+    NetworkBuildDuration   time.Duration
+    FactSubmissionDuration time.Duration
+    TotalDuration          time.Duration
     
-    // Garbage Collection
-    GCDuration     time.Duration
+    TypesAdded          int
+    RulesAdded          int
+    FactsSubmitted      int
+    TokensGenerated     int
+    ActivationsProduced int
+    
+    ResetDetected  bool
     NodesCollected int
-    MemoryFreed    int64
-    GCPerformed    bool
-    
-    // Transaction (toujours présente)
-    TransactionID        string
-    TransactionFootprint int64
-    ChangesTracked       int
-    RollbackPerformed    bool
-    RollbackDuration     time.Duration
-    TransactionDuration  time.Duration
+    GCDuration     time.Duration
 }
-```
-
-### `AdvancedPipelineConfig`
-
-Configuration pour le pipeline avancé.
-
-```go
-type AdvancedPipelineConfig struct {
-    // Transactions (toujours activées)
-    TransactionTimeout  time.Duration
-    MaxTransactionSize  int64
-    AutoCommit          bool
-    AutoRollbackOnError bool
-}
-```
-
----
-
-## Fonctions Utilitaires
-
-### `PrintAdvancedMetrics()`
-
-Affiche les métriques avancées de manière formatée.
-
-```go
-func PrintAdvancedMetrics(metrics *AdvancedMetrics)
-```
-
-**Exemple** :
-```go
-network, metrics, err := pipeline.IngestFileWithAdvancedFeatures(
-    "rules.tsd", nil, storage, config,
-)
-
-rete.PrintAdvancedMetrics(metrics)
-```
-
-**Sortie** :
-```
-📊 MÉTRIQUES AVANCÉES
-═══════════════════════════════════════
-🔍 Validation incrémentale
-   Durée: 125ms
-   Types en contexte: 15
-
-🗑️  Garbage Collection
-   Durée: 50ms
-   Nœuds collectés: 42
-
-🔒 Transaction
-   ID: 550e8400-e29b-41d4-a716-446655440000
-   Durée: 250ms
-   Empreinte mémoire: 2.34 KB
-   Changements trackés: 15
-═══════════════════════════════════════
-```
-
-### `GetAdvancedMetricsSummary()`
-
-Retourne un résumé textuel des métriques.
-
-```go
-func GetAdvancedMetricsSummary(metrics *AdvancedMetrics) string
 ```
 
 ---
 
 ## Guide de Sélection
 
-### Quel fonction utiliser ?
+### Quelle fonction utiliser ?
 
 | Besoin | Fonction Recommandée |
 |--------|---------------------|
 | **Cas général** | `IngestFile()` |
 | **Besoin de métriques** | `IngestFileWithMetrics()` |
-| **Configuration fine** | `IngestFileWithAdvancedFeatures()` |
 | **Plusieurs fichiers** | Appels successifs à `IngestFile()` |
-| **Accès transaction** | `IngestFileTransactionalSafe()` |
 
-### Matrice de Fonctionnalités
+### Fonctionnalités
 
-| Fonctionnalité | IngestFile | WithMetrics | WithAdvancedFeatures |
-|----------------|-----------|-------------|---------------------|
-| Transaction automatique | ✅ | ✅ | ✅ |
-| Validation incrémentale | ✅ | ✅ | ✅ |
-| GC après reset | ✅ | ✅ | ✅ |
-| Métriques basiques | ❌ | ✅ | ✅ |
-| Métriques avancées | ❌ | ❌ | ✅ |
-| Configuration fine | ❌ | ❌ | ✅ |
-| Métriques transaction | ❌ | ❌ | ✅ |
+Les deux fonctions offrent les mêmes fonctionnalités :
+- ✅ **Transaction automatique** : Créée, committée ou rollbackée automatiquement
+- ✅ **Validation incrémentale** : Utilise le contexte du réseau existant
+- ✅ **GC après reset** : Nettoyage automatique après commande `reset`
+- ✅ **Propagation de faits** : Les faits existants sont propagés aux nouvelles règles
+
+La seule différence : `IngestFileWithMetrics()` retourne des métriques détaillées.
 
 ---
 
@@ -476,50 +251,20 @@ func main() {
     
     fmt.Printf("Parsing : %v\n", metrics.ParsingDuration)
     fmt.Printf("Validation : %v\n", metrics.ValidationDuration)
+    fmt.Printf("Construction réseau : %v\n", metrics.NetworkBuildDuration)
     fmt.Printf("Total : %v\n", metrics.TotalDuration)
-    fmt.Printf("Faits propagés : %d\n", metrics.FactsPropagated)
-}
-```
-
-### Exemple 3 : Configuration Avancée
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "time"
-    "github.com/treivax/tsd/rete"
-)
-
-func main() {
-    storage := rete.NewMemoryStorage()
-    pipeline := rete.NewConstraintPipeline()
+    fmt.Printf("Types ajoutés : %d\n", metrics.TypesAdded)
+    fmt.Printf("Règles ajoutées : %d\n", metrics.RulesAdded)
+    fmt.Printf("Faits soumis : %d\n", metrics.FactsSubmitted)
     
-    // Configuration personnalisée
-    config := rete.DefaultAdvancedPipelineConfig()
-    config.TransactionTimeout = 60 * time.Second
-    config.MaxTransactionSize = 200 * 1024 * 1024
-    config.AutoCommit = true
-    
-    network, metrics, err := pipeline.IngestFileWithAdvancedFeatures(
-        "rules.tsd", nil, storage, config,
-    )
-    
-    if err != nil {
-        log.Fatalf("Erreur : %v", err)
+    if metrics.ResetDetected {
+        fmt.Printf("Reset détecté - GC effectué : %d nœuds en %v\n", 
+            metrics.NodesCollected, metrics.GCDuration)
     }
-    
-    // Afficher métriques détaillées
-    rete.PrintAdvancedMetrics(metrics)
-    
-    fmt.Printf("\nTransaction ID : %s\n", metrics.TransactionID)
-    fmt.Printf("Commandes : %d\n", metrics.ChangesTracked)
 }
 ```
 
-### Exemple 4 : Ingestion Incrémentale
+### Exemple 3 : Ingestion Incrémentale Multi-Fichiers
 
 ```go
 package main
@@ -534,26 +279,27 @@ func main() {
     storage := rete.NewMemoryStorage()
     pipeline := rete.NewConstraintPipeline()
     
-    // Premier fichier (types de base)
+    // Charger les types
     network, err := pipeline.IngestFile("types.tsd", nil, storage)
     if err != nil {
         log.Fatalf("Erreur types : %v", err)
     }
-    fmt.Printf("Après types : %d types\n", len(network.Types))
+    fmt.Printf("Types chargés : %d\n", len(network.Types))
     
-    // Deuxième fichier (règles) - ingestion incrémentale
+    // Charger les règles (validation incrémentale)
     network, err = pipeline.IngestFile("rules.tsd", network, storage)
     if err != nil {
         log.Fatalf("Erreur règles : %v", err)
     }
-    fmt.Printf("Après règles : %d règles\n", len(network.TerminalNodes))
+    fmt.Printf("Règles chargées : %d\n", len(network.TerminalNodes))
     
-    // Troisième fichier (faits)
+    // Charger les faits
     network, err = pipeline.IngestFile("facts.tsd", network, storage)
     if err != nil {
         log.Fatalf("Erreur faits : %v", err)
     }
-    fmt.Printf("Après faits : %d faits\n", len(network.Storage.GetAllFacts()))
+    
+    fmt.Println("Ingestion multi-fichiers réussie !")
 }
 ```
 

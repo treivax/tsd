@@ -13,13 +13,14 @@ import (
 	"github.com/treivax/tsd/rete"
 )
 
-// Exemple d'utilisation des fonctionnalités avancées du pipeline RETE :
+// Exemple d'utilisation des fonctionnalités du pipeline RETE :
 // 1. Validation sémantique incrémentale
 // 2. Garbage Collection après reset
-// 3. Transactions avec rollback
+// 3. Transactions avec rollback automatique
+// 4. Collecte de métriques
 
 func main() {
-	fmt.Println("=== Démonstration des fonctionnalités avancées ===")
+	fmt.Println("=== Démonstration des fonctionnalités du pipeline RETE ===")
 
 	// Créer un répertoire temporaire pour les exemples
 	tmpDir, err := os.MkdirTemp("", "tsd_advanced_example_")
@@ -40,9 +41,9 @@ func main() {
 	fmt.Println("\n🔒 Exemple 3 : Transactions avec rollback")
 	demonstrateTransactions(tmpDir)
 
-	// Exemple 4 : Toutes les fonctionnalités combinées
-	fmt.Println("\n🚀 Exemple 4 : Toutes les fonctionnalités combinées")
-	demonstrateAllFeatures(tmpDir)
+	// Exemple 4 : Collecte de métriques
+	fmt.Println("\n📊 Exemple 4 : Collecte de métriques d'ingestion")
+	demonstrateMetricsCollection(tmpDir)
 }
 
 // Exemple 1 : Validation incrémentale avec contexte
@@ -53,18 +54,8 @@ func demonstrateIncrementalValidation(tmpDir string) {
 	// Fichier 1 : Définir les types
 	typesFile := filepath.Join(tmpDir, "types.tsd")
 	typesContent := `
-type Employee {
-	id: string
-	name: string
-	salary: number
-	department: string
-}
-
-type Department {
-	id: string
-	name: string
-	budget: number
-}
+type Employee(id: string, name: string, salary: number, department: string)
+type Department(id: string, name: string, budget: number)
 `
 	writeFile(typesFile, typesContent)
 
@@ -78,23 +69,10 @@ type Department {
 	// Fichier 2 : Définir des règles qui utilisent les types existants
 	rulesFile := filepath.Join(tmpDir, "rules.tsd")
 	rulesContent := `
-rule "high_salary_alert" {
-	when {
-		e: Employee(salary > 100000)
-	}
-	then {
-		print("High salary employee: " + e.name)
-	}
-}
+action print(msg: string)
 
-rule "department_budget_check" {
-	when {
-		d: Department(budget < 50000)
-	}
-	then {
-		print("Low budget department: " + d.name)
-	}
-}
+rule high_salary_alert: {e: Employee} / e.salary > 100000 ==> print(e.name)
+rule department_budget: {d: Department} / d.budget < 50000 ==> print(d.name)
 `
 	writeFile(rulesFile, rulesContent)
 
@@ -108,14 +86,7 @@ rule "department_budget_check" {
 	// Fichier 3 : Essayer de charger une règle avec un type inexistant
 	invalidRulesFile := filepath.Join(tmpDir, "invalid_rules.tsd")
 	invalidRulesContent := `
-rule "invalid_rule" {
-	when {
-		p: Product(price > 100)
-	}
-	then {
-		print("Expensive product")
-	}
-}
+rule invalid_rule: {p: Product} / p.price > 100 ==> print("Expensive product")
 `
 	writeFile(invalidRulesFile, invalidRulesContent)
 
@@ -136,32 +107,14 @@ func demonstrateGarbageCollection(tmpDir string) {
 	// Session 1 : Créer un réseau volumineux
 	session1File := filepath.Join(tmpDir, "session1.tsd")
 	session1Content := `
-type Person {
-	id: string
-	name: string
-	age: number
-}
+type Person(id: string, name: string, age: number)
+action print(msg: string)
 
-rule "rule1" {
-	when {
-		p: Person(age >= 18)
-	}
-	then {
-		print("Adult")
-	}
-}
+rule rule1: {p: Person} / p.age >= 18 ==> print("Adult")
+rule rule2: {p: Person} / p.age < 18 ==> print("Minor")
 
-rule "rule2" {
-	when {
-		p: Person(age < 18)
-	}
-	then {
-		print("Minor")
-	}
-}
-
-fact Person { id: "p1", name: "Alice", age: 30 }
-fact Person { id: "p2", name: "Bob", age: 15 }
+Person(id: "p1", name: "Alice", age: 30)
+Person(id: "p2", name: "Bob", age: 15)
 `
 	writeFile(session1File, session1Content)
 
@@ -178,20 +131,10 @@ fact Person { id: "p2", name: "Bob", age: 15 }
 	session2Content := `
 reset
 
-type Vehicle {
-	id: string
-	brand: string
-	model: string
-}
+type Vehicle(id: string, brand: string, model: string)
+action print(msg: string)
 
-rule "luxury_car" {
-	when {
-		v: Vehicle(brand == "BMW")
-	}
-	then {
-		print("Luxury vehicle")
-	}
-}
+rule luxury_car: {v: Vehicle} / v.brand == "BMW" ==> print("Luxury vehicle")
 `
 	writeFile(session2File, session2Content)
 
@@ -213,14 +156,9 @@ func demonstrateTransactions(tmpDir string) {
 	// État initial
 	initialFile := filepath.Join(tmpDir, "initial.tsd")
 	initialContent := `
-type Book {
-	id: string
-	title: string
-	author: string
-	pages: number
-}
+type Book(id: string, title: string, author: string, pages: number)
 
-fact Book { id: "b1", title: "Go Programming", author: "John Doe", pages: 300 }
+Book(id: "b1", title: "Go Programming", author: "John Doe", pages: 300)
 `
 	writeFile(initialFile, initialContent)
 
@@ -235,14 +173,9 @@ fact Book { id: "b1", title: "Go Programming", author: "John Doe", pages: 300 }
 	// Tentative 1 : Ingestion réussie avec transaction
 	validFile := filepath.Join(tmpDir, "valid_update.tsd")
 	validContent := `
-rule "long_book" {
-	when {
-		b: Book(pages > 200)
-	}
-	then {
-		print("Long book: " + b.title)
-	}
-}
+action print(msg: string)
+
+rule long_book: {b: Book} / b.pages > 200 ==> print(b.title)
 `
 	writeFile(validFile, validContent)
 
@@ -256,14 +189,7 @@ rule "long_book" {
 	// Tentative 2 : Ingestion invalide avec rollback
 	invalidFile := filepath.Join(tmpDir, "invalid_update.tsd")
 	invalidContent := `
-rule "invalid_rule" {
-	when {
-		m: Magazine(pages > 50)
-	}
-	then {
-		print("Magazine found")
-	}
-}
+rule invalid_rule: {m: Magazine} / m.pages > 50 ==> print("Magazine found")
 `
 	writeFile(invalidFile, invalidContent)
 
@@ -284,81 +210,91 @@ rule "invalid_rule" {
 	}
 }
 
-// Exemple 4 : Toutes les fonctionnalités combinées
-func demonstrateAllFeatures(tmpDir string) {
+// Exemple 4 : Collecte de métriques
+func demonstrateMetricsCollection(tmpDir string) {
 	storage := rete.NewMemoryStorage()
 	pipeline := rete.NewConstraintPipeline()
-
-	// Configuration avec toutes les fonctionnalités
-	config := rete.DefaultAdvancedPipelineConfig()
-	config.AutoCommit = true
-	config.AutoRollbackOnError = true
 
 	// Fichier 1 : Types de base
 	file1 := filepath.Join(tmpDir, "base_types.tsd")
 	file1Content := `
-type Student {
-	id: string
-	name: string
-	grade: number
-}
+type Student(id: string, name: string, grade: number)
 `
 	writeFile(file1, file1Content)
 
-	fmt.Println("  → Chargement avec toutes les fonctionnalités activées...")
-	network, metrics, err := pipeline.IngestFileWithAdvancedFeatures(file1, nil, storage, config)
+	fmt.Println("  → Ingestion avec collecte de métriques...")
+	network, metrics, err := pipeline.IngestFileWithMetrics(file1, nil, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
 
-	rete.PrintAdvancedMetrics(metrics)
+	fmt.Println("\n  📊 Métriques d'ingestion :")
+	fmt.Printf("    • Durée totale : %v\n", metrics.TotalDuration)
+	fmt.Printf("    • Durée parsing : %v\n", metrics.ParsingDuration)
+	fmt.Printf("    • Durée validation : %v\n", metrics.ValidationDuration)
+	fmt.Printf("    • Durée création types : %v\n", metrics.TypeCreationDuration)
+	fmt.Printf("    • Types ajoutés : %d\n", metrics.TypesAdded)
+	fmt.Printf("    • Règles ajoutées : %d\n", metrics.RulesAdded)
+	fmt.Printf("    • Faits soumis : %d\n", metrics.FactsSubmitted)
+	if metrics.WasReset {
+		fmt.Printf("    • Reset détecté : oui\n")
+	}
 
 	// Fichier 2 : Règles utilisant les types existants
 	file2 := filepath.Join(tmpDir, "student_rules.tsd")
 	file2Content := `
-rule "honor_student" {
-	when {
-		s: Student(grade >= 90)
-	}
-	then {
-		print("Honor student: " + s.name)
-	}
-}
+action print(msg: string)
+
+rule honor_student: {s: Student} / s.grade >= 90 ==> print(s.name)
+rule failing_student: {s: Student} / s.grade < 60 ==> print(s.name)
+
+Student(id: "s1", name: "Alice", grade: 95)
+Student(id: "s2", name: "Bob", grade: 55)
 `
 	writeFile(file2, file2Content)
 
-	network, metrics, err = pipeline.IngestFileWithAdvancedFeatures(file2, network, storage, config)
+	fmt.Println("\n  → Ingestion incrémentale avec métriques...")
+	network, metrics, err = pipeline.IngestFileWithMetrics(file2, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
 
-	fmt.Println("\n  📊 Résumé des métriques :")
-	summary := rete.GetAdvancedMetricsSummary(metrics)
-	fmt.Print("  " + summary)
+	fmt.Println("\n  📊 Métriques d'ingestion incrémentale :")
+	fmt.Printf("    • Durée totale : %v\n", metrics.TotalDuration)
+	fmt.Printf("    • Règles ajoutées : %d\n", metrics.RulesAdded)
+	fmt.Printf("    • Faits soumis : %d\n", metrics.FactsSubmitted)
+	fmt.Printf("    • Faits propagés : %d\n", metrics.FactsPropagated)
+	fmt.Printf("    • Nouveaux terminaux : %d\n", metrics.NewTerminalsAdded)
 
-	// Fichier 3 : Reset avec GC
+	// Fichier 3 : Reset avec GC et métriques
 	file3 := filepath.Join(tmpDir, "reset_system.tsd")
 	file3Content := `
 reset
 
-type Course {
-	id: string
-	name: string
-	credits: number
-}
+type Course(id: string, name: string, credits: number)
+action print(msg: string)
+
+rule credit_heavy_course: {c: Course} / c.credits > 3 ==> print(c.name)
+
+Course(id: "c1", name: "Advanced Algorithms", credits: 4)
 `
 	writeFile(file3, file3Content)
 
-	fmt.Println("  → Reset avec GC...")
-	network, metrics, err = pipeline.IngestFileWithAdvancedFeatures(file3, network, storage, config)
+	fmt.Println("\n  → Reset avec GC et métriques...")
+	network, metrics, err = pipeline.IngestFileWithMetrics(file3, network, storage)
 	if err != nil {
 		log.Fatalf("Erreur : %v", err)
 	}
 
-	if metrics.GCPerformed {
-		fmt.Printf("  ✅ GC effectué : %d nœuds collectés en %v\n",
-			metrics.NodesCollected, metrics.GCDuration)
+	fmt.Println("\n  📊 Métriques après reset :")
+	fmt.Printf("    • Durée totale : %v\n", metrics.TotalDuration)
+	fmt.Printf("    • Reset détecté : %v\n", metrics.WasReset)
+	if metrics.WasReset {
+		fmt.Printf("    • Ancien réseau nettoyé (GC automatique)\n")
 	}
+	fmt.Printf("    • Types ajoutés : %d\n", metrics.TypesAdded)
+	fmt.Printf("    • Règles ajoutées : %d\n", metrics.RulesAdded)
+	fmt.Printf("    • Faits soumis : %d\n", metrics.FactsSubmitted)
 
 	fmt.Printf("\n  🎯 Réseau final : %d type(s), %d règle(s)\n",
 		len(network.Types), len(network.TerminalNodes))
