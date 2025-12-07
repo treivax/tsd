@@ -33,6 +33,8 @@ coverage.txt
 # Test reports
 complete_test_report.txt
 *_test_report.txt
+*_report*.txt
+coverage_report*.txt
 RAPPORT_RETE_*.md
 RAPPORT_CORRECTIF_*.md
 VALIDATION_*.md
