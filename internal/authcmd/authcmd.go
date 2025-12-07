@@ -6,20 +6,11 @@ package authcmd
 
 import (
 	"bufio"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/json"
-	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
-	"math/big"
-	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -261,155 +252,51 @@ func validateToken(args []string, stdin io.Reader, stdout, stderr io.Writer) int
 
 // generateCert génère des certificats TLS auto-signés
 func generateCert(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("generate-cert", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	outputDir := fs.String("output-dir", "./certs", "Répertoire de sortie pour les certificats")
-	hosts := fs.String("hosts", "localhost,127.0.0.1", "Hôtes/IPs séparés par des virgules")
-	validDays := fs.Int("valid-days", 365, "Durée de validité en jours")
-	org := fs.String("org", "TSD Development", "Nom de l'organisation")
-	format := fs.String("format", "text", "Format de sortie (text, json)")
-
-	if err := fs.Parse(args); err != nil {
+	// 1. Parser la configuration
+	config, err := parseCertFlags(args, stderr)
+	if err != nil {
 		return 1
 	}
 
-	// Créer le répertoire de sortie si nécessaire
-	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+	// 2. Créer le répertoire de sortie
+	if err := os.MkdirAll(config.outputDir, 0755); err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur création répertoire: %v\n", err)
 		return 1
 	}
 
-	// Parser les hôtes
-	hostList := strings.Split(*hosts, ",")
-	for i, h := range hostList {
-		hostList[i] = strings.TrimSpace(h)
-	}
-
-	// Générer la clé privée ECDSA
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// 3. Générer la clé privée
+	privateKey, err := generateECDSAPrivateKey()
 	if err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur génération clé privée: %v\n", err)
 		return 1
 	}
 
-	// Préparer le template du certificat
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Duration(*validDays) * 24 * time.Hour)
-
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	// 4. Créer le template du certificat
+	template, err := createCertificateTemplate(config)
 	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur génération numéro série: %v\n", err)
+		fmt.Fprintf(stderr, "❌ Erreur création template: %v\n", err)
 		return 1
 	}
 
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization: []string{*org},
-			CommonName:   hostList[0],
-		},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	// Ajouter les hôtes au certificat
-	for _, h := range hostList {
-		if ip := net.ParseIP(h); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else {
-			template.DNSNames = append(template.DNSNames, h)
-		}
-	}
-
-	// Créer le certificat auto-signé
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	// 5. Créer le certificat auto-signé
+	certDER, err := createSelfSignedCertificate(template, privateKey)
 	if err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur création certificat: %v\n", err)
 		return 1
 	}
 
-	// Sauvegarder le certificat
-	certPath := filepath.Join(*outputDir, "server.crt")
-	certOut, err := os.Create(certPath)
+	// 6. Écrire les fichiers
+	result, err := writeCertificateFiles(config, certDER, privateKey)
 	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur création fichier certificat: %v\n", err)
-		return 1
-	}
-	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		certOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur encodage certificat: %v\n", err)
-		return 1
-	}
-	certOut.Close()
-
-	// Sauvegarder la clé privée
-	keyPath := filepath.Join(*outputDir, "server.key")
-	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur création fichier clé: %v\n", err)
+		fmt.Fprintf(stderr, "❌ Erreur écriture fichiers: %v\n", err)
 		return 1
 	}
 
-	privBytes, err := x509.MarshalECPrivateKey(privateKey)
-	if err != nil {
-		keyOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur marshalling clé: %v\n", err)
-		return 1
-	}
-
-	if err := pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privBytes}); err != nil {
-		keyOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur encodage clé: %v\n", err)
-		return 1
-	}
-	keyOut.Close()
-
-	// Créer aussi une copie du certificat comme CA (pour les clients)
-	caPath := filepath.Join(*outputDir, "ca.crt")
-	if err := copyFile(certPath, caPath); err != nil {
-		fmt.Fprintf(stderr, "⚠️  Avertissement: impossible de créer ca.crt: %v\n", err)
-	}
-
-	if *format == "json" {
-		output := map[string]interface{}{
-			"success":      true,
-			"cert_path":    certPath,
-			"key_path":     keyPath,
-			"ca_path":      caPath,
-			"hosts":        hostList,
-			"valid_days":   *validDays,
-			"not_before":   notBefore.Format(time.RFC3339),
-			"not_after":    notAfter.Format(time.RFC3339),
-			"organization": *org,
-		}
-		data, _ := json.MarshalIndent(output, "", "  ")
-		fmt.Fprintln(stdout, string(data))
+	// 7. Afficher la sortie
+	if config.format == "json" {
+		formatCertOutputJSON(result, config, stdout)
 	} else {
-		fmt.Fprintln(stdout, "🔐 Certificats TLS générés avec succès!")
-		fmt.Fprintln(stdout, "=====================================")
-		fmt.Fprintf(stdout, "\n📁 Répertoire: %s\n\n", *outputDir)
-		fmt.Fprintf(stdout, "📄 Fichiers générés:\n")
-		fmt.Fprintf(stdout, "   - %s (certificat serveur)\n", certPath)
-		fmt.Fprintf(stdout, "   - %s (clé privée serveur)\n", keyPath)
-		fmt.Fprintf(stdout, "   - %s (certificat CA pour clients)\n\n", caPath)
-		fmt.Fprintf(stdout, "🏷️  Hôtes autorisés: %s\n", strings.Join(hostList, ", "))
-		fmt.Fprintf(stdout, "📅 Valide de %s à %s\n", notBefore.Format("2006-01-02"), notAfter.Format("2006-01-02"))
-		fmt.Fprintf(stdout, "🏢 Organisation: %s\n\n", *org)
-		fmt.Fprintln(stdout, "⚠️  IMPORTANT:")
-		fmt.Fprintf(stdout, "   - La clé privée (%s) doit rester SECRÈTE\n", keyPath)
-		fmt.Fprintln(stdout, "   - Ne JAMAIS committer les certificats dans Git")
-		fmt.Fprintln(stdout, "   - Ces certificats sont auto-signés (pour développement)")
-		fmt.Fprintln(stdout, "")
-		fmt.Fprintln(stdout, "📝 Utilisation:")
-		fmt.Fprintf(stdout, "   Serveur: tsd server --tls-cert %s --tls-key %s\n", certPath, keyPath)
-		fmt.Fprintf(stdout, "   Client:  tsd client --server https://localhost:8080 --tls-ca %s\n", caPath)
-		fmt.Fprintln(stdout, "")
-		fmt.Fprintln(stdout, "💡 Pour production, utilisez des certificats signés par une CA reconnue (Let's Encrypt, etc.)")
+		formatCertOutputText(result, config, stdout)
 	}
 
 	return 0
