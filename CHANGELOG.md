@@ -3,6 +3,58 @@
 ## [Unreleased]
 
 ### Added
+- **Opérateurs de Casting de Types** - Conversion explicite entre types de base
+  - Syntaxe : `(type)expression` avec support pour `(number)`, `(string)`, `(bool)`
+  - Conversions supportées :
+    - `(string)` : number → string, bool → string
+    - `(number)` : string → number, bool → number (true→1, false→0)
+    - `(bool)` : string → bool, number → bool (0→false, ≠0→true)
+  - Gestion des erreurs pour conversions invalides (ex: `(number)"abc"`)
+  - Règles de conversion permissives pour string→bool ("true"/"1"→true, "false"/"0"/""→false)
+  - Support dans toutes les expressions : comparaisons, arithmétiques, logiques
+  - Cas d'usage : validation de données, transformation de types, interopérabilité
+  - Fichiers ajoutés :
+    - `rete/evaluator_cast.go` : Logique d'évaluation des casts
+    - `rete/evaluator_cast_test.go` : Tests unitaires (130+ tests)
+    - `examples/type-casting.tsd` : Exemples complets (338 lignes)
+    - `docs/feature-type-casting.md` : Spécification technique complète
+  - Modification de la grammaire PEG : `constraint/grammar/constraint.peg`
+  - Tests exhaustifs couvrant tous les cas de conversion et erreurs
+
+- **Support UTF-8 Étendu** - Support complet des caractères internationaux
+  - UTF-8 dans les chaînes de caractères : Tous les scripts Unicode (français, chinois, russe, arabe, japonais, emoji, etc.)
+  - UTF-8 dans les identifiants : Noms de types, champs, règles, actions avec caractères internationaux
+  - Scripts supportés dans les identifiants :
+    - Latin étendu (français, allemand, espagnol, etc.)
+    - Grec (α, β, Ελληνικά)
+    - Cyrillique (russe : имя, Москва, правило)
+    - Hébreu
+    - Arabe
+    - CJK (Chinois : 用户, 姓名 ; Japonais : ひらがな, カタカナ ; Coréen : 한글)
+  - Styles d'identifiants flexibles :
+    - camelCase : `CustomerOrder`, `orderId`, `sendNotificationEmail`
+    - snake_case : `customer_order`, `order_id`, `send_notification_email`
+    - Mélange autorisé dans le même fichier
+    - Support des underscores initiaux (`_InternalType`)
+    - Support des underscores multiples (`Debug__Info`)
+    - Support des chiffres dans les identifiants (`Product2`, `version2`)
+  - Documentation complète : `docs/utf8-and-identifier-styles.md`
+  - Exemples : `examples/utf8-and-identifier-styles.tsd`
+  - Tests de non-régression : 35 tests couvrant tous les scripts et styles
+
+### Fixed
+- **Case-Insensitive Keywords** - Les mots-clés de la grammaire acceptent maintenant trois formes de casse
+  - Support pour UPPERCASE, lowercase et Capitalized (ex: AND, and, And)
+  - S'applique à tous les opérateurs logiques : AND, OR, NOT
+  - S'applique aux contraintes spéciales : EXISTS
+  - S'applique aux fonctions d'agrégation : AVG, COUNT, SUM, MIN, MAX
+  - S'applique aux opérateurs de comparaison : IN, LIKE, MATCHES, CONTAINS
+  - S'applique aux fonctions de manipulation : LENGTH, SUBSTRING, UPPER, LOWER, TRIM, ABS, ROUND, FLOOR, CEIL
+  - Rejette les formes de casse invalides (ex: aNd, LiKe, eXiStS)
+  - Amélioration de la lisibilité de la grammaire PEG avec syntaxe `"KEYWORD" / "keyword" / "Keyword"`
+  - Tests de non-régression ajoutés dans `parser_case_insensitive_test.go`
+
+### Added
 - **Binaire Unique TSD** - Refactorisation majeure vers un binaire unique multifonction
   - Un seul binaire `tsd` remplace les 4 binaires séparés (`tsd`, `tsd-auth`, `tsd-client`, `tsd-server`)
   - Dispatch automatique selon le premier argument :

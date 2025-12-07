@@ -23,6 +23,9 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🔐 **TLS/HTTPS par défaut** - Communication sécurisée avec génération de certificats
 - 🌐 **Architecture Client/Serveur** - Serveur HTTPS et client pour exécution distante
 - 🔧 **Binaire unique** - Un seul binaire `tsd` pour tous les rôles (compiler, auth, client, server)
+- 💾 **Stockage In-Memory** - Architecture pure en mémoire avec cohérence forte
+
+> **⚠️ Note Architecture:** TSD utilise exclusivement du **stockage en mémoire** avec garanties de cohérence forte. Toutes les données sont conservées en RAM pour des performances maximales (~10,000-50,000 faits/sec). La persistance se fait via export de fichiers `.tsd` et la réplication réseau via Raft est prévue pour les versions futures. Voir [docs/INMEMORY_ONLY_MIGRATION.md](docs/INMEMORY_ONLY_MIGRATION.md) pour plus de détails.
 
 ## 📝 Syntaxe des Règles
 
@@ -396,36 +399,38 @@ defer tx.Rollback()
 err := tx.Commit()
 ```
 
-### Configurations Optimisées par Type de Storage
+### Configurations pour Stockage In-Memory
 
-#### PostgreSQL / MySQL (Rapide et Cohérent)
+#### Configuration par Défaut (Single-Node)
 ```go
-opts := &rete.TransactionOptions{
-    SubmissionTimeout: 10 * time.Second,
-    VerifyRetryDelay:  10 * time.Millisecond,
-    MaxVerifyRetries:  5,
-    VerifyOnCommit:    true,
-}
+opts := rete.DefaultTransactionOptions()
+// SubmissionTimeout: 30s
+// VerifyRetryDelay:  50ms
+// MaxVerifyRetries:  10
+// VerifyOnCommit:    true
+// Performance: ~10,000-50,000 faits/sec
 ```
 
-#### Redis (Ultra-rapide)
+#### Configuration Basse Latence
 ```go
 opts := &rete.TransactionOptions{
     SubmissionTimeout: 5 * time.Second,
     VerifyRetryDelay:  5 * time.Millisecond,
     MaxVerifyRetries:  3,
-    VerifyOnCommit:    false,  // Optionnel pour Redis
-}
-```
-
-#### Cassandra / DynamoDB (Cohérence Éventuelle)
-```go
-opts := &rete.TransactionOptions{
-    SubmissionTimeout: 45 * time.Second,
-    VerifyRetryDelay:  100 * time.Millisecond,
-    MaxVerifyRetries:  12,
     VerifyOnCommit:    true,
 }
+// Performance: ~20,000-50,000 faits/sec
+```
+
+#### Configuration pour Réplication Future (Raft)
+```go
+opts := &rete.TransactionOptions{
+    SubmissionTimeout: 30 * time.Second,
+    VerifyRetryDelay:  50 * time.Millisecond,
+    MaxVerifyRetries:  10,
+    VerifyOnCommit:    true,
+}
+// Performance: ~1,000-10,000 faits/sec (selon réseau)
 ```
 
 ### Monitoring de Performance
@@ -469,16 +474,28 @@ if !perfMetrics.IsHealthy {
 
 ### Performances Attendues
 
-- **PostgreSQL/MySQL**: ~1,000-5,000 faits/sec
-- **Redis**: ~5,000-10,000 faits/sec
-- **Cassandra/DynamoDB**: ~500-2,000 faits/sec
-- **Latence moyenne**: 10-100ms par transaction
+- **In-Memory (Single-Node)**: ~10,000-50,000 faits/sec
+- **In-Memory (Basse Latence)**: ~20,000-50,000 faits/sec
+- **Future - Réplication Raft**: ~1,000-10,000 faits/sec
+- **Latence moyenne**: 1-10ms par transaction
+
+### Architecture de Stockage
+
+TSD utilise exclusivement du **stockage en mémoire** avec garanties de cohérence forte:
+- ✅ Cohérence lecture-après-écriture
+- ✅ Vérification synchrone des faits
+- ✅ Transactions atomiques
+- ✅ Aucune perte de données en cas d'échec
+
+**Persistance**: Export vers fichiers `.tsd`  
+**Réplication**: Via protocole Raft (à venir)
 
 ### Documentation Complète
 
-Pour un guide complet de tuning et d'optimisation, consultez:
-- 📖 **Guide de Tuning**: [`docs/STRONG_MODE_TUNING_GUIDE.md`](docs/STRONG_MODE_TUNING_GUIDE.md)
-- 📊 **Design Document**: [`docs/PHASE4_COHERENCE_STRONG_MODE.md`](docs/PHASE4_COHERENCE_STRONG_MODE.md)
+Pour plus d'informations:
+- 📖 **Guide Utilisateur**: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md)
+- 🏗️ **Architecture**: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- 🚀 **Démarrage Rapide**: [`docs/QUICK_START.md`](docs/QUICK_START.md)
 - ✅ **Completion Report**: [`docs/PHASE4_STRONG_MODE_COMPLETION.md`](docs/PHASE4_STRONG_MODE_COMPLETION.md)
 
 ## 🏗️ Architecture
