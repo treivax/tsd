@@ -1,86 +1,185 @@
-# 📖 Documentation TSD
+# TSD Documentation
 
-Documentation officielle du projet TSD (Type System Development) - Moteur de règles basé sur l'algorithme RETE.
+Welcome to the TSD (Type System Development) documentation. This guide will help you get started and master all features of the TSD rule engine.
 
-## 📋 Table des Matières
+## Documentation Overview
 
-### 🚀 Pour Commencer
-- [README Principal](../README.md) - Vue d'ensemble et installation
-- [Guide de Développement](development_guidelines.md) - Standards et bonnes pratiques
+### 🚀 Getting Started
 
-### 🧪 Tests et Validation
-- [Tests Alpha - Résumé](alpha_actions_summary.md) - Résumé des tests de couverture Alpha
-- [Tests Alpha - Détails](alpha_tests_detailed.md) - Rapport détaillé par test
-- [Rapport de Validation](validation_report.md) - Validation des expressions de négation
-- [Correction LIKE](like_fix_report.md) - Résolution du problème opérateur LIKE
+Start here if you're new to TSD:
 
-### 🏗️ Architecture
+1. **[Installation Guide](INSTALLATION.md)** - Install TSD on your system
+2. **[Quick Start](QUICK_START.md)** - Get up and running in 5 minutes
+3. **[Tutorial](TUTORIAL.md)** - Step-by-step learning path
 
-#### Moteur RETE
-- [Introduction RETE](../rete/README.md) - Vue d'ensemble du moteur RETE
-- [Alpha Nodes](../rete/docs/ALPHA_NODES_IMPLEMENTATION.md) - Implémentation des nœuds Alpha
-- [Beta Nodes](../rete/docs/BETA_NODES_GUIDE.md) - Guide des nœuds Beta
-- [Tuple Space](../rete/docs/TUPLE_SPACE_IMPLEMENTATION.md) - Implémentation de l'espace de tuples
+### 📚 Core Documentation
 
-#### Parser de Contraintes
-- [Grammar](../constraint/grammar/constraint.peg) - Grammaire PEG des contraintes
-- [Guide Contraintes](../constraint/docs/GUIDE_CONTRAINTES.md) - Guide d'écriture des contraintes
-- [Tutoriel Actions](../constraint/docs/TUTORIEL_ACTIONS.md) - Tutoriel des actions
+Complete reference documentation:
 
-## 🎯 Cas d'Usage Validés
+- **[User Guide](USER_GUIDE.md)** - Comprehensive guide covering all features:
+  - Language syntax and structure
+  - Type system and pattern matching
+  - Conditions and operators
+  - Actions and rule execution
+  - Type casting
+  - String operations
+  - Arithmetic operations
+  - Configuration and best practices
 
-### Expressions de Négation Complexes ✅
-TSD supporte entièrement les expressions comme :
+- **[Grammar Guide](GRAMMAR_GUIDE.md)** - Complete language syntax reference
+  - Lexical structure
+  - Type definitions
+  - Rule syntax
+  - Expressions and operators
+  - Comments and identifiers
+
+- **[API Reference](API_REFERENCE.md)** - HTTP API documentation
+  - Server endpoints
+  - Request/response formats
+  - Authentication
+  - Error handling
+
+### 🔐 Security & Operations
+
+- **[Authentication Guide](AUTHENTICATION.md)** - Complete authentication documentation
+  - API key authentication
+  - JWT tokens
+  - TLS/SSL configuration
+  - Key management and rotation
+
+- **[Logging Guide](LOGGING_GUIDE.md)** - Logging configuration and reference
+  - Log levels and formats
+  - Output destinations
+  - Structured logging
+  - Performance considerations
+
+### 🏗️ Advanced Topics
+
+- **[Architecture](ARCHITECTURE.md)** - Technical architecture and design
+  - RETE algorithm implementation
+  - Node types and network structure
+  - Memory management and optimization
+  - Performance characteristics
+  - Transaction system
+  - Concurrency model
+
+- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines
+  - Development setup and workflow
+  - Coding standards and style guide
+  - Testing requirements and best practices
+  - Pull request process
+  - Performance guidelines
+
+## Quick Links
+
+### By Use Case
+
+**I want to...**
+
+- **Start using TSD quickly** → [Quick Start](QUICK_START.md)
+- **Learn TSD step by step** → [Tutorial](TUTORIAL.md)
+- **Understand all features** → [User Guide](USER_GUIDE.md)
+- **Look up syntax** → [Grammar Guide](GRAMMAR_GUIDE.md)
+- **Use the HTTP API** → [API Reference](API_REFERENCE.md)
+- **Secure my deployment** → [Authentication](AUTHENTICATION.md)
+- **Deploy to production** → [Installation](INSTALLATION.md) + [Authentication](AUTHENTICATION.md)
+- **Debug issues** → [User Guide - Troubleshooting](USER_GUIDE.md#troubleshooting)
+
+### By Topic
+
+**Core Language Features:**
+- [Types](USER_GUIDE.md#type-system)
+- [Facts](USER_GUIDE.md#pattern-matching)
+- [Rules](USER_GUIDE.md#pattern-matching)
+- [Actions](USER_GUIDE.md#actions)
+- [Conditions](USER_GUIDE.md#conditions)
+- [Operators](USER_GUIDE.md#conditions)
+
+**Advanced Features:**
+- [Type Casting](USER_GUIDE.md#type-casting)
+- [String Operations](USER_GUIDE.md#string-operations)
+- [Arithmetic](USER_GUIDE.md#arithmetic-operations)
+- [Pattern Matching](USER_GUIDE.md#string-operations) (LIKE, MATCHES, CONTAINS, IN)
+
+**Deployment:**
+- [Installation](INSTALLATION.md)
+- [Configuration](USER_GUIDE.md#configuration)
+- [Server Mode](USER_GUIDE.md#server-mode)
+- [Authentication](AUTHENTICATION.md)
+
+## Examples
+
+See the [examples/](../examples/) directory for complete, working examples:
+
+```bash
+# List all examples
+ls ../examples/
+
+# Run an example
+tsd ../examples/basic-rules.tsd
+tsd ../examples/type-casting.tsd
+tsd ../examples/string-operations.tsd
 ```
-NOT(p.age == 0 AND p.ville <> "Paris")
-```
 
-**Statut :** 100% de conformité sur 26 tests Alpha
+## Getting Help
 
-### Opérateurs Supportés ✅
-- **Booléens :** `==`, `!=` avec `true`/`false`
-- **Comparaisons :** `>`, `<`, `>=`, `<=`
-- **Chaînes :** Égalité et patterns
-- **Fonctions :** `LENGTH()`, `ABS()`, `UPPER()`
-- **Patterns :** `CONTAINS`, `LIKE`, `MATCHES`, `IN`
-- **Négations :** `NOT()` avec tous opérateurs
+### Documentation Issues
 
-## 📊 Métriques de Qualité
+If you find errors or gaps in the documentation:
+- [Report an issue](https://github.com/treivax/tsd/issues)
+- Suggest improvements
+- Submit documentation pull requests
 
-| Métrique | Valeur | Statut |
-|----------|--------|---------|
-| **Tests Alpha** | 26/26 | ✅ 100% |
-| **Couverture Code** | >90% | ✅ Élevée |
-| **Performance** | <1ms/règle | ✅ Optimale |
-| **Expressions Complexes** | Supportées | ✅ Validé |
+### Usage Questions
 
-## 🔧 Pour les Développeurs
+For help using TSD:
+1. Check the [User Guide](USER_GUIDE.md)
+2. Review [examples/](../examples/)
+3. Enable debug logging: `TSD_LOG_LEVEL=debug tsd program.tsd`
+4. Ask in GitHub Discussions
 
-### Structure du Projet
-```
-tsd/
-├── cmd/           # Applications et CLI
-├── constraint/    # Parser de contraintes
-├── rete/          # Moteur RETE
-├── test/          # Tests organisés
-├── docs/          # Documentation
-└── scripts/       # Scripts utilitaires
-```
+### Bug Reports
 
-### Workflow de Développement
-1. Consulter [development_guidelines.md](development_guidelines.md)
-2. Exécuter les tests: `go test ./...`
-3. Valider Alpha: `go run test/coverage/alpha_coverage_runner.go`
-4. Benchmark: `go test -bench=. ./test/benchmark/...`
+To report bugs:
+1. Check [existing issues](https://github.com/treivax/tsd/issues)
+2. Create a new issue with:
+   - TSD version (`tsd --version`)
+   - Operating system
+   - Minimal reproduction case
+   - Expected vs actual behavior
 
-## 🚀 Statut du Projet
+## Document Status
 
-**TSD est prêt pour la production** avec une validation complète des expressions de négation complexes.
+| Document | Status | Last Updated |
+|----------|--------|--------------|
+| Installation | ✅ Complete | 2024-12-07 |
+| Quick Start | ✅ Complete | 2024-12-07 |
+| User Guide | ✅ Complete | 2024-12-07 |
+| Tutorial | ✅ Complete | - |
+| Grammar Guide | ✅ Complete | - |
+| API Reference | ✅ Complete | - |
+| Authentication | ✅ Complete | - |
+| Logging Guide | ✅ Complete | - |
+| Architecture | ✅ Complete | 2024-12-07 |
+| Contributing | ✅ Complete | 2024-12-07 |
 
-**Version :** 1.0
-**Dernière validation :** 17 novembre 2025
-**Conformité :** 100%
+## Contributing to Documentation
 
----
+We welcome documentation improvements! To contribute:
 
-*Documentation générée automatiquement - Projet TSD*
+1. Fork the repository
+2. Edit or create markdown files in `docs/`
+3. Test examples and code snippets
+4. Submit a pull request
+
+**Documentation standards:**
+- Clear, concise language
+- Complete, working examples
+- Proper markdown formatting
+- Cross-references between documents
+- Code examples with expected output
+
+## License
+
+This documentation is part of the TSD project and is licensed under the MIT License.
+See [LICENSE](../LICENSE) for details.
