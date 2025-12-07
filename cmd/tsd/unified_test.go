@@ -5,6 +5,8 @@
 package main
 
 import (
+	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -17,85 +19,122 @@ func TestDetermineRole(t *testing.T) {
 	}{
 		{
 			name:     "no arguments - default compiler",
-			args:     []string{},
+			args:     []string{"tsd"},
 			expected: RoleCompiler,
 		},
 		{
 			name:     "auth role",
-			args:     []string{"auth", "generate-key"},
+			args:     []string{"tsd", "auth", "generate-key"},
 			expected: RoleAuth,
 		},
 		{
 			name:     "client role",
-			args:     []string{"client", "program.tsd"},
+			args:     []string{"tsd", "client", "program.tsd"},
 			expected: RoleClient,
 		},
 		{
 			name:     "server role",
-			args:     []string{"server", "-port", "8080"},
+			args:     []string{"tsd", "server", "-port", "8080"},
 			expected: RoleServer,
 		},
 		{
 			name:     "file argument - default compiler",
-			args:     []string{"program.tsd"},
+			args:     []string{"tsd", "program.tsd"},
 			expected: RoleCompiler,
 		},
 		{
 			name:     "flag argument - default compiler",
-			args:     []string{"-file", "program.tsd"},
+			args:     []string{"tsd", "-file", "program.tsd"},
 			expected: RoleCompiler,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Simuler os.Args
-			originalArgs := make([]string, len(tt.args)+1)
-			originalArgs[0] = "tsd"
-			copy(originalArgs[1:], tt.args)
+			// Sauvegarder os.Args et le restaurer après le test
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
 
-			// Temporairement remplacer os.Args pour le test
-			oldArgs := []string{"tsd"}
-			oldArgs = append(oldArgs, tt.args...)
+			// Définir os.Args pour le test
+			os.Args = tt.args
 
-			// Déterminer le rôle en simulant la logique
-			var role string
-			if len(tt.args) == 0 {
-				role = RoleCompiler
-			} else {
-				firstArg := tt.args[0]
-				switch firstArg {
-				case RoleAuth, RoleClient, RoleServer:
-					role = firstArg
-				default:
-					role = RoleCompiler
-				}
-			}
+			// Appeler la vraie fonction determineRole
+			role := determineRole()
 
 			if role != tt.expected {
-				t.Errorf("determineRole() = %v, want %v", role, tt.expected)
+				t.Errorf("determineRole() = %q, want %q", role, tt.expected)
 			}
 		})
 	}
 }
 
 func TestPrintGlobalHelp(t *testing.T) {
-	// Capturer la sortie de printGlobalHelp
-	// Note: printGlobalHelp écrit sur un io.Writer, pas os.Stdout directement
-	// Pour tester, on devrait la refactorer pour accepter un io.Writer
-	// Pour l'instant, on teste juste qu'elle ne panique pas
+	// Sauvegarder stdout et le restaurer
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	defer func() {
+		os.Stdout = oldStdout
+	}()
 
-	// Test basique
+	// Exécuter printGlobalHelp
 	printGlobalHelp()
 
-	// Vérifier que la fonction ne panique pas
-	t.Log("printGlobalHelp executed successfully")
+	// Fermer le writer et lire la sortie
+	w.Close()
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Vérifier que la sortie contient les éléments clés
+	expectedStrings := []string{
+		"TSD - Type System Development",
+		"RÔLES DISPONIBLES",
+		"auth",
+		"client",
+		"server",
+		"EXEMPLES",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("printGlobalHelp() output missing %q", expected)
+		}
+	}
 }
 
 func TestPrintGlobalVersion(t *testing.T) {
-	// Test basique que la fonction ne panique pas
+	// Sauvegarder stdout et le restaurer
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	defer func() {
+		os.Stdout = oldStdout
+	}()
+
+	// Exécuter printGlobalVersion
 	printGlobalVersion()
-	t.Log("printGlobalVersion executed successfully")
+
+	// Fermer le writer et lire la sortie
+	w.Close()
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Vérifier que la sortie contient les éléments clés
+	expectedStrings := []string{
+		Version,
+		"TSD",
+		"RETE",
+		"Copyright",
+		"MIT",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("printGlobalVersion() output missing %q", expected)
+		}
+	}
 }
 
 func TestRoleConstants(t *testing.T) {
@@ -131,87 +170,51 @@ func TestVersionConstant(t *testing.T) {
 	}
 }
 
-func TestGlobalHelpContent(t *testing.T) {
-	// Capturer stdout pour tester le contenu
-	// Note: Comme printGlobalHelp écrit directement sur stdout,
-	// on ne peut pas facilement capturer la sortie dans ce test.
-	// On devrait refactorer pour accepter un io.Writer.
-	// Pour l'instant, on vérifie juste l'exécution.
-
+// TestDispatch_UnknownRole teste le dispatch avec un rôle inconnu
+func TestDispatch_UnknownRole(t *testing.T) {
+	// Sauvegarder stderr et le restaurer
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
 	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("printGlobalHelp panicked: %v", r)
-		}
+		os.Stderr = oldStderr
 	}()
 
-	printGlobalHelp()
+	// Appeler dispatch avec un rôle inconnu
+	exitCode := dispatch("unknown")
 
-	// Dans une version future, on pourrait vérifier que la sortie contient:
-	// - "TSD - Type System Development"
-	// - "RÔLES DISPONIBLES"
-	// - "auth", "client", "server"
-	// - "EXEMPLES"
+	// Fermer le writer et lire la sortie d'erreur
+	w.Close()
+	var buf bytes.Buffer
+	buf.ReadFrom(r)
+	output := buf.String()
+
+	// Vérifier le code de sortie
+	if exitCode != 1 {
+		t.Errorf("dispatch(unknown) exitCode = %d, want 1", exitCode)
+	}
+
+	// Vérifier le message d'erreur
+	if !strings.Contains(output, "rôle inconnu") {
+		t.Errorf("dispatch(unknown) error message missing 'rôle inconnu', got: %s", output)
+	}
 }
 
-func TestGlobalVersionContent(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("printGlobalVersion panicked: %v", r)
-		}
-	}()
-
-	printGlobalVersion()
-
-	// Dans une version future, on pourrait vérifier que la sortie contient:
-	// - Version
-	// - "Moteur de règles"
-	// - "Copyright"
-	// - "MIT"
-}
-
-// TestDispatchLogic teste la logique de dispatch sans exécuter réellement les commandes
-func TestDispatchLogic(t *testing.T) {
+// TestDispatch_ValidRoles teste que les rôles valides sont reconnus
+func TestDispatch_ValidRoles(t *testing.T) {
 	tests := []struct {
-		name        string
-		role        string
-		shouldError bool
-		description string
+		name string
+		role string
 	}{
-		{
-			name:        "dispatch auth",
-			role:        RoleAuth,
-			shouldError: false,
-			description: "Should dispatch to authcmd",
-		},
-		{
-			name:        "dispatch client",
-			role:        RoleClient,
-			shouldError: false,
-			description: "Should dispatch to clientcmd",
-		},
-		{
-			name:        "dispatch server",
-			role:        RoleServer,
-			shouldError: false,
-			description: "Should dispatch to servercmd",
-		},
-		{
-			name:        "dispatch compiler",
-			role:        RoleCompiler,
-			shouldError: false,
-			description: "Should dispatch to compilercmd",
-		},
-		{
-			name:        "unknown role",
-			role:        "unknown",
-			shouldError: true,
-			description: "Should return error for unknown role",
-		},
+		{"auth role", RoleAuth},
+		{"client role", RoleClient},
+		{"server role", RoleServer},
+		{"compiler role", RoleCompiler},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Vérifier que le rôle est valide ou invalide comme attendu
+			// Vérifier que le rôle est dans le switch de dispatch
 			validRoles := map[string]bool{
 				RoleAuth:     true,
 				RoleClient:   true,
@@ -219,14 +222,8 @@ func TestDispatchLogic(t *testing.T) {
 				RoleCompiler: true,
 			}
 
-			isValid := validRoles[tt.role]
-
-			if tt.shouldError && isValid {
-				t.Errorf("Expected role %q to be invalid, but it's valid", tt.role)
-			}
-
-			if !tt.shouldError && !isValid {
-				t.Errorf("Expected role %q to be valid, but it's invalid", tt.role)
+			if !validRoles[tt.role] {
+				t.Errorf("Role %q should be valid", tt.role)
 			}
 		})
 	}
