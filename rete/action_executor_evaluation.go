@@ -85,6 +85,10 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 		// Opération binaire (format du parser)
 		return ae.evaluateBinaryOperation(argMap, ctx)
 
+	case "cast":
+		// Expression de cast
+		return ae.evaluateCastExpression(argMap, ctx)
+
 	default:
 		return arg, nil
 	}
@@ -142,9 +146,25 @@ func (ae *ActionExecutor) evaluateBinaryOperation(argMap map[string]interface{},
 	}
 }
 
-// evaluateArithmeticOperation effectue une opération arithmétique
+// evaluateArithmeticOperation effectue une opération arithmétique ou une concaténation de strings
 func (ae *ActionExecutor) evaluateArithmeticOperation(left interface{}, operator string, right interface{}) (interface{}, error) {
-	// Convertir en nombres
+	// Cas spécial pour l'opérateur + : si LES DEUX opérandes sont des strings, faire une concaténation
+	if operator == "+" {
+		leftStr, leftIsString := left.(string)
+		rightStr, rightIsString := right.(string)
+
+		// Si les deux sont des strings, concaténer
+		if leftIsString && rightIsString {
+			return leftStr + rightStr, nil
+		}
+
+		// Si un seul est une string, c'est une erreur - utiliser un cast explicite
+		if leftIsString || rightIsString {
+			return nil, fmt.Errorf("opération + avec types mixtes string/non-string (reçu: %T, %T). Utilisez un cast explicite: (string)valeur", left, right)
+		}
+	}
+
+	// Pour tous les autres opérateurs (et + avec deux nombres), faire une opération arithmétique
 	leftNum, okL := toNumber(left)
 	rightNum, okR := toNumber(right)
 	if !okL || !okR {
@@ -212,6 +232,35 @@ func (ae *ActionExecutor) areEqual(left, right interface{}) bool {
 
 	// Comparaison directe pour les autres types
 	return left == right
+}
+
+// evaluateCastExpression évalue une expression de cast dans une action
+func (ae *ActionExecutor) evaluateCastExpression(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
+	// Extraire le type de cast
+	castType, ok := argMap["castType"].(string)
+	if !ok {
+		return nil, fmt.Errorf("type de cast manquant ou invalide")
+	}
+
+	// Extraire l'expression à caster
+	innerExpr, ok := argMap["expression"]
+	if !ok {
+		return nil, fmt.Errorf("expression à caster manquante")
+	}
+
+	// Évaluer l'expression interne
+	value, err := ae.evaluateArgument(innerExpr, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("erreur lors de l'évaluation de l'expression à caster: %w", err)
+	}
+
+	// Appliquer le cast en utilisant les fonctions de rete/evaluator_cast.go
+	result, err := EvaluateCast(castType, value)
+	if err != nil {
+		return nil, fmt.Errorf("erreur lors du cast: %w", err)
+	}
+
+	return result, nil
 }
 
 // toNumber convertit une valeur en nombre flottant si possible

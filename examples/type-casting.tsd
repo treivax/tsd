@@ -1,0 +1,338 @@
+// Exemples démontrant les opérateurs de casting de types en TSD
+// Les opérateurs de casting permettent la conversion explicite entre types (number, string, bool)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. CASTING NUMBER → STRING
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Product(id: string, price: number, quantity: number, discount: number)
+
+// Exemple 1.1: Convertir un prix numérique en chaîne pour comparaison
+rule priceAsString : {p:Product} /
+    (string)p.price == "99.99" ==>
+    print("Special price product detected")
+
+// Exemple 1.2: Convertir pour concaténation de messages
+rule formatMessage : {p:Product} /
+    p.price > 100 ==>
+    notify("Price: $" + (string)p.price)
+
+// Exemple 1.3: Convertir un entier en chaîne
+rule quantityString : {p:Product} /
+    (string)p.quantity == "10" ==>
+    alert("Exactly 10 items")
+
+// Exemple 1.4: Convertir un négatif (discount) en chaîne
+rule discountMessage : {p:Product} /
+    p.discount > 0 ==>
+    log("Discount: " + (string)p.discount + "%")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. CASTING STRING → NUMBER
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Input(value: string, threshold: number, amount: string)
+
+// Exemple 2.1: Convertir une chaîne numérique pour comparaison
+rule checkNumericInput : {i:Input} /
+    (number)i.value > i.threshold ==>
+    process("Value exceeds threshold")
+
+// Exemple 2.2: Calcul avec des valeurs en chaîne
+rule calculateTotal : {i:Input} /
+    (number)i.amount * 2 > 100 ==>
+    alert("Doubled value is high")
+
+// Exemple 2.3: Addition de nombres stockés en chaînes
+rule sumStringNumbers : {i:Input} /
+    (number)i.value + (number)i.amount > 1000 ==>
+    notify("Sum exceeds 1000")
+
+// Exemple 2.4: Conversion avec validation
+rule validateNumericString : {i:Input} /
+    (number)i.value >= 0 AND (number)i.value <= 100 ==>
+    validate("Value in valid range")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. CASTING BOOL → STRING
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Status(active: bool, verified: bool, name: string)
+
+// Exemple 3.1: Comparer un booléen converti en chaîne
+rule checkActiveString : {s:Status} /
+    (string)s.active == "true" ==>
+    activate(s.name)
+
+// Exemple 3.2: Utiliser dans une concaténation
+rule statusMessage : {s:Status} /
+    s.active == true ==>
+    log("Status: " + (string)s.active)
+
+// Exemple 3.3: Vérifier deux booléens en chaînes
+rule verificationMessage : {s:Status} /
+    (string)s.active == "true" AND (string)s.verified == "true" ==>
+    confirm("Fully activated and verified")
+
+// Exemple 3.4: Booléen false en chaîne
+rule inactiveMessage : {s:Status} /
+    (string)s.active == "false" ==>
+    deactivate(s.name)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. CASTING STRING → BOOL
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Config(enabled: string, debugMode: string, feature: string)
+
+// Exemple 4.1: Convertir une chaîne en booléen pour évaluation
+rule checkEnabled : {c:Config} /
+    (bool)c.enabled == true ==>
+    enableFeature(c.feature)
+
+// Exemple 4.2: Validation de chaînes booléennes avec AND
+rule validateConfig : {c:Config} /
+    (bool)c.enabled AND (bool)c.debugMode ==>
+    activateDebug()
+
+// Exemple 4.3: Conversion de "false" en bool
+rule checkDisabled : {c:Config} /
+    (bool)c.enabled == false ==>
+    disableFeature(c.feature)
+
+// Exemple 4.4: Chaînes booléennes avec variantes de casse
+rule flexibleBool : {c:Config} /
+    (bool)c.enabled AND c.feature != "" ==>
+    applyConfiguration()
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. CASTING NUMBER → BOOL
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Counter(count: number, errorCode: number, status: number)
+
+// Exemple 5.1: Zéro devient false, non-zéro devient true
+rule checkNonZero : {c:Counter} /
+    (bool)c.count == true ==>
+    process("Counter is active")
+
+// Exemple 5.2: Vérifier si un code d'erreur est présent
+rule checkError : {c:Counter} /
+    (bool)c.errorCode == true ==>
+    handleError("Error detected")
+
+// Exemple 5.3: Zéro devient false
+rule checkZero : {c:Counter} /
+    (bool)c.status == false ==>
+    initialize("Status is zero")
+
+// Exemple 5.4: Combiner avec AND
+rule validateCounters : {c:Counter} /
+    (bool)c.count AND (bool)c.status ==>
+    proceed("All counters active")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. CASTING BOOL → NUMBER
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Flags(flag1: bool, flag2: bool, flag3: bool)
+
+// Exemple 6.1: true devient 1, false devient 0
+rule countActiveFlags : {f:Flags} /
+    (number)f.flag1 + (number)f.flag2 + (number)f.flag3 > 1 ==>
+    notify("Multiple flags active")
+
+// Exemple 6.2: Utiliser comme multiplicateur
+rule flagMultiplier : {f:Flags} /
+    (number)f.flag1 * 100 > 0 ==>
+    calculate("Flag1 is active")
+
+// Exemple 6.3: Comparer avec un nombre
+rule flagComparison : {f:Flags} /
+    (number)f.flag1 == 1 ==>
+    activate("Flag1 equals 1")
+
+// Exemple 6.4: Somme de booléens
+rule sumFlags : {f:Flags} /
+    (number)f.flag1 + (number)f.flag2 == 2 ==>
+    trigger("Exactly two flags active")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. EXPRESSIONS COMPLEXES AVEC CASTING
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Order(orderId: string, quantity: string, priceStr: string, urgent: string, discount: number)
+
+// Exemple 7.1: Multiple casts dans une expression
+rule processOrder : {o:Order} /
+    (number)o.quantity > 10 AND
+    (number)o.priceStr * (number)o.quantity > 1000 AND
+    (bool)o.urgent == true ==>
+    expediteOrder(o.orderId)
+
+// Exemple 7.2: Cast avec opérations arithmétiques
+rule calculateDiscount : {o:Order} /
+    (number)o.priceStr * (1 - o.discount) > 50 ==>
+    applyDiscount(o.orderId)
+
+// Exemple 7.3: Combinaison de différents types de cast
+rule complexValidation : {o:Order} /
+    (number)o.quantity >= 1 AND
+    (string)((number)o.priceStr * (number)o.quantity) != "0" AND
+    (bool)o.urgent ==>
+    validateAndProcess(o.orderId)
+
+// Exemple 7.4: Cast dans comparaison avec AND/OR
+rule advancedCheck : {o:Order} /
+    ((number)o.quantity > 5 OR (bool)o.urgent) AND
+    (number)o.priceStr < 100 ==>
+    standardProcessing(o.orderId)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. E-COMMERCE : EXEMPLE COMPLET
+// ═══════════════════════════════════════════════════════════════════════════
+
+type ShoppingCart(
+    cartId: string,
+    totalItems: string,
+    totalPrice: string,
+    hasCoupon: string,
+    isPremium: bool
+)
+
+action applyExpressShipping(cartId: string)
+action sendPromotionEmail(cartId: string, total: string)
+action flagForReview(cartId: string, reason: string)
+
+// Règle 1: Expédition express pour gros paniers
+rule expressShippingRule : {cart:ShoppingCart} /
+    (number)cart.totalItems > 10 AND
+    (number)cart.totalPrice > 500 AND
+    cart.isPremium == true ==>
+    applyExpressShipping(cart.cartId)
+
+// Règle 2: Email promotionnel pour panier moyen
+rule promotionEmailRule : {cart:ShoppingCart} /
+    (number)cart.totalPrice >= 100 AND
+    (number)cart.totalPrice < 500 AND
+    (bool)cart.hasCoupon == false ==>
+    sendPromotionEmail(cart.cartId, cart.totalPrice)
+
+// Règle 3: Révision pour panier suspect
+rule suspiciousCartRule : {cart:ShoppingCart} /
+    (number)cart.totalItems > 50 OR
+    (number)cart.totalPrice > 10000 ==>
+    flagForReview(cart.cartId, "High value or quantity")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. CONFIGURATION : EXEMPLE COMPLET
+// ═══════════════════════════════════════════════════════════════════════════
+
+type SystemConfig(
+    maxConnections: string,
+    timeout: string,
+    enableSSL: string,
+    enableLogging: string,
+    logLevel: number
+)
+
+action applyConfiguration(status: string)
+action reportError(message: string)
+
+// Règle 1: Validation de configuration valide
+rule validateConfig : {c:SystemConfig} /
+    (number)c.maxConnections >= 1 AND
+    (number)c.maxConnections <= 1000 AND
+    (number)c.timeout > 0 AND
+    (number)c.timeout <= 300 AND
+    (bool)c.enableSSL == true ==>
+    applyConfiguration("valid")
+
+// Règle 2: Configuration avec logging activé
+rule configureLogging : {c:SystemConfig} /
+    (bool)c.enableLogging == true AND
+    c.logLevel > 0 ==>
+    applyConfiguration("logging_enabled")
+
+// Règle 3: Détection de configuration invalide
+rule invalidConfig : {c:SystemConfig} /
+    (number)c.maxConnections < 1 OR
+    (number)c.maxConnections > 1000 OR
+    (number)c.timeout <= 0 ==>
+    reportError("Invalid configuration parameters")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. DATA TRANSFORMATION : EXEMPLE COMPLET
+// ═══════════════════════════════════════════════════════════════════════════
+
+type RawData(
+    sensorId: string,
+    value: string,
+    multiplier: number,
+    isActive: string,
+    threshold: string
+)
+
+action storeProcessedData(id: string, result: string, status: string)
+action triggerAlert(id: string, value: string)
+
+// Règle 1: Transformation et stockage
+rule transformData : {r:RawData} /
+    (number)r.value * r.multiplier > (number)r.threshold AND
+    (bool)r.isActive == true ==>
+    storeProcessedData(
+        r.sensorId,
+        (string)((number)r.value * r.multiplier),
+        "processed"
+    )
+
+// Règle 2: Alerte pour valeurs élevées
+rule highValueAlert : {r:RawData} /
+    (number)r.value > 100 AND
+    (bool)r.isActive ==>
+    triggerAlert(r.sensorId, r.value)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FAITS DE TEST
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Données pour les tests de casting
+Product(id: "P001", price: 99.99, quantity: 10, discount: 15.0)
+Product(id: "P002", price: 150.00, quantity: 5, discount: 0.0)
+
+Input(value: "75", threshold: 50.0, amount: "125")
+Input(value: "25", threshold: 30.0, amount: "50")
+
+Status(active: true, verified: true, name: "User1")
+Status(active: false, verified: false, name: "User2")
+
+Config(enabled: "true", debugMode: "false", feature: "FeatureX")
+Config(enabled: "1", debugMode: "true", feature: "FeatureY")
+
+Counter(count: 10.0, errorCode: 0.0, status: 1.0)
+Counter(count: 0.0, errorCode: 404.0, status: 0.0)
+
+Flags(flag1: true, flag2: true, flag3: false)
+Flags(flag1: false, flag2: false, flag3: false)
+
+Order(orderId: "ORD001", quantity: "15", priceStr: "89.99", urgent: "true", discount: 0.1)
+Order(orderId: "ORD002", quantity: "3", priceStr: "25.50", urgent: "false", discount: 0.0)
+
+ShoppingCart(cartId: "CART001", totalItems: "12", totalPrice: "650", hasCoupon: "false", isPremium: true)
+ShoppingCart(cartId: "CART002", totalItems: "3", totalPrice: "150", hasCoupon: "true", isPremium: false)
+
+SystemConfig(maxConnections: "100", timeout: "60", enableSSL: "true", enableLogging: "true", logLevel: 2.0)
+SystemConfig(maxConnections: "5000", timeout: "0", enableSSL: "false", enableLogging: "false", logLevel: 0.0)
+
+RawData(sensorId: "SENSOR01", value: "125", multiplier: 2.0, isActive: "true", threshold: "200")
+RawData(sensorId: "SENSOR02", value: "50", multiplier: 1.5, isActive: "false", threshold: "100")
