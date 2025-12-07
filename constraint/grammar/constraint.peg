@@ -244,14 +244,14 @@ Constraint <- "(" _ expr:Constraints _ ")" { return expr, nil } /
     }, nil
 }
 
-NotConstraint <- "NOT" _ "(" _ expr:Constraints _ ")" {
+NotConstraint <- ("NOT" / "not" / "Not") _ "(" _ expr:Constraints _ ")" {
     return map[string]interface{}{
         "type": "notConstraint",
         "expression": expr,
     }, nil
 }
 
-ExistsConstraint <- "EXISTS" _ "(" _ variable:TypedVariable _ "/" _ condition:Constraints _ ")" {
+ExistsConstraint <- ("EXISTS" / "exists" / "Exists") _ "(" _ variable:TypedVariable _ "/" _ condition:Constraints _ ")" {
     return map[string]interface{}{
         "type": "existsConstraint",
         "variable": variable,
@@ -277,11 +277,11 @@ AccumulateConstraint <- accumFunc:AccumulateFunction _ "(" _ accumVar:TypedVaria
     }, nil
 }
 
-AccumulateFunction <- "AVG" { return "AVG", nil } /
-                     "COUNT" { return "COUNT", nil } /
-                     "SUM" { return "SUM", nil } /
-                     "MIN" { return "MIN", nil } /
-                     "MAX" { return "MAX", nil }
+AccumulateFunction <- ("AVG" / "avg" / "Avg") { return "AVG", nil } /
+                     ("COUNT" / "count" / "Count") { return "COUNT", nil } /
+                     ("SUM" / "sum" / "Sum") { return "SUM", nil } /
+                     ("MIN" / "min" / "Min") { return "MIN", nil } /
+                     ("MAX" / "max" / "Max") { return "MAX", nil }
 
 
 ArithmeticExpr <- first:Term rest:(_ ("+" / "-") _ Term)* {
@@ -323,6 +323,7 @@ Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
 }
 
 Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
+          CastExpression /
           FunctionCall /
           FieldAccess /
           Number /
@@ -330,6 +331,18 @@ Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
           BooleanLiteral /
           ArrayLiteral /
           Variable
+
+CastExpression <- "(" _ castType:CastType _ ")" _ expr:Factor {
+    return map[string]interface{}{
+        "type": "cast",
+        "castType": castType,
+        "expression": expr,
+    }, nil
+}
+
+CastType <- "number" { return "number", nil } /
+            "string" { return "string", nil } /
+            "bool"   { return "bool", nil }
 
 FieldAccess <- object:IdentName "." field:IdentName {
     return map[string]interface{}{
@@ -377,15 +390,15 @@ FunctionCall <- name:FunctionName _ "(" _ args:FunctionArgList? _ ")" {
     }, nil
 }
 
-FunctionName <- "LENGTH" { return "LENGTH", nil } /
-                "SUBSTRING" { return "SUBSTRING", nil } /
-                "UPPER" { return "UPPER", nil } /
-                "LOWER" { return "LOWER", nil } /
-                "TRIM" { return "TRIM", nil } /
-                "ABS" { return "ABS", nil } /
-                "ROUND" { return "ROUND", nil } /
-                "FLOOR" { return "FLOOR", nil } /
-                "CEIL" { return "CEIL", nil }
+FunctionName <- ("LENGTH" / "length" / "Length") { return "LENGTH", nil } /
+                ("SUBSTRING" / "substring" / "Substring") { return "SUBSTRING", nil } /
+                ("UPPER" / "upper" / "Upper") { return "UPPER", nil } /
+                ("LOWER" / "lower" / "Lower") { return "LOWER", nil } /
+                ("TRIM" / "trim" / "Trim") { return "TRIM", nil } /
+                ("ABS" / "abs" / "Abs") { return "ABS", nil } /
+                ("ROUND" / "round" / "Round") { return "ROUND", nil } /
+                ("FLOOR" / "floor" / "Floor") { return "FLOOR", nil } /
+                ("CEIL" / "ceil" / "Ceil") { return "CEIL", nil }
 
 FunctionArgList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     args := []interface{}{first}
@@ -437,13 +450,13 @@ ComparisonOp <- "==" { return "==", nil } /
                 ">=" { return ">=", nil } /
                 "<"  { return "<", nil } /
                 ">"  { return ">", nil } /
-                "IN" { return "IN", nil } /
-                "LIKE" { return "LIKE", nil } /
-                "MATCHES" { return "MATCHES", nil } /
-                "CONTAINS" { return "CONTAINS", nil }
+                ("IN" / "in" / "In") { return "IN", nil } /
+                ("LIKE" / "like" / "Like") { return "LIKE", nil } /
+                ("MATCHES" / "matches" / "Matches") { return "MATCHES", nil } /
+                ("CONTAINS" / "contains" / "Contains") { return "CONTAINS", nil }
 
-LogicalOp <- "AND" { return "AND", nil } /
-             "OR"  { return "OR", nil }
+LogicalOp <- ("AND" / "and" / "And") { return "AND", nil } /
+             ("OR" / "or" / "Or")  { return "OR", nil }
 
 BooleanLiteral <- "true" {
         return map[string]interface{}{
@@ -616,15 +629,20 @@ IdentStart <- [a-zA-Z_] / UnicodeLetterStart
 
 IdentContinue <- [a-zA-Z0-9_-] / UnicodeLetterContinue / PunctuationChar
 
-// Support pour les caractères étendus les plus courants (Latin étendu, accents français)
+// Support pour les caractères Unicode étendus (tous les scripts majeurs)
+// Latin étendu, Grec, Cyrillique, Hébreu, Arabe, CJK (Chinois, Japonais, Coréen), etc.
 UnicodeLetterStart <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
                       [\u0100-\u024F] / [\u1E00-\u1EFF] / [\u0370-\u03FF] /
-                      [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF]
+                      [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF] /
+                      [\u3040-\u309F] / [\u30A0-\u30FF] / [\u3400-\u4DBF] /
+                      [\u4E00-\u9FFF] / [\uAC00-\uD7AF] / [\uF900-\uFAFF]
 
 UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
                          [\u0100-\u024F] / [\u1E00-\u1EFF] / [\u0370-\u03FF] /
                          [\u0400-\u04FF] / [\u0590-\u05FF] / [\u0600-\u06FF] /
-                         [\u0300-\u036F] / [\u1AB0-\u1AFF] / [\u1DC0-\u1DFF]
+                         [\u0300-\u036F] / [\u1AB0-\u1AFF] / [\u1DC0-\u1DFF] /
+                         [\u3040-\u309F] / [\u30A0-\u30FF] / [\u3400-\u4DBF] /
+                         [\u4E00-\u9FFF] / [\uAC00-\uD7AF] / [\uF900-\uFAFF]
 
 PunctuationChar <- [-_] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
 

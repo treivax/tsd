@@ -1,0 +1,225 @@
+// Exemples démontrant le support UTF-8 et les styles d'identifiants (camelCase, snake_case)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. SUPPORT UTF-8 DANS LES CHAÎNES DE CARACTÈRES
+// ═══════════════════════════════════════════════════════════════════════════
+
+type Person(name: string, city: string, greeting: string)
+
+// Français - Accents et caractères spéciaux
+rule french_names : {p:Person} / p.name == "François" ==> print("Bonjour François!")
+Person(name: "François", city: "Paris", greeting: "Enchanté")
+
+// Allemand - Umlauts
+rule german_cities : {p:Person} / p.city == "München" ==> print("Willkommen in München")
+Person(name: "Hans", city: "München", greeting: "Guten Tag")
+
+// Espagnol - ñ et caractères spéciaux
+rule spanish_greeting : {p:Person} / p.greeting == "¡Hola señor!" ==> print("Español detectado")
+Person(name: "José", city: "Madrid", greeting: "¡Hola señor!")
+
+// Russe - Cyrillique
+rule russian_cities : {p:Person} / p.city == "Москва" ==> print("Добро пожаловать")
+Person(name: "Иван", city: "Москва", greeting: "Привет")
+
+// Chinois - Caractères CJK
+rule chinese_cities : {p:Person} / p.city == "北京" ==> print("欢迎")
+Person(name: "李明", city: "北京", greeting: "你好")
+
+// Japonais - Hiragana, Katakana, Kanji
+rule japanese_names : {p:Person} / p.name == "田中さん" ==> print("いらっしゃいませ")
+Person(name: "田中さん", city: "東京", greeting: "こんにちは")
+
+// Arabe - Script arabe (RTL)
+rule arabic_cities : {p:Person} / p.city == "القاهرة" ==> print("مرحبا")
+Person(name: "محمد", city: "القاهرة", greeting: "السلام عليكم")
+
+// Grec - Alphabet grec
+rule greek_symbols : {p:Person} / p.greeting == "Γεια σου" ==> print("Ελληνικά")
+Person(name: "Νίκος", city: "Αθήνα", greeting: "Γεια σου")
+
+// Emoji - Caractères Unicode étendus
+type Message(text: string, emoji: string)
+rule emoji_detection : {m:Message} / m.emoji == "😊" ==> print("Happy emoji detected!")
+Message(text: "Hello World", emoji: "😊")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. IDENTIFIANTS AVEC CARACTÈRES UTF-8
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Français - Identifiants avec accents
+type Personne(nom: string, prénom: string, âge: number)
+rule règle_majorité : {p:Personne} / p.âge >= 18 ==> print("Majeur")
+Personne(nom: "Dupont", prénom: "François", âge: 25)
+
+// Russe - Identifiants en cyrillique
+type Пользователь(имя: string, возраст: number)
+rule правило_возраст : {u:Пользователь} / u.возраст > 18 ==> print("Взрослый")
+Пользователь(имя: "Иван", возраст: 25)
+
+// Chinois - Identifiants en caractères chinois
+type 用户(姓名: string, 年龄: number)
+rule 年龄规则 : {u:用户} / u.年龄 > 18 ==> print("成年")
+用户(姓名: "李明", 年龄: 25)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. STYLES D'IDENTIFIANTS : camelCase
+// ═══════════════════════════════════════════════════════════════════════════
+
+type CustomerOrder(orderId: string, customerId: string, totalAmount: number, orderDate: string)
+
+action sendNotificationEmail(recipientEmail: string, orderTotal: number)
+action updateCustomerRecord(customerId: string, lastOrderDate: string)
+
+rule processLargeOrder : {o:CustomerOrder} /
+    o.totalAmount > 1000 ==>
+    sendNotificationEmail("admin@example.com", o.totalAmount),
+    updateCustomerRecord(o.customerId, o.orderDate)
+
+CustomerOrder(
+    orderId: "ORD-12345",
+    customerId: "CUST-001",
+    totalAmount: 1500,
+    orderDate: "2025-01-15"
+)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. STYLES D'IDENTIFIANTS : snake_case
+// ═══════════════════════════════════════════════════════════════════════════
+
+type product_inventory(
+    product_id: string,
+    product_name: string,
+    stock_quantity: number,
+    reorder_level: number
+)
+
+action send_reorder_alert(product_name: string, current_stock: number)
+action update_inventory_status(product_id: string)
+
+rule check_low_stock : {p:product_inventory} /
+    p.stock_quantity < p.reorder_level ==>
+    send_reorder_alert(p.product_name, p.stock_quantity),
+    update_inventory_status(p.product_id)
+
+product_inventory(
+    product_id: "PROD-001",
+    product_name: "Widget Pro",
+    stock_quantity: 5,
+    reorder_level: 10
+)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. MÉLANGE DE STYLES : camelCase + snake_case
+// ═══════════════════════════════════════════════════════════════════════════
+
+type EmployeeRecord(
+    employee_id: string,
+    firstName: string,
+    lastName: string,
+    department_name: string,
+    salaryAmount: number,
+    hire_date: string
+)
+
+action calculateBonus(employeeId: string, base_amount: number)
+action send_hr_notification(employee_name: string)
+
+rule year_end_bonus : {e:EmployeeRecord} /
+    e.salaryAmount > 50000 and
+    LENGTH(e.hire_date) > 0 ==>
+    calculateBonus(e.employee_id, e.salaryAmount),
+    send_hr_notification(e.firstName)
+
+EmployeeRecord(
+    employee_id: "EMP-123",
+    firstName: "Alice",
+    lastName: "Johnson",
+    department_name: "Engineering",
+    salaryAmount: 75000,
+    hire_date: "2020-03-15"
+)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. IDENTIFIANTS SPÉCIAUX
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Identifiants commençant par underscore (convention pour éléments privés/internes)
+type _InternalConfig(name: string, value: number)
+rule _internal_check : {c:_InternalConfig} / c.value > 0 ==> print("Config valid")
+_InternalConfig(name: "max_connections", value: 100)
+
+// Identifiants avec plusieurs underscores consécutifs
+type Debug__Info(message__text: string, level__value: number)
+rule debug__logger : {d:Debug__Info} / d.level__value > 5 ==> print("High priority")
+Debug__Info(message__text: "System alert", level__value: 8)
+
+// Identifiants avec chiffres
+type Product2(name: string, version2: number, model3x: string)
+rule check_version_2 : {p:Product2} / p.version2 >= 2 ==> print("Version 2+")
+Product2(name: "Widget", version2: 3, model3x: "Pro")
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. COMBINAISON UTF-8 + STYLES D'IDENTIFIANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Français avec snake_case
+type client_français(nom_complet: string, ville_résidence: string, âge_actuel: number)
+rule vérification_âge : {c:client_français} /
+    c.âge_actuel >= 18 and c.ville_résidence == "Paris" ==>
+    print("Client parisien majeur")
+
+client_français(
+    nom_complet: "Jean-François Dupont",
+    ville_résidence: "Paris",
+    âge_actuel: 30
+)
+
+// Mélange multilingue
+type InternationalUser(
+    userId: string,
+    名前: string,
+    имя: string,
+    prénom: string,
+    user_location: string
+)
+
+rule international_rule : {u:InternationalUser} /
+    LENGTH(u.名前) > 0 or
+    LENGTH(u.имя) > 0 or
+    LENGTH(u.prénom) > 0 ==>
+    print("International user detected")
+
+InternationalUser(
+    userId: "USER-001",
+    名前: "太郎",
+    имя: "Иван",
+    prénom: "François",
+    user_location: "Global"
+)
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. CAS D'USAGE AVANCÉS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Agrégations avec identifiants UTF-8 et styles mixtes
+type Transaction(客户ID: string, montant_total: number, transaction_date: string)
+
+rule analyse_transactions : {t:Transaction, total:sum(t.montant_total)} /
+    total > 10000 ==>
+    print("Volume élevé de transactions")
+
+Transaction(客户ID: "CUST-001", montant_total: 5000, transaction_date: "2025-01-10")
+Transaction(客户ID: "CUST-001", montant_total: 6000, transaction_date: "2025-01-11")
+
+// Contraintes d'accumulation avec UTF-8
+rule comptage_用户 : {t:Transaction} /
+    count(t2:Transaction / t2.客户ID == t.客户ID) > 5 ==>
+    print("Client fidèle")

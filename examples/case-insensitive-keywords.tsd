@@ -1,0 +1,169 @@
+// Exemple démontrant l'utilisation de mots-clés insensibles à la casse
+// Ce fichier montre que les mots-clés peuvent être écrits en UPPERCASE, lowercase ou Capitalized
+
+// Définitions de types
+type Employee(id: string, name: string, salary: number, department: string, active: bool)
+type Sale(employeeId: string, amount: number, date: string)
+type Department(name: string, budget: number)
+
+// Exemple 1: Opérateurs logiques en UPPERCASE (style SQL traditionnel)
+rule highSalaryAndActive : {e: Employee} / e.salary > 100000 AND e.active == true ==> alert("High salary active employee")
+
+// Exemple 2: Opérateurs logiques en lowercase (style moderne)
+rule lowSalaryOrInactive : {e: Employee} / e.salary < 30000 or e.active == false ==> notify("Review needed")
+
+// Exemple 3: Opérateurs logiques en Capitalized (style mixte)
+rule midRangeEmployee : {e: Employee} / e.salary >= 50000 And e.salary <= 80000 ==> log("Mid-range salary")
+
+// Exemple 4: Contrainte NOT en différentes casses
+rule notHighSalary_UPPER : {e: Employee} / NOT(e.salary > 100000) ==> process("standard")
+rule notHighSalary_lower : {e: Employee} / not(e.salary > 100000) ==> process("standard")
+rule notHighSalary_Capital : {e: Employee} / Not(e.salary > 100000) ==> process("standard")
+
+// Exemple 5: Contrainte EXISTS en différentes casses
+rule hasRecentSales_UPPER : {e: Employee} / EXISTS(s: Sale / s.employeeId == e.id) ==> reward("active seller")
+rule hasRecentSales_lower : {e: Employee} / exists(s: Sale / s.employeeId == e.id) ==> reward("active seller")
+rule hasRecentSales_Capital : {e: Employee} / Exists(s: Sale / s.employeeId == e.id) ==> reward("active seller")
+
+// Exemple 6: Fonctions d'agrégation en différentes casses
+rule avgSales_UPPER : {s: Sale, avg: AVG(s.amount)} / avg > 5000 ==> celebrate("high average")
+rule avgSales_lower : {s: Sale, avg: avg(s.amount)} / avg > 5000 ==> celebrate("high average")
+rule avgSales_Capital : {s: Sale, avg: Avg(s.amount)} / avg > 5000 ==> celebrate("high average")
+
+rule countSales_UPPER : {s: Sale} / COUNT(s: Sale / s.amount > 0) > 10 ==> report("many sales")
+rule countSales_lower : {s: Sale} / count(s: Sale / s.amount > 0) > 10 ==> report("many sales")
+rule countSales_Capital : {s: Sale} / Count(s: Sale / s.amount > 0) > 10 ==> report("many sales")
+
+// Exemple 7: Opérateurs de comparaison en différentes casses
+rule inDepartment_UPPER : {e: Employee} / e.department IN ["Sales", "Marketing"] ==> track("commercial")
+rule inDepartment_lower : {e: Employee} / e.department in ["Sales", "Marketing"] ==> track("commercial")
+rule inDepartment_Capital : {e: Employee} / e.department In ["Sales", "Marketing"] ==> track("commercial")
+
+rule likeName_UPPER : {e: Employee} / e.name LIKE "John%" ==> greet("Hello John")
+rule likeName_lower : {e: Employee} / e.name like "John%" ==> greet("Hello John")
+rule likeName_Capital : {e: Employee} / e.name Like "John%" ==> greet("Hello John")
+
+// Exemple 8: Fonctions de manipulation de chaînes en différentes casses
+rule longName_UPPER : {e: Employee} / LENGTH(e.name) > 20 ==> warn("long name")
+rule longName_lower : {e: Employee} / length(e.name) > 20 ==> warn("long name")
+rule longName_Capital : {e: Employee} / Length(e.name) > 20 ==> warn("long name")
+
+rule upperName_UPPER : {e: Employee} / UPPER(e.name) == "JOHN DOE" ==> match("exact")
+rule upperName_lower : {e: Employee} / upper(e.name) == "JOHN DOE" ==> match("exact")
+rule upperName_Capital : {e: Employee} / Upper(e.name) == "JOHN DOE" ==> match("exact")
+
+// Exemple 9: Fonctions mathématiques en différentes casses
+rule absoluteSalary_UPPER : {e: Employee} / ABS(e.salary - 50000) < 5000 ==> classify("near average")
+rule absoluteSalary_lower : {e: Employee} / abs(e.salary - 50000) < 5000 ==> classify("near average")
+rule absoluteSalary_Capital : {e: Employee} / Abs(e.salary - 50000) < 5000 ==> classify("near average")
+
+rule roundedSalary_UPPER : {e: Employee} / ROUND(e.salary) > 100000 ==> flag("six figures")
+rule roundedSalary_lower : {e: Employee} / round(e.salary) > 100000 ==> flag("six figures")
+rule roundedSalary_Capital : {e: Employee} / Round(e.salary) > 100000 ==> flag("six figures")
+
+// Exemple 10: Combinaison de plusieurs styles dans une même règle
+rule complexRule : {e: Employee, s: Sale, total: sum(s.amount)} /
+    e.active == true And
+    exists(s: Sale / s.employeeId == e.id) and
+    total > 10000 OR
+    length(e.name) < 10 ==>
+    processEmployee(e.id, "complex evaluation")
+
+// Exemple 11: Règle avec toutes les fonctionnalités en lowercase
+rule all_lowercase_rule : {e: Employee, s: Sale, avg: avg(s.amount)} /
+    e.salary > 50000 and
+    e.active == true and
+    not(e.department in ["Deprecated", "Closed"]) and
+    exists(d: Department / d.name == e.department and d.budget > 100000) and
+    count(s: Sale / s.employeeId == e.id) > 5 and
+    avg > 1000 and
+    length(e.name) > 3 and
+    lower(e.department) like "%sales%" ==>
+    promote(e.id, "excellent performance")
+
+// Exemple 12: Règle avec toutes les fonctionnalités en UPPERCASE
+rule ALL_UPPERCASE_RULE : {e: Employee, s: Sale, total: SUM(s.amount)} /
+    e.salary > 50000 AND
+    e.active == true AND
+    NOT(e.department IN ["Deprecated", "Closed"]) AND
+    EXISTS(d: Department / d.name == e.department AND d.budget > 100000) AND
+    COUNT(s: Sale / s.employeeId == e.id) > 5 AND
+    total > 10000 AND
+    LENGTH(e.name) > 3 AND
+    UPPER(e.department) LIKE "%SALES%" ==>
+    promote(e.id, "excellent performance")
+
+// Exemple 13: Règle avec style Capitalized
+rule Capitalized_Style_Rule : {e: Employee, s: Sale, max: Max(s.amount)} /
+    e.salary > 50000 And
+    e.active == true And
+    Not(e.department In ["Deprecated", "Closed"]) And
+    Exists(d: Department / d.name == e.department And d.budget > 100000) And
+    Count(s: Sale / s.employeeId == e.id) > 5 And
+    max > 5000 And
+    Length(e.name) > 3 And
+    Lower(e.department) Like "%sales%" ==>
+    promote(e.id, "excellent performance")
+
+// Exemple 14: Fonctions d'accumulation dans AccumulateConstraint - UPPERCASE
+rule accumulate_sum_UPPER : {e: Employee} /
+    SUM(s: Sale / s.employeeId == e.id ; s.amount) > 50000 ==>
+    reward(e.id, "top seller")
+
+rule accumulate_avg_UPPER : {e: Employee} /
+    AVG(s: Sale / s.employeeId == e.id AND s.amount > 0 ; s.amount) > 5000 ==>
+    analyze(e.id, "high average")
+
+rule accumulate_count_UPPER : {e: Employee} /
+    COUNT(s: Sale / s.employeeId == e.id) > 100 ==>
+    celebrate(e.id, "many sales")
+
+rule accumulate_min_UPPER : {e: Employee} /
+    MIN(s: Sale / s.employeeId == e.id ; s.amount) > 100 ==>
+    validate(e.id, "good minimum")
+
+rule accumulate_max_UPPER : {e: Employee} /
+    MAX(s: Sale / s.employeeId == e.id ; s.amount) > 10000 ==>
+    highlight(e.id, "big sale")
+
+// Exemple 15: Fonctions d'accumulation dans AccumulateConstraint - lowercase
+rule accumulate_sum_lower : {e: Employee} /
+    sum(s: Sale / s.employeeId == e.id ; s.amount) > 50000 ==>
+    reward(e.id, "top seller")
+
+rule accumulate_avg_lower : {e: Employee} /
+    avg(s: Sale / s.employeeId == e.id and s.amount > 0 ; s.amount) > 5000 ==>
+    analyze(e.id, "high average")
+
+rule accumulate_count_lower : {e: Employee} /
+    count(s: Sale / s.employeeId == e.id) > 100 ==>
+    celebrate(e.id, "many sales")
+
+rule accumulate_min_lower : {e: Employee} /
+    min(s: Sale / s.employeeId == e.id ; s.amount) > 100 ==>
+    validate(e.id, "good minimum")
+
+rule accumulate_max_lower : {e: Employee} /
+    max(s: Sale / s.employeeId == e.id ; s.amount) > 10000 ==>
+    highlight(e.id, "big sale")
+
+// Exemple 16: Fonctions d'accumulation dans AccumulateConstraint - Capitalized
+rule accumulate_sum_Capital : {e: Employee} /
+    Sum(s: Sale / s.employeeId == e.id ; s.amount) > 50000 ==>
+    reward(e.id, "top seller")
+
+rule accumulate_avg_Capital : {e: Employee} /
+    Avg(s: Sale / s.employeeId == e.id And s.amount > 0 ; s.amount) > 5000 ==>
+    analyze(e.id, "high average")
+
+rule accumulate_count_Capital : {e: Employee} /
+    Count(s: Sale / s.employeeId == e.id) > 100 ==>
+    celebrate(e.id, "many sales")
+
+rule accumulate_min_Capital : {e: Employee} /
+    Min(s: Sale / s.employeeId == e.id ; s.amount) > 100 ==>
+    validate(e.id, "good minimum")
+
+rule accumulate_max_Capital : {e: Employee} /
+    Max(s: Sale / s.employeeId == e.id ; s.amount) > 10000 ==>
+    highlight(e.id, "big sale")

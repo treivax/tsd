@@ -5,9 +5,9 @@
 package constraint
 
 import (
-	"github.com/treivax/tsd/tsdio"
 	"encoding/json"
 	"fmt"
+	"github.com/treivax/tsd/tsdio"
 )
 
 // ProgramState maintains the cumulative state of parsed types, rules, and facts
