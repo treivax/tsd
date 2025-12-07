@@ -1,0 +1,666 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>servercmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/treivax/tsd/internal/servercmd/servercmd.go (74.4%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+package servercmd
+
+import (
+        "crypto/tls"
+        "encoding/json"
+        "flag"
+        "fmt"
+        "io"
+        "log"
+        "net/http"
+        "os"
+        "path/filepath"
+        "runtime"
+        "strings"
+        "time"
+
+        "github.com/treivax/tsd/auth"
+        "github.com/treivax/tsd/constraint"
+        "github.com/treivax/tsd/rete"
+        "github.com/treivax/tsd/tsdio"
+)
+
+const (
+        // DefaultPort est le port par défaut du serveur
+        DefaultPort = 8080
+
+        // DefaultHost est l'hôte par défaut du serveur
+        DefaultHost = "0.0.0.0"
+
+        // Version est la version du serveur
+        Version = "1.0.0"
+
+        // MaxRequestSize est la taille maximale d'une requête (10MB)
+        MaxRequestSize = 10 * 1024 * 1024
+
+        // DefaultCertDir est le répertoire par défaut des certificats
+        DefaultCertDir = "./certs"
+
+        // DefaultCertFile est le fichier de certificat par défaut
+        DefaultCertFile = "server.crt"
+
+        // DefaultKeyFile est le fichier de clé privée par défaut
+        DefaultKeyFile = "server.key"
+)
+
+var (
+        // startTime est l'heure de démarrage du serveur
+        startTime = time.Now()
+)
+
+// Config contient la configuration du serveur
+type Config struct {
+        Host          string
+        Port          int
+        Verbose       bool
+        AuthType      string
+        AuthKeys      []string
+        JWTSecret     string
+        JWTExpiration time.Duration
+        JWTIssuer     string
+        TLSCertFile   string
+        TLSKeyFile    string
+        Insecure      bool
+}
+
+// Server représente le serveur HTTP TSD
+type Server struct {
+        config      *Config
+        logger      *log.Logger
+        mux         *http.ServeMux
+        authManager *auth.Manager
+}
+
+// Run démarre le serveur TSD avec les arguments donnés et retourne un code de sortie
+func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int <span class="cov8" title="1">{
+        config := parseFlags(args)
+
+        logger := log.New(stdout, "[TSD-SERVER] ", log.LstdFlags)
+
+        server, initErr := NewServer(config, logger)
+        if initErr != nil </span><span class="cov8" title="1">{
+                fmt.Fprintf(stderr, "❌ Erreur initialisation serveur: %v\n", initErr)
+                return 1
+        }</span>
+
+        <span class="cov0" title="0">addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
+
+        // Déterminer le protocole
+        protocol := "https"
+        if config.Insecure </span><span class="cov0" title="0">{
+                protocol = "http"
+        }</span>
+
+        <span class="cov0" title="0">logger.Printf("🚀 Démarrage du serveur TSD sur %s://%s", protocol, addr)
+        logger.Printf("📊 Version: %s", Version)
+
+        // Afficher le statut TLS
+        if config.Insecure </span><span class="cov0" title="0">{
+                logger.Printf("⚠️  TLS: désactivé (mode HTTP non sécurisé)")
+                logger.Printf("⚠️  AVERTISSEMENT: Ne pas utiliser en production!")
+        }</span> else<span class="cov0" title="0"> {
+                logger.Printf("🔒 TLS: activé")
+                logger.Printf("   Certificat: %s", config.TLSCertFile)
+                logger.Printf("   Clé: %s", config.TLSKeyFile)
+        }</span>
+
+        // Afficher le statut d'authentification
+        <span class="cov0" title="0">if server.authManager.IsEnabled() </span><span class="cov0" title="0">{
+                logger.Printf("🔒 Authentification: activée (%s)", server.authManager.GetAuthType())
+        }</span> else<span class="cov0" title="0"> {
+                logger.Printf("⚠️  Authentification: désactivée (mode développement)")
+        }</span>
+
+        <span class="cov0" title="0">logger.Printf("🔗 Endpoints disponibles:")
+        logger.Printf("   POST %s://%s/api/v1/execute - Exécuter un programme TSD", protocol, addr)
+        logger.Printf("   GET  %s://%s/health - Health check", protocol, addr)
+        logger.Printf("   GET  %s://%s/api/v1/version - Version info", protocol, addr)
+
+        // Démarrer le serveur
+        var err error
+        if config.Insecure </span><span class="cov0" title="0">{
+                // Mode HTTP non sécurisé
+                err = http.ListenAndServe(addr, server.mux)
+        }</span> else<span class="cov0" title="0"> {
+                // Mode HTTPS avec TLS
+                tlsConfig := &amp;tls.Config{
+                        MinVersion: tls.VersionTLS12,
+                        CipherSuites: []uint16{
+                                tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                                tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                                tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+                                tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+                        },
+                        PreferServerCipherSuites: true,
+                }
+
+                httpServer := &amp;http.Server{
+                        Addr:      addr,
+                        Handler:   server.mux,
+                        TLSConfig: tlsConfig,
+                }
+
+                err = httpServer.ListenAndServeTLS(config.TLSCertFile, config.TLSKeyFile)
+        }</span>
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                fmt.Fprintf(stderr, "❌ Erreur démarrage serveur: %v\n", err)
+                return 1
+        }</span>
+
+        <span class="cov0" title="0">return 0</span>
+}
+
+// parseFlags parse les arguments de ligne de commande
+func parseFlags(args []string) *Config <span class="cov8" title="1">{
+        config := &amp;Config{}
+
+        fs := flag.NewFlagSet("tsd-server", flag.ContinueOnError)
+        fs.StringVar(&amp;config.Host, "host", DefaultHost, "Hôte du serveur")
+        fs.IntVar(&amp;config.Port, "port", DefaultPort, "Port du serveur")
+        fs.BoolVar(&amp;config.Verbose, "v", false, "Mode verbeux")
+
+        // TLS
+        defaultCertPath := filepath.Join(DefaultCertDir, DefaultCertFile)
+        defaultKeyPath := filepath.Join(DefaultCertDir, DefaultKeyFile)
+        fs.StringVar(&amp;config.TLSCertFile, "tls-cert", defaultCertPath, "Chemin vers le certificat TLS")
+        fs.StringVar(&amp;config.TLSKeyFile, "tls-key", defaultKeyPath, "Chemin vers la clé privée TLS")
+        fs.BoolVar(&amp;config.Insecure, "insecure", false, "Désactiver TLS (mode HTTP non sécurisé)")
+
+        // Authentification
+        fs.StringVar(&amp;config.AuthType, "auth", "none", "Type d'authentification: none, key, jwt")
+        authKeysStr := fs.String("auth-keys", "", "Clés API (séparées par des virgules)")
+        fs.StringVar(&amp;config.JWTSecret, "jwt-secret", "", "Secret pour JWT")
+        fs.DurationVar(&amp;config.JWTExpiration, "jwt-expiration", 24*time.Hour, "Durée de validité JWT")
+        fs.StringVar(&amp;config.JWTIssuer, "jwt-issuer", "tsd-server", "Émetteur JWT")
+
+        fs.Parse(args)
+
+        // Variables d'environnement pour TLS
+        if envCert := os.Getenv("TSD_TLS_CERT"); envCert != "" </span><span class="cov8" title="1">{
+                config.TLSCertFile = envCert
+        }</span>
+        <span class="cov8" title="1">if envKey := os.Getenv("TSD_TLS_KEY"); envKey != "" </span><span class="cov8" title="1">{
+                config.TLSKeyFile = envKey
+        }</span>
+        <span class="cov8" title="1">if os.Getenv("TSD_INSECURE") == "true" </span><span class="cov8" title="1">{
+                config.Insecure = true
+        }</span>
+
+        // Vérifier que les certificats existent si TLS est activé
+        <span class="cov8" title="1">if !config.Insecure </span><span class="cov8" title="1">{
+                if _, err := os.Stat(config.TLSCertFile); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                        fmt.Fprintf(os.Stderr, "❌ Certificat TLS non trouvé: %s\n", config.TLSCertFile)
+                        fmt.Fprintf(os.Stderr, "\n💡 Solutions:\n")
+                        fmt.Fprintf(os.Stderr, "   1. Générer des certificats: tsd auth generate-cert\n")
+                        fmt.Fprintf(os.Stderr, "   2. Spécifier un certificat: --tls-cert /path/to/cert.crt\n")
+                        fmt.Fprintf(os.Stderr, "   3. Démarrer en mode non sécurisé: --insecure (déconseillé en production)\n")
+                        os.Exit(1)
+                }</span>
+                <span class="cov8" title="1">if _, err := os.Stat(config.TLSKeyFile); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                        fmt.Fprintf(os.Stderr, "❌ Clé privée TLS non trouvée: %s\n", config.TLSKeyFile)
+                        fmt.Fprintf(os.Stderr, "\n💡 Solutions:\n")
+                        fmt.Fprintf(os.Stderr, "   1. Générer des certificats: tsd auth generate-cert\n")
+                        fmt.Fprintf(os.Stderr, "   2. Spécifier une clé: --tls-key /path/to/key.key\n")
+                        fmt.Fprintf(os.Stderr, "   3. Démarrer en mode non sécurisé: --insecure (déconseillé en production)\n")
+                        os.Exit(1)
+                }</span>
+        }
+
+        // Parser les clés API depuis la variable d'environnement ou le flag
+        <span class="cov8" title="1">if *authKeysStr == "" </span><span class="cov8" title="1">{
+                *authKeysStr = os.Getenv("TSD_AUTH_KEYS")
+        }</span>
+        <span class="cov8" title="1">if *authKeysStr != "" </span><span class="cov8" title="1">{
+                config.AuthKeys = strings.Split(*authKeysStr, ",")
+                for i, key := range config.AuthKeys </span><span class="cov8" title="1">{
+                        config.AuthKeys[i] = strings.TrimSpace(key)
+                }</span>
+        }
+
+        // Récupérer le secret JWT depuis la variable d'environnement si non fourni
+        <span class="cov8" title="1">if config.JWTSecret == "" </span><span class="cov8" title="1">{
+                config.JWTSecret = os.Getenv("TSD_JWT_SECRET")
+        }</span>
+
+        <span class="cov8" title="1">return config</span>
+}
+
+// NewServer crée un nouveau serveur TSD
+func NewServer(config *Config, logger *log.Logger) (*Server, error) <span class="cov8" title="1">{
+        // Créer le gestionnaire d'authentification
+        authConfig := &amp;auth.Config{
+                Type:          config.AuthType,
+                AuthKeys:      config.AuthKeys,
+                JWTSecret:     config.JWTSecret,
+                JWTExpiration: config.JWTExpiration,
+                JWTIssuer:     config.JWTIssuer,
+        }
+
+        authManager, err := auth.NewManager(authConfig)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("erreur initialisation authentification: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">s := &amp;Server{
+                config:      config,
+                logger:      logger,
+                mux:         http.NewServeMux(),
+                authManager: authManager,
+        }
+
+        // Enregistrer les routes
+        s.registerRoutes()
+
+        return s, nil</span>
+}
+
+// registerRoutes enregistre les routes HTTP
+func (s *Server) registerRoutes() <span class="cov8" title="1">{
+        s.mux.HandleFunc("/api/v1/execute", s.handleExecute)
+        s.mux.HandleFunc("/health", s.handleHealth)
+        s.mux.HandleFunc("/api/v1/version", s.handleVersion)
+}</span>
+
+// handleExecute gère les requêtes d'exécution de programmes TSD
+func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        startTime := time.Now()
+
+        // Vérifier la méthode HTTP
+        if r.Method != http.MethodPost </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, startTime)
+                return
+        }</span>
+
+        // Authentification
+        <span class="cov8" title="1">if err := s.authenticate(r); err != nil </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, "Authentification échouée: "+err.Error(), http.StatusUnauthorized, startTime)
+                return
+        }</span>
+
+        // Limiter la taille de la requête
+        <span class="cov8" title="1">r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)
+
+        // Décoder la requête JSON
+        var req tsdio.ExecuteRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, fmt.Sprintf("Erreur décodage JSON: %v", err), http.StatusBadRequest, startTime)
+                return
+        }</span>
+
+        // Valider la requête
+        <span class="cov8" title="1">if req.Source == "" </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, "Le champ 'source' est requis", http.StatusBadRequest, startTime)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if req.SourceName == "" </span><span class="cov8" title="1">{
+                req.SourceName = "&lt;request&gt;"
+        }</span>
+
+        <span class="cov8" title="1">if s.config.Verbose || req.Verbose </span><span class="cov8" title="1">{
+                s.logger.Printf("📥 Requête d'exécution reçue: source=%s, length=%d", req.SourceName, len(req.Source))
+        }</span>
+
+        // Exécuter le programme TSD
+        <span class="cov8" title="1">response := s.executeTSDProgram(&amp;req, startTime)
+
+        // Écrire la réponse
+        s.writeJSON(w, response, http.StatusOK)
+
+        if s.config.Verbose || req.Verbose </span><span class="cov8" title="1">{
+                if response.Success </span><span class="cov0" title="0">{
+                        s.logger.Printf("✅ Exécution réussie: %d activations en %dms",
+                                response.Results.ActivationsCount, response.ExecutionTimeMs)
+                }</span> else<span class="cov8" title="1"> {
+                        s.logger.Printf("❌ Exécution échouée: %s (%s) en %dms",
+                                response.ErrorType, response.Error, response.ExecutionTimeMs)
+                }</span>
+        }
+}
+
+// executeTSDProgram exécute un programme TSD et retourne la réponse
+func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Time) *tsdio.ExecuteResponse <span class="cov8" title="1">{
+        // Parser le programme TSD
+        result, err := constraint.ParseConstraint(req.SourceName, []byte(req.Source))
+        if err != nil </span><span class="cov8" title="1">{
+                executionTimeMs := time.Since(startTime).Milliseconds()
+                return tsdio.NewErrorResponse(tsdio.ErrorTypeParsingError, fmt.Sprintf("Erreur de parsing: %v", err), executionTimeMs)
+        }</span>
+
+        // Valider le programme
+        <span class="cov8" title="1">if err := constraint.ValidateConstraintProgram(result); err != nil </span><span class="cov0" title="0">{
+                executionTimeMs := time.Since(startTime).Milliseconds()
+                return tsdio.NewErrorResponse(tsdio.ErrorTypeValidationError, fmt.Sprintf("Erreur de validation: %v", err), executionTimeMs)
+        }</span>
+
+        // Créer le pipeline RETE
+        <span class="cov8" title="1">pipeline := rete.NewConstraintPipeline()
+        storage := rete.NewMemoryStorage()
+
+        // Créer un fichier temporaire pour le source
+        tmpFile, err := os.CreateTemp("", "tsd-*.tsd")
+        if err != nil </span><span class="cov0" title="0">{
+                executionTimeMs := time.Since(startTime).Milliseconds()
+                return tsdio.NewErrorResponse(tsdio.ErrorTypeServerError, fmt.Sprintf("Erreur création fichier temporaire: %v", err), executionTimeMs)
+        }</span>
+        <span class="cov8" title="1">defer os.Remove(tmpFile.Name())
+        defer tmpFile.Close()
+
+        // Écrire le source dans le fichier temporaire
+        if _, err := tmpFile.Write([]byte(req.Source)); err != nil </span><span class="cov0" title="0">{
+                executionTimeMs := time.Since(startTime).Milliseconds()
+                return tsdio.NewErrorResponse(tsdio.ErrorTypeServerError, fmt.Sprintf("Erreur écriture fichier temporaire: %v", err), executionTimeMs)
+        }</span>
+        <span class="cov8" title="1">tmpFile.Close()
+
+        // Ingérer le fichier
+        network, _, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
+        if err != nil </span><span class="cov0" title="0">{
+                executionTimeMs := time.Since(startTime).Milliseconds()
+                return tsdio.NewErrorResponse(tsdio.ErrorTypeExecutionError, fmt.Sprintf("Erreur ingestion: %v", err), executionTimeMs)
+        }</span>
+
+        // Collecter les résultats
+        <span class="cov8" title="1">facts := storage.GetAllFacts()
+        activations := s.collectActivations(network)
+
+        executionTimeMs := time.Since(startTime).Milliseconds()
+
+        results := &amp;tsdio.ExecutionResults{
+                FactsCount:       len(facts),
+                ActivationsCount: len(activations),
+                Activations:      activations,
+        }
+
+        return tsdio.NewSuccessResponse(results, executionTimeMs)</span>
+}
+
+// collectActivations collecte toutes les activations du réseau
+func (s *Server) collectActivations(network *rete.ReteNetwork) []tsdio.Activation <span class="cov8" title="1">{
+        if network == nil </span><span class="cov8" title="1">{
+                return []tsdio.Activation{}
+        }</span>
+
+        <span class="cov8" title="1">activations := []tsdio.Activation{}
+
+        for _, terminal := range network.TerminalNodes </span><span class="cov8" title="1">{
+                if terminal.Memory == nil || terminal.Memory.Tokens == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">actionName := "unknown"
+                if terminal.Action != nil &amp;&amp; terminal.Action.Job != nil </span><span class="cov8" title="1">{
+                        actionName = terminal.Action.Job.Name
+                }</span>
+
+                <span class="cov8" title="1">for _, token := range terminal.Memory.Tokens </span><span class="cov8" title="1">{
+                        activation := tsdio.Activation{
+                                ActionName:      actionName,
+                                Arguments:       s.extractArguments(terminal, token),
+                                TriggeringFacts: s.extractFacts(token),
+                                BindingsCount:   len(token.Facts),
+                        }
+                        activations = append(activations, activation)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return activations</span>
+}
+
+// extractArguments extrait les arguments d'une activation
+func (s *Server) extractArguments(terminal *rete.TerminalNode, token *rete.Token) []tsdio.ArgumentValue <span class="cov8" title="1">{
+        args := []tsdio.ArgumentValue{}
+
+        if terminal.Action == nil || terminal.Action.Job == nil </span><span class="cov0" title="0">{
+                return args
+        }</span>
+
+        // Note: Les arguments ne peuvent pas être facilement évalués ici car
+        // l'évaluateur d'arguments n'est pas exporté. On retourne les expressions
+        // brutes converties en string.
+        <span class="cov8" title="1">for i, argExpr := range terminal.Action.Job.Args </span><span class="cov8" title="1">{
+                // Convertir l'expression en string
+                value := fmt.Sprintf("%v", argExpr)
+
+                argValue := tsdio.ArgumentValue{
+                        Position: i,
+                        Value:    value,
+                        Type:     "expression",
+                }
+                args = append(args, argValue)
+        }</span>
+
+        <span class="cov8" title="1">return args</span>
+}
+
+// getValueType retourne le type d'une valeur
+func (s *Server) getValueType(value interface{}) string <span class="cov8" title="1">{
+        if value == nil </span><span class="cov8" title="1">{
+                return "nil"
+        }</span>
+
+        <span class="cov8" title="1">switch value.(type) </span>{
+        case string:<span class="cov8" title="1">
+                return "string"</span>
+        case int, int8, int16, int32, int64:<span class="cov8" title="1">
+                return "int"</span>
+        case uint, uint8, uint16, uint32, uint64:<span class="cov0" title="0">
+                return "uint"</span>
+        case float32, float64:<span class="cov8" title="1">
+                return "float"</span>
+        case bool:<span class="cov8" title="1">
+                return "bool"</span>
+        default:<span class="cov8" title="1">
+                return "unknown"</span>
+        }
+}
+
+// extractFacts extrait les faits d'un token
+func (s *Server) extractFacts(token *rete.Token) []tsdio.Fact <span class="cov8" title="1">{
+        facts := []tsdio.Fact{}
+
+        for _, fact := range token.Facts </span><span class="cov8" title="1">{
+                if fact == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">f := tsdio.Fact{
+                        ID:         fact.ID,
+                        Type:       fact.Type,
+                        Attributes: s.extractAttributes(fact),
+                }
+                facts = append(facts, f)</span>
+        }
+
+        <span class="cov8" title="1">return facts</span>
+}
+
+// extractAttributes extrait les attributs d'un fait
+func (s *Server) extractAttributes(fact *rete.Fact) map[string]interface{} <span class="cov8" title="1">{
+        attrs := make(map[string]interface{})
+
+        if fact.Fields != nil </span><span class="cov8" title="1">{
+                for key, value := range fact.Fields </span><span class="cov8" title="1">{
+                        attrs[key] = value
+                }</span>
+        }
+
+        <span class="cov8" title="1">return attrs</span>
+}
+
+// authenticate vérifie l'authentification de la requête
+func (s *Server) authenticate(r *http.Request) error <span class="cov8" title="1">{
+        if !s.authManager.IsEnabled() </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        // Extraire le token du header Authorization
+        <span class="cov8" title="1">authHeader := r.Header.Get("Authorization")
+        token := auth.ExtractTokenFromHeader(authHeader)
+
+        // Valider le token
+        if err := s.authManager.ValidateToken(token); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// handleHealth gère les requêtes de health check
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, time.Now())
+                return
+        }</span>
+
+        <span class="cov8" title="1">uptime := time.Since(startTime).Seconds()
+
+        response := tsdio.HealthResponse{
+                Status:        "ok",
+                Version:       Version,
+                UptimeSeconds: int64(uptime),
+                Timestamp:     time.Now(),
+        }
+
+        s.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// handleVersion gère les requêtes de version
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        if r.Method != http.MethodGet </span><span class="cov8" title="1">{
+                s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, time.Now())
+                return
+        }</span>
+
+        <span class="cov8" title="1">response := tsdio.VersionResponse{
+                Version:   Version,
+                GoVersion: runtime.Version(),
+        }
+
+        s.writeJSON(w, response, http.StatusOK)</span>
+}
+
+// writeJSON écrit une réponse JSON
+func (s *Server) writeJSON(w http.ResponseWriter, data interface{}, statusCode int) <span class="cov8" title="1">{
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(statusCode)
+
+        if err := json.NewEncoder(w).Encode(data); err != nil </span><span class="cov8" title="1">{
+                s.logger.Printf("❌ Erreur encodage JSON: %v", err)
+        }</span>
+}
+
+// writeError écrit une réponse d'erreur
+func (s *Server) writeError(w http.ResponseWriter, errorType, message string, statusCode int, startTime time.Time) <span class="cov8" title="1">{
+        executionTimeMs := time.Since(startTime).Milliseconds()
+        response := tsdio.NewErrorResponse(errorType, message, executionTimeMs)
+        s.writeJSON(w, response, statusCode)
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
