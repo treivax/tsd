@@ -211,151 +211,52 @@ func generateJWT(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 // validateToken valide un token
 func validateToken(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	token := fs.String("token", "", "Token à valider (requis)")
-	authType := fs.String("type", "", "Type d'auth: key ou jwt (requis)")
-	secret := fs.String("secret", "", "Secret JWT (requis si type=jwt)")
-	keys := fs.String("keys", "", "Clés API valides séparées par des virgules (requis si type=key)")
-	interactive := fs.Bool("i", false, "Mode interactif")
-	format := fs.String("format", "text", "Format de sortie (text, json)")
-
-	if err := fs.Parse(args); err != nil {
+	// Étape 1: Parser les arguments de ligne de commande
+	config, _, err := parseValidationFlags(args, stderr)
+	if err != nil {
 		return 1
 	}
 
-	// Mode interactif
-	if *interactive {
-		reader := bufio.NewReader(stdin)
-
-		if *token == "" {
-			fmt.Fprint(stdout, "Token: ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*token = strings.TrimSpace(input)
-		}
-
-		if *authType == "" {
-			fmt.Fprint(stdout, "Type d'authentification (key/jwt): ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*authType = strings.TrimSpace(input)
-		}
-
-		if *authType == "jwt" && *secret == "" {
-			fmt.Fprint(stdout, "Secret JWT: ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*secret = strings.TrimSpace(input)
-		}
-
-		if *authType == "key" && *keys == "" {
-			fmt.Fprint(stdout, "Clés API (séparées par des virgules): ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*keys = strings.TrimSpace(input)
-		}
-	}
-
-	// Validation des arguments
-	if *token == "" {
-		fmt.Fprintln(stderr, "Erreur: le token est requis (-token)")
-		return 1
-	}
-
-	if *authType == "" {
-		fmt.Fprintln(stderr, "Erreur: le type d'authentification est requis (-type key|jwt)")
-		return 1
-	}
-
-	// Créer la config selon le type
-	var config *auth.Config
-	switch *authType {
-	case "key":
-		if *keys == "" {
-			fmt.Fprintln(stderr, "Erreur: les clés API sont requises pour type=key (-keys)")
+	// Étape 2: Mode interactif - lire les inputs manquants
+	if config.Interactive {
+		if err := readInteractiveInput(config, stdin, stdout, stderr); err != nil {
+			fmt.Fprintf(stderr, "Erreur: %v\n", err)
 			return 1
 		}
-		keysList := strings.Split(*keys, ",")
-		for i, key := range keysList {
-			keysList[i] = strings.TrimSpace(key)
-		}
-		config = &auth.Config{
-			Type:     auth.AuthTypeKey,
-			AuthKeys: keysList,
-		}
+	}
 
-	case "jwt":
-		if *secret == "" {
-			fmt.Fprintln(stderr, "Erreur: le secret JWT est requis pour type=jwt (-secret)")
-			return 1
-		}
-		config = &auth.Config{
-			Type:      auth.AuthTypeJWT,
-			JWTSecret: *secret,
-		}
-
-	default:
-		fmt.Fprintf(stderr, "Erreur: type invalide '%s' (doit être 'key' ou 'jwt')\n", *authType)
+	// Étape 3: Valider que tous les paramètres requis sont présents
+	if err := validateConfigParameters(config); err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n", err)
 		return 1
 	}
 
-	// Créer le manager
-	manager, err := auth.NewManager(config)
+	// Étape 4: Créer la configuration auth
+	authConfig, err := createAuthConfig(config)
+	if err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n", err)
+		return 1
+	}
+
+	// Étape 5: Créer le manager d'authentification
+	manager, err := auth.NewManager(authConfig)
 	if err != nil {
 		fmt.Fprintf(stderr, "Erreur initialisation: %v\n", err)
 		return 1
 	}
 
-	// Valider le token
-	info, err := manager.GetTokenInfo(*token)
+	// Étape 6: Valider le token
+	result := validateTokenWithManager(manager, config.Token)
 
-	if *format == "json" {
-		output := map[string]interface{}{
-			"valid": err == nil && info.Valid,
-			"type":  *authType,
-		}
-		if err != nil {
-			output["error"] = err.Error()
-		}
-		if info != nil {
-			output["username"] = info.Username
-			output["roles"] = info.Roles
-		}
-		data, _ := json.MarshalIndent(output, "", "  ")
-		fmt.Fprintln(stdout, string(data))
-	} else {
-		if err == nil && info.Valid {
-			fmt.Fprintln(stdout, "✅ Token valide")
-			fmt.Fprintf(stdout, "Type: %s\n", *authType)
-			if *authType == "jwt" && info.Username != "" {
-				fmt.Fprintf(stdout, "Utilisateur: %s\n", info.Username)
-				if len(info.Roles) > 0 {
-					fmt.Fprintf(stdout, "Rôles: %s\n", strings.Join(info.Roles, ", "))
-				}
-			}
-			return 0
-		}
-		fmt.Fprintln(stdout, "❌ Token invalide")
-		if err != nil {
-			fmt.Fprintf(stdout, "Erreur: %v\n", err)
-		}
-		return 1
+	// Étape 7: Formater et afficher le résultat
+	output := formatValidationOutput(result, config)
+	fmt.Fprint(stdout, output)
+
+	// Retourner le code de sortie approprié
+	if result.Valid {
+		return 0
 	}
-
-	return 0
+	return 1
 }
 
 // generateCert génère des certificats TLS auto-signés
