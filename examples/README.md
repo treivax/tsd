@@ -4,6 +4,81 @@ Ce répertoire contient des exemples d'utilisation du système TSD (Type System 
 
 ## Exemples disponibles
 
+### type-casting.tsd
+
+**Description:** Démontre l'utilisation des opérateurs de casting de types en TSD.
+
+**Fonctionnalités démontrées:**
+- Casting `number → string` pour concaténation et comparaison
+- Casting `string → number` pour calculs arithmétiques
+- Casting `bool → string` pour formatage de messages
+- Casting `string → bool` pour évaluation conditionnelle
+- Casting `number → bool` (0 = false, non-zero = true)
+- Casting `bool → number` (false = 0, true = 1)
+- Expressions complexes avec multiples casts
+- Exemples complets : e-commerce, configuration système, transformation de données
+
+**Utilisation:**
+```bash
+# Parser et valider
+./tsd examples/type-casting.tsd
+
+# Exécuter avec verbose
+./tsd examples/type-casting.tsd -verbose
+```
+
+**Concepts clés:**
+- Cast explicite requis pour conversions de types
+- Syntaxe : `cast(expression as type)` ou `(type)expression`
+- Politique de typage stricte (pas de conversion implicite)
+- Combinaison de casts avec opérateurs arithmétiques et logiques
+
+**Cas d'usage:**
+- Formatage de prix et quantités pour affichage
+- Conversion de données utilisateur (strings) en nombres pour calcul
+- Validation de configuration avec booléens en string
+- Comptage de flags booléens via conversion en nombre
+
+---
+
+### string-operations.tsd
+
+**Description:** Démontre les opérations sur chaînes de caractères en TSD.
+
+**Fonctionnalités démontrées:**
+- Concaténation de chaînes avec l'opérateur `+`
+- Concaténation avec casting de types (number, bool → string)
+- Pattern matching avec `LIKE` (wildcards `%`)
+- Recherche de sous-chaînes avec `CONTAINS`
+- Expressions régulières avec `MATCHES`
+- Appartenance à un ensemble avec `IN`
+- Exemples complets : e-commerce, traitement de logs, validation de données
+
+**Utilisation:**
+```bash
+# Parser et valider
+./tsd examples/string-operations.tsd
+
+# Exécuter avec verbose
+./tsd examples/string-operations.tsd -verbose
+```
+
+**Concepts clés:**
+- Concaténation stricte : `string + string` uniquement (pas de conversion implicite)
+- Pattern matching : `email LIKE "%@gmail.com"`
+- Containment : `content CONTAINS "urgent"`
+- Regex : `timestamp MATCHES "[0-9]{4}-[0-9]{2}-[0-9]{2}"`
+- Set membership : `status IN ["pending", "processing"]`
+
+**Cas d'usage:**
+- Formatage de messages et rapports
+- Validation d'emails, téléphones, et autres entrées utilisateur
+- Filtrage de logs par patterns
+- Détection de contenu sensible ou urgent
+- Routage basé sur patterns (régions, statuts, etc.)
+
+---
+
 ### multiple_actions_example.tsd
 
 **Description:** Démontre l'utilisation des actions multiples dans les règles RETE.
@@ -125,11 +200,22 @@ rule r3 : {d: Dept, avg: AVG(e.salary)} / {e: Emp} / e.deptId == d.id ==>
 - `OR` : Ou logique
 - `NOT` : Négation
 
-### Arithmétiques (dans les arguments)
-- `+` : Addition
+### Arithmétiques
+- `+` : Addition (nombres) ou Concaténation (chaînes)
 - `-` : Soustraction
 - `*` : Multiplication
 - `/` : Division
+
+### Chaînes de caractères
+- `LIKE` : Pattern matching avec wildcards (`%`)
+- `CONTAINS` : Recherche de sous-chaîne
+- `MATCHES` : Expression régulière
+- `IN` : Appartenance à un ensemble
+
+### Casting
+- `cast(expr as type)` : Conversion explicite de type
+- Types supportés : `number`, `string`, `bool`
+- Syntaxe alternative : `(type)expr`
 
 ## Fonctions d'agrégation
 
@@ -143,9 +229,13 @@ rule r3 : {d: Dept, avg: AVG(e.salary)} / {e: Emp} / e.deptId == d.id ==>
 
 ## Ressources
 
-- [Documentation complète](../docs/multiple_actions.md)
-- [Tests d'intégration](../test/integration/)
-- [Grammaire PEG](../constraint/grammar/constraint.peg)
+- [Guide utilisateur complet](../docs/USER_GUIDE.md)
+- [Guide de démarrage rapide](../docs/QUICK_START.md)
+- [Architecture technique](../docs/ARCHITECTURE.md)
+- [Guide de contribution](../docs/CONTRIBUTING.md)
+- [Référence API](../docs/API_REFERENCE.md)
+- [Guide d'authentification](../docs/AUTHENTICATION.md)
+- [Tests d'intégration](../tests/e2e/)
 - [CHANGELOG](../CHANGELOG.md)
 
 ## Contribution

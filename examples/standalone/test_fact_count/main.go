@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	
+
 	"github.com/treivax/tsd/rete"
 )
 
@@ -47,7 +47,7 @@ Person(name:"Bob", age:15)
 	for i, f := range facts {
 		fmt.Printf("  Fact %d: %s (Type: %s, Fields: %+v)\n", i, f.ID, f.Type, f.Fields)
 	}
-	
+
 	fmt.Printf("TypeNodes: %d\n", len(network.TypeNodes))
 	fmt.Printf("TerminalNodes: %d\n", len(network.TerminalNodes))
 }
