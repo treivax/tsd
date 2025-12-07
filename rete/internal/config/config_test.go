@@ -22,9 +22,6 @@ func TestDefaultConfig(t *testing.T) {
 	if config.Storage.Type != "memory" {
 		t.Errorf("Storage.Type = %s, want memory", config.Storage.Type)
 	}
-	if config.Storage.Prefix != "/rete/nodes" {
-		t.Errorf("Storage.Prefix = %s, want /rete/nodes", config.Storage.Prefix)
-	}
 	if config.Storage.Timeout != 30*time.Second {
 		t.Errorf("Storage.Timeout = %v, want 30s", config.Storage.Timeout)
 	}
@@ -72,18 +69,11 @@ func TestConfig_Validate(t *testing.T) {
 			},
 			wantError: false,
 		},
-		{
-			name: "valid etcd storage",
-			config: &Config{
-				Storage: StorageConfig{Type: "etcd"},
-				Logger:  LoggerConfig{Level: "info"},
-			},
-			wantError: false,
-		},
+
 		{
 			name: "invalid storage type",
 			config: &Config{
-				Storage: StorageConfig{Type: "redis"},
+				Storage: StorageConfig{Type: "invalid"},
 				Logger:  LoggerConfig{Level: "info"},
 			},
 			wantError: true,
@@ -173,10 +163,10 @@ func TestValidationError_Error(t *testing.T) {
 			name: "storage type error",
 			err: &ValidationError{
 				Field:   "storage.type",
-				Value:   "redis",
-				Message: "must be 'memory' or 'etcd'",
+				Value:   "invalid",
+				Message: "must be 'memory' (in-memory storage only)",
 			},
-			expected: "config validation error on field 'storage.type': must be 'memory' or 'etcd'",
+			expected: "config validation error on field 'storage.type': must be 'memory' (in-memory storage only)",
 		},
 		{
 			name: "logger level error",
@@ -210,20 +200,12 @@ func TestValidationError_Error(t *testing.T) {
 
 func TestStorageConfig(t *testing.T) {
 	storage := StorageConfig{
-		Type:     "etcd",
-		Endpoint: "localhost:2379",
-		Prefix:   "/custom/prefix",
-		Timeout:  10 * time.Second,
+		Type:    "memory",
+		Timeout: 10 * time.Second,
 	}
 
-	if storage.Type != "etcd" {
-		t.Errorf("Type = %s, want etcd", storage.Type)
-	}
-	if storage.Endpoint != "localhost:2379" {
-		t.Errorf("Endpoint = %s, want localhost:2379", storage.Endpoint)
-	}
-	if storage.Prefix != "/custom/prefix" {
-		t.Errorf("Prefix = %s, want /custom/prefix", storage.Prefix)
+	if storage.Type != "memory" {
+		t.Errorf("Type = %s, want memory", storage.Type)
 	}
 	if storage.Timeout != 10*time.Second {
 		t.Errorf("Timeout = %v, want 10s", storage.Timeout)
@@ -268,8 +250,7 @@ func TestLoggerConfig(t *testing.T) {
 
 func TestConfig_JSONMarshaling(t *testing.T) {
 	original := DefaultConfig()
-	original.Storage.Type = "etcd"
-	original.Storage.Endpoint = "localhost:2379"
+	original.Storage.Type = "memory"
 	original.Network.MaxNodes = 2000
 	original.Logger.Level = "debug"
 
@@ -288,9 +269,6 @@ func TestConfig_JSONMarshaling(t *testing.T) {
 	// Verify values are preserved
 	if unmarshaled.Storage.Type != original.Storage.Type {
 		t.Errorf("Storage.Type not preserved: got %s, want %s", unmarshaled.Storage.Type, original.Storage.Type)
-	}
-	if unmarshaled.Storage.Endpoint != original.Storage.Endpoint {
-		t.Errorf("Storage.Endpoint not preserved: got %s, want %s", unmarshaled.Storage.Endpoint, original.Storage.Endpoint)
 	}
 	if unmarshaled.Network.MaxNodes != original.Network.MaxNodes {
 		t.Errorf("Network.MaxNodes not preserved: got %d, want %d", unmarshaled.Network.MaxNodes, original.Network.MaxNodes)
@@ -428,10 +406,7 @@ func TestConfig_AllStorageTypes(t *testing.T) {
 		valid bool
 	}{
 		{"memory", "memory", true},
-		{"etcd", "etcd", true},
-		{"redis", "redis", false},
-		{"mysql", "mysql", false},
-		{"postgres", "postgres", false},
+		{"invalid type", "invalid", false},
 		{"empty", "", false},
 		{"uppercase MEMORY", "MEMORY", false},
 		{"mixed case Memory", "Memory", false},

@@ -65,7 +65,10 @@
 //
 // # Storage Backends
 //
-// The package supports multiple storage backends:
-//   - MemoryStorage: In-memory storage for development and testing
-//   - Future: Persistent storage backends for production use
+// Storage:
+//   - MemoryStorage: In-memory storage with strong consistency guarantees
+//   - Future: Network replication via Raft consensus protocol
+//
+// All storage is purely in-memory. Facts can be exported to .tsd files
+// and network replication to other nodes is planned for future releases.
 package rete

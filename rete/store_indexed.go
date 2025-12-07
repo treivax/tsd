@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-// IndexedFactStorage fournit un stockage indexé pour les faits
+// IndexedFactStorage provides indexed in-memory storage for facts.
+// This is an optimized in-memory storage implementation with indexing
+// for fast lookups by type, field values, and composite keys.
+// Like MemoryStorage, all data is kept purely in memory.
 type IndexedFactStorage struct {
 	// Index principal par ID de fait
 	factsByID map[string]*Fact

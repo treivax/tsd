@@ -10,25 +10,28 @@ import (
 	"sync"
 )
 
-// MemoryStorage implémente Storage en mémoire (pour les tests)
+// MemoryStorage implements pure in-memory storage with strong consistency guarantees.
+// This is the only storage implementation in TSD - all data is kept in memory.
+// Facts can be exported to .tsd files, and network replication via Raft is planned.
 type MemoryStorage struct {
 	memories map[string]*WorkingMemory
 	mutex    sync.RWMutex
 }
 
-// NewMemoryStorage crée un nouveau storage en mémoire
+// NewMemoryStorage creates a new in-memory storage instance with strong consistency.
 func NewMemoryStorage() *MemoryStorage {
 	return &MemoryStorage{
 		memories: make(map[string]*WorkingMemory),
 	}
 }
 
-// SaveMemory sauvegarde en mémoire
+// SaveMemory saves working memory to in-memory storage.
+// Thread-safe with mutex protection.
 func (ms *MemoryStorage) SaveMemory(nodeID string, memory *WorkingMemory) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// Copier la mémoire pour éviter les modifications concurrentes
+	// Copy memory to avoid concurrent modifications
 	data, err := json.Marshal(memory)
 	if err != nil {
 		return err
@@ -44,7 +47,8 @@ func (ms *MemoryStorage) SaveMemory(nodeID string, memory *WorkingMemory) error 
 	return nil
 }
 
-// LoadMemory charge depuis la mémoire
+// LoadMemory loads working memory from in-memory storage.
+// Returns a copy to ensure thread safety.
 func (ms *MemoryStorage) LoadMemory(nodeID string) (*WorkingMemory, error) {
 	ms.mutex.RLock()
 	defer ms.mutex.RUnlock()
@@ -54,7 +58,7 @@ func (ms *MemoryStorage) LoadMemory(nodeID string) (*WorkingMemory, error) {
 		return nil, fmt.Errorf("mémoire non trouvée pour le nœud %s", nodeID)
 	}
 
-	// Retourner une copie
+	// Return a copy for thread safety
 	data, err := json.Marshal(memory)
 	if err != nil {
 		return nil, err
@@ -69,7 +73,7 @@ func (ms *MemoryStorage) LoadMemory(nodeID string) (*WorkingMemory, error) {
 	return &copyMemory, nil
 }
 
-// DeleteMemory supprime de la mémoire
+// DeleteMemory removes working memory from in-memory storage.
 func (ms *MemoryStorage) DeleteMemory(nodeID string) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
@@ -77,7 +81,7 @@ func (ms *MemoryStorage) DeleteMemory(nodeID string) error {
 	return nil
 }
 
-// ListNodes liste les nœuds en mémoire
+// ListNodes returns all node IDs stored in memory.
 func (ms *MemoryStorage) ListNodes() ([]string, error) {
 	ms.mutex.RLock()
 	defer ms.mutex.RUnlock()
@@ -89,12 +93,12 @@ func (ms *MemoryStorage) ListNodes() ([]string, error) {
 	return nodes, nil
 }
 
-// Clear vide tous les faits du storage
+// Clear removes all facts from in-memory storage.
 func (ms *MemoryStorage) Clear() error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// Vider toutes les mémoires
+	// Clear all memories
 	for nodeID := range ms.memories {
 		delete(ms.memories, nodeID)
 	}
@@ -103,12 +107,12 @@ func (ms *MemoryStorage) Clear() error {
 	return nil
 }
 
-// AddFact ajoute un fait au storage (dans une mémoire globale)
+// AddFact adds a fact to in-memory storage (in global memory).
 func (ms *MemoryStorage) AddFact(fact *Fact) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// Utiliser une mémoire globale pour les faits
+	// Use global memory for facts
 	const globalNodeID = "__global_facts__"
 
 	memory, exists := ms.memories[globalNodeID]
@@ -124,14 +128,14 @@ func (ms *MemoryStorage) AddFact(fact *Fact) error {
 	return memory.AddFact(fact)
 }
 
-// GetAllFacts récupère tous les faits du storage
+// GetAllFacts retrieves all facts from in-memory storage.
 func (ms *MemoryStorage) GetAllFacts() []*Fact {
 	ms.mutex.RLock()
 	defer ms.mutex.RUnlock()
 
 	facts := make([]*Fact, 0)
 
-	// Collecter les faits de toutes les mémoires
+	// Collect facts from all memories
 	for _, memory := range ms.memories {
 		if memory != nil && memory.Facts != nil {
 			for _, fact := range memory.Facts {
@@ -143,12 +147,12 @@ func (ms *MemoryStorage) GetAllFacts() []*Fact {
 	return facts
 }
 
-// RemoveFact supprime un fait du storage par son ID interne
+// RemoveFact removes a fact from in-memory storage by its internal ID.
 func (ms *MemoryStorage) RemoveFact(factID string) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// Chercher dans toutes les mémoires
+	// Search in all memories
 	for _, memory := range ms.memories {
 		if memory != nil && memory.Facts != nil {
 			if _, exists := memory.Facts[factID]; exists {
@@ -161,12 +165,12 @@ func (ms *MemoryStorage) RemoveFact(factID string) error {
 	return fmt.Errorf("fact %s not found", factID)
 }
 
-// GetFact récupère un fait par son ID interne
+// GetFact retrieves a fact by its internal ID from in-memory storage.
 func (ms *MemoryStorage) GetFact(factID string) *Fact {
 	ms.mutex.RLock()
 	defer ms.mutex.RUnlock()
 
-	// Chercher dans toutes les mémoires
+	// Search in all memories
 	for _, memory := range ms.memories {
 		if memory != nil && memory.Facts != nil {
 			if fact, exists := memory.Facts[factID]; exists {
@@ -178,22 +182,23 @@ func (ms *MemoryStorage) GetFact(factID string) *Fact {
 	return nil
 }
 
-// Sync garantit que toutes les écritures sont durables et visibles
-// Pour MemoryStorage, cette opération vérifie la cohérence interne
-// car toutes les données sont déjà en mémoire et donc "durables" dans ce contexte
+// Sync ensures all writes are consistent and visible.
+// For in-memory storage, this verifies internal consistency since all data
+// is already in memory. In a future replicated setup, this would coordinate
+// with other nodes via Raft consensus.
 func (ms *MemoryStorage) Sync() error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
-	// Vérification de cohérence interne :
-	// - Toutes les mémoires doivent avoir des structures valides
-	// - Pas de faits orphelins ou de tokens sans faits associés
+	// Internal consistency verification:
+	// - All memories must have valid structures
+	// - No orphaned facts or tokens without associated facts
 	for nodeID, memory := range ms.memories {
 		if memory == nil {
 			return fmt.Errorf("mémoire nulle pour le nœud %s", nodeID)
 		}
 
-		// Vérifier que les structures de données sont initialisées
+		// Verify data structures are initialized
 		if memory.Facts == nil {
 			memory.Facts = make(map[string]*Fact)
 		}
@@ -202,7 +207,7 @@ func (ms *MemoryStorage) Sync() error {
 		}
 	}
 
-	// Pour MemoryStorage, Sync() réussit toujours après vérification
-	// Dans une implémentation avec persistance disque, ici on appellerait fsync()
+	// For in-memory storage, Sync() always succeeds after verification.
+	// In a future replicated implementation, this would ensure Raft consensus.
 	return nil
 }

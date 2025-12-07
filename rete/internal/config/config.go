@@ -17,10 +17,8 @@ type Config struct {
 
 // StorageConfig configuration pour le système de persistance.
 type StorageConfig struct {
-	Type     string        `json:"type"`     // "memory" ou "etcd"
-	Endpoint string        `json:"endpoint"` // pour etcd
-	Prefix   string        `json:"prefix"`   // préfixe des clés
-	Timeout  time.Duration `json:"timeout"`
+	Type    string        `json:"type"` // "memory" uniquement
+	Timeout time.Duration `json:"timeout"`
 }
 
 // NetworkConfig configuration pour le réseau RETE.
@@ -42,7 +40,6 @@ func DefaultConfig() *Config {
 	return &Config{
 		Storage: StorageConfig{
 			Type:    "memory",
-			Prefix:  "/rete/nodes",
 			Timeout: 30 * time.Second,
 		},
 		Network: NetworkConfig{
@@ -60,12 +57,12 @@ func DefaultConfig() *Config {
 
 // Validate vérifie la validité de la configuration.
 func (c *Config) Validate() error {
-	// Validation basique
-	if c.Storage.Type != "memory" && c.Storage.Type != "etcd" {
+	// Validation basique - seul le stockage en mémoire est supporté
+	if c.Storage.Type != "memory" {
 		return &ValidationError{
 			Field:   "storage.type",
 			Value:   c.Storage.Type,
-			Message: "must be 'memory' or 'etcd'",
+			Message: "must be 'memory' (in-memory storage only)",
 		}
 	}
 
