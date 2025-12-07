@@ -85,3 +85,8 @@ test_results.txt
 coverage.out
 coverage.html
 *.log
+
+# Additional coverage patterns
+coverage*.out
+coverage*.html
+*.prof
