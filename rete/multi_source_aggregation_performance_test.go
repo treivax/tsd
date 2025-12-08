@@ -576,7 +576,7 @@ func generateMainFacts(count int) []*Fact {
 
 func generateSourceFacts(factType, prefix, foreignKey string, numParents, count int) []*Fact {
 	facts := make([]*Fact, count)
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for i := 0; i < count; i++ {
 		parentIdx := i % numParents
@@ -596,11 +596,11 @@ func generateSourceFacts(factType, prefix, foreignKey string, numParents, count 
 		// Add type-specific fields
 		switch factType {
 		case "Employee":
-			fields["salary"] = 40000 + rand.Intn(80000) // 40k-120k
+			fields["salary"] = 40000 + rng.Intn(80000) // 40k-120k
 		case "Performance":
-			fields["score"] = 60 + rand.Intn(40) // 60-100
+			fields["score"] = 60 + rng.Intn(40) // 60-100
 		case "Training":
-			fields["hours"] = 10 + rand.Intn(90) // 10-100
+			fields["hours"] = 10 + rng.Intn(90) // 10-100
 		}
 
 		facts[i] = &Fact{
