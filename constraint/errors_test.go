@@ -265,16 +265,19 @@ func TestErrorTypeConstants(t *testing.T) {
 
 func TestValidationErrors_AsError(t *testing.T) {
 	// Test that ValidationErrors can be used as an error interface
-	var err error
 	ve := ValidationErrors{
 		{File: "test.constraint", Type: "rule", Message: "test error", Line: 1},
 	}
-	err = ve
-	if err == nil {
-		t.Error("ValidationErrors should implement error interface")
-	}
+	var err error = ve
+
+	// Verify it implements error interface by checking the error message
 	if err.Error() != ve.Error() {
 		t.Errorf("error.Error() = %q, want %q", err.Error(), ve.Error())
+	}
+
+	// Verify type assertion works
+	if _, ok := err.(ValidationErrors); !ok {
+		t.Error("ValidationErrors should be assertable from error interface")
 	}
 }
 

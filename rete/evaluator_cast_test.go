@@ -325,8 +325,8 @@ func TestCastEdgeCases(t *testing.T) {
 		assert.Contains(t, result, "0.0001")
 	})
 
-	t.Run("cast negative zero to bool", func(t *testing.T) {
-		result, err := CastToBool(-0.0)
+	t.Run("cast zero to bool", func(t *testing.T) {
+		result, err := CastToBool(0.0)
 		require.NoError(t, err)
 		assert.Equal(t, false, result)
 	})

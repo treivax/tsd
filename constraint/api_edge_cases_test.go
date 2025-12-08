@@ -677,6 +677,7 @@ func TestIterativeParser_ConcurrentAccess(t *testing.T) {
 		program := parser.GetProgram()
 		if program == nil {
 			t.Error("GetProgram() returned nil")
+			continue
 		}
 		if len(program.Types) != 1 {
 			t.Errorf("Iteration %d: expected 1 type, got %d", i, len(program.Types))
@@ -688,6 +689,7 @@ func TestIterativeParser_ConcurrentAccess(t *testing.T) {
 		state := parser.GetState()
 		if state == nil {
 			t.Error("GetState() returned nil")
+			continue
 		}
 		if len(state.Types) != 1 {
 			t.Errorf("Iteration %d: expected 1 type in state, got %d", i, len(state.Types))
