@@ -1294,7 +1294,7 @@ func TestCollectExistingFacts(t *testing.T) {
 	})
 }
 
-// TestIngestFile_ErrorPaths tests error handling in ingestFileWithMetrics
+// TestIngestFile_ErrorPaths tests error handling in IngestFile
 func TestIngestFile_ErrorPaths(t *testing.T) {
 	t.Run("handles conversion error", func(t *testing.T) {
 		// This test would require mocking the constraint package

@@ -34,6 +34,7 @@ Cette règle garantit :
 ### 🔄 Rapports de Refactoring
 | Fichier | Date | Description |
 |---------|------|-------------|
+| `REFACTORING_INGEST_FILE_UNIQUE_2025-12-08.md` | 2025-12-08 | ⭐ Simplification majeure - Fusion `IngestFile()` unique, suppression de `ingestFileWithMetrics()` et des fonctions d'orchestration (-376 lignes) |
 | `REFACTORING_ADVANCED_BETA_2025-12-07.md` | 2025-12-07 | Refactoring de `advanced_beta.go` - Décomposition en modules |
 | `REFACTORING_NETWORK_OPTIMIZER_2025-12-07.md` | 2025-12-07 | Refactoring de `network_optimizer.go` - Séparation des stratégies |
 | `REFACTORING_CONSTRAINT_PIPELINE_2025-12-07.md` | 2025-12-07 | Refactoring de `ingestFileWithMetrics()` - Décomposition en orchestration modulaire |

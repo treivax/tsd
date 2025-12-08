@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Changed
+- **Simplification Architecture Pipeline** - Fusion de `IngestFile()` en fonction unique (2025-12-08)
+  - Suppression de `ingestFileWithMetrics()` : fonction privée inutile fusionnée dans `IngestFile()`
+  - Suppression de 13 fonctions d'orchestration de haut niveau dans `constraint_pipeline_orchestration.go`
+  - Suppression de 3 méthodes sur `ingestionContext` (transactions gérées directement dans `IngestFile()`)
+  - Résultat : **Une seule fonction publique** `IngestFile()` avec 12 étapes claires et linéaires
+  - Réduction de code : -376 lignes (-92%) dans `constraint_pipeline_orchestration.go`
+  - Pipeline plus lisible : code linéaire au lieu de fragmenté sur 16 fonctions
+  - Métriques toujours retournées, même en cas d'erreur (meilleur diagnostic)
+  - Aucune régression : tous les tests passent (100%)
+  - Documentation alignée : `docs/API_REFERENCE.md` mis à jour
+  - Principe appliqué : KISS (Keep It Simple, Stupid) - suppression d'abstraction prématurée
+  - Rapport détaillé : `REPORTS/REFACTORING_INGEST_FILE_UNIQUE_2025-12-08.md`
+
 ### Added
 - **Amélioration Couverture de Tests** - Ajout de 112 nouveaux cas de test pour le package constraint
   - Nouveaux fichiers de test :

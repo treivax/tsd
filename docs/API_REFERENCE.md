@@ -107,7 +107,7 @@ type IngestionMetrics struct {
 
 **Exemple** :
 ```go
-network, metrics, err := pipeline.IngestFileWithMetrics("rules.tsd", nil, storage)
+network, metrics, err := pipeline.IngestFile("rules.tsd", nil, storage)
 if err != nil {
     log.Fatalf("Erreur : %v", err)
 }
@@ -140,7 +140,7 @@ pipeline := rete.NewConstraintPipeline()
 
 ### `IngestionMetrics`
 
-Structure contenant les métriques d'une ingestion avec `IngestFileWithMetrics()`.
+Structure contenant les métriques d'une ingestion avec `IngestFile()`.
 
 ```go
 type IngestionMetrics struct {

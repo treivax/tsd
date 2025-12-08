@@ -3,6 +3,7 @@
 REPORTS/*
 !REPORTS/README.md
 !REPORTS/.gitkeep
+!REPORTS/REFACTORING_*.md
 
 # AI prompts (not versioned)
 .github/prompts/
