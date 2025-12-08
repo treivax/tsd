@@ -6,7 +6,6 @@ package domain
 
 import (
 	"testing"
-	"time"
 )
 
 // ===== Fact Tests =====
@@ -31,19 +30,13 @@ func TestNewFact(t *testing.T) {
 	if len(fact.Fields) != 2 {
 		t.Errorf("Expected 2 fields, got %d", len(fact.Fields))
 	}
-	if fact.Timestamp.IsZero() {
-		t.Error("Timestamp should be set")
-	}
-	if time.Since(fact.Timestamp) > time.Second {
-		t.Error("Timestamp should be recent")
-	}
 }
 
 func TestFact_String(t *testing.T) {
 	fact := NewFact("fact1", "Person", nil)
 
 	result := fact.String()
-	expected := "fact1:Person"
+	expected := "Fact{ID:fact1, Type:Person, Fields:map[]}"
 
 	if result != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, result)

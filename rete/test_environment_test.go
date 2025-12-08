@@ -85,7 +85,7 @@ func TestTestEnvironment_IngestFileContent(t *testing.T) {
 action print(message: string)
 rule Adults : {p: Person} / p.age >= 18 ==> print(p.name)`
 
-	network, err := env.IngestFileContent(content)
+	network, _, err := env.IngestFileContent(content)
 	require.NoError(t, err)
 	assert.NotNil(t, network)
 	logs := env.GetLogs()

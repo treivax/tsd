@@ -389,6 +389,7 @@ func TestGetTypeDefinition(t *testing.T) {
 	typeDef := network.GetTypeDefinition("Person")
 	if typeDef == nil {
 		t.Error("GetTypeDefinition() returned nil")
+		return
 	}
 
 	if typeDef.Name != "Person" {
@@ -408,6 +409,7 @@ func TestGetNetworkStats(t *testing.T) {
 	stats := network.GetNetworkStats()
 	if stats == nil {
 		t.Error("GetNetworkStats() returned nil")
+		return
 	}
 
 	if _, ok := stats["type_nodes"]; !ok {
@@ -426,6 +428,7 @@ func TestGetRuleInfo(t *testing.T) {
 	info := network.GetRuleInfo("test_rule")
 	if info == nil {
 		t.Error("GetRuleInfo() returned nil")
+		return
 	}
 
 	if info.RuleID != "test_rule" {

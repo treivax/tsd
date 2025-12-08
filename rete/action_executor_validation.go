@@ -39,24 +39,6 @@ func (ae *ActionExecutor) validateFactFields(typeDef *TypeDefinition, fields map
 	return nil
 }
 
-// validateFieldValue valide qu'une valeur de champ est cohérente avec sa définition
-func (ae *ActionExecutor) validateFieldValue(typeDef *TypeDefinition, fieldName string, value interface{}) error {
-	// Trouver la définition du champ
-	var fieldDef *Field
-	for i := range typeDef.Fields {
-		if typeDef.Fields[i].Name == fieldName {
-			fieldDef = &typeDef.Fields[i]
-			break
-		}
-	}
-
-	if fieldDef == nil {
-		return fmt.Errorf("champ '%s' non défini dans le type '%s'", fieldName, typeDef.Name)
-	}
-
-	return ae.validateFieldType(fieldDef.Type, value)
-}
-
 // validateFieldType valide qu'une valeur correspond au type attendu
 func (ae *ActionExecutor) validateFieldType(expectedType string, value interface{}) error {
 	switch expectedType {

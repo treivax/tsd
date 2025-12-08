@@ -6,7 +6,6 @@ package rete
 
 import (
 	"testing"
-	"time"
 )
 
 // TestPartialEval_UnboundVariables tests that partial eval mode tolerates unbound variables
@@ -25,7 +24,6 @@ func TestPartialEval_UnboundVariables(t *testing.T) {
 			"id":  "U1",
 			"age": 25,
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact
@@ -99,7 +97,6 @@ func TestPartialEval_LogicalExpressions(t *testing.T) {
 			"id":  "U1",
 			"age": 30,
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact
@@ -181,7 +178,6 @@ func TestPartialEval_MixedBoundUnbound(t *testing.T) {
 			"age":  25,
 			"name": "Alice",
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact
@@ -272,7 +268,6 @@ func TestPartialEval_ComparisonOperators(t *testing.T) {
 				Fields: map[string]interface{}{
 					"age": 25,
 				},
-				Timestamp: time.Now(),
 			}
 
 			evaluator.variableBindings["u"] = userFact
@@ -321,7 +316,6 @@ func TestPartialEval_StringComparisons(t *testing.T) {
 			"name":   "Alice",
 			"status": "active",
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact
@@ -395,7 +389,6 @@ func TestPartialEval_NestedFieldAccess(t *testing.T) {
 			"age":  25,
 			"name": "Bob",
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact
@@ -461,7 +454,6 @@ func TestPartialEval_NormalModeComparison(t *testing.T) {
 			"id":  "U1",
 			"age": 25,
 		},
-		Timestamp: time.Now(),
 	}
 
 	// Condition that references unbound variable 'o'
@@ -524,7 +516,6 @@ func TestPartialEval_ArithmeticExpressions(t *testing.T) {
 			"quantity": 5,
 			"price":    20.0,
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["o"] = orderFact
@@ -582,7 +573,6 @@ func TestPartialEval_EdgeCases(t *testing.T) {
 		Fields: map[string]interface{}{
 			"age": 25,
 		},
-		Timestamp: time.Now(),
 	}
 
 	evaluator.variableBindings["u"] = userFact

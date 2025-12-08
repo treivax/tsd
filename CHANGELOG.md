@@ -2,7 +2,63 @@
 
 ## [Unreleased]
 
+### Changed
+- **Nettoyage Timestamps Inutiles** - Suppression des champs `Timestamp` inutilisés (2025-12-08)
+  - Suppression de `Fact.Timestamp` dans `rete/pkg/domain/facts.go` : jamais utilisé dans la logique métier
+  - Suppression de `JoinResult.Timestamp` dans `rete/beta_join_cache.go` : redondant avec le timestamp du cache LRU
+  - Conservation de `lruItem.timestamp` dans `lru_cache.go` : seul réellement utilisé pour le TTL
+  - Résultat : -8 bytes par Fact (~14%), -8 bytes par JoinResult (~25%)
+  - Nettoyage de ~50 lignes de code et tests
+  - Architecture clarifiée : un seul timestamp au bon niveau (cache LRU)
+  - Aucune régression : tous les tests passent (100%)
+  - Documentation mise à jour : `docs/WORKING_MEMORY.md`
+  - Rapport détaillé : `REPORTS/REFACTORING_REMOVE_UNUSED_TIMESTAMPS_2025-12-08.md`
+
+- **Simplification Architecture Pipeline** - Fusion de `IngestFile()` en fonction unique (2025-12-08)
+  - Suppression de `ingestFileWithMetrics()` : fonction privée inutile fusionnée dans `IngestFile()`
+  - Suppression de 13 fonctions d'orchestration de haut niveau dans `constraint_pipeline_orchestration.go`
+  - Suppression de 3 méthodes sur `ingestionContext` (transactions gérées directement dans `IngestFile()`)
+  - Résultat : **Une seule fonction publique** `IngestFile()` avec 12 étapes claires et linéaires
+  - Réduction de code : -376 lignes (-92%) dans `constraint_pipeline_orchestration.go`
+  - Pipeline plus lisible : code linéaire au lieu de fragmenté sur 16 fonctions
+  - Métriques toujours retournées, même en cas d'erreur (meilleur diagnostic)
+  - Aucune régression : tous les tests passent (100%)
+  - Documentation alignée : `docs/API_REFERENCE.md` mis à jour
+  - Principe appliqué : KISS (Keep It Simple, Stupid) - suppression d'abstraction prématurée
+  - Rapport détaillé : `REPORTS/REFACTORING_INGEST_FILE_UNIQUE_2025-12-08.md`
+
 ### Added
+- **Amélioration Couverture de Tests** - Ajout de 112 nouveaux cas de test pour le package constraint
+  - Nouveaux fichiers de test :
+    - `constraint/api_edge_cases_test.go` : Tests edge cases pour l'API publique (9 fonctions)
+    - `constraint/program_state_edge_cases_test.go` : Tests edge cases pour gestion d'état (7 fonctions)
+    - `auth/auth_test.go` : Tests pour le package auth
+    - `internal/authcmd/authcmd_test.go` : Tests pour commandes auth
+    - `internal/clientcmd/clientcmd_test.go` : Tests pour client HTTP
+    - `internal/servercmd/servercmd_test.go` : Tests pour serveur HTTP
+    - `internal/compilercmd/compilercmd_test.go` : Tests pour compilateur
+    - `tsdio/api_test.go` et `tsdio/logger_test.go` : Tests pour IO
+  - Couverture améliorée :
+    - Package `constraint` : 83.6% → 83.9%
+    - Fonction `ParseAndMerge` : 78.9% → 84.2% (+5.3%)
+    - Fonction `ParseAndMergeContent` : 80.0% → 84.0% (+4.0%)
+    - Couverture globale maintenue à 74.7%
+  - Types de tests ajoutés :
+    - Edge cases (entrées vides, valeurs extrêmes, formats spéciaux)
+    - Error handling (parsing, validation, récupération d'erreur)
+    - Integration tests (multi-fichiers, merge, reset, accès concurrent)
+  - Tous les tests suivent les directives du prompt `.github/prompts/add-test.md`
+  - Documentation complète dans `REPORTS/TEST_COVERAGE_CONSTRAINT_2025-01-07.md`
+
+### Changed
+- **Nettoyage Approfondi** - Deep clean suivant `.github/prompts/deep-clean.md`
+  - Suppression de tous les fichiers de couverture temporaires (coverage*.out, coverage*.html)
+  - Suppression du fichier coverage_report_cmds.txt
+  - Suppression des dossiers vides (constraint/test/coverage/)
+  - Mise à jour du .gitignore pour ignorer les fichiers coverage_report*.txt
+  - Formatage du code avec `go fmt`
+  - Validation complète : tous les tests passent (74.7% couverture)
+
 - **Opérateurs de Casting de Types** - Conversion explicite entre types de base
   - Syntaxe : `(type)expression` avec support pour `(number)`, `(string)`, `(bool)`
   - Conversions supportées :

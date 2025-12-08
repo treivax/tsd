@@ -161,7 +161,6 @@ func BenchmarkJoinCache_Hits(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -218,7 +217,6 @@ func BenchmarkJoinCache_Misses(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -280,7 +278,6 @@ func BenchmarkJoinCache_Evictions(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -316,7 +313,6 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -356,7 +352,6 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 			result := &JoinResult{
 				Matched:   true,
 				Token:     token,
-				Timestamp: time.Now(),
 			}
 			cache.SetJoinResult(token, fact, joinNode, result)
 		}
@@ -869,13 +864,13 @@ func createMixedPatterns(count int) []JoinPattern {
 	operators := []string{"==", "!=", ">", "<", ">=", "<="}
 	fields := []string{"id", "value", "amount", "status", "type", "category"}
 
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for i := 0; i < count; i++ {
 		leftVar := vars[i]
 		rightVar := vars[i+1]
-		operator := operators[rand.Intn(len(operators))]
-		field := fields[rand.Intn(len(fields))]
+		operator := operators[rng.Intn(len(operators))]
+		field := fields[rng.Intn(len(fields))]
 
 		patterns[i] = JoinPattern{
 			LeftVars:  []string{leftVar},

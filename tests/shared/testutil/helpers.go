@@ -6,7 +6,6 @@ package testutil
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +39,7 @@ func CreateTempTSDFile(t *testing.T, content string) string {
 	t.Helper()
 
 	// Create temp file with .tsd extension
-	tmpFile, err := ioutil.TempFile("", "test-*.tsd")
+	tmpFile, err := os.CreateTemp("", "test-*.tsd")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
@@ -72,7 +71,7 @@ func CreateTempTSDFileWithName(t *testing.T, name, content string) string {
 	t.Helper()
 
 	// Create temp directory
-	tmpDir, err := ioutil.TempDir("", "tsd-test-*")
+	tmpDir, err := os.MkdirTemp("", "tsd-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -83,7 +82,7 @@ func CreateTempTSDFileWithName(t *testing.T, name, content string) string {
 		path += ".tsd"
 	}
 
-	if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		os.RemoveAll(tmpDir)
 		t.Fatalf("Failed to write temp file: %v", err)
 	}
@@ -134,7 +133,7 @@ func GetFixturePath(category, name string) string {
 func ReadTestFile(t *testing.T, path string) string {
 	t.Helper()
 
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("Failed to read test file %s: %v", path, err)
 	}
@@ -146,7 +145,7 @@ func ReadTestFile(t *testing.T, path string) string {
 func WriteTestFile(t *testing.T, path, content string) {
 	t.Helper()
 
-	if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to write test file %s: %v", path, err)
 	}
 }
@@ -155,7 +154,7 @@ func WriteTestFile(t *testing.T, path, content string) {
 func CreateTempDir(t *testing.T, prefix string) string {
 	t.Helper()
 
-	tmpDir, err := ioutil.TempDir("", prefix)
+	tmpDir, err := os.MkdirTemp("", prefix)
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -193,12 +192,12 @@ func DirExists(path string) bool {
 func CopyFile(t *testing.T, src, dst string) {
 	t.Helper()
 
-	content, err := ioutil.ReadFile(src)
+	content, err := os.ReadFile(src)
 	if err != nil {
 		t.Fatalf("Failed to read source file %s: %v", src, err)
 	}
 
-	if err := ioutil.WriteFile(dst, content, 0644); err != nil {
+	if err := os.WriteFile(dst, content, 0644); err != nil {
 		t.Fatalf("Failed to write destination file %s: %v", dst, err)
 	}
 }
@@ -278,13 +277,14 @@ func ListFiles(t *testing.T, dir string) []string {
 
 	var files []string
 
-	entries, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("Failed to read directory %s: %v", dir, err)
 	}
 
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		info, err := entry.Info()
+		if err == nil && !info.IsDir() {
 			files = append(files, entry.Name())
 		}
 	}

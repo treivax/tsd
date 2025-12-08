@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-// TestIngestFileWithMetrics tests the IngestFileWithMetrics wrapper function
-func TestIngestFileWithMetrics(t *testing.T) {
+// TestIngestFile tests the IngestFile wrapper function
+func TestIngestFile(t *testing.T) {
 	t.Run("returns metrics on success", func(t *testing.T) {
 		// Create a temporary test file
 		tmpDir := t.TempDir()
@@ -28,10 +28,10 @@ Person(id: "1", name: "Alice")
 
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
-		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network, metrics, err := pipeline.IngestFile(testFile, nil, storage)
 
 		if err != nil {
-			t.Fatalf("IngestFileWithMetrics failed: %v", err)
+			t.Fatalf("IngestFile failed: %v", err)
 		}
 
 		if network == nil {
@@ -52,7 +52,7 @@ Person(id: "1", name: "Alice")
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
 
-		network, metrics, err := pipeline.IngestFileWithMetrics("/non/existent/file.tsd", nil, storage)
+		network, metrics, err := pipeline.IngestFile("/non/existent/file.tsd", nil, storage)
 
 		if err == nil {
 			t.Error("Expected error for non-existent file")
@@ -83,10 +83,10 @@ rule r1 : {i: Item} / i.id == "test" ==> process(i.id)
 		storage := NewMemoryStorage()
 
 		// Pass nil network - should create new one
-		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network, metrics, err := pipeline.IngestFile(testFile, nil, storage)
 
 		if err != nil {
-			t.Fatalf("IngestFileWithMetrics failed: %v", err)
+			t.Fatalf("IngestFile failed: %v", err)
 		}
 
 		if network == nil {
@@ -132,7 +132,7 @@ rule r2 : {o: Order} / o.id == "2" ==> log2(o.id)
 		storage := NewMemoryStorage()
 
 		// Ingest first file
-		network1, metrics1, err := pipeline.IngestFileWithMetrics(file1, nil, storage)
+		network1, metrics1, err := pipeline.IngestFile(file1, nil, storage)
 		if err != nil {
 			t.Fatalf("First ingest failed: %v", err)
 		}
@@ -143,7 +143,7 @@ rule r2 : {o: Order} / o.id == "2" ==> log2(o.id)
 		}
 
 		// Ingest second file with existing network
-		network2, metrics2, err := pipeline.IngestFileWithMetrics(file2, network1, storage)
+		network2, metrics2, err := pipeline.IngestFile(file2, network1, storage)
 		if err != nil {
 			t.Fatalf("Second ingest failed: %v", err)
 		}
@@ -1294,8 +1294,8 @@ func TestCollectExistingFacts(t *testing.T) {
 	})
 }
 
-// TestIngestFileWithMetrics_ErrorPaths tests error handling in ingestFileWithMetrics
-func TestIngestFileWithMetrics_ErrorPaths(t *testing.T) {
+// TestIngestFile_ErrorPaths tests error handling in IngestFile
+func TestIngestFile_ErrorPaths(t *testing.T) {
 	t.Run("handles conversion error", func(t *testing.T) {
 		// This test would require mocking the constraint package
 		// which is beyond the scope of unit tests here
@@ -1319,7 +1319,7 @@ Person(id: "1", name: "Alice")
 
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
-		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network1, _, err := pipeline.IngestFile(testFile, nil, storage)
 		if err != nil {
 			t.Fatalf("Initial ingestion failed: %v", err)
 		}
@@ -1335,7 +1335,7 @@ rule r2 : {o: Order} / o.id == "100" ==> process(o.id)
 			t.Fatalf("Failed to update test file: %v", err)
 		}
 
-		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		network2, metrics, err := pipeline.IngestFile(testFile, network1, storage)
 		if err != nil {
 			t.Fatalf("Reset ingestion failed: %v", err)
 		}
@@ -1379,7 +1379,7 @@ rule bad : {o: Order} / o.id == "1" ==> log("test")
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
 
-		_, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		_, _, err := pipeline.IngestFile(testFile, nil, storage)
 
 		// Should fail validation
 		if err == nil {
@@ -1403,7 +1403,7 @@ rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
 
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
-		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network1, _, err := pipeline.IngestFile(testFile, nil, storage)
 		if err != nil {
 			t.Fatalf("Initial ingestion failed: %v", err)
 		}
@@ -1418,7 +1418,7 @@ rule r2 : {o: Order, p: Person} / o.person_id == p.id ==> process(o.id)
 			t.Fatalf("Failed to update test file: %v", err)
 		}
 
-		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		network2, metrics, err := pipeline.IngestFile(testFile, network1, storage)
 		if err != nil {
 			t.Fatalf("Incremental ingestion failed: %v", err)
 		}
@@ -1462,7 +1462,7 @@ Product(id: "p2", name: "Mouse", price: 25)
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
 
-		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network, metrics, err := pipeline.IngestFile(testFile, nil, storage)
 		if err != nil {
 			t.Fatalf("Ingestion failed: %v", err)
 		}
@@ -1498,7 +1498,7 @@ Item(id: "i2", category: "electronics")
 
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
-		network1, _, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network1, _, err := pipeline.IngestFile(testFile, nil, storage)
 		if err != nil {
 			t.Fatalf("Initial ingestion failed: %v", err)
 		}
@@ -1511,7 +1511,7 @@ rule books : {i: Item} / i.category == "books" ==> log(i.id)
 			t.Fatalf("Failed to update test file: %v", err)
 		}
 
-		network2, metrics, err := pipeline.IngestFileWithMetrics(testFile, network1, storage)
+		network2, metrics, err := pipeline.IngestFile(testFile, network1, storage)
 		if err != nil {
 			t.Fatalf("Rule ingestion failed: %v", err)
 		}
@@ -1545,7 +1545,7 @@ rule books : {i: Item} / i.category == "books" ==> log(i.id)
 		pipeline := NewConstraintPipeline()
 		storage := NewMemoryStorage()
 
-		network, metrics, err := pipeline.IngestFileWithMetrics(testFile, nil, storage)
+		network, metrics, err := pipeline.IngestFile(testFile, nil, storage)
 
 		// Should succeed even with empty content
 		if err != nil {

@@ -208,13 +208,13 @@ func (te *TestEnvironment) CreateConstraintFile(name string, content string) str
 
 // IngestFile is a convenience method to ingest a constraint file using the
 // environment's pipeline, network, and storage.
-func (te *TestEnvironment) IngestFile(filename string) (*ReteNetwork, error) {
+func (te *TestEnvironment) IngestFile(filename string) (*ReteNetwork, *IngestionMetrics, error) {
 	return te.Pipeline.IngestFile(filename, te.Network, te.Storage)
 }
 
 // IngestFileContent creates a temporary constraint file with the given content
 // and ingests it, returning the results.
-func (te *TestEnvironment) IngestFileContent(content string) (*ReteNetwork, error) {
+func (te *TestEnvironment) IngestFileContent(content string) (*ReteNetwork, *IngestionMetrics, error) {
 	te.t.Helper()
 
 	filename := te.CreateConstraintFile("test.constraint", content)
@@ -225,7 +225,7 @@ func (te *TestEnvironment) IngestFileContent(content string) (*ReteNetwork, erro
 func (te *TestEnvironment) RequireIngestFile(filename string) *ReteNetwork {
 	te.t.Helper()
 
-	network, err := te.IngestFile(filename)
+	network, _, err := te.IngestFile(filename)
 	if err != nil {
 		te.t.Fatalf("Failed to ingest file %s: %v\nLogs:\n%s", filename, err, te.GetLogs())
 	}
@@ -237,7 +237,7 @@ func (te *TestEnvironment) RequireIngestFile(filename string) *ReteNetwork {
 func (te *TestEnvironment) RequireIngestFileContent(content string) *ReteNetwork {
 	te.t.Helper()
 
-	network, err := te.IngestFileContent(content)
+	network, _, err := te.IngestFileContent(content)
 	if err != nil {
 		te.t.Fatalf("Failed to ingest content: %v\nLogs:\n%s", err, te.GetLogs())
 	}

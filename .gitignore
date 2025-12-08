@@ -3,6 +3,7 @@
 REPORTS/*
 !REPORTS/README.md
 !REPORTS/.gitkeep
+!REPORTS/REFACTORING_*.md
 
 # AI prompts (not versioned)
 .github/prompts/
@@ -33,6 +34,8 @@ coverage.txt
 # Test reports
 complete_test_report.txt
 *_test_report.txt
+*_report*.txt
+coverage_report*.txt
 RAPPORT_RETE_*.md
 RAPPORT_CORRECTIF_*.md
 VALIDATION_*.md
@@ -83,3 +86,8 @@ test_results.txt
 coverage.out
 coverage.html
 *.log
+
+# Additional coverage patterns
+coverage*.out
+coverage*.html
+*.prof

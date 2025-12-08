@@ -19,24 +19,34 @@ Exécuter tous les tests du projet pour valider que le système fonctionne corre
    - Exécuter `make test`
    - Vérifier que tous les modules passent (rete, constraint, test, integration)
 
-2. **Lancer le runner universel RETE** :
+2. 🏁 **Lancer les tests avec race detector (OBLIGATOIRE)** :
+   - Exécuter `make test-race` ou `go test -race ./...`
+   - ⚠️ **CRITIQUE** : Ce test est OBLIGATOIRE pour détecter les race conditions
+   - Les race conditions ne sont détectées QUE avec le flag `-race`
+   - Vérifier qu'aucune race condition n'est détectée
+   - **Ne JAMAIS skip cette étape**, même si plus lente (~10x)
+
+3. **Lancer le runner universel RETE** :
    - Exécuter `make rete-unified`
    - Vérifier que les 58 tests passent
 
-3. **Vérifier l'absence d'erreurs critiques** :
+4. **Vérifier l'absence d'erreurs critiques** :
    - Pas d'erreur "variable non liée"
    - Pas d'erreur de parsing
    - Pas d'erreur de réseau RETE
+   - Pas de race condition détectée
 
-4. **Générer un rapport de synthèse** :
+5. **Générer un rapport de synthèse** :
    - Nombre de tests passés/échoués
    - Temps d'exécution
    - Modules testés
+   - Race conditions détectées (doit être 0)
    - Erreurs éventuelles
 
 ## Critères de Succès
 
 ✅ Tous les tests unitaires Go passent (PASS)
+🏁 **✅ `go test -race ./...` passe sans race condition (OBLIGATOIRE)**
 ✅ Les 58 tests du runner universel passent
 ✅ Aucune erreur critique détectée
 ✅ Rapport de synthèse généré
@@ -45,6 +55,7 @@ Exécuter tous les tests du projet pour valider que le système fonctionne corre
 
 ```bash
 make test                 # Tests unitaires Go
+make test-race            # 🏁 Tests avec race detector (OBLIGATOIRE)
 make test-coverage        # Tests avec couverture
 make test-integration     # Tests d'intégration uniquement
 make rete-unified         # Runner universel (tous les tests RETE)
@@ -63,15 +74,21 @@ make validate             # Validation complète (format + lint + build + test)
    - test : [OK/FAIL]
    - integration : [OK/FAIL]
 
-2. Runner Universel RETE : [STATUT]
+2. 🏁 Tests Race Detector (OBLIGATOIRE) : [STATUT]
+   - Commande : go test -race ./...
+   - Race conditions détectées : [OUI/NON]
+   - Détails si race détectée
+
+3. Runner Universel RETE : [STATUT]
    - Tests exécutés : X
    - Tests réussis : X
    - Tests échoués : X
 
-3. Erreurs Critiques : [OUI/NON]
+4. Erreurs Critiques : [OUI/NON]
    - Détails des erreurs le cas échéant
 
-4. Conclusion : [SUCCÈS/ÉCHEC]
+5. Conclusion : [SUCCÈS/ÉCHEC]
+   - ⚠️ Note : Échec si race conditions détectées
 ```
 
 ## Exemple d'Utilisation

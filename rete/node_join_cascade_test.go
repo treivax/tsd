@@ -7,7 +7,6 @@ package rete
 import (
 	"os"
 	"testing"
-	"time"
 )
 
 // TestJoinNodeCascade_TwoVariablesIntegration tests cascading joins with 2 variables via pipeline
@@ -31,7 +30,7 @@ rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_o
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -43,7 +42,6 @@ rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_o
 		ID:        "U1",
 		Type:      "User",
 		Fields:    map[string]interface{}{"id": "U1", "name": "Alice"},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(userFact)
@@ -64,7 +62,6 @@ rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_o
 		ID:        "O1",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1", "amount": 100},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(orderFact)
@@ -85,7 +82,6 @@ rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_o
 		ID:        "O2",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O2", "user_id": "U999", "amount": 50},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(badOrderFact)
@@ -113,7 +109,7 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
+	network, _, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -125,7 +121,6 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 		ID:        "U1",
 		Type:      "User",
 		Fields:    map[string]interface{}{"id": "U1", "age": 25},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(userFact)
@@ -141,7 +136,6 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 		ID:        "O1",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1", "product_id": "P1"},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(orderFact)
@@ -157,7 +151,6 @@ func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
 		ID:        "P1",
 		Type:      "Product",
 		Fields:    map[string]interface{}{"id": "P1", "name": "Widget"},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(productFact)
@@ -207,7 +200,7 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 			pipeline := NewConstraintPipeline()
 			storage := NewMemoryStorage()
 
-			network, err := pipeline.IngestFile(tmpFile, nil, storage)
+			network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 			if err != nil {
 				t.Fatalf("❌ Failed to build network: %v", err)
 			}
@@ -216,14 +209,12 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 				ID:        "U1",
 				Type:      "User",
 				Fields:    map[string]interface{}{"id": "U1"},
-				Timestamp: time.Now(),
 			}
 
 			orderFact := &Fact{
 				ID:        "O1",
 				Type:      "Order",
 				Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
-				Timestamp: time.Now(),
 			}
 
 			// Submit in specified order
@@ -272,7 +263,7 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -282,13 +273,11 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 		ID:        "U1",
 		Type:      "User",
 		Fields:    map[string]interface{}{"id": "U1"},
-		Timestamp: time.Now(),
 	}
 	user2 := &Fact{
 		ID:        "U2",
 		Type:      "User",
 		Fields:    map[string]interface{}{"id": "U2"},
-		Timestamp: time.Now(),
 	}
 
 	network.SubmitFact(user1)
@@ -299,19 +288,16 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 		ID:        "O1",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
-		Timestamp: time.Now(),
 	}
 	order2 := &Fact{
 		ID:        "O2",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O2", "user_id": "U1"},
-		Timestamp: time.Now(),
 	}
 	order3 := &Fact{
 		ID:        "O3",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O3", "user_id": "U2"},
-		Timestamp: time.Now(),
 	}
 
 	network.SubmitFact(order1)
@@ -349,7 +335,7 @@ func TestJoinNodeCascade_Retraction(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tmpFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Failed to build network: %v", err)
 	}
@@ -359,13 +345,11 @@ func TestJoinNodeCascade_Retraction(t *testing.T) {
 		ID:        "U1",
 		Type:      "User",
 		Fields:    map[string]interface{}{"id": "U1"},
-		Timestamp: time.Now(),
 	}
 	orderFact := &Fact{
 		ID:        "O1",
 		Type:      "Order",
 		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
-		Timestamp: time.Now(),
 	}
 
 	network.SubmitFact(userFact)

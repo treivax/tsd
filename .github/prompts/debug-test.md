@@ -126,11 +126,12 @@ Poser les questions :
 - **Quand** : À quel moment de l'exécution (parsing, construction réseau, propagation) ?
 - **Pourquoi** : Quelle est la cause sous-jacente ?
 
-### 4. Proposer et Implémenter une Correction
+4. Proposer et Implémenter une Correction
 
 1. **Analyser l'impact** :
    - Quels autres tests/modules sont affectés ?
    - Y a-t-il des effets de bord ?
+   - La correction peut-elle introduire des race conditions ?
 
 2. **Implémenter la correction** :
    - Modifier le code nécessaire
@@ -139,7 +140,9 @@ Poser les questions :
 
 3. **Valider la correction** :
    - Relancer le test spécifique
+   - 🏁 **Relancer avec race detector : `go test -race -run TestNomDuTest` (OBLIGATOIRE)**
    - Relancer tous les tests pour éviter les régressions
+   - 🏁 **Vérifier race detector global : `make test-race` (OBLIGATOIRE)**
    - Vérifier le runner universel
 
 ## Critères de Succès
@@ -147,7 +150,9 @@ Poser les questions :
 ✅ La cause racine est identifiée et documentée
 ✅ Une correction est proposée et implémentée
 ✅ Le test qui échouait passe maintenant
+🏁 **✅ `go test -race` passe sans race condition (OBLIGATOIRE)**
 ✅ Aucune régression sur les autres tests
+🏁 **✅ `make test-race` passe sans erreur (OBLIGATOIRE)**
 ✅ Le runner universel passe toujours (58/58)
 
 ## Commandes Utiles
@@ -162,14 +167,17 @@ go test -v -timeout 5m -run TestNomDuTest ./rete
 # Afficher seulement les échecs
 go test -v -run TestNomDuTest ./rete 2>&1 | grep -A10 "FAIL"
 
-# Lancer avec race detector
+# 🏁 OBLIGATOIRE : Lancer avec race detector (détecte race conditions)
 go test -race -run TestNomDuTest ./rete
+# ⚠️ CRITICAL: Toujours exécuter avec -race pour détecter les race conditions
+# Les race conditions ne sont détectées QUE par le flag -race
+# Ne JAMAIS skip cette étape, même si plus lent (~10x)
 
 # Lancer tous les tests du module
 go test -v ./rete
 
-# Vérifier qu'on n'a pas de régression
-make test && make rete-unified
+# 🏁 OBLIGATOIRE : Vérifier qu'on n'a pas de régression (avec race detector)
+make test && make test-race && make rete-unified
 ```
 
 ## Format de Réponse Attendu
@@ -223,8 +231,11 @@ pour identifier et corriger le problème ?
 - [ ] **TESTS RETE** : Résultats extraits du réseau (pas simulés)
 - [ ] **CODE GO** : Aucun hardcoding introduit
 - [ ] **CODE GO** : Code générique avec paramètres
+- [ ] 🏁 **`go test -race` exécuté sur le test corrigé (OBLIGATOIRE)**
+- [ ] **Aucune race condition détectée**
 - [ ] J'ai vérifié l'impact de ma correction
 - [ ] J'ai testé la correction localement
+- [ ] 🏁 **`make test-race` passé sans erreur (OBLIGATOIRE)**
 - [ ] Aucune régression n'a été introduite
 - [ ] La documentation est à jour si nécessaire
 

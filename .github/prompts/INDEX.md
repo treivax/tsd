@@ -10,6 +10,7 @@
 - **Vérifier la conformité de licence** → [`verify-license-compliance.md`](verify-license-compliance.md)
 
 ### Je veux tester
+- 🏁 **Guide du Race Detector (À LIRE EN PREMIER)** → [`RACE_DETECTOR_GUIDE.md`](RACE_DETECTOR_GUIDE.md)
 - **Lancer tous les tests** → [`run-tests.md`](run-tests.md)
 - **Ajouter des tests** → [`add-test.md`](add-test.md)
 - **Débugger un test qui échoue** → [`debug-test.md`](debug-test.md)
@@ -54,6 +55,7 @@
 ### 🧪 Tests
 | Prompt | Description | Taille |
 |--------|-------------|--------|
+| 🏁 [RACE_DETECTOR_GUIDE.md](RACE_DETECTOR_GUIDE.md) | **Guide obligatoire du race detector - LIRE EN PREMIER** | 12K |
 | [run-tests.md](run-tests.md) | Lancer l'ensemble des tests (unitaires + runner universel) | 4K |
 | [add-test.md](add-test.md) | Ajouter des tests (unitaires, intégration, RETE) | 12K |
 | [debug-test.md](debug-test.md) | Débugger un test qui échoue avec analyse complète | 8K |
@@ -119,6 +121,7 @@
 | [README.md](README.md) | Documentation complète du système de prompts | 8K |
 | [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Référence rapide avec exemples | 8K |
 | [INDEX.md](INDEX.md) | Ce fichier - navigation globale | 4K |
+| 🏁 [RACE_DETECTOR_GUIDE.md](RACE_DETECTOR_GUIDE.md) | **Guide obligatoire du race detector** - À lire avant d'écrire des tests | 12K |
 
 ---
 
@@ -164,7 +167,8 @@ Utilise le prompt "validate-network" pour beta_coverage_tests/join_complex.const
 | Mot-clé | Prompts Associés |
 **Mot-clé** | **Prompts Associés** |
 |---------|------------------|
-| **test** | run-tests, add-test, debug-test, validate-network |
+| **test** | RACE_DETECTOR_GUIDE, run-tests, add-test, debug-test, validate-network |
+| **race** | RACE_DETECTOR_GUIDE |
 | **erreur** | analyze-error, debug-test, fix-bug |
 | **bug** | fix-bug, debug-test, analyze-error |
 | **code** | explain-code, code-review, add-feature, modify-behavior, refactor, deep-clean |
@@ -188,9 +192,9 @@ Utilise le prompt "validate-network" pour beta_coverage_tests/join_complex.const
 ## 📊 Statistiques
 
 - **Total prompts** : 18
-- **Taille totale** : ~260 KB
+- **Taille totale** : ~272 KB
 - **Catégories** : 10
-- **Documentation** : 3 fichiers
+- **Documentation** : 4 fichiers (dont 1 guide obligatoire race detector)
 - **Niveau de détail** : Débutant à Expert
 
 ---
@@ -199,26 +203,29 @@ Utilise le prompt "validate-network" pour beta_coverage_tests/join_complex.const
 
 ### 👶 Nouveau sur le Projet
 1. [explain-code.md](explain-code.md) - Comprendre l'architecture
-2. [run-tests.md](run-tests.md) - Valider l'environnement
-3. [validate-network.md](validate-network.md) - Explorer RETE
-4. [generate-examples.md](generate-examples.md) - Créer exemples pour apprendre
+2. 🏁 [RACE_DETECTOR_GUIDE.md](RACE_DETECTOR_GUIDE.md) - **Lire le guide race detector**
+3. [run-tests.md](run-tests.md) - Valider l'environnement
+4. [validate-network.md](validate-network.md) - Explorer RETE
+5. [generate-examples.md](generate-examples.md) - Créer exemples pour apprendre
 
 ### 👨‍💻 Développeur
-1. [add-feature.md](add-feature.md) - Implémenter nouvelle feature
-2. [modify-behavior.md](modify-behavior.md) - Modifier feature existante
-3. [fix-bug.md](fix-bug.md) - Corriger un bug
-4. [refactor.md](refactor.md) - Améliorer la structure du code
-5. [add-test.md](add-test.md) - Ajouter des tests
-6. [run-tests.md](run-tests.md) - Tester
-7. [code-review.md](code-review.md) - Valider
-8. [deep-clean.md](deep-clean.md) - Nettoyer régulièrement
+1. 🏁 [RACE_DETECTOR_GUIDE.md](RACE_DETECTOR_GUIDE.md) - **Lire le guide race detector**
+2. [add-feature.md](add-feature.md) - Implémenter nouvelle feature
+3. [modify-behavior.md](modify-behavior.md) - Modifier feature existante
+4. [fix-bug.md](fix-bug.md) - Corriger un bug
+5. [refactor.md](refactor.md) - Améliorer la structure du code
+6. [add-test.md](add-test.md) - Ajouter des tests
+7. [run-tests.md](run-tests.md) - Tester
+8. [code-review.md](code-review.md) - Valider
+9. [deep-clean.md](deep-clean.md) - Nettoyer régulièrement
 
 ### 🐛 Debugger
-1. [analyze-error.md](analyze-error.md) - Comprendre l'erreur
-2. [debug-test.md](debug-test.md) - Corriger un test
-3. [fix-bug.md](fix-bug.md) - Corriger un bug
-4. [investigate.md](investigate.md) - Investiguer comportement étrange
-5. [run-tests.md](run-tests.md) - Valider
+1. 🏁 [RACE_DETECTOR_GUIDE.md](RACE_DETECTOR_GUIDE.md) - **Lire le guide race detector**
+2. [analyze-error.md](analyze-error.md) - Comprendre l'erreur
+3. [debug-test.md](debug-test.md) - Corriger un test
+4. [fix-bug.md](fix-bug.md) - Corriger un bug
+5. [investigate.md](investigate.md) - Investiguer comportement étrange
+6. [run-tests.md](run-tests.md) - Valider
 
 ### ⚡ Performance Engineer
 1. [optimize-performance.md](optimize-performance.md) - Optimiser

@@ -6,20 +6,11 @@ package authcmd
 
 import (
 	"bufio"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/json"
-	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
-	"math/big"
-	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -211,304 +202,101 @@ func generateJWT(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 // validateToken valide un token
 func validateToken(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	token := fs.String("token", "", "Token à valider (requis)")
-	authType := fs.String("type", "", "Type d'auth: key ou jwt (requis)")
-	secret := fs.String("secret", "", "Secret JWT (requis si type=jwt)")
-	keys := fs.String("keys", "", "Clés API valides séparées par des virgules (requis si type=key)")
-	interactive := fs.Bool("i", false, "Mode interactif")
-	format := fs.String("format", "text", "Format de sortie (text, json)")
-
-	if err := fs.Parse(args); err != nil {
+	// Étape 1: Parser les arguments de ligne de commande
+	config, _, err := parseValidationFlags(args, stderr)
+	if err != nil {
 		return 1
 	}
 
-	// Mode interactif
-	if *interactive {
-		reader := bufio.NewReader(stdin)
-
-		if *token == "" {
-			fmt.Fprint(stdout, "Token: ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*token = strings.TrimSpace(input)
-		}
-
-		if *authType == "" {
-			fmt.Fprint(stdout, "Type d'authentification (key/jwt): ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*authType = strings.TrimSpace(input)
-		}
-
-		if *authType == "jwt" && *secret == "" {
-			fmt.Fprint(stdout, "Secret JWT: ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*secret = strings.TrimSpace(input)
-		}
-
-		if *authType == "key" && *keys == "" {
-			fmt.Fprint(stdout, "Clés API (séparées par des virgules): ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintf(stderr, "Erreur lecture: %v\n", err)
-				return 1
-			}
-			*keys = strings.TrimSpace(input)
-		}
-	}
-
-	// Validation des arguments
-	if *token == "" {
-		fmt.Fprintln(stderr, "Erreur: le token est requis (-token)")
-		return 1
-	}
-
-	if *authType == "" {
-		fmt.Fprintln(stderr, "Erreur: le type d'authentification est requis (-type key|jwt)")
-		return 1
-	}
-
-	// Créer la config selon le type
-	var config *auth.Config
-	switch *authType {
-	case "key":
-		if *keys == "" {
-			fmt.Fprintln(stderr, "Erreur: les clés API sont requises pour type=key (-keys)")
+	// Étape 2: Mode interactif - lire les inputs manquants
+	if config.Interactive {
+		if err := readInteractiveInput(config, stdin, stdout, stderr); err != nil {
+			fmt.Fprintf(stderr, "Erreur: %v\n", err)
 			return 1
 		}
-		keysList := strings.Split(*keys, ",")
-		for i, key := range keysList {
-			keysList[i] = strings.TrimSpace(key)
-		}
-		config = &auth.Config{
-			Type:     auth.AuthTypeKey,
-			AuthKeys: keysList,
-		}
+	}
 
-	case "jwt":
-		if *secret == "" {
-			fmt.Fprintln(stderr, "Erreur: le secret JWT est requis pour type=jwt (-secret)")
-			return 1
-		}
-		config = &auth.Config{
-			Type:      auth.AuthTypeJWT,
-			JWTSecret: *secret,
-		}
-
-	default:
-		fmt.Fprintf(stderr, "Erreur: type invalide '%s' (doit être 'key' ou 'jwt')\n", *authType)
+	// Étape 3: Valider que tous les paramètres requis sont présents
+	if err := validateConfigParameters(config); err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n", err)
 		return 1
 	}
 
-	// Créer le manager
-	manager, err := auth.NewManager(config)
+	// Étape 4: Créer la configuration auth
+	authConfig, err := createAuthConfig(config)
+	if err != nil {
+		fmt.Fprintf(stderr, "Erreur: %v\n", err)
+		return 1
+	}
+
+	// Étape 5: Créer le manager d'authentification
+	manager, err := auth.NewManager(authConfig)
 	if err != nil {
 		fmt.Fprintf(stderr, "Erreur initialisation: %v\n", err)
 		return 1
 	}
 
-	// Valider le token
-	info, err := manager.GetTokenInfo(*token)
+	// Étape 6: Valider le token
+	result := validateTokenWithManager(manager, config.Token)
 
-	if *format == "json" {
-		output := map[string]interface{}{
-			"valid": err == nil && info.Valid,
-			"type":  *authType,
-		}
-		if err != nil {
-			output["error"] = err.Error()
-		}
-		if info != nil {
-			output["username"] = info.Username
-			output["roles"] = info.Roles
-		}
-		data, _ := json.MarshalIndent(output, "", "  ")
-		fmt.Fprintln(stdout, string(data))
-	} else {
-		if err == nil && info.Valid {
-			fmt.Fprintln(stdout, "✅ Token valide")
-			fmt.Fprintf(stdout, "Type: %s\n", *authType)
-			if *authType == "jwt" && info.Username != "" {
-				fmt.Fprintf(stdout, "Utilisateur: %s\n", info.Username)
-				if len(info.Roles) > 0 {
-					fmt.Fprintf(stdout, "Rôles: %s\n", strings.Join(info.Roles, ", "))
-				}
-			}
-			return 0
-		}
-		fmt.Fprintln(stdout, "❌ Token invalide")
-		if err != nil {
-			fmt.Fprintf(stdout, "Erreur: %v\n", err)
-		}
-		return 1
+	// Étape 7: Formater et afficher le résultat
+	output := formatValidationOutput(result, config)
+	fmt.Fprint(stdout, output)
+
+	// Retourner le code de sortie approprié
+	if result.Valid {
+		return 0
 	}
-
-	return 0
+	return 1
 }
 
 // generateCert génère des certificats TLS auto-signés
 func generateCert(args []string, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("generate-cert", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	outputDir := fs.String("output-dir", "./certs", "Répertoire de sortie pour les certificats")
-	hosts := fs.String("hosts", "localhost,127.0.0.1", "Hôtes/IPs séparés par des virgules")
-	validDays := fs.Int("valid-days", 365, "Durée de validité en jours")
-	org := fs.String("org", "TSD Development", "Nom de l'organisation")
-	format := fs.String("format", "text", "Format de sortie (text, json)")
-
-	if err := fs.Parse(args); err != nil {
+	// 1. Parser la configuration
+	config, err := parseCertFlags(args, stderr)
+	if err != nil {
 		return 1
 	}
 
-	// Créer le répertoire de sortie si nécessaire
-	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+	// 2. Créer le répertoire de sortie
+	if err := os.MkdirAll(config.outputDir, 0755); err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur création répertoire: %v\n", err)
 		return 1
 	}
 
-	// Parser les hôtes
-	hostList := strings.Split(*hosts, ",")
-	for i, h := range hostList {
-		hostList[i] = strings.TrimSpace(h)
-	}
-
-	// Générer la clé privée ECDSA
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// 3. Générer la clé privée
+	privateKey, err := generateECDSAPrivateKey()
 	if err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur génération clé privée: %v\n", err)
 		return 1
 	}
 
-	// Préparer le template du certificat
-	notBefore := time.Now()
-	notAfter := notBefore.Add(time.Duration(*validDays) * 24 * time.Hour)
-
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	// 4. Créer le template du certificat
+	template, err := createCertificateTemplate(config)
 	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur génération numéro série: %v\n", err)
+		fmt.Fprintf(stderr, "❌ Erreur création template: %v\n", err)
 		return 1
 	}
 
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization: []string{*org},
-			CommonName:   hostList[0],
-		},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	// Ajouter les hôtes au certificat
-	for _, h := range hostList {
-		if ip := net.ParseIP(h); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else {
-			template.DNSNames = append(template.DNSNames, h)
-		}
-	}
-
-	// Créer le certificat auto-signé
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	// 5. Créer le certificat auto-signé
+	certDER, err := createSelfSignedCertificate(template, privateKey)
 	if err != nil {
 		fmt.Fprintf(stderr, "❌ Erreur création certificat: %v\n", err)
 		return 1
 	}
 
-	// Sauvegarder le certificat
-	certPath := filepath.Join(*outputDir, "server.crt")
-	certOut, err := os.Create(certPath)
+	// 6. Écrire les fichiers
+	result, err := writeCertificateFiles(config, certDER, privateKey)
 	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur création fichier certificat: %v\n", err)
-		return 1
-	}
-	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		certOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur encodage certificat: %v\n", err)
-		return 1
-	}
-	certOut.Close()
-
-	// Sauvegarder la clé privée
-	keyPath := filepath.Join(*outputDir, "server.key")
-	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		fmt.Fprintf(stderr, "❌ Erreur création fichier clé: %v\n", err)
+		fmt.Fprintf(stderr, "❌ Erreur écriture fichiers: %v\n", err)
 		return 1
 	}
 
-	privBytes, err := x509.MarshalECPrivateKey(privateKey)
-	if err != nil {
-		keyOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur marshalling clé: %v\n", err)
-		return 1
-	}
-
-	if err := pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privBytes}); err != nil {
-		keyOut.Close()
-		fmt.Fprintf(stderr, "❌ Erreur encodage clé: %v\n", err)
-		return 1
-	}
-	keyOut.Close()
-
-	// Créer aussi une copie du certificat comme CA (pour les clients)
-	caPath := filepath.Join(*outputDir, "ca.crt")
-	if err := copyFile(certPath, caPath); err != nil {
-		fmt.Fprintf(stderr, "⚠️  Avertissement: impossible de créer ca.crt: %v\n", err)
-	}
-
-	if *format == "json" {
-		output := map[string]interface{}{
-			"success":      true,
-			"cert_path":    certPath,
-			"key_path":     keyPath,
-			"ca_path":      caPath,
-			"hosts":        hostList,
-			"valid_days":   *validDays,
-			"not_before":   notBefore.Format(time.RFC3339),
-			"not_after":    notAfter.Format(time.RFC3339),
-			"organization": *org,
-		}
-		data, _ := json.MarshalIndent(output, "", "  ")
-		fmt.Fprintln(stdout, string(data))
+	// 7. Afficher la sortie
+	if config.format == "json" {
+		formatCertOutputJSON(result, config, stdout)
 	} else {
-		fmt.Fprintln(stdout, "🔐 Certificats TLS générés avec succès!")
-		fmt.Fprintln(stdout, "=====================================")
-		fmt.Fprintf(stdout, "\n📁 Répertoire: %s\n\n", *outputDir)
-		fmt.Fprintf(stdout, "📄 Fichiers générés:\n")
-		fmt.Fprintf(stdout, "   - %s (certificat serveur)\n", certPath)
-		fmt.Fprintf(stdout, "   - %s (clé privée serveur)\n", keyPath)
-		fmt.Fprintf(stdout, "   - %s (certificat CA pour clients)\n\n", caPath)
-		fmt.Fprintf(stdout, "🏷️  Hôtes autorisés: %s\n", strings.Join(hostList, ", "))
-		fmt.Fprintf(stdout, "📅 Valide de %s à %s\n", notBefore.Format("2006-01-02"), notAfter.Format("2006-01-02"))
-		fmt.Fprintf(stdout, "🏢 Organisation: %s\n\n", *org)
-		fmt.Fprintln(stdout, "⚠️  IMPORTANT:")
-		fmt.Fprintf(stdout, "   - La clé privée (%s) doit rester SECRÈTE\n", keyPath)
-		fmt.Fprintln(stdout, "   - Ne JAMAIS committer les certificats dans Git")
-		fmt.Fprintln(stdout, "   - Ces certificats sont auto-signés (pour développement)")
-		fmt.Fprintln(stdout, "")
-		fmt.Fprintln(stdout, "📝 Utilisation:")
-		fmt.Fprintf(stdout, "   Serveur: tsd server --tls-cert %s --tls-key %s\n", certPath, keyPath)
-		fmt.Fprintf(stdout, "   Client:  tsd client --server https://localhost:8080 --tls-ca %s\n", caPath)
-		fmt.Fprintln(stdout, "")
-		fmt.Fprintln(stdout, "💡 Pour production, utilisez des certificats signés par une CA reconnue (Let's Encrypt, etc.)")
+		formatCertOutputText(result, config, stdout)
 	}
 
 	return 0

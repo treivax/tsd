@@ -38,7 +38,7 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Should succeed - networks without rules are now allowed
 	if err != nil {
@@ -94,7 +94,7 @@ type Order(id: string, personId: string, total:number)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Should succeed - networks without rules are now allowed
 	if err != nil {
@@ -158,7 +158,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
 	for _, file := range files {
-		network, err = pipeline.IngestFile(file, network, storage)
+		network, _, err = pipeline.IngestFile(file, network, storage)
 		if err != nil {
 			t.Fatalf("Failed to ingest file %s: %v", file, err)
 		}
@@ -209,7 +209,7 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 
 	// Should succeed - empty files create empty networks
 	if err != nil {
@@ -269,7 +269,7 @@ User(id: "U003", username: "charlie", email: "charlie@example.com")
 	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
 	for _, file := range files {
-		network, err = pipeline.IngestFile(file, network, storage)
+		network, _, err = pipeline.IngestFile(file, network, storage)
 		if err != nil {
 			t.Fatalf("Failed to ingest file %s: %v", file, err)
 		}

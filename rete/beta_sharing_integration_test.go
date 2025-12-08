@@ -357,7 +357,7 @@ func TestBetaSharingIntegration_MemoryManagement(t *testing.T) {
 
 	// After reset, GetBetaChainMetrics still returns registry metrics
 	// (not the reset internal metrics), which is expected behavior
-	metrics = network.GetBetaChainMetrics()
+	_ = network.GetBetaChainMetrics()
 	// We won't assert zero values since registry metrics persist
 }
 

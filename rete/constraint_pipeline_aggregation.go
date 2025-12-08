@@ -16,159 +16,74 @@ import (
 // 3. Format multi-source avancé : extractMultiSourceAggregationInfo
 
 // extractAggregationInfoFromVariables extracts aggregation info from the new multi-pattern syntax
-// where aggregation variables are declared in the first pattern block
+// where aggregation variables are declared in the first pattern block.
+// Cette fonction agit comme orchestrateur, déléguant l'extraction à des fonctions spécialisées
+// pour réduire la complexité et améliorer la testabilité.
 func (cp *ConstraintPipeline) extractAggregationInfoFromVariables(exprMap map[string]interface{}) (*AggregationInfo, error) {
 	aggInfo := &AggregationInfo{}
 
-	// Check for multi-pattern syntax
-	patternsData, hasPatterns := exprMap["patterns"]
-	if !hasPatterns {
-		return nil, fmt.Errorf("no patterns field found")
+	// Étape 1: Parser et valider la structure de base
+	_, varsList, err := cp.parseAggregationExpression(exprMap)
+	if err != nil {
+		return nil, err
 	}
 
-	patternsList, ok := patternsData.([]interface{})
-	if !ok || len(patternsList) < 2 {
-		return nil, fmt.Errorf("expected at least 2 pattern blocks for aggregation with join")
+	// Étape 2: Trouver la variable d'agrégation
+	aggVar, found := findAggregationVariable(varsList)
+	if !found {
+		return nil, fmt.Errorf("no aggregation variable found in first pattern")
 	}
 
-	// First pattern block should contain the aggregation variable(s)
-	firstPattern, ok := patternsList[0].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("first pattern is not a map")
+	// Étape 3: Extraire la fonction d'agrégation (AVG, SUM, COUNT, etc.)
+	function, err := cp.extractAggregationFunction(aggVar)
+	if err != nil {
+		return nil, err
 	}
+	aggInfo.Function = function
 
-	varsData, hasVars := firstPattern["variables"]
-	if !hasVars {
-		return nil, fmt.Errorf("no variables in first pattern")
+	// Étape 4: Extraire le champ agrégé et la variable source
+	aggVariable, field, err := cp.extractAggregationField(aggVar)
+	if err != nil {
+		return nil, err
 	}
+	aggInfo.AggVariable = aggVariable
+	aggInfo.Field = field
 
-	varsList, ok := varsData.([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("variables is not a list")
+	// Étape 5: Extraire le type source depuis le second pattern
+	aggType, err := cp.extractSourceType(exprMap)
+	if err != nil {
+		// Type source optionnel, continuer sans erreur
+		aggType = ""
 	}
+	aggInfo.AggType = aggType
 
-	// Find the aggregation variable
-	for _, varInterface := range varsList {
-		varMap, ok := varInterface.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		varType, _ := varMap["type"].(string)
-		if varType == "aggregationVariable" {
-			// Extract aggregation function
-			if function, ok := varMap["function"].(string); ok {
-				aggInfo.Function = function
-			} else {
-				// Try alternative extraction: check if value contains the function
-				if valueData, ok := varMap["value"].(map[string]interface{}); ok {
-					if fnType, ok := valueData["type"].(string); ok {
-						if fnType == "functionCall" || fnType == "aggregationCall" {
-							if fnName, ok := valueData["function"].(string); ok {
-								aggInfo.Function = fnName
-							}
-						}
-					}
-				}
-			}
-
-			// Extract field being aggregated
-			if fieldData, ok := varMap["field"].(map[string]interface{}); ok {
-				if fieldObj, ok := fieldData["object"].(string); ok {
-					aggInfo.AggVariable = fieldObj
-				}
-				if fieldName, ok := fieldData["field"].(string); ok {
-					aggInfo.Field = fieldName
-				}
-			} else if valueData, ok := varMap["value"].(map[string]interface{}); ok {
-				// Alternative: extract from value structure
-				if argsData, ok := valueData["arguments"].([]interface{}); ok && len(argsData) > 0 {
-					if argMap, ok := argsData[0].(map[string]interface{}); ok {
-						if argMap["type"] == "fieldAccess" {
-							if objName, ok := argMap["object"].(string); ok {
-								aggInfo.AggVariable = objName
-							}
-							if fieldName, ok := argMap["field"].(string); ok {
-								aggInfo.Field = fieldName
-							}
-						}
-					}
-				}
-			}
-			break
-		}
-	}
-
-	// Second pattern block contains the source type
-	secondPattern, ok := patternsList[1].(map[string]interface{})
-	if ok {
-		if varsData2, hasVars2 := secondPattern["variables"]; hasVars2 {
-			if varsList2, ok := varsData2.([]interface{}); ok && len(varsList2) > 0 {
-				if varMap2, ok := varsList2[0].(map[string]interface{}); ok {
-					if aggType, ok := varMap2["dataType"].(string); ok {
-						aggInfo.AggType = aggType
-					}
-				}
-			}
-		}
-	}
-
-	// Extract join condition and threshold from constraints
+	// Étape 6: Extraire les conditions de jointure et seuil
 	if constraintsData, hasConstraints := exprMap["constraints"]; hasConstraints {
 		if constraintMap, ok := constraintsData.(map[string]interface{}); ok {
 			aggInfo.JoinCondition = constraintMap
 
-			// Get list of aggregation variable names from first pattern
+			// Obtenir les noms des variables d'agrégation
 			aggVarNames := cp.getAggregationVariableNames(exprMap)
 
-			// Separate join conditions and threshold conditions
+			// Séparer les conditions de jointure et de seuil
 			joinConditions, thresholdConditions := cp.separateAggregationConstraints(constraintMap, aggVarNames)
 
-			// Extract join fields from join conditions
+			// Étape 7: Extraire les champs de jointure
 			if joinConditions != nil {
-				if joinConditions["type"] == "comparison" {
-					// Left side
-					if leftData, ok := joinConditions["left"].(map[string]interface{}); ok {
-						if leftData["type"] == "fieldAccess" {
-							if joinField, ok := leftData["field"].(string); ok {
-								aggInfo.JoinField = joinField
-							}
-						}
-					}
-
-					// Right side
-					if rightData, ok := joinConditions["right"].(map[string]interface{}); ok {
-						if rightData["type"] == "fieldAccess" {
-							if mainField, ok := rightData["field"].(string); ok {
-								aggInfo.MainField = mainField
-							}
-						}
-					}
-				}
+				joinField, mainField := cp.extractJoinFields(joinConditions)
+				aggInfo.JoinField = joinField
+				aggInfo.MainField = mainField
 			}
 
-			// Extract threshold from threshold conditions
-			if len(thresholdConditions) > 0 {
-				// Use the first threshold condition found
-				threshold := thresholdConditions[0]
-				if operator, ok := threshold["operator"].(string); ok {
-					aggInfo.Operator = operator
-				}
-				if rightData, ok := threshold["right"].(map[string]interface{}); ok {
-					if value, ok := rightData["value"].(float64); ok {
-						aggInfo.Threshold = value
-					}
-				}
-			} else {
-				// No threshold - always fire (use >= 0 as default)
-				aggInfo.Operator = ">="
-				aggInfo.Threshold = 0
-			}
+			// Étape 8: Extraire les conditions de seuil
+			operator, threshold := cp.extractThresholdConditions(thresholdConditions)
+			aggInfo.Operator = operator
+			aggInfo.Threshold = threshold
 		}
 	} else {
-		// No constraints - set default threshold
-		aggInfo.Operator = ">="
-		aggInfo.Threshold = 0
+		// Pas de contraintes - utiliser les valeurs par défaut
+		aggInfo.Operator = DefaultThresholdOperator
+		aggInfo.Threshold = DefaultThresholdValue
 	}
 
 	return aggInfo, nil

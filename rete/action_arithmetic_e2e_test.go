@@ -121,7 +121,7 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Printf("📁 Fichier TSD: %s\n\n", tsdFile)
 
 	// Construire le réseau depuis le fichier unique
-	network, err := pipeline.IngestFile(tsdFile, nil, storage)
+	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}

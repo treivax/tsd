@@ -79,11 +79,3 @@ func (s *SimpleRuleRemovalStrategy) RemoveRule(ruleID string, nodeIDs []string) 
 
 	return deletedCount, nil
 }
-
-// removeSimpleRule is the legacy method that delegates to the strategy
-// This maintains backward compatibility
-func (rn *ReteNetwork) removeSimpleRule(ruleID string, nodeIDs []string) error {
-	strategy := NewSimpleRuleRemovalStrategy(rn)
-	_, err := strategy.RemoveRule(ruleID, nodeIDs)
-	return err
-}

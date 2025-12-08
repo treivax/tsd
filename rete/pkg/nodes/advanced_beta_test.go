@@ -294,7 +294,6 @@ func TestNotNode_ProcessRightFact_WithLeftTokens(t *testing.T) {
 	}
 }
 
-
 func TestNotNode_ConcurrentAccess(t *testing.T) {
 	logger := newMockLogger()
 	node := NewNotNode("not1", logger)

@@ -40,7 +40,6 @@ type Logger struct {
 var (
 	// DefaultLogger est le logger global par défaut
 	DefaultLogger *Logger
-	once          sync.Once
 )
 
 func init() {

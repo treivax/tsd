@@ -378,7 +378,10 @@ tsd/
 4. **Tests flaky** :
    - Identifier : `go test -count=10 ./...`
    - Corriger : rendre déterministes
-   - Race conditions : `go test -race ./...`
+   - 🏁 **Race conditions (OBLIGATOIRE)** : `go test -race ./...`
+     - ⚠️ Ce test est OBLIGATOIRE - ne JAMAIS skip
+     - Race conditions = bugs timing-dependent invisibles sans `-race`
+     - Fixer toute race détectée avant validation finale
 
 5. **Organisation** :
    - Tests unitaires avec le code
@@ -403,7 +406,15 @@ golangci-lint run
 
 # 3. Tests
 go test ./...
+
+# 🏁 OBLIGATOIRE : Race detector (détecte race conditions)
 go test -race ./...
+# ⚠️ CRITICAL: Ce test est OBLIGATOIRE et NE DOIT JAMAIS être skip
+# Les race conditions ne sont détectées QUE par le flag -race
+# Elles causent bugs intermittents, corruption données, crashes production
+# TOUJOURS exécuter ce test, même si plus lent (~10x)
+# Si échec → FIXER avant de continuer
+
 go test -cover ./...
 
 # 4. Build
@@ -421,6 +432,11 @@ make validate
 ```
 
 **Tous doivent passer** ✅
+
+⚠️ **ATTENTION CRITIQUE** : `go test -race ./...` est **OBLIGATOIRE**
+- Si skip → Deep-clean est INCOMPLET
+- Si échec → FIXER avant certification
+- Race conditions = dette technique critique
 
 #### 3.2 Métriques de Qualité
 
@@ -493,6 +509,8 @@ goreportcard-cli  # Si installé
 - [ ] Couverture > 80%
 - [ ] **Tests RETE avec extraction réseau réel uniquement**
 - [ ] Tous les tests passent
+- [ ] 🏁 **`go test -race ./...` passé sans erreur (OBLIGATOIRE)**
+- [ ] **Aucune race condition détectée**
 - [ ] Aucun test flaky
 - [ ] Tests déterministes
 
@@ -507,6 +525,7 @@ goreportcard-cli  # Si installé
 ### ✅ Qualité Maximale
 
 - [ ] go vet : 0 erreur
+- [ ] 🏁 **`go test -race ./...` : 0 race condition (OBLIGATOIRE)**
 - [ ] golangci-lint : 0 erreur
 - [ ] gocyclo < 15 partout
 - [ ] Aucune duplication

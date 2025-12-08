@@ -123,6 +123,7 @@ func TestAlphaNodePassthroughLeft(t *testing.T) {
 			childCalled = true
 			if token == nil {
 				t.Error("Token should not be nil")
+				return nil
 			}
 			if len(token.Facts) != 1 {
 				t.Errorf("Expected 1 fact in token, got %d", len(token.Facts))

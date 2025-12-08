@@ -231,7 +231,7 @@ func executePipeline(constraintSource, factsFile string) (*Result, error) {
 	storage := rete.NewMemoryStorage()
 
 	// Ingest constraint file
-	network, err := pipeline.IngestFile(constraintSource, nil, storage)
+	network, _, err := pipeline.IngestFile(constraintSource, nil, storage)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func executePipeline(constraintSource, factsFile string) (*Result, error) {
 	// Ingest facts file only if it's different from the constraint source
 	// (to avoid double-ingesting the same file)
 	if factsFile != constraintSource {
-		network, err = pipeline.IngestFile(factsFile, network, storage)
+		network, _, err = pipeline.IngestFile(factsFile, network, storage)
 		if err != nil {
 			return nil, err
 		}

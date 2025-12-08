@@ -77,7 +77,16 @@ package [nom_du_package]
    - ✅ Constantes nommées pour valeurs de test
    - ✅ Setup/teardown propre
 
-3. **QUALITÉ** :
+3. **RACE DETECTOR - OBLIGATOIRE** :
+   - 🏁 **TOUJOURS exécuter `go test -race`** après avoir écrit/modifié des tests
+   - ❌ Ne JAMAIS valider des tests sans avoir exécuté `-race`
+   - ⚠️ Les race conditions ne sont détectées QUE avec le flag `-race`
+   - ✅ Ajouter `make test-race` à la validation
+   - ✅ Fixer toute race condition détectée avant de considérer les tests terminés
+   - 📖 **Pourquoi** : Race conditions causent bugs intermittents, corruption données, crashes production
+   - ⏱️ **Note** : `-race` est ~10x plus lent mais OBLIGATOIRE
+
+4. **QUALITÉ** :
    - ❌ Pas de tests qui passent toujours
    - ❌ Pas de tests qui testent rien
    - ✅ Assertions claires et explicites
@@ -526,8 +535,11 @@ go test -v -run TestNewTests ./...
 # Tests complets
 go test ./...
 
-# Avec race detector
+# 🏁 OBLIGATOIRE : Avec race detector (détecte race conditions)
 go test -race ./...
+# ⚠️ CRITICAL: Ce test est OBLIGATOIRE pour détecter les race conditions
+# Les race conditions ne sont détectées QUE par le flag -race
+# TOUJOURS exécuter ce test, même si plus lent (~10x)
 
 # Avec couverture
 go test -cover ./...
@@ -590,6 +602,8 @@ go test -parallel=8 ./...
 - [ ] Tests écrits pour gestion d'erreurs
 - [ ] **Tests RETE avec extraction réseau réel**
 - [ ] **AUCUN hardcoding** dans les tests
+- [ ] 🏁 **`go test -race` exécuté et passé (OBLIGATOIRE)**
+- [ ] **Aucune race condition détectée**
 - [ ] Tests déterministes (pas flaky)
 - [ ] Tests isolés et indépendants
 
@@ -604,6 +618,7 @@ go test -parallel=8 ./...
 ### ✅ Qualité
 
 - [ ] Tous les tests passent
+- [ ] 🏁 **`go test -race ./...` passe sans erreur (OBLIGATOIRE)**
 - [ ] Aucun test flaky (10 runs)
 - [ ] go vet sans erreur
 - [ ] Tests documentés

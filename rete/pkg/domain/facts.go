@@ -6,37 +6,72 @@
 package domain
 
 import (
-	"time"
+	"fmt"
 )
 
 // Fact représente un fait dans le système RETE.
 // Un fait est une donnée d'entrée qui sera propagée à travers le réseau.
 type Fact struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type"`
-	Fields    map[string]interface{} `json:"fields"`
-	Timestamp time.Time              `json:"timestamp"`
+	ID     string                 `json:"id"`
+	Type   string                 `json:"type"`
+	Fields map[string]interface{} `json:"fields"`
 }
 
-// NewFact crée un nouveau fait avec timestamp automatique.
+// NewFact crée un nouveau fait.
 func NewFact(id, factType string, fields map[string]interface{}) *Fact {
 	return &Fact{
-		ID:        id,
-		Type:      factType,
-		Fields:    fields,
-		Timestamp: time.Now(),
+		ID:     id,
+		Type:   factType,
+		Fields: fields,
 	}
 }
 
 // String retourne la représentation string d'un fait.
 func (f *Fact) String() string {
-	return f.ID + ":" + f.Type
+	return fmt.Sprintf("Fact{ID:%s, Type:%s, Fields:%v}", f.ID, f.Type, f.Fields)
+}
+
+// GetInternalID retourne l'identifiant interne unique (Type_ID)
+func (f *Fact) GetInternalID() string {
+	return fmt.Sprintf("%s_%s", f.Type, f.ID)
 }
 
 // GetField retourne la valeur d'un champ et indique s'il existe.
 func (f *Fact) GetField(fieldName string) (interface{}, bool) {
 	value, exists := f.Fields[fieldName]
 	return value, exists
+}
+
+// Clone crée une copie profonde d'un fait
+func (f *Fact) Clone() *Fact {
+	clone := &Fact{
+		ID:     f.ID,
+		Type:   f.Type,
+		Fields: make(map[string]interface{}),
+	}
+
+	// Copier les champs
+	for k, v := range f.Fields {
+		clone.Fields[k] = v
+	}
+
+	return clone
+}
+
+// MakeInternalID construit un identifiant interne à partir d'un type et d'un ID
+func MakeInternalID(factType, factID string) string {
+	return fmt.Sprintf("%s_%s", factType, factID)
+}
+
+// ParseInternalID décompose un identifiant interne en type et ID
+// Retourne (type, id, true) si le format est valide, sinon ("", "", false)
+func ParseInternalID(internalID string) (string, string, bool) {
+	for i := 0; i < len(internalID); i++ {
+		if internalID[i] == '_' {
+			return internalID[:i], internalID[i+1:], true
+		}
+	}
+	return "", "", false
 }
 
 // Token représente un token dans le réseau RETE.

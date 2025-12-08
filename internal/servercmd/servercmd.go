@@ -359,7 +359,7 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	tmpFile.Close()
 
 	// Ingérer le fichier
-	network, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
+	network, _, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
 		executionTimeMs := time.Since(startTime).Milliseconds()
 		return tsdio.NewErrorResponse(tsdio.ErrorTypeExecutionError, fmt.Sprintf("Erreur ingestion: %v", err), executionTimeMs)
@@ -472,7 +472,7 @@ func (s *Server) extractFacts(token *rete.Token) []tsdio.Fact {
 		f := tsdio.Fact{
 			ID:         fact.ID,
 			Type:       fact.Type,
-			Attributes: s.extractAttributes(fact),
+			Fields: s.extractAttributes(fact),
 		}
 		facts = append(facts, f)
 	}

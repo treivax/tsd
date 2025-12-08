@@ -99,7 +99,7 @@ func TestSaveMemoryCreatesDeepCopy(t *testing.T) {
 	}
 
 	// Verify saved memory wasn't modified
-	saved, _ := storage.memories["node1"]
+	saved := storage.memories["node1"]
 	if len(saved.Tokens) != 1 {
 		t.Errorf("Expected saved memory to have 1 token (not affected by original modification), got %d", len(saved.Tokens))
 	}

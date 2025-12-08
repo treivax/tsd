@@ -86,12 +86,12 @@ func ExecuteTSDFileWithOptions(t *testing.T, path string, opts *ExecutionOptions
 	var capturedOutput string
 	if opts.CaptureOutput {
 		capturedOutput = captureOutput(func() {
-			network, err = pipeline.IngestFile(path, nil, storage)
+			network, _, err = pipeline.IngestFile(path, nil, storage)
 			result.Error = err
 		})
 		result.Output = capturedOutput
 	} else {
-		network, err = pipeline.IngestFile(path, nil, storage)
+		network, _, err = pipeline.IngestFile(path, nil, storage)
 		result.Error = err
 	}
 

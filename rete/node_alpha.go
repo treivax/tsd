@@ -160,141 +160,50 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 // ActivateWithContext activates the node with an evaluation context for decomposed expressions.
 // This method supports intermediate result propagation through the context.
 func (an *AlphaNode) ActivateWithContext(fact *Fact, context *EvaluationContext) error {
-	// Verify all dependencies are satisfied
-	for _, dep := range an.Dependencies {
-		if !context.HasIntermediateResult(dep) {
-			return fmt.Errorf("dependency %s not satisfied for node %s", dep, an.ID)
-		}
+	// Étape 1: Vérifier que toutes les dépendances sont satisfaites
+	if err := verifyDependencies(an.Dependencies, context, an.ID); err != nil {
+		return err
 	}
 
-	// For atomic nodes, evaluate condition with context
-	var result interface{}
-	var err error
-
+	// Étape 2: Évaluer la condition selon le type de nœud (atomique ou non)
 	if an.IsAtomic && an.Condition != nil {
-		// Try cache first if ResultName is set
-		var fromCache bool
-		if an.ResultName != "" && context.Cache != nil {
-			// Build dependencies map from context
-			dependencies := make(map[string]interface{})
-			for _, dep := range an.Dependencies {
-				if val, exists := context.GetIntermediateResult(dep); exists {
-					dependencies[dep] = val
-				}
-			}
-
-			// Try to get from cache
-			if cachedResult, found := context.Cache.GetWithDependencies(an.ResultName, dependencies); found {
-				result = cachedResult
-				fromCache = true
-			}
+		// Nœud atomique: évaluation avec cache et contexte
+		evalResult, err := evaluateAtomicCondition(an, fact, context)
+		if err != nil {
+			return err
 		}
 
-		// If not from cache, evaluate
-		if !fromCache {
-			// Use ConditionEvaluator for context-aware evaluation
-			evaluator := NewConditionEvaluator(an.Storage)
-			result, err = evaluator.EvaluateWithContext(an.Condition, fact, context)
-			if err != nil {
-				return fmt.Errorf("error evaluating condition with context in node %s: %w", an.ID, err)
-			}
+		// Étape 3: Stocker le résultat intermédiaire si nécessaire
+		storeIntermediateResult(an, context, evalResult.Result)
 
-			// Store in cache if ResultName is set
-			if an.ResultName != "" && context.Cache != nil {
-				dependencies := make(map[string]interface{})
-				for _, dep := range an.Dependencies {
-					if val, exists := context.GetIntermediateResult(dep); exists {
-						dependencies[dep] = val
-					}
-				}
-				context.Cache.SetWithDependencies(an.ResultName, dependencies, result)
-			}
-		}
-
-		// Store intermediate result if this node produces one
-		if an.ResultName != "" {
-			context.SetIntermediateResult(an.ResultName, result)
-		}
-
-		// For comparison conditions, check if result is false
-		if isComparisonCondition(an.Condition) {
-			if boolResult, ok := result.(bool); ok && !boolResult {
-				// Condition not satisfied, don't propagate
-				return nil
-			}
+		// Étape 4: Vérifier si le résultat permet la propagation
+		if !shouldPropagateResult(an.Condition, evalResult.Result) {
+			return nil
 		}
 	} else {
-		// Non-atomic node: use standard evaluation
-		if an.Condition != nil {
-			evaluator := NewAlphaConditionEvaluator()
-			passed, err := evaluator.EvaluateCondition(an.Condition, fact, an.VariableName)
-			if err != nil {
-				return fmt.Errorf("error evaluating condition in node %s: %w", an.ID, err)
-			}
-			if !passed {
-				return nil
-			}
+		// Nœud non-atomique: évaluation standard
+		passed, err := evaluateNonAtomicCondition(an, fact)
+		if err != nil {
+			return err
+		}
+		if !passed {
+			return nil
 		}
 	}
 
-	// Add fact to memory (idempotent)
-	an.mutex.Lock()
-	internalID := fact.GetInternalID()
-	_, alreadyExists := an.Memory.Facts[internalID]
-	if !alreadyExists {
-		if err := an.Memory.AddFact(fact); err != nil {
-			an.mutex.Unlock()
-			return fmt.Errorf("error adding fact to alpha node: %w", err)
-		}
+	// Étape 5: Ajouter le fait à la mémoire (opération idempotente)
+	alreadyExists, err := addFactToMemory(an, fact)
+	if err != nil {
+		return err
 	}
-	an.mutex.Unlock()
 
+	// Si le fait existe déjà, ne pas propager
 	if alreadyExists {
 		return nil
 	}
 
-	// Propagate to children with context
-	for _, child := range an.GetChildren() {
-		if alphaChild, ok := child.(*AlphaNode); ok {
-			// Propagate with context to alpha children
-			if err := alphaChild.ActivateWithContext(fact, context); err != nil {
-				return fmt.Errorf("error propagating to alpha child %s: %w", child.GetID(), err)
-			}
-		} else {
-			// For non-alpha nodes (JoinNode, TerminalNode, etc.)
-			// Check if this is a passthrough node to determine activation method
-			isPassthroughRight := false
-			if an.Condition != nil {
-				if condMap, ok := an.Condition.(map[string]interface{}); ok {
-					if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
-						if side, sideExists := condMap["side"].(string); sideExists && side == "right" {
-							isPassthroughRight = true
-						}
-					}
-				}
-			}
-
-			if isPassthroughRight {
-				// Passthrough RIGHT: use ActivateRight for JoinNode
-				if err := child.ActivateRight(fact); err != nil {
-					return fmt.Errorf("error propagating fact to %s: %w", child.GetID(), err)
-				}
-			} else {
-				// Passthrough LEFT or final atomic node: create token and use ActivateLeft
-				token := &Token{
-					ID:       fmt.Sprintf("token_%s_%s", an.ID, fact.ID),
-					Facts:    []*Fact{fact},
-					NodeID:   an.ID,
-					Bindings: map[string]*Fact{an.VariableName: fact},
-				}
-				if err := child.ActivateLeft(token); err != nil {
-					return fmt.Errorf("error propagating token to %s: %w", child.GetID(), err)
-				}
-			}
-		}
-	}
-
-	return nil
+	// Étape 6: Propager aux enfants avec contexte
+	return propagateToChildren(an, fact, context)
 }
 
 // isComparisonCondition checks if a condition is a comparison operation

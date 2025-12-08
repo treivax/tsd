@@ -171,52 +171,6 @@ func (jrb *JoinRuleBuilder) buildChainWithBuilder(
 	return chain, nil
 }
 
-// connectChainToNetwork connects the beta chain to the network's type nodes and terminal
-func (jrb *JoinRuleBuilder) connectChainToNetwork(
-	network *ReteNetwork,
-	ruleID string,
-	chain *BetaChain,
-	variableNames []string,
-	variableTypes []string,
-	terminalNode *TerminalNode,
-) error {
-	// Connect type nodes to the first join node (for first two variables)
-	if len(chain.Nodes) > 0 {
-		firstJoin := chain.Nodes[0]
-		for i := 0; i < 2 && i < len(variableNames); i++ {
-			varName := variableNames[i]
-			varType := variableTypes[i]
-			side := NodeSideRight
-			if i == 0 {
-				side = NodeSideLeft
-			}
-			jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, firstJoin, side)
-		}
-		fmt.Printf("   ✓ Connected first two variables to initial JoinNode\n")
-	}
-
-	// Connect subsequent variables to their respective join nodes
-	for i := 2; i < len(variableNames) && i-1 < len(chain.Nodes); i++ {
-		joinNode := chain.Nodes[i-1]
-		varName := variableNames[i]
-		varType := variableTypes[i]
-		jrb.utils.ConnectTypeNodeToBetaNode(network, ruleID, varName, varType, joinNode, NodeSideRight)
-		fmt.Printf("   ✓ Connected variable %s to cascade level %d\n", varName, i)
-	}
-
-	// Connect the final node to the terminal
-	if chain.FinalNode != nil {
-		chain.FinalNode.AddChild(terminalNode)
-		fmt.Printf("   ✅ Chain complete: %d JoinNodes, %d shared\n",
-			len(chain.Nodes),
-			network.BetaChainBuilder.GetMetrics().SharedJoinNodesReused)
-	}
-
-	fmt.Printf("   ✅ Architecture en cascade complète avec partage: %s\n", strings.Join(variableNames, " ⋈ "))
-
-	return nil
-}
-
 // connectChainToNetworkWithAlpha connects the beta chain with alpha node integration
 func (jrb *JoinRuleBuilder) connectChainToNetworkWithAlpha(
 	network *ReteNetwork,

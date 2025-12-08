@@ -86,8 +86,8 @@ type Fact struct {
 	// Type est le type du fait (ex: "Person", "Order")
 	Type string `json:"type"`
 
-	// Attributes contient les attributs du fait
-	Attributes map[string]interface{} `json:"attributes"`
+	// Fields contient les champs du fait (renommé de Attributes pour cohérence avec domain.Fact)
+	Fields map[string]interface{} `json:"fields"`
 }
 
 // HealthResponse représente la réponse du endpoint health

@@ -75,7 +75,6 @@ func TestGetSetJoinResult(t *testing.T) {
 	expectedResult := &JoinResult{
 		Matched:   true,
 		Token:     leftToken,
-		Timestamp: time.Now(),
 		JoinType:  "binary",
 	}
 
