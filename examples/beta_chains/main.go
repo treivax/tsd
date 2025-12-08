@@ -20,11 +20,9 @@ import (
 // Configuration flags
 var (
 	scenario      = flag.String("scenario", "", "Scenario to run: simple, complex, advanced")
-	verbose       = flag.Bool("verbose", false, "Enable verbose logging")
 	compare       = flag.Bool("compare", false, "Compare all scenarios")
 	export        = flag.String("export", "", "Export results to file (json or csv)")
 	configType    = flag.String("config", "default", "Config type: default, high-performance, memory-optimized")
-	joinCacheSize = flag.Int("join-cache", 0, "Join cache size (0 = use config default)")
 	hashCacheSize = flag.Int("hash-cache", 0, "Hash cache size (0 = use config default)")
 	noMetrics     = flag.Bool("no-metrics", false, "Disable metrics collection")
 )
