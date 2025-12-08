@@ -83,7 +83,7 @@ func (cp *ConstraintPipeline) separateAggregationConstraints(constraints map[str
 		}
 	} else if constraintType == "logicalExpr" {
 		// Logical expression (AND/OR) - separate conditions
-		leftData, _ := constraints["left"]
+		leftData := constraints["left"]
 
 		// Handle operations field - it might be []interface{} or []map[string]interface{}
 		var operations []interface{}

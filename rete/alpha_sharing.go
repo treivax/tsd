@@ -350,11 +350,9 @@ func (asr *AlphaSharingRegistry) GetStats() map[string]interface{} {
 
 	// Compter le nombre total de règles utilisant ces nœuds
 	totalRuleReferences := 0
-	childCounts := make([]int, 0, totalNodes)
 
 	for _, node := range asr.sharedAlphaNodes {
 		childCount := len(node.GetChildren())
-		childCounts = append(childCounts, childCount)
 		totalRuleReferences += childCount
 	}
 
