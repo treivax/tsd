@@ -6,7 +6,6 @@ package rete
 
 import (
 	"testing"
-	"time"
 )
 
 // ========== TESTS DE BASE ==========
@@ -19,7 +18,6 @@ func TestFact_Creation(t *testing.T) {
 			"name": "Alice",
 			"age":  30,
 		},
-		Timestamp: time.Now(),
 	}
 
 	if fact.ID != "test_001" {
@@ -457,7 +455,6 @@ func TestIncrementalPropagation(t *testing.T) {
 			"id":  "U1",
 			"age": 25,
 		},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(userFact)
@@ -487,7 +484,6 @@ func TestIncrementalPropagation(t *testing.T) {
 			"user_id":    "U1", // Match avec user.id
 			"product_id": "P1",
 		},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(orderFact)
@@ -514,7 +510,6 @@ func TestIncrementalPropagation(t *testing.T) {
 			"id":   "P1", // Match avec order.product_id
 			"name": "TestProduct",
 		},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(productFact)
@@ -546,7 +541,6 @@ func TestIncrementalPropagation(t *testing.T) {
 			"user_id":    "U999", // Ne match PAS avec user.id
 			"product_id": "P1",
 		},
-		Timestamp: time.Now(),
 	}
 
 	err = network.SubmitFact(badOrderFact)

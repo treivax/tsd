@@ -1186,8 +1186,8 @@ func TestExtractFacts(t *testing.T) {
 	if facts[0].Type != "Person" {
 		t.Errorf("facts[0].Type = %q, want 'Person'", facts[0].Type)
 	}
-	if facts[0].Attributes["name"] != "Alice" {
-		t.Errorf("facts[0].Attributes[name] = %v, want 'Alice'", facts[0].Attributes["name"])
+	if facts[0].Fields["name"] != "Alice" {
+		t.Errorf("facts[0].Fields[name] = %v, want 'Alice'", facts[0].Fields["name"])
 	}
 
 	if facts[1].ID != "f2" {

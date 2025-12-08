@@ -781,7 +781,7 @@ func TestPrintResults_Text_WithActivations(t *testing.T) {
 						{
 							ID:   "f1",
 							Type: "Person",
-							Attributes: map[string]interface{}{
+							Fields: map[string]interface{}{
 								"name": "Alice",
 							},
 						},

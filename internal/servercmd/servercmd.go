@@ -472,7 +472,7 @@ func (s *Server) extractFacts(token *rete.Token) []tsdio.Fact {
 		f := tsdio.Fact{
 			ID:         fact.ID,
 			Type:       fact.Type,
-			Attributes: s.extractAttributes(fact),
+			Fields: s.extractAttributes(fact),
 		}
 		facts = append(facts, f)
 	}

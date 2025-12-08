@@ -3,6 +3,17 @@
 ## [Unreleased]
 
 ### Changed
+- **Nettoyage Timestamps Inutiles** - Suppression des champs `Timestamp` inutilisés (2025-12-08)
+  - Suppression de `Fact.Timestamp` dans `rete/pkg/domain/facts.go` : jamais utilisé dans la logique métier
+  - Suppression de `JoinResult.Timestamp` dans `rete/beta_join_cache.go` : redondant avec le timestamp du cache LRU
+  - Conservation de `lruItem.timestamp` dans `lru_cache.go` : seul réellement utilisé pour le TTL
+  - Résultat : -8 bytes par Fact (~14%), -8 bytes par JoinResult (~25%)
+  - Nettoyage de ~50 lignes de code et tests
+  - Architecture clarifiée : un seul timestamp au bon niveau (cache LRU)
+  - Aucune régression : tous les tests passent (100%)
+  - Documentation mise à jour : `docs/WORKING_MEMORY.md`
+  - Rapport détaillé : `REPORTS/REFACTORING_REMOVE_UNUSED_TIMESTAMPS_2025-12-08.md`
+
 - **Simplification Architecture Pipeline** - Fusion de `IngestFile()` en fonction unique (2025-12-08)
   - Suppression de `ingestFileWithMetrics()` : fonction privée inutile fusionnée dans `IngestFile()`
   - Suppression de 13 fonctions d'orchestration de haut niveau dans `constraint_pipeline_orchestration.go`

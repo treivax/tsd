@@ -421,8 +421,8 @@ func printText(config *Config, response *tsdio.ExecuteResponse, stdout, stderr i
 			fmt.Fprintf(stdout, "   Faits déclencheurs:\n")
 			for j, fact := range activation.TriggeringFacts {
 				fmt.Fprintf(stdout, "     [%d] %s (id: %s)\n", j, fact.Type, fact.ID)
-				if len(fact.Attributes) > 0 {
-					for key, value := range fact.Attributes {
+				if len(fact.Fields) > 0 {
+					for key, value := range fact.Fields {
 						fmt.Fprintf(stdout, "         %s: %v\n", key, value)
 					}
 				}

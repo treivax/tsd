@@ -6,7 +6,6 @@ package rete
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,12 +85,10 @@ func TestWorkingMemory_GetTokensByVariable(t *testing.T) {
 
 // TestFact_Clone tests cloning a fact
 func TestFact_Clone(t *testing.T) {
-	timestamp := time.Now()
 	original := &Fact{
-		ID:        "fact1",
-		Type:      "Person",
-		Fields:    map[string]interface{}{"name": "Alice", "age": 30},
-		Timestamp: timestamp,
+		ID:     "fact1",
+		Type:   "Person",
+		Fields: map[string]interface{}{"name": "Alice", "age": 30},
 	}
 
 	// Clone the fact
@@ -101,7 +98,7 @@ func TestFact_Clone(t *testing.T) {
 	require.NotNil(t, clone, "Clone should not be nil")
 	assert.Equal(t, original.ID, clone.ID, "ID should match")
 	assert.Equal(t, original.Type, clone.Type, "Type should match")
-	assert.Equal(t, original.Timestamp, clone.Timestamp, "Timestamp should match")
+
 	assert.Equal(t, original.Fields["name"], clone.Fields["name"], "Fields should match")
 	assert.Equal(t, original.Fields["age"], clone.Fields["age"], "Fields should match")
 

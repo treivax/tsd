@@ -67,10 +67,9 @@ Dictionnaire des **faits** validés par ce nœud.
 
 ```go
 type Fact struct {
-    ID        string                 // "123"
-    Type      string                 // "Person"
-    Fields    map[string]interface{} // {"name": "Alice", "age": 25}
-    Timestamp time.Time
+    ID     string                 // "123"
+    Type   string                 // "Person"
+    Fields map[string]interface{} // {"name": "Alice", "age": 25}
 }
 ```
 

@@ -6,7 +6,6 @@ package rete
 
 import (
 	"testing"
-	"time"
 )
 
 // TestAddFactCommand_ExecuteUndo tests the AddFact command execution and undo
@@ -20,7 +19,6 @@ func TestAddFactCommand_ExecuteUndo(t *testing.T) {
 		Fields: map[string]interface{}{
 			"value": 42,
 		},
-		Timestamp: time.Now(),
 	}
 
 	cmd := NewAddFactCommand(storage, fact)
@@ -67,7 +65,6 @@ func TestAddFactCommand_Idempotence(t *testing.T) {
 		Fields: map[string]interface{}{
 			"value": 100,
 		},
-		Timestamp: time.Now(),
 	}
 
 	cmd := NewAddFactCommand(storage, fact)
@@ -101,7 +98,6 @@ func TestRemoveFactCommand_ExecuteUndo(t *testing.T) {
 		Fields: map[string]interface{}{
 			"value": 200,
 		},
-		Timestamp: time.Now(),
 	}
 
 	// Ajouter le fait d'abord
@@ -170,7 +166,6 @@ func TestCommandString(t *testing.T) {
 		Fields: map[string]interface{}{
 			"value": 42,
 		},
-		Timestamp: time.Now(),
 	}
 
 	addCmd := NewAddFactCommand(storage, fact)
@@ -199,9 +194,9 @@ func TestMultipleCommands(t *testing.T) {
 
 	// Créer et exécuter plusieurs commandes
 	facts := []*Fact{
-		{ID: "f1", Type: "T1", Fields: map[string]interface{}{"v": 1}, Timestamp: time.Now()},
-		{ID: "f2", Type: "T1", Fields: map[string]interface{}{"v": 2}, Timestamp: time.Now()},
-		{ID: "f3", Type: "T1", Fields: map[string]interface{}{"v": 3}, Timestamp: time.Now()},
+		{ID: "f1", Type: "T1", Fields: map[string]interface{}{"v": 1}},
+		{ID: "f2", Type: "T1", Fields: map[string]interface{}{"v": 2}},
+		{ID: "f3", Type: "T1", Fields: map[string]interface{}{"v": 3}},
 	}
 
 	commands := make([]Command, len(facts))
@@ -295,7 +290,6 @@ func BenchmarkAddFactCommand(b *testing.B) {
 			ID:        "bench_fact",
 			Type:      "BenchType",
 			Fields:    map[string]interface{}{"value": i},
-			Timestamp: time.Now(),
 		}
 		cmd := NewAddFactCommand(storage, fact)
 		cmd.Execute()
@@ -318,7 +312,6 @@ func BenchmarkRemoveFactCommand(b *testing.B) {
 			ID:        "bench_fact",
 			Type:      "BenchType",
 			Fields:    map[string]interface{}{"value": i},
-			Timestamp: time.Now(),
 		}
 		storage.AddFact(fact)
 		b.StartTimer()

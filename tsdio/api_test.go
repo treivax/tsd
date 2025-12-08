@@ -274,7 +274,7 @@ func TestActivation(t *testing.T) {
 	fact := Fact{
 		ID:         TestFactID,
 		Type:       TestFactType,
-		Attributes: map[string]interface{}{"name": "Alice"},
+		Fields: map[string]interface{}{"name": "Alice"},
 	}
 
 	arg := ArgumentValue{
@@ -380,7 +380,7 @@ func TestFact(t *testing.T) {
 	fact := Fact{
 		ID:         TestFactID,
 		Type:       TestFactType,
-		Attributes: attrs,
+		Fields: attrs,
 	}
 
 	if fact.ID != TestFactID {
@@ -391,16 +391,16 @@ func TestFact(t *testing.T) {
 		t.Errorf("Type = %q, want %q", fact.Type, TestFactType)
 	}
 
-	if len(fact.Attributes) != 2 {
-		t.Errorf("len(Attributes) = %d, want 2", len(fact.Attributes))
+	if len(fact.Fields) != 2 {
+		t.Errorf("len(Attributes) = %d, want 2", len(fact.Fields))
 	}
 
-	if fact.Attributes["name"] != "Alice" {
-		t.Errorf("Attributes[name] = %v, want Alice", fact.Attributes["name"])
+	if fact.Fields["name"] != "Alice" {
+		t.Errorf("Attributes[name] = %v, want Alice", fact.Fields["name"])
 	}
 
-	if fact.Attributes["age"] != 30 {
-		t.Errorf("Attributes[age] = %v, want 30", fact.Attributes["age"])
+	if fact.Fields["age"] != 30 {
+		t.Errorf("Attributes[age] = %v, want 30", fact.Fields["age"])
 	}
 }
 
@@ -548,7 +548,7 @@ func TestFact_EmptyAttributes(t *testing.T) {
 	fact := Fact{
 		ID:         TestFactID,
 		Type:       TestFactType,
-		Attributes: map[string]interface{}{},
+		Fields: map[string]interface{}{},
 	}
 
 	if fact.ID != TestFactID {
@@ -559,8 +559,8 @@ func TestFact_EmptyAttributes(t *testing.T) {
 		t.Errorf("Type = %q, want %q", fact.Type, TestFactType)
 	}
 
-	if len(fact.Attributes) != 0 {
-		t.Errorf("len(Attributes) = %d, want 0", len(fact.Attributes))
+	if len(fact.Fields) != 0 {
+		t.Errorf("len(Attributes) = %d, want 0", len(fact.Fields))
 	}
 }
 

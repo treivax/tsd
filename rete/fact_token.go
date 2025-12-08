@@ -6,47 +6,19 @@ package rete
 
 import (
 	"fmt"
-	"time"
+
+	"github.com/treivax/tsd/rete/pkg/domain"
 )
 
-type Fact struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type"`
-	Fields    map[string]interface{} `json:"fields"`
-	Timestamp time.Time              `json:"timestamp"`
-}
+// Fact est un alias vers domain.Fact pour compatibilité avec le code existant.
+// Toutes les méthodes et fonctions sont définies dans rete/pkg/domain/facts.go.
+type Fact = domain.Fact
 
-// String retourne la représentation string d'un fait
-func (f *Fact) String() string {
-	return fmt.Sprintf("Fact{ID:%s, Type:%s, Fields:%v}", f.ID, f.Type, f.Fields)
-}
-
-// GetInternalID retourne l'identifiant interne unique (Type_ID)
-func (f *Fact) GetInternalID() string {
-	return fmt.Sprintf("%s_%s", f.Type, f.ID)
-}
-
-// GetField retourne la valeur d'un champ
-func (f *Fact) GetField(fieldName string) (interface{}, bool) {
-	value, exists := f.Fields[fieldName]
-	return value, exists
-}
-
-// MakeInternalID construit un identifiant interne à partir d'un type et d'un ID
-func MakeInternalID(factType, factID string) string {
-	return fmt.Sprintf("%s_%s", factType, factID)
-}
-
-// ParseInternalID décompose un identifiant interne en type et ID
-// Retourne (type, id, true) si le format est valide, sinon ("", "", false)
-func ParseInternalID(internalID string) (string, string, bool) {
-	for i := 0; i < len(internalID); i++ {
-		if internalID[i] == '_' {
-			return internalID[:i], internalID[i+1:], true
-		}
-	}
-	return "", "", false
-}
+// Réexporter les fonctions helper pour compatibilité
+var (
+	MakeInternalID  = domain.MakeInternalID
+	ParseInternalID = domain.ParseInternalID
+)
 
 // Token représente un token dans le réseau RETE
 type Token struct {
@@ -151,23 +123,6 @@ func (wm *WorkingMemory) GetTokensByVariable(variables []string) []*Token {
 	return wm.GetTokens()
 }
 
-// Clone crée une copie profonde d un fait
-func (f *Fact) Clone() *Fact {
-	clone := &Fact{
-		ID:        f.ID,
-		Type:      f.Type,
-		Fields:    make(map[string]interface{}),
-		Timestamp: f.Timestamp,
-	}
-
-	// Copier les champs
-	for k, v := range f.Fields {
-		clone.Fields[k] = v
-	}
-
-	return clone
-}
-
 // Clone crée une copie profonde de WorkingMemory
 func (wm *WorkingMemory) Clone() *WorkingMemory {
 	clone := &WorkingMemory{
@@ -189,7 +144,7 @@ func (wm *WorkingMemory) Clone() *WorkingMemory {
 	return clone
 }
 
-// Clone crée une copie profonde d un token
+// Clone crée une copie profonde d'un token
 func (t *Token) Clone() *Token {
 	clone := &Token{
 		ID:           t.ID,
@@ -209,7 +164,7 @@ func (t *Token) Clone() *Token {
 		clone.Bindings[k] = v.Clone()
 	}
 
-	// Note: Parent n est pas cloné pour éviter récursion infinie
+	// Note: Parent n'est pas cloné pour éviter récursion infinie
 
 	return clone
 }

@@ -35,7 +35,6 @@ func buildNetworkWithFacts(size int) *ReteNetwork {
 				"value": i,
 				"name":  fmt.Sprintf("test_%d", i),
 			},
-			Timestamp: time.Now(),
 		}
 		storage.AddFact(fact)
 	}
@@ -52,7 +51,6 @@ func createTestFact() *Fact {
 			"value": 42,
 			"name":  "test",
 		},
-		Timestamp: time.Now(),
 	}
 }
 

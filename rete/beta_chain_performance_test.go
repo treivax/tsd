@@ -161,7 +161,6 @@ func BenchmarkJoinCache_Hits(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -218,7 +217,6 @@ func BenchmarkJoinCache_Misses(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -280,7 +278,6 @@ func BenchmarkJoinCache_Evictions(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -316,7 +313,6 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 		result := &JoinResult{
 			Matched:   true,
 			Token:     token,
-			Timestamp: time.Now(),
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -356,7 +352,6 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 			result := &JoinResult{
 				Matched:   true,
 				Token:     token,
-				Timestamp: time.Now(),
 			}
 			cache.SetJoinResult(token, fact, joinNode, result)
 		}

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
 )
 
 // BetaJoinCache gère le cache des résultats de jointure pour optimiser les performances.
@@ -20,7 +19,7 @@ import (
 // Architecture:
 //
 //	Cache Key: hash(leftTokenID + rightFactID + joinConditions)
-//	Cache Value: JoinResult (matched: bool, token: *Token, timestamp: time)
+//	Cache Value: JoinResult (matched: bool, token: *Token)
 //
 // Utilisation du cache LRU existant pour bénéficier de:
 //   - Éviction automatique (LRU)
@@ -58,11 +57,11 @@ type BetaJoinCache struct {
 }
 
 // JoinResult représente le résultat d'une opération de jointure mise en cache.
+// Note: Le timestamp de mise en cache est géré par le cache LRU sous-jacent.
 type JoinResult struct {
-	Matched   bool      // true si le token et le fait ont matché
-	Token     *Token    // Token résultant si matched=true, nil sinon
-	Timestamp time.Time // Timestamp de la mise en cache
-	JoinType  string    // Type de jointure (pour debug/metrics)
+	Matched  bool   // true si le token et le fait ont matché
+	Token    *Token // Token résultant si matched=true, nil sinon
+	JoinType string // Type de jointure (pour debug/metrics)
 }
 
 // joinCacheKey représente une clé de cache pour une opération de jointure.
@@ -175,7 +174,6 @@ func (bjc *BetaJoinCache) GetJoinResult(leftToken *Token, rightFact *Fact, joinN
 //	result := &JoinResult{
 //	    Matched: true,
 //	    Token: joinedToken,
-//	    Timestamp: time.Now(),
 //	    JoinType: "binary",
 //	}
 //	cache.SetJoinResult(token, fact, node, result)
@@ -191,12 +189,8 @@ func (bjc *BetaJoinCache) SetJoinResult(leftToken *Token, rightFact *Fact, joinN
 		return
 	}
 
-	// Définir le timestamp si pas déjà défini
-	if result.Timestamp.IsZero() {
-		result.Timestamp = time.Now()
-	}
-
 	// Stocker dans le cache LRU
+	// Note: Le timestamp est géré automatiquement par le cache LRU
 	bjc.lruCache.Set(cacheKey, result)
 }
 
