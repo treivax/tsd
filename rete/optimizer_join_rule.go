@@ -120,11 +120,3 @@ func (s *JoinRuleRemovalStrategy) RemoveRule(ruleID string, nodeIDs []string) (i
 	s.network.logger.Info("✅ Rule %s removed successfully (%d node(s) deleted)", ruleID, deletedCount)
 	return deletedCount, nil
 }
-
-// removeRuleWithJoins is the legacy method that delegates to the strategy
-// This maintains backward compatibility
-func (rn *ReteNetwork) removeRuleWithJoins(ruleID string, nodeIDs []string) error {
-	strategy := NewJoinRuleRemovalStrategy(rn)
-	_, err := strategy.RemoveRule(ruleID, nodeIDs)
-	return err
-}

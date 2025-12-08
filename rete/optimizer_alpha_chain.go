@@ -123,12 +123,3 @@ func (s *AlphaChainRemovalStrategy) RemoveRule(ruleID string, nodeIDs []string) 
 	s.network.logger.Info("✅ Règle %s avec chaîne supprimée avec succès (%d nœud(s) supprimé(s))", ruleID, deletedCount)
 	return deletedCount, nil
 }
-
-// removeAlphaChain is the legacy method that delegates to the strategy
-// This maintains backward compatibility
-func (rn *ReteNetwork) removeAlphaChain(ruleID string) error {
-	nodeIDs := rn.LifecycleManager.GetNodesForRule(ruleID)
-	strategy := NewAlphaChainRemovalStrategy(rn)
-	_, err := strategy.RemoveRule(ruleID, nodeIDs)
-	return err
-}
