@@ -51,7 +51,7 @@ This document illustrates the architectural refactoring of the RETE network modu
             │                      │                      │
   ┌─────────▼────────┐   ┌─────────▼────────┐   ┌───────▼──────────┐
   │ network_builder  │   │ network_manager  │   │ network_optimizer│
-  │   (82 lines)     │   │  (414 lines)     │   │   (660 lines)    │
+  │   (82 lines)     │   │  (414 lines)     │   │   (108 lines)    │
   ├──────────────────┤   ├──────────────────┤   ├──────────────────┤
   │ Construction     │   │ Runtime Mgmt     │   │ Optimization     │
   ├──────────────────┤   ├──────────────────┤   ├──────────────────┤
@@ -291,13 +291,13 @@ Before:
 ████████████████████████████████████████  1300 lines (100%)
 
 After:
-network.go:          ████                   167 lines (12.9%)
-network_builder.go:  █                       82 lines (6.3%)
-network_manager.go:  ████████               414 lines (31.8%)
-network_optimizer.go:███████████████        660 lines (50.8%)
-network_validator.go:█████                  254 lines (19.5%)
+network.go:          ████                   167 lines (16.3%)
+network_builder.go:  █                       82 lines (8.0%)
+network_manager.go:  ████████               414 lines (40.4%)
+network_optimizer.go:██                     108 lines (10.5%)
+network_validator.go:█████                  254 lines (24.8%)
                      ──────────────────────────────────────
-                     Total: 1577 lines (121.3% - includes new validation)
+                     Total: 1025 lines (78.8% - more focused code)
 ```
 
 ## Design Principles Applied

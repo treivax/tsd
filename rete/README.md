@@ -94,6 +94,7 @@ func main() {
 
 ### Guides Techniques
 
+- [**Network Architecture**](docs/NETWORK_ARCHITECTURE.md) - Architecture modulaire du réseau RETE
 - [**Advanced Nodes**](docs/ADVANCED_NODES_IMPLEMENTATION.md) - Implémentation des nœuds avancés
 - [**Advanced Nodes Usage**](docs/ADVANCED_NODES_USAGE_GUIDE.md) - Guide d'utilisation des nœuds avancés
 - [**Node Lifecycle**](docs/NODE_LIFECYCLE.md) - Cycle de vie des nœuds
