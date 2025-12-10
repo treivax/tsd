@@ -4,9 +4,6 @@ REPORTS/*
 !REPORTS/README.md
 !REPORTS/.gitkeep
 
-# AI prompts (not versioned)
-.github/prompts/
-
 # TLS Certificates (never commit private keys!)
 certs/
 *.crt
