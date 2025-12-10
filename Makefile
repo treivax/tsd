@@ -40,10 +40,12 @@ help: ## Afficher cette aide
 	@echo ""
 	@echo "$(CYAN)🧪 TESTS & QUALITÉ:$(NC)"
 	@echo "$(GREEN)test-unit$(NC)            - Tests unitaires (rapides)"
+	@echo "$(GREEN)test-fixtures$(NC)        - Tests fixtures partagées"
 	@echo "$(GREEN)test-e2e$(NC)             - Tests E2E (fixtures TSD)"
 	@echo "$(GREEN)test-integration$(NC)     - Tests d'intégration"
 	@echo "$(GREEN)test-performance$(NC)     - Tests de performance"
-	@echo "$(GREEN)test-all$(NC)             - Tous les tests"
+	@echo "$(GREEN)test-all$(NC)             - Tous les tests standards"
+	@echo "$(GREEN)test-complete$(NC)        - TOUS les tests (complet)"
 	@echo "$(GREEN)coverage$(NC)             - Rapport de couverture"
 	@echo "$(GREEN)bench$(NC)                - Benchmarks"
 	@echo "$(GREEN)lint$(NC)                 - Analyse statique du code"
@@ -124,10 +126,17 @@ rete-unified-report: build-runners ## RETE - Générer seulement le rapport univ
 # TESTS & QUALITÉ
 # ================================
 
+test: test-unit ## TEST - Alias pour tests unitaires (raccourci)
+
 test-unit: ## TEST - Tests unitaires (rapides, sans build tags)
 	@echo "$(BLUE)🧪 Exécution des tests unitaires...$(NC)"
 	@go test -v -short -timeout=$(TEST_TIMEOUT) ./constraint/... ./rete/... ./cmd/...
 	@echo "$(GREEN)✅ Tests unitaires terminés$(NC)"
+
+test-fixtures: ## TEST - Tests des fixtures partagées
+	@echo "$(BLUE)📦 Exécution des tests fixtures...$(NC)"
+	@go test -v -timeout=$(TEST_TIMEOUT) ./tests/fixtures/...
+	@echo "$(GREEN)✅ Tests fixtures terminés$(NC)"
 
 test-e2e: ## TEST - Tests E2E (fixtures TSD)
 	@echo "$(BLUE)🎯 Exécution des tests E2E...$(NC)"
@@ -161,9 +170,28 @@ test-load: ## TEST - Tests de charge avec profiling
 	@go test -v -tags=performance -run=TestLoad -cpuprofile=cpu.prof -memprofile=mem.prof ./tests/performance/...
 	@echo "$(GREEN)✅ Profiles générés: cpu.prof, mem.prof$(NC)"
 
-test-all: test-unit test-integration test-e2e ## TEST - Tous les tests
+test-all: test-unit test-fixtures test-integration test-e2e test-performance ## TEST - Tous les tests standards
 	@echo ""
-	@echo "$(GREEN)🎉 TOUS LES TESTS RÉUSSIS$(NC)"
+	@echo "$(GREEN)🎉 TOUS LES TESTS STANDARDS RÉUSSIS$(NC)"
+
+test-complete: ## TEST - TOUS les tests (tous les sous-répertoires de tests/)
+	@echo "$(BLUE)🚀 Exécution COMPLÈTE de tous les tests...$(NC)"
+	@echo "$(CYAN)📂 Tests unitaires...$(NC)"
+	@go test -v -short -timeout=$(TEST_TIMEOUT) ./constraint/... ./rete/... ./cmd/...
+	@echo ""
+	@echo "$(CYAN)📦 Tests fixtures...$(NC)"
+	@go test -v -timeout=$(TEST_TIMEOUT) ./tests/fixtures/...
+	@echo ""
+	@echo "$(CYAN)🔗 Tests intégration...$(NC)"
+	@go test -v -tags=integration -timeout=$(TEST_TIMEOUT) ./tests/integration/...
+	@echo ""
+	@echo "$(CYAN)🎯 Tests E2E...$(NC)"
+	@go test -v -tags=e2e -timeout=$(TEST_TIMEOUT) ./tests/e2e/...
+	@echo ""
+	@echo "$(CYAN)⚡ Tests performance...$(NC)"
+	@go test -v -tags=performance -timeout=1h ./tests/performance/...
+	@echo ""
+	@echo "$(GREEN)🎉 VALIDATION COMPLÈTE - TOUS LES TESTS RÉUSSIS$(NC)"
 
 test-race: ## TEST - Tests avec race detector
 	@echo "$(BLUE)🏁 Tests avec race detector...$(NC)"
@@ -299,7 +327,7 @@ watch-test: ## DEV - Surveiller et relancer tests
 # VALIDATION COMPLÈTE
 # ================================
 
-validate: format lint build test-all ## VALIDATION COMPLÈTE
+validate: format lint build test-complete ## VALIDATION COMPLÈTE (tous les tests)
 	@echo ""
 	@echo "$(GREEN)🎉 VALIDATION COMPLÈTE RÉUSSIE$(NC)"
 	@echo "==============================="
@@ -307,15 +335,17 @@ validate: format lint build test-all ## VALIDATION COMPLÈTE
 	@echo "$(GREEN)✅ Analyse statique$(NC)"
 	@echo "$(GREEN)✅ Compilation$(NC)"
 	@echo "$(GREEN)✅ Tests unitaires$(NC)"
+	@echo "$(GREEN)✅ Tests fixtures$(NC)"
 	@echo "$(GREEN)✅ Tests d'intégration$(NC)"
 	@echo "$(GREEN)✅ Tests E2E$(NC)"
+	@echo "$(GREEN)✅ Tests performance$(NC)"
 	@echo ""
 	@echo "$(BLUE)🚀 Projet prêt pour la production !$(NC)"
 
 quick-check: format lint build ## Validation rapide sans tests
 	@echo "$(GREEN)✅ Validation rapide terminée$(NC)"
 
-ci: clean deps lint test-all build ## Validation pour CI/CD
+ci: clean deps lint test-complete build ## Validation pour CI/CD
 	@echo "$(GREEN)🤖 Validation CI/CD terminée$(NC)"
 
 # ================================
