@@ -54,15 +54,15 @@ rule r3 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 	}
 
 	// Verify we have 2 rules
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules after first file, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules after first file, got %d", ps.GetRulesCount())
 	}
 
 	// Verify rule IDs are tracked
-	if !ps.RuleIDs["r1"] {
+	if !ps.HasRuleIDForTesting("r1") {
 		t.Error("Rule ID 'r1' should be tracked")
 	}
-	if !ps.RuleIDs["r2"] {
+	if !ps.HasRuleIDForTesting("r2") {
 		t.Error("Rule ID 'r2' should be tracked")
 	}
 
@@ -76,18 +76,18 @@ rule r3 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 
 	// Should have only 3 rules total (r1 and r2 from file1, r3 from file2)
 	// The duplicate r1 from file2 should be ignored
-	if len(ps.Rules) != 3 {
-		t.Errorf("Expected 3 rules total (duplicate r1 ignored), got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 3 {
+		t.Errorf("Expected 3 rules total (duplicate r1 ignored), got %d", ps.GetRulesCount())
 	}
 
 	// Verify r3 was added
-	if !ps.RuleIDs["r3"] {
+	if !ps.HasRuleIDForTesting("r3") {
 		t.Error("Rule ID 'r3' should be tracked")
 	}
 
 	// Verify we have an error recorded for the duplicate
 	foundDuplicateError := false
-	for _, errRecord := range ps.Errors {
+	for _, errRecord := range ps.GetErrors() {
 		if errRecord.Type == "rule" && errRecord.File == file2 {
 			t.Logf("✅ Duplicate rule error recorded: %s", errRecord.Message)
 			foundDuplicateError = true
@@ -149,11 +149,11 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 	}
 
 	// Verify initial state
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules after first file, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules after first file, got %d", ps.GetRulesCount())
 	}
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type after first file, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type after first file, got %d", ps.GetTypesCount())
 	}
 
 	t.Logf("✅ Before reset: 2 rules (r1, r2), 1 type (Person)")
@@ -165,34 +165,34 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 	}
 
 	// After reset, should have new rules with same IDs (allowed after reset)
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules after reset, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules after reset, got %d", ps.GetRulesCount())
 	}
 
 	// Should have Product type, not Person (reset cleared Person)
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type after reset, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type after reset, got %d", ps.GetTypesCount())
 	}
 
-	if _, exists := ps.Types["Product"]; !exists {
+	if _, exists := ps.GetTypes()["Product"]; !exists {
 		t.Error("Expected Product type after reset")
 	}
 
-	if _, exists := ps.Types["Person"]; exists {
+	if _, exists := ps.GetTypes()["Person"]; exists {
 		t.Error("Person type should be cleared after reset")
 	}
 
 	// Verify rule IDs are the new ones
-	if !ps.RuleIDs["r1"] {
+	if !ps.HasRuleIDForTesting("r1") {
 		t.Error("Rule ID 'r1' should be tracked after reset")
 	}
-	if !ps.RuleIDs["r2"] {
+	if !ps.HasRuleIDForTesting("r2") {
 		t.Error("Rule ID 'r2' should be tracked after reset")
 	}
 
 	// Should have no errors (reusing IDs after reset is allowed)
-	if len(ps.Errors) > 0 {
-		t.Errorf("Expected no errors after reset, got %d: %v", len(ps.Errors), ps.Errors)
+	if len(ps.GetErrors()) > 0 {
+		t.Errorf("Expected no errors after reset, got %d: %v", len(ps.GetErrors()), ps.GetErrors())
 	}
 
 	t.Logf("✅ After reset: 2 rules (r1, r2 reused), 1 type (Product)")
@@ -233,17 +233,17 @@ rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 
 	// Should have only 2 rules (first r1 and r2)
 	// The second r1 should be ignored
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules (duplicate ignored), got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules (duplicate ignored), got %d", ps.GetRulesCount())
 	}
 
 	// Verify we have an error recorded
-	if len(ps.Errors) != 1 {
-		t.Errorf("Expected 1 error for duplicate rule ID, got %d", len(ps.Errors))
+	if len(ps.GetErrors()) != 1 {
+		t.Errorf("Expected 1 error for duplicate rule ID, got %d", len(ps.GetErrors()))
 	}
 
-	if len(ps.Errors) > 0 {
-		t.Logf("✅ Duplicate error recorded: %s", ps.Errors[0].Message)
+	if len(ps.GetErrors()) > 0 {
+		t.Logf("✅ Duplicate error recorded: %s", ps.GetErrors()[0].Message)
 	}
 
 	t.Log("\n🎊 TEST PASSED: Duplicate rule IDs in same file are detected")
@@ -257,14 +257,14 @@ func TestRuleIdEmptyAllowed(t *testing.T) {
 	ps := NewProgramState()
 
 	// Manually create rules with empty IDs (simulating legacy or edge case)
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "string"},
 			{Name: "age", Type: "number"},
 		},
-	}
+	})
 
 	// Create rules with empty IDs
 	rule1 := Expression{
@@ -296,13 +296,13 @@ func TestRuleIdEmptyAllowed(t *testing.T) {
 	}
 
 	// Both rules should be added (empty IDs are not tracked)
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules with empty IDs, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules with empty IDs, got %d", ps.GetRulesCount())
 	}
 
 	// Should have no errors (empty IDs don't trigger uniqueness check)
-	if len(ps.Errors) > 0 {
-		t.Errorf("Expected no errors for empty IDs, got %d", len(ps.Errors))
+	if len(ps.GetErrors()) > 0 {
+		t.Errorf("Expected no errors for empty IDs, got %d", len(ps.GetErrors()))
 	}
 
 	t.Logf("✅ Both rules with empty IDs were accepted")
@@ -370,13 +370,13 @@ rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 	t.Logf("✅ File3: 1 rule accepted (r3), 1 duplicate rejected (r1)")
 
 	// Should have 3 rules total: r1 (file1), r2 (file2), r3 (file3)
-	if len(ps.Rules) != 3 {
-		t.Errorf("Expected 3 rules total, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 3 {
+		t.Errorf("Expected 3 rules total, got %d", ps.GetRulesCount())
 	}
 
 	// Should have 1 error for duplicate r1 in file3
 	duplicateErrors := 0
-	for _, errRecord := range ps.Errors {
+	for _, errRecord := range ps.GetErrors() {
 		if errRecord.Type == "rule" && errRecord.File == file3 {
 			duplicateErrors++
 			t.Logf("✅ Error recorded: %s", errRecord.Message)
@@ -390,7 +390,7 @@ rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 	// Verify tracked IDs
 	expectedIDs := []string{"r1", "r2", "r3"}
 	for _, id := range expectedIDs {
-		if !ps.RuleIDs[id] {
+		if !ps.HasRuleIDForTesting(id) {
 			t.Errorf("Rule ID '%s' should be tracked", id)
 		}
 	}

@@ -18,7 +18,7 @@ func BenchmarkTSDExecution_Simple(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(fixture, nil, storage)
+		_, _, _ = pipeline.IngestFile(fixture, nil, storage)
 	}
 }
 
@@ -29,7 +29,7 @@ func BenchmarkTSDExecution_Complex(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(fixture, nil, storage)
+		_, _, _ = pipeline.IngestFile(fixture, nil, storage)
 	}
 }
 
@@ -40,7 +40,7 @@ func BenchmarkParallel(b *testing.B) {
 		for pb.Next() {
 			pipeline := rete.NewConstraintPipeline()
 			storage := rete.NewMemoryStorage()
-			_, _ = pipeline.IngestFile(fixture, nil, storage)
+			_, _, _ = pipeline.IngestFile(fixture, nil, storage)
 		}
 	})
 }
@@ -61,7 +61,7 @@ func BenchmarkTSDExecution_AlphaFixtures(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				pipeline := rete.NewConstraintPipeline()
 				storage := rete.NewMemoryStorage()
-				_, _ = pipeline.IngestFile(fixturePath, nil, storage)
+				_, _, _ = pipeline.IngestFile(fixturePath, nil, storage)
 			}
 		})
 	}
@@ -81,7 +81,7 @@ func BenchmarkTSDExecution_BetaFixtures(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				pipeline := rete.NewConstraintPipeline()
 				storage := rete.NewMemoryStorage()
-				_, _ = pipeline.IngestFile(fixturePath, nil, storage)
+				_, _, _ = pipeline.IngestFile(fixturePath, nil, storage)
 			}
 		})
 	}
@@ -109,7 +109,7 @@ func BenchmarkFactProcessing_10Facts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -121,7 +121,7 @@ func BenchmarkFactProcessing_100Facts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -133,7 +133,7 @@ func BenchmarkFactProcessing_1000Facts(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -153,7 +153,7 @@ Item(value:3)
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -178,7 +178,7 @@ Record(a:25, b:75, c:65, d:true, e:"test3")
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -200,7 +200,7 @@ Company(id:2, person_id:2, name:"TechCorp")
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -228,7 +228,7 @@ C(id:200, b_id:20, value:"c2")
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -252,7 +252,7 @@ Data(value:-7)
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -272,7 +272,7 @@ Simple(value:3)
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -294,7 +294,7 @@ Complex(f1:5, f2:"d", f3:false, f4:6, f5:"e", f6:true, f7:7, f8:"f", f9:false, f
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 
@@ -308,7 +308,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		pipeline := rete.NewConstraintPipeline()
 		storage := rete.NewMemoryStorage()
-		_, _ = pipeline.IngestFile(tempFile, nil, storage)
+		_, _, _ = pipeline.IngestFile(tempFile, nil, storage)
 	}
 }
 

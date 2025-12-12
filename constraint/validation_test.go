@@ -13,13 +13,13 @@ func TestValidateFactWithInvalidType(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add a type definition
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	// Create a fact with an undefined type
 	fact := &Fact{
@@ -43,13 +43,13 @@ func TestValidateFactWithInvalidField(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add a type definition
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	// Create a fact with an undefined field
 	fact := &Fact{
@@ -71,13 +71,13 @@ func TestValidateFactSuccess(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add a type definition
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	// Create a valid fact
 	fact := &Fact{
@@ -214,7 +214,7 @@ func TestErrorMethods(t *testing.T) {
 
 	// Test that GetErrors returns a copy
 	errors[0].Message = "modified"
-	if ps.Errors[0].Message == "modified" {
+	if ps.GetErrors()[0].Message == "modified" {
 		t.Error("GetErrors should return a copy, not the original slice")
 	}
 

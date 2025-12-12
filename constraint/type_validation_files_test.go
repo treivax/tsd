@@ -23,18 +23,18 @@ func TestTypeValidation_ValidFile(t *testing.T) {
 	}
 
 	// Verify all types were loaded
-	if len(ps.Types) != 3 {
-		t.Errorf("Expected 3 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 3 {
+		t.Errorf("Expected 3 types, got %d", ps.GetTypesCount())
 	}
 
 	// Verify all facts were loaded
-	if len(ps.Facts) != 8 {
-		t.Errorf("Expected 8 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 8 {
+		t.Errorf("Expected 8 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify all rules were loaded
-	if len(ps.Rules) != 5 {
-		t.Errorf("Expected 5 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 5 {
+		t.Errorf("Expected 5 rules, got %d", ps.GetRulesCount())
 	}
 }
 
@@ -63,16 +63,16 @@ func TestTypeValidation_InvalidFile(t *testing.T) {
 	}
 
 	// Verify valid items were still loaded
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types (valid ones), got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types (valid ones), got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("Expected 2 valid facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("Expected 2 valid facts, got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 valid rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 valid rules, got %d", ps.GetRulesCount())
 	}
 
 	// Verify error types
@@ -162,8 +162,8 @@ func TestTypeValidation_MultipleFiles(t *testing.T) {
 		t.Errorf("Valid file should not produce errors")
 	}
 
-	initialFactsCount := len(ps.Facts)
-	initialRulesCount := len(ps.Rules)
+	initialFactsCount := ps.GetFactsCount()
+	initialRulesCount := ps.GetRulesCount()
 
 	// Parse invalid file second
 	err = ps.ParseAndMerge("test/validation/invalid_items.tsd")
@@ -178,13 +178,13 @@ func TestTypeValidation_MultipleFiles(t *testing.T) {
 
 	// Facts should increase by 2 (valid facts from invalid_items.tsd)
 	expectedFacts := initialFactsCount + 2
-	if len(ps.Facts) != expectedFacts {
-		t.Errorf("Expected %d facts total, got %d", expectedFacts, len(ps.Facts))
+	if ps.GetFactsCount() != expectedFacts {
+		t.Errorf("Expected %d facts total, got %d", expectedFacts, ps.GetFactsCount())
 	}
 
 	// At least some rules should have been added or rejected
-	if len(ps.Rules) < initialRulesCount {
-		t.Errorf("Rule count should not decrease, got %d (was %d)", len(ps.Rules), initialRulesCount)
+	if ps.GetRulesCount() < initialRulesCount {
+		t.Errorf("Rule count should not decrease, got %d (was %d)", ps.GetRulesCount(), initialRulesCount)
 	}
 
 	// All errors should be from the invalid file

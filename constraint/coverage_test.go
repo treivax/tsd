@@ -12,13 +12,13 @@ import (
 func TestValidateRuleWithUndefinedType(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	rule := &Expression{
 		Set: Set{
@@ -39,13 +39,13 @@ func TestValidateRuleWithUndefinedType(t *testing.T) {
 func TestValidateRuleWithValidType(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	rule := &Expression{
 		Set: Set{
@@ -66,13 +66,13 @@ func TestValidateRuleWithValidType(t *testing.T) {
 func TestScanForFieldAccessWithInvalidField(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	variables := map[string]string{
 		"p": "Person",
@@ -94,13 +94,13 @@ func TestScanForFieldAccessWithInvalidField(t *testing.T) {
 func TestScanForFieldAccessWithValidField(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	variables := map[string]string{
 		"p": "Person",
@@ -165,8 +165,8 @@ func TestMergeTypesCompatible(t *testing.T) {
 		t.Errorf("Unexpected error merging compatible types: %v", err)
 	}
 
-	if len(ps.Types["Person"].Fields) != 2 {
-		t.Errorf("Expected 2 fields, got %d", len(ps.Types["Person"].Fields))
+	if len(ps.GetTypes()["Person"].Fields) != 2 {
+		t.Errorf("Expected 2 fields, got %d", len(ps.GetTypes()["Person"].Fields))
 	}
 }
 
@@ -246,14 +246,14 @@ func TestMergeFactsNilProgramState(t *testing.T) {
 func TestToProgram(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 		},
-	}
+	})
 
-	ps.Rules = append(ps.Rules, &Expression{
+	ps.AddRuleForTesting(&Expression{
 		Set: Set{
 			Variables: []TypedVariable{
 				{Name: "p", DataType: "Person"},
@@ -261,7 +261,7 @@ func TestToProgram(t *testing.T) {
 		},
 	})
 
-	ps.Facts = append(ps.Facts, &Fact{
+	ps.AddFactForTesting(&Fact{
 		TypeName: "Person",
 		Fields: []FactField{
 			{Name: "id", Value: FactValue{Type: "identifier", Value: "P001"}},
@@ -321,7 +321,7 @@ func TestValidateFactValueIdentifierAsString(t *testing.T) {
 	}
 }
 
-// TestGetStringValueValidCases tests getStringValue with various inputs
+// TestGetStringValueValidCases tests extractMapStringValue with various inputs
 func TestGetStringValueValidCases(t *testing.T) {
 	// Test with valid string
 	m := map[string]interface{}{
@@ -329,21 +329,21 @@ func TestGetStringValueValidCases(t *testing.T) {
 		"age":  25,
 	}
 
-	result := getStringValue(m, "name")
-	if result != "Alice" {
-		t.Errorf("Expected 'Alice', got '%s'", result)
+	result, ok := extractMapStringValue(m, "name")
+	if !ok || result != "Alice" {
+		t.Errorf("Expected ('Alice', true), got ('%s', %v)", result, ok)
 	}
 
 	// Test with non-string value
-	result = getStringValue(m, "age")
-	if result != "" {
-		t.Errorf("Expected empty string for non-string value, got '%s'", result)
+	result, ok = extractMapStringValue(m, "age")
+	if ok || result != "" {
+		t.Errorf("Expected ('', false) for non-string value, got ('%s', %v)", result, ok)
 	}
 
 	// Test with non-existent key
-	result = getStringValue(m, "nonexistent")
-	if result != "" {
-		t.Errorf("Expected empty string for non-existent key, got '%s'", result)
+	result, ok = extractMapStringValue(m, "nonexistent")
+	if ok || result != "" {
+		t.Errorf("Expected ('', false) for non-existent key, got ('%s', %v)", result, ok)
 	}
 }
 
@@ -351,13 +351,13 @@ func TestGetStringValueValidCases(t *testing.T) {
 func TestScanForFieldAccessArrayNested(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	variables := map[string]string{
 		"p": "Person",
@@ -384,12 +384,12 @@ func TestScanForFieldAccessArrayNested(t *testing.T) {
 func TestScanForFieldAccessUnknownVariable(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 		},
-	}
+	})
 
 	variables := map[string]string{
 		"p": "Person",
@@ -418,8 +418,8 @@ func TestMergeTypesEmptySlice(t *testing.T) {
 		t.Errorf("Unexpected error for empty types: %v", err)
 	}
 
-	if len(ps.Types) != 0 {
-		t.Errorf("Expected 0 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 0 {
+		t.Errorf("Expected 0 types, got %d", ps.GetTypesCount())
 	}
 }
 
@@ -448,8 +448,8 @@ func TestMergeRulesWithInvalidRule(t *testing.T) {
 		t.Error("Expected validation error to be recorded")
 	}
 
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 valid rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 valid rules, got %d", ps.GetRulesCount())
 	}
 }
 
@@ -457,13 +457,13 @@ func TestMergeRulesWithInvalidRule(t *testing.T) {
 func TestValidateRuleWithFieldAccessError(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
 		},
-	}
+	})
 
 	rule := &Expression{
 		Set: Set{
@@ -488,13 +488,13 @@ func TestValidateRuleWithFieldAccessError(t *testing.T) {
 func TestValidateFactWithWrongFieldType(t *testing.T) {
 	ps := NewProgramState()
 
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "identifier"},
 			{Name: "age", Type: "number"},
 		},
-	}
+	})
 
 	// Fact with string value for number field
 	fact := &Fact{
@@ -807,8 +807,8 @@ func TestParseAndMergeContentValidInput(t *testing.T) {
 		t.Errorf("Expected no error for valid content, got %v", err)
 	}
 
-	if len(ps.FilesParsed) != 1 {
-		t.Errorf("Expected 1 file parsed, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 1 {
+		t.Errorf("Expected 1 file parsed, got %d", len(ps.GetFilesParsed()))
 	}
 }
 
@@ -1212,7 +1212,7 @@ func TestValidateLogicalExpressionConstraint(t *testing.T) {
 				},
 			},
 		}
-		err := validateLogicalExpressionConstraint(program, constraint, 0)
+		err := validateLogicalExpressionConstraint(program, constraint, 0, 0)
 		if err != nil {
 			t.Errorf("Expected no error for valid logical expression, got %v", err)
 		}
@@ -1225,7 +1225,7 @@ func TestValidateLogicalExpressionConstraint(t *testing.T) {
 				"type": "comparison",
 			},
 		}
-		err := validateLogicalExpressionConstraint(program, constraint, 0)
+		err := validateLogicalExpressionConstraint(program, constraint, 0, 0)
 		if err != nil {
 			t.Errorf("Expected no error when operations is missing, got %v", err)
 		}
@@ -1268,7 +1268,7 @@ func TestValidateBinaryOpConstraint(t *testing.T) {
 				"value": 5,
 			},
 		}
-		err := validateBinaryOpConstraint(program, constraint, 0)
+		err := validateConstraintWithOperands(program, constraint, 0, false, 0)
 		if err != nil {
 			t.Errorf("Expected no error for valid binary operation, got %v", err)
 		}
@@ -1284,7 +1284,7 @@ func TestValidateBinaryOpConstraint(t *testing.T) {
 			},
 			"operator": "+",
 		}
-		err := validateBinaryOpConstraint(program, constraint, 0)
+		err := validateConstraintWithOperands(program, constraint, 0, false, 0)
 		if err != nil {
 			t.Errorf("Expected no error when right is missing, got %v", err)
 		}

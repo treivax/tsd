@@ -32,8 +32,8 @@ func TestNonBlockingValidation(t *testing.T) {
 		t.Fatalf("ParseAndMerge should not fail with validation errors: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("Expected 2 valid facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("Expected 2 valid facts, got %d", ps.GetFactsCount())
 	}
 
 	if !ps.HasErrors() {
@@ -45,5 +45,5 @@ func TestNonBlockingValidation(t *testing.T) {
 		t.Errorf("Expected at least 1 error, got %d", errorCount)
 	}
 
-	t.Logf("Non-blocking: %d types, %d valid facts, %d errors", len(ps.Types), len(ps.Facts), errorCount)
+	t.Logf("Non-blocking: %d types, %d valid facts, %d errors", ps.GetTypesCount(), ps.GetFactsCount(), errorCount)
 }

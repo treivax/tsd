@@ -21,8 +21,8 @@ func TestIncrementalFactsParsing_SingleType(t *testing.T) {
 		t.Fatalf("Failed to parse type: %v", err)
 	}
 
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type, got %d", ps.GetTypesCount())
 	}
 
 	// Step 2: Add first batch of facts
@@ -35,8 +35,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse first batch of facts: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After first batch: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After first batch: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 3: Add second batch of facts
@@ -50,8 +50,8 @@ Person(id: "P005", name: "Eve", age: 42)
 		t.Fatalf("Failed to parse second batch of facts: %v", err)
 	}
 
-	if len(ps.Facts) != 5 {
-		t.Errorf("After second batch: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After second batch: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 4: Add third batch of facts
@@ -63,8 +63,8 @@ Person(id: "P006", name: "Frank", age: 50)
 		t.Fatalf("Failed to parse third batch of facts: %v", err)
 	}
 
-	if len(ps.Facts) != 6 {
-		t.Errorf("After third batch: expected 6 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 6 {
+		t.Errorf("After third batch: expected 6 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify no errors occurred
@@ -74,7 +74,7 @@ Person(id: "P006", name: "Frank", age: 50)
 
 	// Verify all facts are unique
 	idsSeen := make(map[string]bool)
-	for _, fact := range ps.Facts {
+	for _, fact := range ps.GetFacts() {
 		for _, field := range fact.Fields {
 			if field.Name == "id" {
 				id := field.Value.Value.(string)
@@ -106,8 +106,8 @@ type Order(id: string, customer_id: string, product_id: string, quantity:number)
 		t.Fatalf("Failed to parse types: %v", err)
 	}
 
-	if len(ps.Types) != 3 {
-		t.Errorf("Expected 3 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 3 {
+		t.Errorf("Expected 3 types, got %d", ps.GetTypesCount())
 	}
 
 	// Step 2: Add Person facts
@@ -120,8 +120,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse Person facts: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After Person facts: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After Person facts: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 3: Add Product facts
@@ -135,8 +135,8 @@ Product(id: "PR003", name: "Keyboard", price: 79.99)
 		t.Fatalf("Failed to parse Product facts: %v", err)
 	}
 
-	if len(ps.Facts) != 5 {
-		t.Errorf("After Product facts: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After Product facts: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 4: Add Order facts
@@ -149,8 +149,8 @@ Order(id: "O002", customer_id: "P002", product_id: "PR002", quantity: 2)
 		t.Fatalf("Failed to parse Order facts: %v", err)
 	}
 
-	if len(ps.Facts) != 7 {
-		t.Errorf("After Order facts: expected 7 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 7 {
+		t.Errorf("After Order facts: expected 7 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 5: Add more mixed facts
@@ -164,8 +164,8 @@ Order(id: "O003", customer_id: "P003", product_id: "PR004", quantity: 1)
 		t.Fatalf("Failed to parse mixed facts: %v", err)
 	}
 
-	if len(ps.Facts) != 10 {
-		t.Errorf("After mixed facts: expected 10 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 10 {
+		t.Errorf("After mixed facts: expected 10 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify no errors
@@ -175,7 +175,7 @@ Order(id: "O003", customer_id: "P003", product_id: "PR004", quantity: 1)
 
 	// Verify fact type distribution
 	factsByType := make(map[string]int)
-	for _, fact := range ps.Facts {
+	for _, fact := range ps.GetFacts() {
 		factsByType[fact.TypeName]++
 	}
 
@@ -229,8 +229,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse facts1 file: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After facts1: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After facts1: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Create and parse second facts file
@@ -250,8 +250,8 @@ Person(id: "P005", name: "Eve", age: 42)
 		t.Fatalf("Failed to parse facts2 file: %v", err)
 	}
 
-	if len(ps.Facts) != 5 {
-		t.Errorf("After facts2: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After facts2: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Create and parse third facts file
@@ -270,13 +270,13 @@ Person(id: "P007", name: "Grace", age: 33)
 		t.Fatalf("Failed to parse facts3 file: %v", err)
 	}
 
-	if len(ps.Facts) != 7 {
-		t.Errorf("After facts3: expected 7 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 7 {
+		t.Errorf("After facts3: expected 7 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify files parsed
-	if len(ps.FilesParsed) != 4 {
-		t.Errorf("Expected 4 files parsed, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 4 {
+		t.Errorf("Expected 4 files parsed, got %d", len(ps.GetFilesParsed()))
 	}
 
 	// Verify no errors
@@ -306,8 +306,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse valid facts: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After valid batch 1: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After valid batch 1: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Add batch with some invalid facts
@@ -322,8 +322,8 @@ Person(id: "P005", name: "Eve", age: "forty-two")
 	}
 
 	// Should have 3 facts (2 from first batch + 1 valid from second)
-	if len(ps.Facts) != 3 {
-		t.Errorf("After mixed batch: expected 3 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 3 {
+		t.Errorf("After mixed batch: expected 3 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Should have 2 validation errors
@@ -347,8 +347,8 @@ Person(id: "P007", name: "Grace", age: 33)
 	}
 
 	// Should now have 5 facts total
-	if len(ps.Facts) != 5 {
-		t.Errorf("After valid batch 2: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After valid batch 2: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Error count should still be 2 (no new errors)
@@ -373,8 +373,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse initial content: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After initial: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After initial: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Add more facts
@@ -386,8 +386,8 @@ Person(id: "P003", name: "Charlie", age: 35)
 		t.Fatalf("Failed to parse additional content: %v", err)
 	}
 
-	if len(ps.Facts) != 3 {
-		t.Errorf("After additional: expected 3 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 3 {
+		t.Errorf("After additional: expected 3 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Reset and add new facts
@@ -405,12 +405,12 @@ Person(id: "P101", name: "Yolanda", age: 45)
 	}
 
 	// Should only have 2 facts (after reset)
-	if len(ps.Facts) != 2 {
-		t.Errorf("After reset: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After reset: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify the facts are the new ones
-	for _, fact := range ps.Facts {
+	for _, fact := range ps.GetFacts() {
 		for _, field := range fact.Fields {
 			if field.Name == "id" {
 				id := field.Value.Value.(string)
@@ -454,14 +454,14 @@ func TestIncrementalFactsParsing_LargeScale(t *testing.T) {
 		}
 
 		expectedCount := (batchNum + 1) * batchSize
-		if len(ps.Facts) != expectedCount {
-			t.Errorf("After batch %d: expected %d facts, got %d", batchNum, expectedCount, len(ps.Facts))
+		if ps.GetFactsCount() != expectedCount {
+			t.Errorf("After batch %d: expected %d facts, got %d", batchNum, expectedCount, ps.GetFactsCount())
 		}
 	}
 
 	// Verify final count
-	if len(ps.Facts) != totalBatches*batchSize {
-		t.Errorf("Final count: expected %d facts, got %d", totalBatches*batchSize, len(ps.Facts))
+	if ps.GetFactsCount() != totalBatches*batchSize {
+		t.Errorf("Final count: expected %d facts, got %d", totalBatches*batchSize, ps.GetFactsCount())
 	}
 
 	// Verify no errors
@@ -486,8 +486,8 @@ rule senior_check : {p: Person} / p.age >= 60 ==> senior(p.id)
 		t.Fatalf("Failed to parse types and rules: %v", err)
 	}
 
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 rules, got %d", ps.GetRulesCount())
 	}
 
 	// Add facts batch 1
@@ -500,13 +500,13 @@ Person(id: "P002", name: "Bob", age: 17)
 		t.Fatalf("Failed to parse facts1: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After facts1: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After facts1: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Rules should still be there
-	if len(ps.Rules) != 2 {
-		t.Errorf("Rules disappeared: expected 2, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Rules disappeared: expected 2, got %d", ps.GetRulesCount())
 	}
 
 	// Add facts batch 2
@@ -519,18 +519,18 @@ Person(id: "P004", name: "Diana", age: 25)
 		t.Fatalf("Failed to parse facts2: %v", err)
 	}
 
-	if len(ps.Facts) != 4 {
-		t.Errorf("After facts2: expected 4 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 4 {
+		t.Errorf("After facts2: expected 4 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Rules should still be there
-	if len(ps.Rules) != 2 {
-		t.Errorf("Rules disappeared: expected 2, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Rules disappeared: expected 2, got %d", ps.GetRulesCount())
 	}
 
 	// Types should still be there
-	if len(ps.Types) != 1 {
-		t.Errorf("Types disappeared: expected 1, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Types disappeared: expected 1, got %d", ps.GetTypesCount())
 	}
 
 	// Verify no errors

@@ -167,6 +167,9 @@ func RunTSDFile(t *testing.T, path string) *TSDResult {
 // captureOutput captures stdout during function execution
 // This function is thread-safe by using tsdio's stdout mutex to prevent races on os.Stdout
 func captureOutput(fn func()) string {
+	// Create a buffer to capture output
+	var buf bytes.Buffer
+
 	// Lock only during os.Stdout modifications, not during fn() execution
 	tsdio.LockStdout()
 	oldStdout := os.Stdout
@@ -174,25 +177,28 @@ func captureOutput(fn func()) string {
 	os.Stdout = w
 	tsdio.UnlockStdout()
 
-	// Channel to read the output
-	outputChan := make(chan string)
+	// Channel to signal when reading is complete
+	done := make(chan bool)
 	go func() {
-		var buf bytes.Buffer
 		io.Copy(&buf, r)
-		outputChan <- buf.String()
+		done <- true
 	}()
 
 	// Execute function (without holding mutex to avoid deadlock)
 	fn()
 
+	// Close writer to signal EOF to reader
+	w.Close()
+
+	// Wait for all output to be read
+	<-done
+
 	// Lock again to restore stdout
 	tsdio.LockStdout()
-	w.Close()
 	os.Stdout = oldStdout
 	tsdio.UnlockStdout()
 
-	// Read captured output
-	return <-outputChan
+	return buf.String()
 }
 
 // AssertTSDResult validates a TSD execution result against expected values

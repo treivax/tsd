@@ -422,7 +422,7 @@ func TestActionValidator_inferArgumentType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := av.inferArgumentType(tt.arg, tt.vars)
+			result, err := av.inferArgumentType(tt.arg, tt.vars, 0)
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
 			} else {

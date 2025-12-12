@@ -84,7 +84,7 @@ func TestGetFieldTypeExtended(t *testing.T) {
 		fieldType, err := GetFieldType(program, "p", "name", 0)
 		assert.Error(t, err)
 		assert.Equal(t, "", fieldType)
-		assert.Contains(t, err.Error(), "invalide")
+		assert.Contains(t, err.Error(), "invalid")
 	})
 
 	t.Run("variable not found", func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestGetFieldTypeExtended(t *testing.T) {
 		fieldType, err := GetFieldType(program, "unknown", "name", 0)
 		assert.Error(t, err)
 		assert.Equal(t, "", fieldType)
-		assert.Contains(t, err.Error(), "non trouvée")
+		assert.Contains(t, err.Error(), "not found")
 	})
 
 	t.Run("field not found in type", func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestGetFieldTypeExtended(t *testing.T) {
 		fieldType, err := GetFieldType(program, "p", "nonexistent", 0)
 		assert.Error(t, err)
 		assert.Equal(t, "", fieldType)
-		assert.Contains(t, err.Error(), "non trouvé")
+		assert.Contains(t, err.Error(), "not found")
 	})
 
 	t.Run("type definition not found", func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestValidateActionExtended(t *testing.T) {
 
 		err := ValidateAction(program, action, 999)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalide")
+		assert.Contains(t, err.Error(), "invalid")
 	})
 
 	t.Run("action with undefined variable", func(t *testing.T) {
