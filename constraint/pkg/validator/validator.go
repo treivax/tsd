@@ -18,16 +18,26 @@ type ConstraintValidator struct {
 	config       domain.ValidatorConfig
 }
 
-// NewConstraintValidator crée un nouveau validateur
-func NewConstraintValidator(registry domain.TypeRegistry, checker domain.TypeChecker) *ConstraintValidator {
+// NewConstraintValidator crée un nouveau validateur avec configuration injectable
+func NewConstraintValidator(registry domain.TypeRegistry, checker domain.TypeChecker, config domain.ValidatorConfig) *ConstraintValidator {
 	return &ConstraintValidator{
 		typeRegistry: registry,
 		typeChecker:  checker,
-		config: domain.ValidatorConfig{
-			StrictMode:       true,
-			AllowedOperators: []string{"==", "!=", "<", ">", "<=", ">=", "AND", "OR", "NOT"},
-			MaxDepth:         10,
-		},
+		config:       config,
+	}
+}
+
+// NewConstraintValidatorWithDefaults crée un validateur avec configuration par défaut
+func NewConstraintValidatorWithDefaults(registry domain.TypeRegistry, checker domain.TypeChecker) *ConstraintValidator {
+	return NewConstraintValidator(registry, checker, defaultValidatorConfig())
+}
+
+// defaultValidatorConfig retourne une configuration par défaut
+func defaultValidatorConfig() domain.ValidatorConfig {
+	return domain.ValidatorConfig{
+		StrictMode:       true,
+		AllowedOperators: []string{"==", "!=", "<", ">", "<=", ">=", "AND", "OR", "NOT", "+", "-", "*", "/", "%"},
+		MaxDepth:         10,
 	}
 }
 
@@ -187,8 +197,7 @@ func (v *ConstraintValidator) ValidateExpression(expr domain.Expression, types [
 
 	// Valider l'action (maintenant obligatoire)
 	if expr.Action != nil {
-		validator := NewActionValidator()
-		if err := validator.ValidateAction(expr.Action); err != nil {
+		if err := ValidateAction(expr.Action); err != nil {
 			return err
 		}
 	} else {
@@ -199,10 +208,91 @@ func (v *ConstraintValidator) ValidateExpression(expr domain.Expression, types [
 	return nil
 }
 
-// ValidateConstraint valide une contrainte
+// ValidateConstraint valide une contrainte de manière récursive
 func (v *ConstraintValidator) ValidateConstraint(constraint interface{}, variables []domain.TypedVariable, types []domain.TypeDefinition) error {
-	// Cette méthode délègue au type checker pour les détails de validation des types
-	return v.typeChecker.ValidateTypeCompatibility("", "", "")
+	if constraint == nil {
+		return nil
+	}
+
+	// Convertir en map pour l'analyse
+	constraintMap, ok := constraint.(map[string]interface{})
+	if !ok {
+		// Si ce n'est pas une map, on considère que c'est valide (littéral ou autre)
+		return nil
+	}
+
+	constraintType, _ := constraintMap["type"].(string)
+
+	switch constraintType {
+	case "constraint", "binaryOperation":
+		return v.validateBinaryConstraint(constraintMap, variables, types)
+	case "unaryOperation":
+		return v.validateUnaryConstraint(constraintMap, variables, types)
+	case "fieldAccess":
+		// Vérifier que le field access est valide
+		_, err := v.typeChecker.GetFieldType(constraint, variables, types)
+		return err
+	default:
+		// Pour les littéraux et autres types, pas de validation spécifique nécessaire
+		return nil
+	}
+}
+
+// validateBinaryConstraint valide une contrainte binaire
+func (v *ConstraintValidator) validateBinaryConstraint(constraint map[string]interface{}, variables []domain.TypedVariable, types []domain.TypeDefinition) error {
+	operator, _ := constraint["operator"].(string)
+	left := constraint["left"]
+	right := constraint["right"]
+
+	// Valider récursivement les opérandes
+	if err := v.ValidateConstraint(left, variables, types); err != nil {
+		return err
+	}
+	if err := v.ValidateConstraint(right, variables, types); err != nil {
+		return err
+	}
+
+	// Obtenir les types des opérandes
+	leftType := v.getOperandType(left, variables, types)
+	rightType := v.getOperandType(right, variables, types)
+
+	// Valider la compatibilité des types
+	return v.typeChecker.ValidateTypeCompatibility(leftType, rightType, operator)
+}
+
+// validateUnaryConstraint valide une contrainte unaire
+func (v *ConstraintValidator) validateUnaryConstraint(constraint map[string]interface{}, variables []domain.TypedVariable, types []domain.TypeDefinition) error {
+	operator, _ := constraint["operator"].(string)
+	operand := constraint["operand"]
+
+	// Valider récursivement l'opérande
+	if err := v.ValidateConstraint(operand, variables, types); err != nil {
+		return err
+	}
+
+	// Pour les opérateurs unaires (NOT), vérifier le type
+	operandType := v.getOperandType(operand, variables, types)
+	return v.typeChecker.ValidateTypeCompatibility(operandType, "", operator)
+}
+
+// getOperandType détermine le type d'un opérande
+func (v *ConstraintValidator) getOperandType(operand interface{}, variables []domain.TypedVariable, types []domain.TypeDefinition) string {
+	if operand == nil {
+		return "unknown"
+	}
+
+	// Si c'est un field access
+	if operandMap, ok := operand.(map[string]interface{}); ok {
+		if operandType, _ := operandMap["type"].(string); operandType == "fieldAccess" {
+			fieldType, err := v.typeChecker.GetFieldType(operand, variables, types)
+			if err == nil {
+				return fieldType
+			}
+		}
+	}
+
+	// Sinon, utiliser GetValueType
+	return v.typeChecker.GetValueType(operand)
 }
 
 // SetConfig configure le validateur
@@ -215,16 +305,8 @@ func (v *ConstraintValidator) GetConfig() domain.ValidatorConfig {
 	return v.config
 }
 
-// ActionValidator valide les actions
-type ActionValidator struct{}
-
-// NewActionValidator crée un nouveau validateur d'actions
-func NewActionValidator() *ActionValidator {
-	return &ActionValidator{}
-}
-
 // ValidateAction valide une action
-func (av *ActionValidator) ValidateAction(action *domain.Action) error {
+func ValidateAction(action *domain.Action) error {
 	if action == nil {
 		return domain.NewActionError(
 			"action cannot be nil",
@@ -237,7 +319,7 @@ func (av *ActionValidator) ValidateAction(action *domain.Action) error {
 
 	// Valider chaque job
 	for _, job := range jobs {
-		if err := av.ValidateJobCall(&job); err != nil {
+		if err := ValidateJobCall(&job); err != nil {
 			return err
 		}
 	}
@@ -246,7 +328,7 @@ func (av *ActionValidator) ValidateAction(action *domain.Action) error {
 }
 
 // ValidateJobCall valide un appel de fonction/job
-func (av *ActionValidator) ValidateJobCall(jobCall *domain.JobCall) error {
+func ValidateJobCall(jobCall *domain.JobCall) error {
 	if jobCall == nil {
 		return domain.NewActionError(
 			"jobCall cannot be nil",

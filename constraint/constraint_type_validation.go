@@ -19,7 +19,8 @@ func ValidateTypes(program Program) error {
 	for i, expression := range program.Expressions {
 		for _, variable := range expression.Set.Variables {
 			if !definedTypes[variable.DataType] {
-				return fmt.Errorf("expression %d: type non défini: %s pour la variable %s", i+1, variable.DataType, variable.Name)
+				return fmt.Errorf("expression %d: undefined type: %s for variable %s",
+					i+1, sanitizeForLog(variable.DataType, 50), sanitizeForLog(variable.Name, 50))
 			}
 		}
 	}
@@ -34,5 +35,5 @@ func GetTypeFields(program Program, typeName string) ([]Field, error) {
 			return typeDef.Fields, nil
 		}
 	}
-	return nil, fmt.Errorf("type non trouvé: %s", typeName)
+	return nil, fmt.Errorf("type not found: %s", sanitizeForLog(typeName, 50))
 }

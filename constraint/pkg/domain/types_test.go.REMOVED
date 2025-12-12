@@ -25,47 +25,37 @@ func TestNewProgram(t *testing.T) {
 	if program.Expressions == nil {
 		t.Error("Expressions should be initialized")
 	}
-	if program.Metadata == nil {
-		t.Error("Metadata should be initialized")
-	}
-	if program.Metadata.Version != "1.0" {
-		t.Errorf("Expected version '1.0', got '%s'", program.Metadata.Version)
-	}
-	if program.Metadata.CreatedAt.IsZero() {
-		t.Error("CreatedAt should be set")
-	}
-	if time.Since(program.Metadata.CreatedAt) > time.Second {
-		t.Error("CreatedAt should be recent")
-	}
+	// Note: Metadata is not part of constraint.Program anymore
+	// It was specific to domain package but removed to avoid duplication
 }
 
 func TestProgram_GetTypeByName(t *testing.T) {
 	program := NewProgram()
 	typeDef := NewTypeDefinition("Person")
-	typeDef.AddField("name", "string")
-	program.Types = append(program.Types, *typeDef)
+	AddTypeField(&typeDef, "name", "string")
+	program.Types = append(program.Types, typeDef)
 
 	// Existing type
-	found := program.GetTypeByName("Person")
+	found := GetProgramTypeByName(program, "Person")
 	if found == nil {
-		t.Error("GetTypeByName should find existing type")
+		t.Error("GetProgramTypeByName should find existing type")
 	}
 	if found != nil && found.Name != "Person" {
 		t.Errorf("Expected type name 'Person', got '%s'", found.Name)
 	}
 
 	// Non-existing type
-	notFound := program.GetTypeByName("NonExistent")
+	notFound := GetProgramTypeByName(program, "NonExistent")
 	if notFound != nil {
-		t.Error("GetTypeByName should return nil for non-existing type")
+		t.Error("GetProgramTypeByName should return nil for non-existing type")
 	}
 }
 
 func TestProgram_String(t *testing.T) {
 	program := NewProgram()
 	typeDef := NewTypeDefinition("Person")
-	typeDef.AddField("name", "string")
-	program.Types = append(program.Types, *typeDef)
+	AddTypeField(&typeDef, "name", "string")
+	program.Types = append(program.Types, typeDef)
 
 	result := program.String()
 	if result == "" {
@@ -81,9 +71,11 @@ func TestProgram_String(t *testing.T) {
 }
 
 func TestProgram_String_EmptyProgram(t *testing.T) {
-	program := &Program{
-		Types:       []TypeDefinition{},
-		Expressions: []Expression{},
+	program := &ProgramWrapper{
+		Program: &Program{
+			Types:       []TypeDefinition{},
+			Expressions: []Expression{},
+		},
 	}
 
 	result := program.String()
