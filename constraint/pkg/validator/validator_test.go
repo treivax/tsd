@@ -16,7 +16,12 @@ import (
 func TestNewConstraintValidator(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	config := domain.ValidatorConfig{
+		StrictMode:       true,
+		AllowedOperators: []string{"==", "!="},
+		MaxDepth:         5,
+	}
+	validator := NewConstraintValidator(registry, checker, config)
 
 	if validator == nil {
 		t.Fatal("NewConstraintValidator should not return nil")
@@ -28,10 +33,30 @@ func TestNewConstraintValidator(t *testing.T) {
 		t.Error("ConstraintValidator.typeChecker should be set")
 	}
 	if validator.config.StrictMode != true {
+		t.Error("Config should have StrictMode enabled")
+	}
+	if len(validator.config.AllowedOperators) != 2 {
+		t.Errorf("Config should have 2 allowed operators, got %d", len(validator.config.AllowedOperators))
+	}
+}
+
+// TestNewConstraintValidatorWithDefaults teste la création avec config par défaut
+func TestNewConstraintValidatorWithDefaults(t *testing.T) {
+	registry := NewTypeRegistry()
+	checker := NewTypeChecker(registry)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
+
+	if validator == nil {
+		t.Fatal("NewConstraintValidatorWithDefaults should not return nil")
+	}
+	if validator.config.StrictMode != true {
 		t.Error("Default config should have StrictMode enabled")
 	}
 	if len(validator.config.AllowedOperators) == 0 {
 		t.Error("Default config should have allowed operators")
+	}
+	if validator.config.MaxDepth != 10 {
+		t.Errorf("Default MaxDepth should be 10, got %d", validator.config.MaxDepth)
 	}
 }
 
@@ -39,7 +64,7 @@ func TestNewConstraintValidator(t *testing.T) {
 func TestConstraintValidator_ValidateTypes(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 	tests := []struct {
 		name        string
@@ -209,7 +234,7 @@ func TestConstraintValidator_ValidateTypes(t *testing.T) {
 func TestConstraintValidator_ValidateExpression(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 	// Préparer les types
 	types := []domain.TypeDefinition{
@@ -541,7 +566,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			registry := NewTypeRegistry()
 			checker := NewTypeChecker(registry)
-			validator := NewConstraintValidator(registry, checker)
+			validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 			err := validator.ValidateProgram(tt.program)
 			if (err != nil) != tt.wantErr {
@@ -561,7 +586,7 @@ func TestConstraintValidator_ValidateProgram(t *testing.T) {
 func TestConstraintValidator_SetConfig(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 	newConfig := domain.ValidatorConfig{
 		StrictMode:       false,
@@ -587,7 +612,7 @@ func TestConstraintValidator_SetConfig(t *testing.T) {
 func TestConstraintValidator_GetConfig(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 	config := validator.GetConfig()
 
@@ -604,17 +629,8 @@ func TestConstraintValidator_GetConfig(t *testing.T) {
 
 // ===== ActionValidator Tests =====
 
-// TestNewActionValidator teste la création d'un nouveau validateur d'actions
-func TestNewActionValidator(t *testing.T) {
-	validator := NewActionValidator()
-	if validator == nil {
-		t.Fatal("NewActionValidator should not return nil")
-	}
-}
-
-// TestActionValidator_ValidateAction teste la validation des actions
-func TestActionValidator_ValidateAction(t *testing.T) {
-	validator := NewActionValidator()
+// TestValidateAction teste la validation des actions
+func TestValidateAction(t *testing.T) {
 
 	tests := []struct {
 		name        string
@@ -679,7 +695,7 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validator.ValidateAction(tt.action)
+			err := ValidateAction(tt.action)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateAction() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -693,9 +709,8 @@ func TestActionValidator_ValidateAction(t *testing.T) {
 	}
 }
 
-// TestActionValidator_ValidateJobCall teste la validation des appels de job
-func TestActionValidator_ValidateJobCall(t *testing.T) {
-	validator := NewActionValidator()
+// TestValidateJobCall teste la validation des appels de job
+func TestValidateJobCall(t *testing.T) {
 
 	tests := []struct {
 		name        string
@@ -808,7 +823,7 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validator.ValidateJobCall(tt.jobCall)
+			err := ValidateJobCall(tt.jobCall)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateJobCall() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -822,12 +837,10 @@ func TestActionValidator_ValidateJobCall(t *testing.T) {
 	}
 }
 
-// TestActionValidator_ErrorTypes teste que les erreurs sont du bon type
-func TestActionValidator_ErrorTypes(t *testing.T) {
-	validator := NewActionValidator()
-
+// TestActionValidation_ErrorTypes teste que les erreurs sont du bon type
+func TestActionValidation_ErrorTypes(t *testing.T) {
 	// Test avec action nil
-	err := validator.ValidateAction(nil)
+	err := ValidateAction(nil)
 	if err == nil {
 		t.Fatal("Expected error for nil action")
 	}
@@ -840,7 +853,7 @@ func TestActionValidator_ErrorTypes(t *testing.T) {
 	}
 
 	// Test avec job name vide
-	err = validator.ValidateJobCall(&domain.JobCall{Name: ""})
+	err = ValidateJobCall(&domain.JobCall{Name: ""})
 	if err == nil {
 		t.Fatal("Expected error for empty job name")
 	}
@@ -857,7 +870,7 @@ func TestActionValidator_ErrorTypes(t *testing.T) {
 func TestConstraintValidator_ValidateConstraint(t *testing.T) {
 	registry := NewTypeRegistry()
 	checker := NewTypeChecker(registry)
-	validator := NewConstraintValidator(registry, checker)
+	validator := NewConstraintValidatorWithDefaults(registry, checker)
 
 	// Préparer les types
 	types := []domain.TypeDefinition{

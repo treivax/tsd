@@ -45,7 +45,7 @@ func TestValidateConstraintWithOperands_NilOperands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateConstraintWithOperands(program, tt.constraint, 0, true)
+			err := validateConstraintWithOperands(program, tt.constraint, 0, true, 0)
 			if err != nil {
 				t.Errorf("validateConstraintWithOperands() with nil operands should return nil, got: %v", err)
 			}
@@ -109,7 +109,7 @@ func TestValidateConstraintWithOperands_NestedValidation(t *testing.T) {
 			},
 			checkCompat:   true,
 			expectError:   true,
-			errorContains: "non trouvé", // French: "not found"
+			errorContains: "not found", // French: "not found"
 		},
 		{
 			name: "invalid right field access",
@@ -128,7 +128,7 @@ func TestValidateConstraintWithOperands_NestedValidation(t *testing.T) {
 			},
 			checkCompat:   true,
 			expectError:   true,
-			errorContains: "non trouvé",
+			errorContains: "not found",
 		},
 		{
 			name: "without compatibility check",
@@ -148,7 +148,7 @@ func TestValidateConstraintWithOperands_NestedValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateConstraintWithOperands(program, tt.constraint, 0, tt.checkCompat)
+			err := validateConstraintWithOperands(program, tt.constraint, 0, tt.checkCompat, 0)
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("validateConstraintWithOperands() expected error, got nil")
@@ -241,7 +241,7 @@ func TestValidateOperandTypeCompatibility_AllCombinations(t *testing.T) {
 				"value": "hello",
 			},
 			expectError:   true,
-			errorContains: "incompatibilité de types",
+			errorContains: "incompatibility",
 		},
 		{
 			name: "variable vs number - allowed (aggregation)",
@@ -292,7 +292,7 @@ func TestValidateOperandTypeCompatibility_AllCombinations(t *testing.T) {
 				"value": "string_value",
 			},
 			expectError:   true,
-			errorContains: "incompatibilité de types",
+			errorContains: "incompatibility",
 		},
 		{
 			name: "two field accesses - same type",
@@ -321,7 +321,7 @@ func TestValidateOperandTypeCompatibility_AllCombinations(t *testing.T) {
 				"field":  "name",
 			},
 			expectError:   true,
-			errorContains: "incompatibilité de types",
+			errorContains: "incompatibility",
 		},
 		{
 			name: "field access error propagation",
@@ -335,7 +335,7 @@ func TestValidateOperandTypeCompatibility_AllCombinations(t *testing.T) {
 				"value": float64(10),
 			},
 			expectError:   true,
-			errorContains: "non trouvé",
+			errorContains: "not found",
 		},
 	}
 
@@ -585,7 +585,7 @@ func TestValidateLogicalExpressionConstraint_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateLogicalExpressionConstraint(program, tt.constraint, 0)
+			err := validateLogicalExpressionConstraint(program, tt.constraint, 0, 0)
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("validateLogicalExpressionConstraint() expected error, got nil")
@@ -768,9 +768,11 @@ func TestValidateBinaryOpConstraint_NoCompatCheck(t *testing.T) {
 		"right": "incompatible_string", // This would fail with compatibility check
 	}
 
-	err := validateBinaryOpConstraint(program, constraint, 0)
+	// validateBinaryOpConstraint was removed - test directly with validateConstraintWithOperands
+	// Binary operations should not check type compatibility (checkCompatibility = false)
+	err := validateConstraintWithOperands(program, constraint, 0, false, 0)
 	if err != nil {
-		t.Errorf("validateBinaryOpConstraint() should not check type compatibility, got error: %v", err)
+		t.Errorf("validateConstraintWithOperands() for binary op should not check type compatibility, got error: %v", err)
 	}
 }
 
@@ -819,7 +821,7 @@ func TestValidateConstraintWithOperands_DeepNesting(t *testing.T) {
 		},
 	}
 
-	err := validateConstraintWithOperands(program, constraint, 0, true)
+	err := validateConstraintWithOperands(program, constraint, 0, true, 0)
 	if err != nil {
 		t.Errorf("validateConstraintWithOperands() with nested binary op failed: %v", err)
 	}

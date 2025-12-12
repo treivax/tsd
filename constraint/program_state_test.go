@@ -63,15 +63,15 @@ Company(id: "C001", name: "TechCorp", employees: 250)`
 	}
 
 	// Verify types were parsed
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
-	if _, exists := ps.Types["Person"]; !exists {
+	if _, exists := ps.GetTypes()["Person"]; !exists {
 		t.Error("Person type not found")
 	}
 
-	if _, exists := ps.Types["Company"]; !exists {
+	if _, exists := ps.GetTypes()["Company"]; !exists {
 		t.Error("Company type not found")
 	}
 
@@ -82,7 +82,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)`
 	}
 
 	// Verify rules were parsed
-	if len(ps.Rules) == 0 {
+	if ps.GetRulesCount() == 0 {
 		t.Error("No rules were parsed")
 	}
 
@@ -93,13 +93,13 @@ Company(id: "C001", name: "TechCorp", employees: 250)`
 	}
 
 	// Verify facts were parsed
-	if len(ps.Facts) != 3 {
-		t.Errorf("Expected 3 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 3 {
+		t.Errorf("Expected 3 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify all files were recorded
-	if len(ps.FilesParsed) != 3 {
-		t.Errorf("Expected 3 parsed files, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 3 {
+		t.Errorf("Expected 3 parsed files, got %d", len(ps.GetFilesParsed()))
 	}
 
 	// Convert back to Program structure
@@ -117,7 +117,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)`
 	}
 
 	t.Logf("Successfully parsed %d files with %d types, %d rules, %d facts",
-		len(ps.FilesParsed), len(ps.Types), len(ps.Rules), len(ps.Facts))
+		len(ps.GetFilesParsed()), ps.GetTypesCount(), ps.GetRulesCount(), ps.GetFactsCount())
 }
 
 func TestProgramStateTypeValidation(t *testing.T) {
@@ -181,10 +181,10 @@ func TestProgramState_ParseAndMergeContent(t *testing.T) {
 			content:  `type Person(id: string, name: string, age: number)`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
-				if len(ps.Types) != 1 {
-					t.Errorf("Expected 1 type, got %d", len(ps.Types))
+				if ps.GetTypesCount() != 1 {
+					t.Errorf("Expected 1 type, got %d", ps.GetTypesCount())
 				}
-				if _, exists := ps.Types["Person"]; !exists {
+				if _, exists := ps.GetTypes()["Person"]; !exists {
 					t.Error("Person type not found")
 				}
 			},
@@ -195,8 +195,8 @@ func TestProgramState_ParseAndMergeContent(t *testing.T) {
 rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
-				if len(ps.Rules) != 1 {
-					t.Errorf("Expected 1 rule, got %d", len(ps.Rules))
+				if ps.GetRulesCount() != 1 {
+					t.Errorf("Expected 1 rule, got %d", ps.GetRulesCount())
 				}
 			},
 		},
@@ -206,8 +206,8 @@ rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)`,
 Person(id: "P001")`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
-				if len(ps.Facts) != 1 {
-					t.Errorf("Expected 1 fact, got %d", len(ps.Facts))
+				if ps.GetFactsCount() != 1 {
+					t.Errorf("Expected 1 fact, got %d", ps.GetFactsCount())
 				}
 			},
 		},
@@ -229,8 +229,8 @@ Person(id: "P001")`,
 type Company(id: string, name: string)`,
 			filename: "multi.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
-				if len(ps.Types) != 2 {
-					t.Errorf("Expected 2 types, got %d", len(ps.Types))
+				if ps.GetTypesCount() != 2 {
+					t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 				}
 			},
 		},
@@ -308,7 +308,7 @@ func TestProgramState_Reset(t *testing.T) {
 	ps.AddError(ValidationError{Message: "test error", File: "test.tsd", Type: "test"})
 
 	// Verify data exists
-	if len(ps.Types) == 0 || len(ps.Facts) == 0 || !ps.HasErrors() {
+	if ps.GetTypesCount() == 0 || ps.GetFactsCount() == 0 || !ps.HasErrors() {
 		t.Fatal("Setup failed - expected some data in ProgramState")
 	}
 
@@ -316,14 +316,14 @@ func TestProgramState_Reset(t *testing.T) {
 	ps.Reset()
 
 	// Verify everything is cleared
-	if len(ps.Types) != 0 {
-		t.Errorf("Expected 0 types after reset, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 0 {
+		t.Errorf("Expected 0 types after reset, got %d", ps.GetTypesCount())
 	}
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules after reset, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules after reset, got %d", ps.GetRulesCount())
 	}
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts after reset, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts after reset, got %d", ps.GetFactsCount())
 	}
 	if ps.HasErrors() {
 		t.Error("Expected no errors after reset")
@@ -350,7 +350,7 @@ func TestProgramState_MergeConflicts(t *testing.T) {
 	}
 
 	// Verify at least one Person type exists
-	if _, exists := ps.Types["Person"]; !exists {
+	if _, exists := ps.GetTypes()["Person"]; !exists {
 		t.Error("Person type should exist after merge")
 	}
 }

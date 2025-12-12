@@ -10,40 +10,23 @@ import (
 
 // ValidateFieldAccess vérifie qu'un accès aux champs est valide dans une expression donnée
 func ValidateFieldAccess(program Program, fieldAccess FieldAccess, expressionIndex int) error {
+	// Validate inputs
+	if err := validateInputNotNil(map[string]interface{}{
+		"fieldAccess": fieldAccess,
+	}); err != nil {
+		return err
+	}
+
 	if expressionIndex >= len(program.Expressions) {
-		return fmt.Errorf("index d'expression invalide: %d", expressionIndex)
+		return fmt.Errorf("invalid expression index: %d", expressionIndex)
 	}
 
 	expr := program.Expressions[expressionIndex]
 
-	// Trouver le type de l'objet dans l'expression spécifiée
-	var objectType string
-
-	// Check new multi-pattern syntax first
-	if len(expr.Patterns) > 0 {
-		for _, pattern := range expr.Patterns {
-			for _, variable := range pattern.Variables {
-				if variable.Name == fieldAccess.Object {
-					objectType = variable.DataType
-					break
-				}
-			}
-			if objectType != "" {
-				break
-			}
-		}
-	} else {
-		// Old single-pattern syntax (backward compatibility)
-		for _, variable := range expr.Set.Variables {
-			if variable.Name == fieldAccess.Object {
-				objectType = variable.DataType
-				break
-			}
-		}
-	}
-
-	if objectType == "" {
-		return fmt.Errorf("variable non trouvée: %s dans l'expression %d", fieldAccess.Object, expressionIndex+1)
+	// Use helper to find variable type
+	objectType, err := findVariableType(expr, fieldAccess.Object)
+	if err != nil {
+		return fmt.Errorf("in expression %d: %v", expressionIndex+1, err)
 	}
 
 	// Vérifier que le champ existe dans le type
@@ -58,11 +41,22 @@ func ValidateFieldAccess(program Program, fieldAccess FieldAccess, expressionInd
 		}
 	}
 
-	return fmt.Errorf("champ %s non trouvé dans le type %s", fieldAccess.Field, objectType)
+	return fmt.Errorf("field %s not found in type %s",
+		sanitizeForLog(fieldAccess.Field, 50), sanitizeForLog(objectType, 50))
 }
 
 // ValidateConstraintFieldAccess parcourt récursivement les contraintes pour valider les accès aux champs
 func ValidateConstraintFieldAccess(program Program, constraint interface{}, expressionIndex int) error {
+	return validateConstraintFieldAccessWithDepth(program, constraint, expressionIndex, 0)
+}
+
+// validateConstraintFieldAccessWithDepth validates field access with recursion depth tracking
+func validateConstraintFieldAccessWithDepth(program Program, constraint interface{}, expressionIndex int, depth int) error {
+	// Prevent stack overflow
+	if depth > MaxValidationDepth {
+		return fmt.Errorf("maximum validation depth exceeded (%d)", MaxValidationDepth)
+	}
+
 	switch c := constraint.(type) {
 	case map[string]interface{}:
 		constraintType, ok := c["type"].(string)
@@ -83,23 +77,23 @@ func ValidateConstraintFieldAccess(program Program, constraint interface{}, expr
 				return ValidateFieldAccess(program, fieldAccess, expressionIndex)
 			}
 		case ConstraintTypeComparison, ConstraintTypeBinaryOp:
-			return validateFieldAccessInOperands(program, c, expressionIndex)
+			return validateFieldAccessInOperands(program, c, expressionIndex, depth)
 		case ConstraintTypeLogicalExpr:
-			return validateFieldAccessInLogicalExpr(program, c, expressionIndex)
+			return validateFieldAccessInLogicalExpr(program, c, expressionIndex, depth)
 		}
 	}
 	return nil
 }
 
 // validateFieldAccessInOperands validates field access in left/right operands
-func validateFieldAccessInOperands(program Program, c map[string]interface{}, expressionIndex int) error {
+func validateFieldAccessInOperands(program Program, c map[string]interface{}, expressionIndex int, depth int) error {
 	if left := c["left"]; left != nil {
-		if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
+		if err := validateConstraintFieldAccessWithDepth(program, left, expressionIndex, depth+1); err != nil {
 			return err
 		}
 	}
 	if right := c["right"]; right != nil {
-		if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
+		if err := validateConstraintFieldAccessWithDepth(program, right, expressionIndex, depth+1); err != nil {
 			return err
 		}
 	}
@@ -107,9 +101,9 @@ func validateFieldAccessInOperands(program Program, c map[string]interface{}, ex
 }
 
 // validateFieldAccessInLogicalExpr validates field access in logical expressions
-func validateFieldAccessInLogicalExpr(program Program, c map[string]interface{}, expressionIndex int) error {
+func validateFieldAccessInLogicalExpr(program Program, c map[string]interface{}, expressionIndex int, depth int) error {
 	if left := c["left"]; left != nil {
-		if err := ValidateConstraintFieldAccess(program, left, expressionIndex); err != nil {
+		if err := validateConstraintFieldAccessWithDepth(program, left, expressionIndex, depth+1); err != nil {
 			return err
 		}
 	}
@@ -117,7 +111,7 @@ func validateFieldAccessInLogicalExpr(program Program, c map[string]interface{},
 		for _, op := range operations {
 			if opMap, ok := op.(map[string]interface{}); ok {
 				if right := opMap["right"]; right != nil {
-					if err := ValidateConstraintFieldAccess(program, right, expressionIndex); err != nil {
+					if err := validateConstraintFieldAccessWithDepth(program, right, expressionIndex, depth+1); err != nil {
 						return err
 					}
 				}
@@ -130,39 +124,15 @@ func validateFieldAccessInLogicalExpr(program Program, c map[string]interface{},
 // GetFieldType retourne le type d'un champ spécifique d'un objet dans une expression
 func GetFieldType(program Program, object string, field string, expressionIndex int) (string, error) {
 	if expressionIndex >= len(program.Expressions) {
-		return "", fmt.Errorf("index d'expression invalide: %d", expressionIndex)
+		return "", fmt.Errorf("invalid expression index: %d", expressionIndex)
 	}
 
 	expr := program.Expressions[expressionIndex]
 
-	// Trouver le type de l'objet
-	var objectType string
-
-	// Check new multi-pattern syntax first
-	if len(expr.Patterns) > 0 {
-		for _, pattern := range expr.Patterns {
-			for _, variable := range pattern.Variables {
-				if variable.Name == object {
-					objectType = variable.DataType
-					break
-				}
-			}
-			if objectType != "" {
-				break
-			}
-		}
-	} else {
-		// Old single-pattern syntax (backward compatibility)
-		for _, variable := range expr.Set.Variables {
-			if variable.Name == object {
-				objectType = variable.DataType
-				break
-			}
-		}
-	}
-
-	if objectType == "" {
-		return "", fmt.Errorf("variable non trouvée: %s", object)
+	// Use helper to find variable type
+	objectType, err := findVariableType(expr, object)
+	if err != nil {
+		return "", err
 	}
 
 	// Trouver le type du champ dans la définition du type
@@ -177,5 +147,6 @@ func GetFieldType(program Program, object string, field string, expressionIndex 
 		}
 	}
 
-	return "", fmt.Errorf("champ %s non trouvé dans le type %s", field, objectType)
+	return "", fmt.Errorf("field %s not found in type %s",
+		sanitizeForLog(field, 50), sanitizeForLog(objectType, 50))
 }

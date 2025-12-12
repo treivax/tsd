@@ -63,8 +63,15 @@ func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName st
 			return fmt.Errorf("champ '%s' du type %s attend une valeur boolean, reçu %s", fieldName, typeName, value.Type)
 		}
 	default:
-		// Type non reconnu, on accepte pour l'instant
-		return nil
+		// Type non primitif : vérifier si c'est un type valide défini
+		// Les types personnalisés et futurs types primitifs doivent être validés explicitement
+		if !ValidPrimitiveTypes[expectedType] {
+			// Type personnalisé ou non standard accepté pour extensibilité
+			// TODO: Valider que le type personnalisé existe dans le programme
+			return nil
+		}
+		// Type primitif non géré dans le switch - erreur de validation
+		return fmt.Errorf("champ '%s' du type %s : type attendu '%s' non pris en charge", fieldName, typeName, expectedType)
 	}
 	return nil
 }
@@ -78,10 +85,11 @@ func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
 			FieldNameReteType: fact.TypeName, // Type RETE (ex: "Balance")
 		}
 
-		// Convertir les champs et gérer l'ID
-		factID := convertFactFields(fact.Fields, reteFact, i)
+		// Convertir les champs
+		convertFactFieldsToMap(fact.Fields, reteFact)
 
-		// Définir l'ID du fait (nécessaire pour le réseau RETE)
+		// Gérer l'ID du fait
+		factID := ensureFactID(reteFact, i)
 		reteFact[FieldNameID] = factID
 
 		// CORRECTION CRITIQUE: Assurer que le type RETE est toujours préservé
@@ -93,30 +101,25 @@ func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
 	return reteFacts
 }
 
-// convertFactFields converts fact fields and returns the fact ID
-func convertFactFields(fields []FactField, reteFact map[string]interface{}, factIndex int) string {
-	var factID string
-	hasExplicitID := false
-
+// convertFactFieldsToMap converts fact fields to a map, handling value conversion
+func convertFactFieldsToMap(fields []FactField, targetMap map[string]interface{}) {
 	for _, field := range fields {
 		convertedValue := convertFactFieldValue(field.Value)
+		targetMap[field.Name] = convertedValue
+	}
+}
 
-		// Ajouter le champ au fact
-		reteFact[field.Name] = convertedValue
-
-		// Vérifier si c'est un champ ID
-		if field.Name == FieldNameID {
-			factID = convertedValue.(string)
-			hasExplicitID = true
+// ensureFactID ensures a fact has an ID, generating one if necessary
+func ensureFactID(reteFact map[string]interface{}, factIndex int) string {
+	// Check if ID was explicitly provided in the fields
+	if id, exists := reteFact[FieldNameID]; exists {
+		if idStr, ok := id.(string); ok && idStr != "" {
+			return idStr
 		}
 	}
 
-	// Générer un ID si pas fourni explicitement
-	if !hasExplicitID {
-		factID = fmt.Sprintf("parsed_fact_%d", factIndex+1)
-	}
-
-	return factID
+	// Generate ID if not provided
+	return fmt.Sprintf("parsed_fact_%d", factIndex+1)
 }
 
 // convertFactFieldValue converts a fact field value to its appropriate Go type

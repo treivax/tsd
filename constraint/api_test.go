@@ -135,7 +135,8 @@ func TestConvertToReteProgram(t *testing.T) {
 			Expressions: []Expression{},
 		}
 
-		result := ConvertToReteProgram(program)
+		result, err := ConvertToReteProgram(program)
+		require.NoError(t, err)
 		require.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]interface{})
@@ -169,7 +170,8 @@ func TestConvertToReteProgram(t *testing.T) {
 			Expressions: []Expression{},
 		}
 
-		result := ConvertToReteProgram(program)
+		result, err := ConvertToReteProgram(program)
+		require.NoError(t, err)
 		require.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]interface{})
@@ -194,7 +196,8 @@ func TestConvertToReteProgram(t *testing.T) {
 			Expressions: []Expression{},
 		}
 
-		result := ConvertToReteProgram(program)
+		result, err := ConvertToReteProgram(program)
+		require.NoError(t, err)
 		require.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]interface{})
@@ -218,7 +221,8 @@ func TestConvertToReteProgram(t *testing.T) {
 			},
 		}
 
-		result := ConvertToReteProgram(program)
+		result, err := ConvertToReteProgram(program)
+		require.NoError(t, err)
 		require.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]interface{})
@@ -242,7 +246,8 @@ func TestConvertToReteProgram(t *testing.T) {
 			},
 		}
 
-		result := ConvertToReteProgram(program)
+		result, err := ConvertToReteProgram(program)
+		require.NoError(t, err)
 		require.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]interface{})

@@ -54,7 +54,8 @@ func ValidateAction(program Program, action Action, expressionIndex int) error {
 func extractVariablesFromArg(arg interface{}) []string {
 	var vars []string
 
-	// Si c'est une string simple, c'est probablement un nom de variable
+	// Si c'est une string simple, c'est potentiellement un nom de variable
+	// (le parser peut produire des simples strings pour les variables dans certains contextes)
 	if str, ok := arg.(string); ok {
 		vars = append(vars, str)
 		return vars
@@ -65,16 +66,39 @@ func extractVariablesFromArg(arg interface{}) []string {
 		argType, _ := argMap["type"].(string)
 		switch argType {
 		case "fieldAccess":
+			// Accès à un champ d'objet : l'objet est une variable
 			if object, ok := argMap["object"].(string); ok {
 				vars = append(vars, object)
 			}
-		case "string":
-			// Les string literals ne contiennent pas de variables
-		case "number":
-			// Les number literals ne contiennent pas de variables
+		case "variable":
+			// Variable explicitement typée
+			if name, ok := argMap["name"].(string); ok {
+				vars = append(vars, name)
+			}
+		case ArgTypeStringLiteral, "string":
+			// String literals ne contiennent pas de variables
+		case ArgTypeNumberLiteral, "number":
+			// Number literals ne contiennent pas de variables
+		case ArgTypeBoolLiteral, ValueTypeBoolean:
+			// Boolean literals ne contiennent pas de variables
 		default:
-			// Pour d'autres types, on peut chercher récursivement
-			// mais pour l'instant on ignore
+			// Vérifier si c'est un type d'opération binaire (plusieurs variantes possibles)
+			if isBinaryOperationType(argType) {
+				// Pour les opérations binaires, extraire récursivement des opérandes
+				if left := argMap["left"]; left != nil {
+					vars = append(vars, extractVariablesFromArg(left)...)
+				}
+				if right := argMap["right"]; right != nil {
+					vars = append(vars, extractVariablesFromArg(right)...)
+				}
+			} else if argType == ArgTypeFunctionCall {
+				// Pour les appels de fonction, extraire des arguments
+				if args, ok := argMap["args"].([]interface{}); ok {
+					for _, funcArg := range args {
+						vars = append(vars, extractVariablesFromArg(funcArg)...)
+					}
+				}
+			}
 		}
 	}
 

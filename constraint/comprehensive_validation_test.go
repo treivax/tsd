@@ -50,8 +50,8 @@ Company(id: "C001", name: "TechCorp", employees: 100)`
 		t.Fatalf("Failed to parse types: %v", err)
 	}
 
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
 	// Étape 2: Parser les faits (contient des erreurs)
@@ -71,14 +71,14 @@ Company(id: "C001", name: "TechCorp", employees: 100)`
 	}
 
 	// Vérification: Les faits valides doivent être parsés
-	validFactCount := len(ps.Facts)
+	validFactCount := ps.GetFactsCount()
 	if validFactCount < 3 {
 		t.Errorf("Expected at least 3 valid facts, got %d", validFactCount)
 	}
 
 	// Vérification: Les types doivent être préservés
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types after fact parsing, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types after fact parsing, got %d", ps.GetTypesCount())
 	}
 
 	// Vérification des erreurs spécifiques
@@ -107,7 +107,7 @@ Company(id: "C001", name: "TechCorp", employees: 100)`
 	}
 
 	t.Logf("✅ Comprehensive validation: %d types, %d valid facts, %d errors",
-		len(ps.Types), len(ps.Facts), errorCount)
+		ps.GetTypesCount(), ps.GetFactsCount(), errorCount)
 }
 
 func contains(s, substr string) bool {

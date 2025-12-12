@@ -5,9 +5,6 @@ REPORTS/*
 !REPORTS/.gitkeep
 !REPORTS/REFACTORING_*.md
 
-# AI prompts (not versioned)
-.github/prompts/
-
 # TLS Certificates (never commit private keys!)
 certs/
 *.crt
@@ -91,3 +88,6 @@ coverage.html
 coverage*.out
 coverage*.html
 *.prof
+
+# Scripts review environment
+scripts/review/.env

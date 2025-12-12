@@ -30,26 +30,26 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	}
 
 	// Verify types were parsed
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
-	if _, exists := ps.Types["Person"]; !exists {
+	if _, exists := ps.GetTypes()["Person"]; !exists {
 		t.Error("Person type not found")
 	}
 
-	if _, exists := ps.Types["Product"]; !exists {
+	if _, exists := ps.GetTypes()["Product"]; !exists {
 		t.Error("Product type not found")
 	}
 
 	// Verify facts were parsed
-	if len(ps.Facts) != 4 {
-		t.Errorf("Expected 4 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 4 {
+		t.Errorf("Expected 4 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify no rules (should be 0)
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules, got %d", ps.GetRulesCount())
 	}
 
 	// Verify no errors
@@ -93,22 +93,22 @@ Order(id: "O004", customer_id: "C003", amount: 50.00, date: "2025-01-18")
 	}
 
 	// Verify parsing results
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 7 {
-		t.Errorf("Expected 7 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 7 {
+		t.Errorf("Expected 7 facts, got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules, got %d", ps.GetRulesCount())
 	}
 
 	// Verify fact types
 	customerCount := 0
 	orderCount := 0
-	for _, fact := range ps.Facts {
+	for _, fact := range ps.GetFacts() {
 		switch fact.TypeName {
 		case "Customer":
 			customerCount++
@@ -159,16 +159,16 @@ type Address(street: string, city: string, zipcode:string)
 		t.Fatalf("Failed to parse types only: %v", err)
 	}
 
-	if len(ps.Types) != 3 {
-		t.Errorf("Expected 3 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 3 {
+		t.Errorf("Expected 3 types, got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts, got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules, got %d", ps.GetRulesCount())
 	}
 }
 
@@ -187,8 +187,8 @@ Product(id: "PR001", name: "Laptop", price: 999.99)
 	}
 
 	// Facts should be rejected because types are not defined
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts (types not defined), got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts (types not defined), got %d", ps.GetFactsCount())
 	}
 
 	// Should have validation errors
@@ -215,8 +215,8 @@ type Product(id: string, name: string, price:number)
 		t.Fatalf("Failed to parse types: %v", err)
 	}
 
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
 	// Step 2: Parse first batch of facts
@@ -229,8 +229,8 @@ Person(id: "P002", name: "Bob", age: 25)
 		t.Fatalf("Failed to parse facts1: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After facts1: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After facts1: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Step 3: Parse second batch of facts
@@ -244,13 +244,13 @@ Person(id: "P003", name: "Charlie", age: 35)
 		t.Fatalf("Failed to parse facts2: %v", err)
 	}
 
-	if len(ps.Facts) != 5 {
-		t.Errorf("After facts2: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After facts2: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify no rules throughout
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules throughout, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules throughout, got %d", ps.GetRulesCount())
 	}
 
 	// Verify no errors
@@ -344,16 +344,16 @@ Product(id: "PR001", name: "Laptop", price: 999.99)
 	}
 
 	// Verify the parsed structure is valid
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 3 {
-		t.Errorf("Expected 3 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 3 {
+		t.Errorf("Expected 3 facts, got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules, got %d", ps.GetRulesCount())
 	}
 
 	// Convert to Program (this is what would be passed to RETE)
@@ -409,8 +409,8 @@ type Order(id: string, customer_id: string, total:number)
 		t.Fatalf("Failed to parse types file: %v", err)
 	}
 
-	if len(ps.Types) != 2 {
-		t.Errorf("After types: expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("After types: expected 2 types, got %d", ps.GetTypesCount())
 	}
 
 	// File 2: Customer facts
@@ -429,8 +429,8 @@ Customer(id: "C002", name: "Bob", email: "bob@example.com")
 		t.Fatalf("Failed to parse customers file: %v", err)
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("After customers: expected 2 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("After customers: expected 2 facts, got %d", ps.GetFactsCount())
 	}
 
 	// File 3: Order facts
@@ -450,18 +450,18 @@ Order(id: "O003", customer_id: "C001", total: 99.99)
 		t.Fatalf("Failed to parse orders file: %v", err)
 	}
 
-	if len(ps.Facts) != 5 {
-		t.Errorf("After orders: expected 5 facts, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 5 {
+		t.Errorf("After orders: expected 5 facts, got %d", ps.GetFactsCount())
 	}
 
 	// Verify no rules exist
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules, got %d", ps.GetRulesCount())
 	}
 
 	// Verify file tracking
-	if len(ps.FilesParsed) != 3 {
-		t.Errorf("Expected 3 files parsed, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 3 {
+		t.Errorf("Expected 3 files parsed, got %d", len(ps.GetFilesParsed()))
 	}
 
 	// Verify Program structure
@@ -483,7 +483,7 @@ Order(id: "O003", customer_id: "C001", total: 99.99)
 	}
 
 	t.Logf("✅ Successfully parsed 3 files with types and facts only (no rules)")
-	t.Logf("   - Files: %d", len(ps.FilesParsed))
+	t.Logf("   - Files: %d", len(ps.GetFilesParsed()))
 	t.Logf("   - Types: %d", len(program.Types))
 	t.Logf("   - Facts: %d", len(program.Facts))
 	t.Logf("   - Rules: %d", len(program.Expressions))

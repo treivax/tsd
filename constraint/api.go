@@ -77,21 +77,21 @@ func ParseFactsFile(filename string) (interface{}, error) {
 	return ParseFile(filename)
 }
 
-// ExtractFactsFromProgram extrait les faits d'un programme parsé et les convertit au format RETE
+// ExtractFactsFromProgram extracts facts from a parsed program and converts them to RETE format
 func ExtractFactsFromProgram(result interface{}) ([]map[string]interface{}, error) {
-	// Convertir le résultat en structure Program
+	// Convert result to Program structure
 	jsonData, err := json.Marshal(result)
 	if err != nil {
-		return nil, fmt.Errorf("erreur conversion JSON: %v", err)
+		return nil, fmt.Errorf("JSON conversion error: %v", err)
 	}
 
 	var program Program
 	err = json.Unmarshal(jsonData, &program)
 	if err != nil {
-		return nil, fmt.Errorf("erreur parsing JSON: %v", err)
+		return nil, fmt.Errorf("JSON parsing error: %v", err)
 	}
 
-	// Convertir les faits au format RETE
+	// Convert facts to RETE format
 	reteFacts := ConvertFactsToReteFormat(program)
 	return reteFacts, nil
 }
@@ -110,23 +110,7 @@ func ValidateActionCalls(program *Program) error {
 	// Validate action calls in each rule
 	for _, expr := range program.Expressions {
 		// Build map of rule variables to their types
-		ruleVariables := make(map[string]string)
-
-		// Extract variables from Set (single pattern, backward compatibility)
-		if len(expr.Set.Variables) > 0 {
-			for _, v := range expr.Set.Variables {
-				ruleVariables[v.Name] = v.DataType
-			}
-		}
-
-		// Extract variables from Patterns (multiple patterns)
-		if expr.Patterns != nil {
-			for _, pattern := range expr.Patterns {
-				for _, v := range pattern.Variables {
-					ruleVariables[v.Name] = v.DataType
-				}
-			}
-		}
+		ruleVariables := extractRuleVariablesFromExpression(&expr)
 
 		// Validate each action call
 		if expr.Action != nil {
@@ -141,100 +125,103 @@ func ValidateActionCalls(program *Program) error {
 	return nil
 }
 
-// ConvertResultToProgram convertit le résultat du parser en structure Program
+// extractRuleVariablesFromExpression extracts all variables and their types from an expression
+func extractRuleVariablesFromExpression(expr *Expression) map[string]string {
+	ruleVariables := make(map[string]string)
+
+	// Extract variables from Set (single pattern, backward compatibility)
+	if len(expr.Set.Variables) > 0 {
+		for _, v := range expr.Set.Variables {
+			ruleVariables[v.Name] = v.DataType
+		}
+	}
+
+	// Extract variables from Patterns (multiple patterns)
+	if expr.Patterns != nil {
+		for _, pattern := range expr.Patterns {
+			for _, v := range pattern.Variables {
+				ruleVariables[v.Name] = v.DataType
+			}
+		}
+	}
+
+	return ruleVariables
+}
+
+// ConvertResultToProgram converts parser result to Program structure
 func ConvertResultToProgram(result interface{}) (*Program, error) {
-	// Convertir le résultat en structure Program
+	// Convert result to Program structure
 	jsonData, err := json.Marshal(result)
 	if err != nil {
-		return nil, fmt.Errorf("erreur conversion JSON: %v", err)
+		return nil, fmt.Errorf("JSON conversion error: %v", err)
 	}
 
 	var program Program
 	err = json.Unmarshal(jsonData, &program)
 	if err != nil {
-		return nil, fmt.Errorf("erreur parsing JSON: %v", err)
+		return nil, fmt.Errorf("JSON parsing error: %v", err)
 	}
 
 	return &program, nil
 }
 
-// ConvertToReteProgram convertit une structure Program des contraintes vers le format attendu par RETE
-func ConvertToReteProgram(program *Program) interface{} {
-	// Convertir les types en map[string]interface{} via JSON pour être compatible avec RETE
-	typesInterface := make([]interface{}, len(program.Types))
-	for i, typeDef := range program.Types {
-		// Sérialiser vers JSON puis désérialiser en map
-		jsonData, err := json.Marshal(typeDef)
-		if err != nil {
-			continue
-		}
-		var typeMap map[string]interface{}
-		if err := json.Unmarshal(jsonData, &typeMap); err != nil {
-			continue
-		}
-		typesInterface[i] = typeMap
+// ConvertToReteProgram converts a Program structure from constraints to the format expected by RETE
+func ConvertToReteProgram(program *Program) (interface{}, error) {
+	// Convert structures to interface arrays using generic helper
+	typesInterface, err := convertSliceToInterfaceArray(program.Types)
+	if err != nil {
+		return nil, fmt.Errorf("error converting types: %w", err)
 	}
 
-	// Convertir les actions en map[string]interface{} via JSON
-	actionsInterface := make([]interface{}, len(program.Actions))
-	for i, actionDef := range program.Actions {
-		// Sérialiser vers JSON puis désérialiser en map
-		jsonData, err := json.Marshal(actionDef)
-		if err != nil {
-			continue
-		}
-		var actionMap map[string]interface{}
-		if err := json.Unmarshal(jsonData, &actionMap); err != nil {
-			continue
-		}
-		actionsInterface[i] = actionMap
+	actionsInterface, err := convertSliceToInterfaceArray(program.Actions)
+	if err != nil {
+		return nil, fmt.Errorf("error converting actions: %w", err)
 	}
 
-	// Convertir les expressions en map[string]interface{} via JSON
-	expressionsInterface := make([]interface{}, len(program.Expressions))
-	for i, expr := range program.Expressions {
-		// Sérialiser vers JSON puis désérialiser en map
-		jsonData, err := json.Marshal(expr)
-		if err != nil {
-			continue
-		}
-		var exprMap map[string]interface{}
-		if err := json.Unmarshal(jsonData, &exprMap); err != nil {
-			continue
-		}
-		expressionsInterface[i] = exprMap
+	expressionsInterface, err := convertSliceToInterfaceArray(program.Expressions)
+	if err != nil {
+		return nil, fmt.Errorf("error converting expressions: %w", err)
 	}
 
-	// Convertir les ruleRemovals si présents
-	var ruleRemovalsInterface []interface{}
-	if len(program.RuleRemovals) > 0 {
-		ruleRemovalsInterface = make([]interface{}, len(program.RuleRemovals))
-		for i, removal := range program.RuleRemovals {
-			jsonData, err := json.Marshal(removal)
-			if err != nil {
-				continue
-			}
-			var removalMap map[string]interface{}
-			if err := json.Unmarshal(jsonData, &removalMap); err != nil {
-				continue
-			}
-			ruleRemovalsInterface[i] = removalMap
-		}
-	}
-
-	// Créer une structure compatible avec le format attendu par RETE
+	// Create program structure
 	reteProgram := map[string]interface{}{
-		"types":       typesInterface,
-		"actions":     actionsInterface,
-		"expressions": expressionsInterface,
+		JSONKeyTypes:       typesInterface,
+		JSONKeyActions:     actionsInterface,
+		JSONKeyExpressions: expressionsInterface,
 	}
 
-	// Ajouter ruleRemovals seulement s'il y en a
-	if len(ruleRemovalsInterface) > 0 {
-		reteProgram["ruleRemovals"] = ruleRemovalsInterface
+	// Add rule removals if present
+	if len(program.RuleRemovals) > 0 {
+		ruleRemovalsInterface, err := convertSliceToInterfaceArray(program.RuleRemovals)
+		if err != nil {
+			return nil, fmt.Errorf("error converting rule removals: %w", err)
+		}
+		reteProgram[JSONKeyRuleRemovals] = ruleRemovalsInterface
 	}
 
-	return reteProgram
+	return reteProgram, nil
+}
+
+// convertSliceToInterfaceArray converts a slice of any type to []interface{} via JSON marshaling
+func convertSliceToInterfaceArray[T any](items []T) ([]interface{}, error) {
+	result := make([]interface{}, 0, len(items))
+
+	for _, item := range items {
+		// Serialize to JSON then deserialize to map
+		jsonData, err := json.Marshal(item)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal item: %w", err)
+		}
+
+		var itemMap map[string]interface{}
+		if err := json.Unmarshal(jsonData, &itemMap); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal item: %w", err)
+		}
+
+		result = append(result, itemMap)
+	}
+
+	return result, nil
 }
 
 // NewIterativeParser creates a new iterative parser that can parse multiple files
@@ -289,11 +276,11 @@ func (ip *IterativeParser) Reset() {
 // GetParsingStatistics returns statistics about the parsing process
 func (ip *IterativeParser) GetParsingStatistics() ParsingStatistics {
 	return ParsingStatistics{
-		TypesCount:       len(ip.state.Types),
-		RulesCount:       len(ip.state.Rules),
-		FactsCount:       len(ip.state.Facts),
-		FilesParsedCount: len(ip.state.FilesParsed),
-		FilesParsed:      ip.state.FilesParsed,
+		TypesCount:       ip.state.GetTypesCount(),
+		RulesCount:       ip.state.GetRulesCount(),
+		FactsCount:       ip.state.GetFactsCount(),
+		FilesParsedCount: len(ip.state.GetFilesParsed()),
+		FilesParsed:      ip.state.GetFilesParsed(),
 	}
 }
 

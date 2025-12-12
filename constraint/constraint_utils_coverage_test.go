@@ -82,7 +82,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 99,
 			expectError:     true,
-			errorContains:   "index d'expression invalide",
+			errorContains:   "invalid expression index",
 		},
 		{
 			name: "variable not found in old syntax",
@@ -92,7 +92,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 0,
 			expectError:     true,
-			errorContains:   "variable non trouvée",
+			errorContains:   "not found",
 		},
 		{
 			name: "variable not found in new syntax",
@@ -102,7 +102,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 1,
 			expectError:     true,
-			errorContains:   "variable non trouvée",
+			errorContains:   "not found",
 		},
 		{
 			name: "type not found",
@@ -112,7 +112,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 0,
 			expectError:     true,
-			errorContains:   "type non trouvé: number",
+			errorContains:   "type not found: number",
 		},
 		{
 			name: "field not found in type",
@@ -122,7 +122,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 0,
 			expectError:     true,
-			errorContains:   "champ unknownField non trouvé dans le type Person",
+			errorContains:   "field unknownField not found in type Person",
 		},
 		{
 			name: "valid field access old syntax",
@@ -168,7 +168,7 @@ func TestValidateFieldAccess_Coverage(t *testing.T) {
 			},
 			expressionIndex: 3,
 			expectError:     true,
-			errorContains:   "variable non trouvée",
+			errorContains:   "not found",
 		},
 	}
 
@@ -378,7 +378,7 @@ func TestValidateConstraintWithOperands_Coverage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateConstraintWithOperands(program, tt.constraint, 0, tt.checkCompatibility)
+			err := validateConstraintWithOperands(program, tt.constraint, 0, tt.checkCompatibility, 0)
 
 			if tt.expectError {
 				if err == nil {
@@ -825,7 +825,7 @@ func TestValidateLogicalExpressionConstraint_Coverage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateLogicalExpressionConstraint(program, tt.constraint, 0)
+			err := validateLogicalExpressionConstraint(program, tt.constraint, 0, 0)
 
 			if tt.expectError {
 				if err == nil {
@@ -932,7 +932,7 @@ func TestValidateFieldAccessInOperands_Coverage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateFieldAccessInOperands(program, tt.constraint, 0)
+			err := validateFieldAccessInOperands(program, tt.constraint, 0, 0)
 
 			if tt.expectError {
 				if err == nil {
@@ -1020,7 +1020,7 @@ func TestValidateFieldAccessInLogicalExpr_Coverage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateFieldAccessInLogicalExpr(program, tt.constraint, 0)
+			err := validateFieldAccessInLogicalExpr(program, tt.constraint, 0, 0)
 
 			if tt.expectError {
 				if err == nil {

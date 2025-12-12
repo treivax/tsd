@@ -498,7 +498,10 @@ rule r2: {b: B} / b.y == "test" ==> DoB()
 				t.Fatalf("Failed to convert to program: %v", err)
 			}
 
-			reteProgram := ConvertToReteProgram(program)
+			reteProgram, err := ConvertToReteProgram(program)
+			if err != nil {
+				t.Fatalf("ConvertToReteProgram() failed: %v", err)
+			}
 			if reteProgram == nil {
 				t.Fatal("ConvertToReteProgram() returned nil")
 			}
@@ -691,8 +694,8 @@ func TestIterativeParser_ConcurrentAccess(t *testing.T) {
 			t.Error("GetState() returned nil")
 			continue
 		}
-		if len(state.Types) != 1 {
-			t.Errorf("Iteration %d: expected 1 type in state, got %d", i, len(state.Types))
+		if state.GetTypesCount() != 1 {
+			t.Errorf("Iteration %d: expected 1 type in state, got %d", i, state.GetTypesCount())
 		}
 	}
 

@@ -40,6 +40,16 @@ func GetValueType(value interface{}) string {
 
 // ValidateTypeCompatibility vérifie la compatibilité des types dans les comparaisons
 func ValidateTypeCompatibility(program Program, constraint interface{}, expressionIndex int) error {
+	return validateTypeCompatibilityWithDepth(program, constraint, expressionIndex, 0)
+}
+
+// validateTypeCompatibilityWithDepth validates type compatibility with recursion depth tracking
+func validateTypeCompatibilityWithDepth(program Program, constraint interface{}, expressionIndex int, depth int) error {
+	// Prevent stack overflow
+	if depth > MaxValidationDepth {
+		return fmt.Errorf("maximum validation depth exceeded (%d)", MaxValidationDepth)
+	}
+
 	constraintMap, ok := constraint.(map[string]interface{})
 	if !ok {
 		return nil
@@ -52,17 +62,17 @@ func ValidateTypeCompatibility(program Program, constraint interface{}, expressi
 
 	switch constraintType {
 	case ConstraintTypeComparison:
-		return validateConstraintWithOperands(program, constraintMap, expressionIndex, true)
+		return validateConstraintWithOperands(program, constraintMap, expressionIndex, true, depth)
 	case ConstraintTypeLogicalExpr:
-		return validateLogicalExpressionConstraint(program, constraintMap, expressionIndex)
+		return validateLogicalExpressionConstraint(program, constraintMap, expressionIndex, depth)
 	case ConstraintTypeBinaryOp:
-		return validateConstraintWithOperands(program, constraintMap, expressionIndex, false)
+		return validateConstraintWithOperands(program, constraintMap, expressionIndex, false, depth)
 	}
 	return nil
 }
 
 // validateConstraintWithOperands handles validation for constraints with left/right operands
-func validateConstraintWithOperands(program Program, c map[string]interface{}, expressionIndex int, checkCompatibility bool) error {
+func validateConstraintWithOperands(program Program, c map[string]interface{}, expressionIndex int, checkCompatibility bool, depth int) error {
 	left := c["left"]
 	right := c["right"]
 
@@ -78,10 +88,10 @@ func validateConstraintWithOperands(program Program, c map[string]interface{}, e
 	}
 
 	// Recursive validation for operands
-	if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
+	if err := validateTypeCompatibilityWithDepth(program, left, expressionIndex, depth+1); err != nil {
 		return err
 	}
-	if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
+	if err := validateTypeCompatibilityWithDepth(program, right, expressionIndex, depth+1); err != nil {
 		return err
 	}
 
@@ -110,7 +120,8 @@ func validateOperandTypeCompatibility(program Program, left, right interface{}, 
 	// Check compatibility
 	if leftType != ValueTypeUnknown && rightType != ValueTypeUnknown && rightType != ValueTypeVariable {
 		if leftType != rightType {
-			return fmt.Errorf("incompatibilité de types dans la comparaison: %s vs %s", leftType, rightType)
+			return fmt.Errorf("type incompatibility in comparison: %s vs %s",
+				sanitizeForLog(leftType, 50), sanitizeForLog(rightType, 50))
 		}
 	}
 
@@ -134,9 +145,9 @@ func getOperandType(program Program, operand interface{}, expressionIndex int) (
 }
 
 // validateLogicalExpressionConstraint handles logical expression validation
-func validateLogicalExpressionConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
+func validateLogicalExpressionConstraint(program Program, c map[string]interface{}, expressionIndex int, depth int) error {
 	if left := c["left"]; left != nil {
-		if err := ValidateTypeCompatibility(program, left, expressionIndex); err != nil {
+		if err := validateTypeCompatibilityWithDepth(program, left, expressionIndex, depth+1); err != nil {
 			return err
 		}
 	}
@@ -153,16 +164,11 @@ func validateLogicalExpressionConstraint(program Program, c map[string]interface
 		}
 
 		if right := opMap["right"]; right != nil {
-			if err := ValidateTypeCompatibility(program, right, expressionIndex); err != nil {
+			if err := validateTypeCompatibilityWithDepth(program, right, expressionIndex, depth+1); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
-}
-
-// validateBinaryOpConstraint handles binary operation validation (wrapper for backward compatibility)
-func validateBinaryOpConstraint(program Program, c map[string]interface{}, expressionIndex int) error {
-	return validateConstraintWithOperands(program, c, expressionIndex, false)
 }

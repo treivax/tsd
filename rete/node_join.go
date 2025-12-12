@@ -234,8 +234,9 @@ func (jn *JoinNode) tokensHaveDifferentVariables(token1 *Token, token2 *Token) b
 
 // getVariableForFact détermine la variable associée à un fait basé sur son type
 func (jn *JoinNode) getVariableForFact(fact *Fact) string {
-	// Utiliser le mapping variable -> type du JoinNode
-	for _, varName := range jn.AllVariables {
+	// Chercher uniquement dans RightVariables, pas dans toutes les variables
+	// Car ce fait arrive par le côté droit du JoinNode
+	for _, varName := range jn.RightVariables {
 		if expectedType, exists := jn.VariableTypes[varName]; exists {
 			if expectedType == fact.Type {
 				return varName
@@ -243,9 +244,25 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 		}
 	}
 
-	fmt.Printf("❌ JOINNODE[%s]: Aucune variable trouvée pour fait %s (type: %s)\n", jn.ID, fact.ID, fact.Type)
-	fmt.Printf("   Variables disponibles: %v\n", jn.AllVariables)
-	fmt.Printf("   Types attendus: %v\n", jn.VariableTypes)
+	// Si pas trouvé dans RightVariables, chercher dans AllVariables (fallback)
+	for _, varName := range jn.AllVariables {
+		if expectedType, exists := jn.VariableTypes[varName]; exists {
+			if expectedType == fact.Type {
+				// Vérifier que cette variable n'est pas déjà dans une autre catégorie
+				found := false
+				for _, rv := range jn.RightVariables {
+					if rv == varName {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return varName
+				}
+			}
+		}
+	}
+
 	return ""
 }
 

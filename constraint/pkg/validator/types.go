@@ -114,58 +114,72 @@ func NewTypeChecker(registry domain.TypeRegistry) *TypeChecker {
 
 // GetFieldType retourne le type d'un champ
 func (tc *TypeChecker) GetFieldType(fieldAccess interface{}, variables []domain.TypedVariable, types []domain.TypeDefinition) (string, error) {
-	// Cast vers FieldAccess
-	fa, ok := fieldAccess.(*domain.FieldAccess)
-	if !ok {
-		// Essayer avec une map (format JSON)
-		if faMap, ok := fieldAccess.(map[string]interface{}); ok {
-			objectName, _ := faMap["object"].(string)
-			fieldName, _ := faMap["field"].(string)
-
-			fa = &domain.FieldAccess{
-				Object: objectName,
-				Field:  fieldName,
-			}
-		} else {
-			return "", domain.NewValidationError(
-				"invalid field access format",
-				domain.Context{Value: fieldAccess},
-			)
-		}
-	}
-
-	// Trouver la variable
-	var variableType string
-	for _, variable := range variables {
-		if variable.Name == fa.Object {
-			variableType = variable.DataType
-			break
-		}
-	}
-
-	if variableType == "" {
-		return "", domain.NewValidationError(
-			fmt.Sprintf("variable '%s' not found", fa.Object),
-			domain.Context{Variable: fa.Object},
-		)
-	}
-
-	// Trouver le type de la variable
-	typeDef, err := tc.registry.GetType(variableType)
+	fa, err := tc.parseFieldAccess(fieldAccess)
 	if err != nil {
 		return "", err
 	}
 
-	// Trouver le champ dans le type
-	field := typeDef.GetFieldByName(fa.Field)
+	variableType, err := tc.findVariableType(fa.Object, variables)
+	if err != nil {
+		return "", err
+	}
+
+	return tc.getFieldTypeFromTypeDef(fa.Field, variableType)
+}
+
+// parseFieldAccess convertit différents formats en FieldAccess
+func (tc *TypeChecker) parseFieldAccess(fieldAccess interface{}) (*domain.FieldAccess, error) {
+	// Cast vers FieldAccess
+	if fa, ok := fieldAccess.(*domain.FieldAccess); ok {
+		return fa, nil
+	}
+
+	// Essayer avec une map (format JSON)
+	if faMap, ok := fieldAccess.(map[string]interface{}); ok {
+		objectName, _ := faMap["object"].(string)
+		fieldName, _ := faMap["field"].(string)
+
+		return &domain.FieldAccess{
+			Object: objectName,
+			Field:  fieldName,
+		}, nil
+	}
+
+	return nil, domain.NewValidationError(
+		"invalid field access format",
+		domain.Context{Value: fieldAccess},
+	)
+}
+
+// findVariableType trouve le type d'une variable dans la liste des variables
+func (tc *TypeChecker) findVariableType(varName string, variables []domain.TypedVariable) (string, error) {
+	for _, variable := range variables {
+		if variable.Name == varName {
+			return variable.DataType, nil
+		}
+	}
+
+	return "", domain.NewValidationError(
+		fmt.Sprintf("variable '%s' not found", varName),
+		domain.Context{Variable: varName},
+	)
+}
+
+// getFieldTypeFromTypeDef récupère le type d'un champ depuis la définition de type
+func (tc *TypeChecker) getFieldTypeFromTypeDef(fieldName, typeName string) (string, error) {
+	typeDef, err := tc.registry.GetType(typeName)
+	if err != nil {
+		return "", err
+	}
+
+	field := domain.GetTypeFieldByName(typeDef, fieldName)
 	if field == nil {
 		return "", domain.NewFieldNotFoundError(
-			fa.Field,
-			variableType,
+			fieldName,
+			typeName,
 			domain.Context{
-				Field:    fa.Field,
-				Type:     variableType,
-				Variable: fa.Object,
+				Field: fieldName,
+				Type:  typeName,
 			},
 		)
 	}
@@ -185,46 +199,38 @@ func (tc *TypeChecker) GetValueType(value interface{}) string {
 	case string:
 		return "string"
 	case map[string]interface{}:
-		// Format JSON, essayer de déterminer le type
-		if valueType, ok := v["type"].(string); ok {
-			switch valueType {
-			case "booleanLiteral":
-				return "bool"
-			case "integerLiteral":
-				return "integer"
-			case "numberLiteral":
-				return "number"
-			case "stringLiteral":
-				return "string"
-			}
-		}
-		// Si on a une valeur directe
-		if val, ok := v["value"]; ok {
-			return tc.GetValueType(val)
-		}
-		return "unknown"
+		return tc.getTypeFromMap(v)
 	default:
 		return "unknown"
 	}
 }
 
+// getTypeFromMap extrait le type depuis une map (format JSON)
+func (tc *TypeChecker) getTypeFromMap(v map[string]interface{}) string {
+	// Table de mapping des types JSON vers types domaine
+	typeMapping := map[string]string{
+		"booleanLiteral": "bool",
+		"integerLiteral": "integer",
+		"numberLiteral":  "number",
+		"stringLiteral":  "string",
+	}
+
+	if valueType, ok := v["type"].(string); ok {
+		if mappedType, exists := typeMapping[valueType]; exists {
+			return mappedType
+		}
+	}
+
+	// Si on a une valeur directe, extraire récursivement
+	if val, ok := v["value"]; ok {
+		return tc.GetValueType(val)
+	}
+
+	return "unknown"
+}
+
 // ValidateTypeCompatibility vérifie la compatibilité entre types
 func (tc *TypeChecker) ValidateTypeCompatibility(leftType, rightType, operator string) error {
-	// Opérateurs de comparaison
-	comparisonOps := map[string]bool{
-		"==": true, "!=": true, "<": true, ">": true, "<=": true, ">=": true,
-	}
-
-	// Opérateurs logiques
-	logicalOps := map[string]bool{
-		"AND": true, "OR": true, "NOT": true,
-	}
-
-	// Opérateurs arithmétiques
-	arithmeticOps := map[string]bool{
-		"+": true, "-": true, "*": true, "/": true, "%": true,
-	}
-
 	// Vérification basique des opérateurs
 	if !domain.IsValidOperator(operator) {
 		return domain.NewValidationError(
@@ -237,18 +243,15 @@ func (tc *TypeChecker) ValidateTypeCompatibility(leftType, rightType, operator s
 	}
 
 	// Règles spécifiques par opérateur
-	if comparisonOps[operator] {
-		// Pour les comparaisons, les types doivent être compatibles
+	if ComparisonOperators[operator] {
 		return tc.validateComparisonTypes(leftType, rightType, operator)
 	}
 
-	if logicalOps[operator] {
-		// Pour les opérations logiques, les opérandes doivent être booléens
+	if LogicalOperators[operator] {
 		return tc.validateLogicalTypes(leftType, rightType, operator)
 	}
 
-	if arithmeticOps[operator] {
-		// Pour l'arithmétique, les types doivent être numériques
+	if ArithmeticOperators[operator] {
 		return tc.validateArithmeticTypes(leftType, rightType, operator)
 	}
 
@@ -270,11 +273,7 @@ func (tc *TypeChecker) validateComparisonTypes(leftType, rightType, operator str
 	}
 
 	// Comparaisons ordinales : seulement pour les types numériques et strings
-	orderableTypes := map[string]bool{
-		"number": true, "integer": true, "string": true,
-	}
-
-	if !orderableTypes[leftType] || !orderableTypes[rightType] {
+	if !OrderableTypes[leftType] || !OrderableTypes[rightType] {
 		return domain.NewValidationError(
 			fmt.Sprintf("operator '%s' not supported for types '%s' and '%s'",
 				operator, leftType, rightType),
@@ -326,11 +325,7 @@ func (tc *TypeChecker) validateLogicalTypes(leftType, rightType, operator string
 
 // validateArithmeticTypes valide les types pour les opérateurs arithmétiques
 func (tc *TypeChecker) validateArithmeticTypes(leftType, rightType, operator string) error {
-	numericTypes := map[string]bool{
-		"number": true, "integer": true,
-	}
-
-	if !numericTypes[leftType] || !numericTypes[rightType] {
+	if !NumericTypes[leftType] || !NumericTypes[rightType] {
 		return domain.NewValidationError(
 			fmt.Sprintf("arithmetic operator '%s' requires numeric operands", operator),
 			domain.Context{

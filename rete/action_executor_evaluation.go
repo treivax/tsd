@@ -43,7 +43,14 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 		}
 		fact := ctx.GetVariable(varName)
 		if fact == nil {
-			return nil, fmt.Errorf("variable '%s' non trouvée", varName)
+			// Debug: list available variables
+			availableVars := make([]string, 0)
+			if ctx.varCache != nil {
+				for k := range ctx.varCache {
+					availableVars = append(availableVars, k)
+				}
+			}
+			return nil, fmt.Errorf("variable '%s' non trouvée (variables disponibles: %v)", varName, availableVars)
 		}
 		return fact, nil
 
@@ -60,7 +67,14 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 
 		fact := ctx.GetVariable(objectName)
 		if fact == nil {
-			return nil, fmt.Errorf("variable '%s' non trouvée", objectName)
+			// Debug: list available variables
+			availableVars := make([]string, 0)
+			if ctx.varCache != nil {
+				for k := range ctx.varCache {
+					availableVars = append(availableVars, k)
+				}
+			}
+			return nil, fmt.Errorf("variable '%s' non trouvée (variables disponibles: %v)", objectName, availableVars)
 		}
 
 		value, exists := fact.Fields[fieldName]

@@ -38,13 +38,13 @@ rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 		}
 
 		// Should have 2 rules (r1 first occurrence and r2)
-		if len(ps.Rules) != 2 {
-			t.Errorf("Expected 2 rules, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 2 {
+			t.Errorf("Expected 2 rules, got %d", ps.GetRulesCount())
 		}
 
 		// Should have 1 error for duplicate r1
-		if len(ps.Errors) != 1 {
-			t.Errorf("Expected 1 error, got %d", len(ps.Errors))
+		if len(ps.GetErrors()) != 1 {
+			t.Errorf("Expected 1 error, got %d", len(ps.GetErrors()))
 		}
 
 		t.Log("✅ Duplicate in same file: correctly rejected")
@@ -98,13 +98,13 @@ rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 
 		// Should have 3 rules: r1 (file1), r2 (file2), r3 (file3)
 		// Duplicate r1 from file3 should be rejected
-		if len(ps.Rules) != 3 {
-			t.Errorf("Expected 3 rules, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 3 {
+			t.Errorf("Expected 3 rules, got %d", ps.GetRulesCount())
 		}
 
 		// Should have 1 error for duplicate r1 in file3
 		errorCount := 0
-		for _, e := range ps.Errors {
+		for _, e := range ps.GetErrors() {
 			if e.File == file3 && e.Type == "rule" {
 				errorCount++
 			}
@@ -152,11 +152,11 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 			t.Fatalf("Failed to parse file1: %v", err)
 		}
 
-		if len(ps.Rules) != 2 {
-			t.Errorf("Expected 2 rules before reset, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 2 {
+			t.Errorf("Expected 2 rules before reset, got %d", ps.GetRulesCount())
 		}
-		if len(ps.Types) != 1 {
-			t.Errorf("Expected 1 type before reset, got %d", len(ps.Types))
+		if ps.GetTypesCount() != 1 {
+			t.Errorf("Expected 1 type before reset, got %d", ps.GetTypesCount())
 		}
 
 		// Parse file2 with reset
@@ -165,21 +165,21 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 		}
 
 		// After reset, should have new rules with same IDs (allowed)
-		if len(ps.Rules) != 2 {
-			t.Errorf("Expected 2 rules after reset, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 2 {
+			t.Errorf("Expected 2 rules after reset, got %d", ps.GetRulesCount())
 		}
 
 		// Should have Product type, not Person
-		if _, exists := ps.Types["Product"]; !exists {
+		if _, exists := ps.GetTypes()["Product"]; !exists {
 			t.Error("Expected Product type after reset")
 		}
-		if _, exists := ps.Types["Person"]; exists {
+		if _, exists := ps.GetTypes()["Person"]; exists {
 			t.Error("Person type should be cleared after reset")
 		}
 
 		// Should have no errors (reusing IDs after reset is valid)
-		if len(ps.Errors) > 0 {
-			t.Errorf("Expected no errors after reset, got %d", len(ps.Errors))
+		if len(ps.GetErrors()) > 0 {
+			t.Errorf("Expected no errors after reset, got %d", len(ps.GetErrors()))
 		}
 
 		t.Log("✅ Reset allows ID reuse: correctly handled")
@@ -211,13 +211,13 @@ rule r1 : {p: Person} / p.age == 19 ==> nineteen(p.id)`
 		}
 
 		// Should have 3 rules: r1, r2, r3 (first occurrences only)
-		if len(ps.Rules) != 3 {
-			t.Errorf("Expected 3 rules, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 3 {
+			t.Errorf("Expected 3 rules, got %d", ps.GetRulesCount())
 		}
 
 		// Should have 3 errors (2nd r1, 2nd r2, 3rd r1)
-		if len(ps.Errors) != 3 {
-			t.Errorf("Expected 3 errors, got %d", len(ps.Errors))
+		if len(ps.GetErrors()) != 3 {
+			t.Errorf("Expected 3 errors, got %d", len(ps.GetErrors()))
 		}
 
 		t.Log("✅ Multiple duplicates: all correctly rejected")
@@ -228,14 +228,14 @@ rule r1 : {p: Person} / p.age == 19 ==> nineteen(p.id)`
 		ps := NewProgramState()
 
 		// Manually add type
-		ps.Types["Person"] = &TypeDefinition{
+		ps.AddTypeForTesting("Person", &TypeDefinition{
 			Type: "typeDefinition",
 			Name: "Person",
 			Fields: []Field{
 				{Name: "id", Type: "string"},
 				{Name: "age", Type: "number"},
 			},
-		}
+		})
 
 		// Create rules with empty IDs
 		rules := []Expression{
@@ -264,17 +264,14 @@ rule r1 : {p: Person} / p.age == 19 ==> nineteen(p.id)`
 		// Mock merge
 		for _, rule := range rules {
 			if rule.RuleId != "" {
-				if ps.RuleIDs[rule.RuleId] {
-					continue
-				}
-				ps.RuleIDs[rule.RuleId] = true
+				ps.SetRuleIDForTesting(rule.RuleId)
 			}
-			ps.Rules = append(ps.Rules, &rule)
+			ps.AddRuleForTesting(&rule)
 		}
 
 		// Both should be accepted (empty IDs don't trigger uniqueness)
-		if len(ps.Rules) != 2 {
-			t.Errorf("Expected 2 rules with empty IDs, got %d", len(ps.Rules))
+		if ps.GetRulesCount() != 2 {
+			t.Errorf("Expected 2 rules with empty IDs, got %d", ps.GetRulesCount())
 		}
 
 		t.Log("✅ Empty IDs: correctly allowed")
@@ -298,15 +295,15 @@ func TestRuleIdValidationWithRealFiles(t *testing.T) {
 		}
 
 		// Should have accepted 5 rules, rejected 2 duplicates
-		if len(ps.Rules) != 5 {
-			t.Logf("⚠️  Expected 5 rules, got %d (file may have been modified)", len(ps.Rules))
+		if ps.GetRulesCount() != 5 {
+			t.Logf("⚠️  Expected 5 rules, got %d (file may have been modified)", ps.GetRulesCount())
 		} else {
 			t.Log("✅ Duplicate rule IDs file: correct behavior")
 		}
 
 		// Should have 2 errors
-		if len(ps.Errors) != 2 {
-			t.Logf("⚠️  Expected 2 errors, got %d (file may have been modified)", len(ps.Errors))
+		if len(ps.GetErrors()) != 2 {
+			t.Logf("⚠️  Expected 2 errors, got %d (file may have been modified)", len(ps.GetErrors()))
 		} else {
 			t.Log("✅ Duplicate rule IDs file: errors correctly recorded")
 		}

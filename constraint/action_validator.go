@@ -5,22 +5,22 @@
 package constraint
 
 import (
-	"encoding/base64"
 	"fmt"
-	"strings"
 )
 
 // ActionValidator validates action calls against action definitions and type definitions.
 type ActionValidator struct {
-	actions map[string]*ActionDefinition
-	types   map[string]*TypeDefinition
+	actions          map[string]*ActionDefinition
+	types            map[string]*TypeDefinition
+	functionRegistry *FunctionRegistry
 }
 
 // NewActionValidator creates a new ActionValidator with the given action and type definitions.
 func NewActionValidator(actions []ActionDefinition, types []TypeDefinition) *ActionValidator {
 	av := &ActionValidator{
-		actions: make(map[string]*ActionDefinition),
-		types:   make(map[string]*TypeDefinition),
+		actions:          make(map[string]*ActionDefinition),
+		types:            make(map[string]*TypeDefinition),
+		functionRegistry: DefaultFunctionRegistry,
 	}
 
 	// Index actions by name
@@ -42,10 +42,18 @@ func NewActionValidator(actions []ActionDefinition, types []TypeDefinition) *Act
 // - The number of arguments matches (considering optional parameters)
 // - The argument types are compatible with parameter types
 func (av *ActionValidator) ValidateActionCall(jobCall *JobCall, ruleVariables map[string]string) error {
+	// Validate inputs
+	if err := validateInputNotNil(map[string]interface{}{
+		"jobCall":       jobCall,
+		"ruleVariables": ruleVariables,
+	}); err != nil {
+		return err
+	}
+
 	// Get action definition
 	actionDef, exists := av.actions[jobCall.Name]
 	if !exists {
-		return fmt.Errorf("action '%s' is not defined", jobCall.Name)
+		return fmt.Errorf("action '%s' is not defined", sanitizeForLog(jobCall.Name, 100))
 	}
 
 	// Count required and optional parameters
@@ -65,11 +73,11 @@ func (av *ActionValidator) ValidateActionCall(jobCall *JobCall, ruleVariables ma
 	// Check argument count
 	if argCount < requiredCount {
 		return fmt.Errorf("action '%s' requires at least %d arguments, got %d",
-			jobCall.Name, requiredCount, argCount)
+			sanitizeForLog(jobCall.Name, 100), requiredCount, argCount)
 	}
 	if argCount > totalParams {
 		return fmt.Errorf("action '%s' accepts at most %d arguments, got %d",
-			jobCall.Name, totalParams, argCount)
+			sanitizeForLog(jobCall.Name, 100), totalParams, argCount)
 	}
 
 	// Validate each argument against its parameter type
@@ -77,24 +85,30 @@ func (av *ActionValidator) ValidateActionCall(jobCall *JobCall, ruleVariables ma
 		param := actionDef.Parameters[i]
 
 		// Get the type of the argument
-		argType, err := av.inferArgumentType(arg, ruleVariables)
+		argType, err := av.inferArgumentType(arg, ruleVariables, 0)
 		if err != nil {
 			return fmt.Errorf("error inferring type of argument %d for action '%s': %v",
-				i+1, jobCall.Name, err)
+				i+1, sanitizeForLog(jobCall.Name, 100), err)
 		}
 
 		// Check type compatibility
 		if !av.isTypeCompatible(argType, param.Type) {
 			return fmt.Errorf("type mismatch for parameter '%s' in action '%s': expected '%s', got '%s'",
-				param.Name, jobCall.Name, param.Type, argType)
+				sanitizeForLog(param.Name, 50), sanitizeForLog(jobCall.Name, 100),
+				sanitizeForLog(param.Type, 50), sanitizeForLog(argType, 50))
 		}
 	}
 
 	return nil
 }
 
-// inferArgumentType infers the type of an argument expression.
-func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[string]string) (string, error) {
+// inferArgumentType infers the type of an argument expression with recursion depth tracking.
+func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[string]string, depth int) (string, error) {
+	// Prevent stack overflow with deeply nested structures
+	if depth > MaxValidationDepth {
+		return "", fmt.Errorf("maximum validation depth exceeded (%d)", MaxValidationDepth)
+	}
+
 	switch v := arg.(type) {
 	case map[string]interface{}:
 		argType, ok := v["type"].(string)
@@ -103,13 +117,13 @@ func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[
 		}
 
 		switch argType {
-		case "string", "stringLiteral":
-			return "string", nil
-		case "number", "numberLiteral":
-			return "number", nil
-		case "boolean", "booleanLiteral", "bool":
-			return "bool", nil
-		case "variable":
+		case ValueTypeString, ArgTypeStringLiteral:
+			return ValueTypeString, nil
+		case ValueTypeNumber, ArgTypeNumberLiteral:
+			return ValueTypeNumber, nil
+		case ValueTypeBoolean, ArgTypeBoolLiteral, ValueTypeBool:
+			return ValueTypeBool, nil
+		case ValueTypeVariable:
 			// Look up the variable type from rule variables
 			varName, ok := v["name"].(string)
 			if !ok {
@@ -117,10 +131,10 @@ func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[
 			}
 			varType, exists := ruleVariables[varName]
 			if !exists {
-				return "", fmt.Errorf("variable '%s' not found in rule", varName)
+				return "", fmt.Errorf("variable '%s' not found in rule", sanitizeForLog(varName, 50))
 			}
 			return varType, nil
-		case "fieldAccess":
+		case ConstraintTypeFieldAccess:
 			// For field access, we need to look up the object type and then the field type
 			objName, ok := v["object"].(string)
 			if !ok {
@@ -134,13 +148,13 @@ func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[
 			// Get the type of the object
 			objType, exists := ruleVariables[objName]
 			if !exists {
-				return "", fmt.Errorf("object '%s' not found in rule", objName)
+				return "", fmt.Errorf("object '%s' not found in rule", sanitizeForLog(objName, 50))
 			}
 
 			// Get the type definition
 			typeDef, exists := av.types[objType]
 			if !exists {
-				return "", fmt.Errorf("type '%s' not found", objType)
+				return "", fmt.Errorf("type '%s' not found", sanitizeForLog(objType, 50))
 			}
 
 			// Find the field in the type
@@ -150,56 +164,48 @@ func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[
 				}
 			}
 
-			return "", fmt.Errorf("field '%s' not found in type '%s'", fieldName, objType)
-		case "binaryOp", "binaryOperation", "binary_operation":
-			// For binary operations, infer from operands (assume number for arithmetic)
+			return "", fmt.Errorf("field '%s' not found in type '%s'",
+				sanitizeForLog(fieldName, 50), sanitizeForLog(objType, 50))
+		case ArgTypeBinaryOp, ArgTypeBinaryOp2, ArgTypeBinaryOp3:
+			// For binary operations, infer from operands
 			op, ok := v["operator"].(string)
 			if !ok {
 				return "", fmt.Errorf("binaryOp missing operator")
 			}
 
-			// The operator might be base64 encoded, try to decode it
-			if decoded, err := base64.StdEncoding.DecodeString(op); err == nil {
-				op = string(decoded)
+			// The operator might be base64 encoded, try to decode it safely
+			if decoded, err := safeBase64Decode(op); err == nil {
+				op = decoded
 			}
 
 			// Arithmetic operations return number
-			if op == "+" || op == "-" || op == "*" || op == "/" || op == "%" {
-				return "number", nil
+			if isArithmeticOperator(op) {
+				return ValueTypeNumber, nil
 			}
 			// Comparison operations return bool
-			if op == "==" || op == "!=" || op == "<" || op == ">" || op == "<=" || op == ">=" {
-				return "bool", nil
+			if isComparisonOperator(op) {
+				return ValueTypeBool, nil
 			}
-			return "", fmt.Errorf("unknown operator '%s'", op)
-		case "functionCall":
-			// Function calls - would need function signature database
-			// For now, return string for string functions, number for numeric functions
+			return "", fmt.Errorf("unknown operator '%s'", sanitizeForLog(op, 20))
+		case ArgTypeFunctionCall:
+			// Function calls - use function registry
 			funcName, ok := v["name"].(string)
 			if !ok {
 				return "", fmt.Errorf("functionCall missing name")
 			}
-			return av.inferFunctionReturnType(funcName), nil
+			return av.functionRegistry.GetReturnType(funcName, ValueTypeString), nil
 		default:
-			return "", fmt.Errorf("unknown argument type: %s", argType)
+			return "", fmt.Errorf("unknown argument type: %s", sanitizeForLog(argType, 50))
 		}
 	default:
 		return "", fmt.Errorf("unexpected argument structure")
 	}
 }
 
-// inferFunctionReturnType returns the return type of a function.
+// inferFunctionReturnType returns the return type of a function using the function registry.
+// Deprecated: Use functionRegistry.GetReturnType() directly
 func (av *ActionValidator) inferFunctionReturnType(funcName string) string {
-	switch strings.ToUpper(funcName) {
-	case "LENGTH":
-		return "number"
-	case "SUBSTRING", "UPPER", "LOWER", "TRIM":
-		return "string"
-	case "ABS", "ROUND", "FLOOR", "CEIL":
-		return "number"
-	default:
-		return "string" // Default to string
-	}
+	return av.functionRegistry.GetReturnType(funcName, ValueTypeString)
 }
 
 // isTypeCompatible checks if an argument type is compatible with a parameter type.

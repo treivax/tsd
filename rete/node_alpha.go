@@ -35,10 +35,27 @@ func NewAlphaNode(nodeID string, condition interface{}, variableName string, sto
 	}
 }
 
-// ActivateLeft (non utilisé pour les nœuds alpha sauf pour propagation rétroactive)
+// ActivateLeft propage le token aux enfants (utilisé dans les cascades de jointures)
 func (an *AlphaNode) ActivateLeft(token *Token) error {
-	// Silently ignore - used during retroactive propagation
-	return nil
+	// Dans les cascades de jointures, l'AlphaNode doit propager le token
+	// pour préserver tous les bindings accumulés dans les jointures précédentes
+
+	// Si l'AlphaNode a une condition de filtrage, l'appliquer
+	if an.Condition != nil {
+		// Vérifier si c'est un passthrough
+		if condMap, ok := an.Condition.(map[string]interface{}); ok {
+			if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
+				// Mode passthrough: propager le token tel quel
+				return an.PropagateToChildren(nil, token)
+			}
+		}
+
+		// Si l'AlphaNode a une vraie condition, évaluer sur chaque fait du token
+		// Pour l'instant, on propage tel quel (le filtrage sera fait ailleurs si nécessaire)
+	}
+
+	// Propager le token aux enfants
+	return an.PropagateToChildren(nil, token)
 }
 
 // ActivateRetract retire le fait de la mémoire alpha et propage aux enfants

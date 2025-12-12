@@ -58,8 +58,8 @@ func TestMainIntegration(t *testing.T) {
 			wantExitCode: 1,
 			wantOutputContains: []string{
 				"Usage:",
-				"constraint-parser <input-file>",
-				"Exemple:",
+				"constraint-parser [options] <input-file>",
+				"Exemples:",
 			},
 		},
 		{
@@ -73,7 +73,7 @@ func TestMainIntegration(t *testing.T) {
 		{
 			name:         "non-existent file",
 			args:         []string{filepath.Join(tempDir, "nonexistent.tsd")},
-			wantExitCode: 1,
+			wantExitCode: 2, // ExitRuntimeError
 			wantErrorContains: []string{
 				"Erreur:",
 			},
@@ -81,7 +81,7 @@ func TestMainIntegration(t *testing.T) {
 		{
 			name:         "invalid syntax",
 			args:         []string{invalidConstraint},
-			wantExitCode: 1,
+			wantExitCode: 2, // ExitRuntimeError
 			wantErrorContains: []string{
 				"Erreur:",
 			},
@@ -330,9 +330,9 @@ func TestUsageMessage(t *testing.T) {
 	outputStr := string(output)
 	requiredStrings := []string{
 		"Usage:",
-		"constraint-parser <input-file>",
-		"Exemple:",
-		"constraint-parser ../tests/test_input.txt",
+		"constraint-parser [options] <input-file>",
+		"Exemples:",
+		"constraint-parser constraints.tsd",
 	}
 
 	for _, required := range requiredStrings {

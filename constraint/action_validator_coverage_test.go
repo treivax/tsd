@@ -25,7 +25,10 @@ func TestInferArgumentType_Coverage(t *testing.T) {
 		},
 	}
 
-	av := &ActionValidator{types: types}
+	av := &ActionValidator{
+		types:            types,
+		functionRegistry: DefaultFunctionRegistry,
+	}
 
 	ruleVars := map[string]string{
 		"p":      "Person",
@@ -442,7 +445,7 @@ func TestInferArgumentType_Coverage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotType, err := av.inferArgumentType(tt.arg, tt.ruleVars)
+			gotType, err := av.inferArgumentType(tt.arg, tt.ruleVars, 0)
 
 			if tt.expectError {
 				if err == nil {
@@ -489,7 +492,9 @@ func TestIsTypeCompatible_Coverage(t *testing.T) {
 }
 
 func TestInferFunctionReturnType(t *testing.T) {
-	av := &ActionValidator{}
+	av := &ActionValidator{
+		functionRegistry: DefaultFunctionRegistry,
+	}
 
 	tests := []struct {
 		funcName string

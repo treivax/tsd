@@ -17,7 +17,8 @@ Cette règle garantit :
 ### 🧹 Rapports de Nettoyage
 | Fichier | Date | Description |
 |---------|------|-------------|
-| `DEEP_CLEAN_CERTIFICATION_2025-12-07.md` | 2025-12-07 | 🏆 Certificat de validation du deep-clean |
+| `DEEP_CLEAN_CERTIFICATION_2025-12-08.md` | 2025-12-08 | 🏆 Certificat de validation du deep-clean |
+| `DEEP_CLEAN_SUMMARY_2025-12-08.md` | 2025-12-08 | Résumé exécutif du nettoyage profond |
 | `DASHBOARD_2025-12-07.md` | 2025-12-07 | 📊 Tableau de bord complet - Vue d'ensemble du projet |
 | `DEEP_CLEAN_REPORT_2025-12-07.md` | 2025-12-07 | Rapport complet du nettoyage profond automatisé |
 | `DEEP_CLEAN_SUMMARY_2025-12-07.md` | 2025-12-07 | Résumé exécutif du nettoyage profond |
@@ -28,20 +29,36 @@ Cette règle garantit :
 ### 📊 Rapports d'Analyse
 | Fichier | Date | Description |
 |---------|------|-------------|
+| `BUILD_AND_TEST_REPORT_2025-12-08.md` | 2025-12-08 | ✅ Rapport de build et tests après merge deep-clean (4,519 tests passés) |
 | `CODE_STATS_2025-12-07.md` | 2025-12-07 | 📊 Statistiques complètes du code (lignes, modules, qualité) |
 | `GIT_PUSH_SUMMARY_2025-12-07.md` | 2025-12-07 | Récapitulatif du push Git (11 commits) |
+| `RACE_CONDITION_ANALYSIS_2025-12-08.md` | 2025-12-08 | Analyse des race conditions |
+| `RACE_TESTING_EXPLANATION_2025-12-08.md` | 2025-12-08 | Explication des tests de race conditions |
+| `USER_SUMMARY_RACE_DETECTOR_2025-12-08.md` | 2025-12-08 | Résumé utilisateur - Race detector |
 
 ### 🔄 Rapports de Refactoring
 | Fichier | Date | Description |
 |---------|------|-------------|
 | `REFACTORING_REMOVE_UNUSED_TIMESTAMPS_2025-12-08.md` | 2025-12-08 | 🧹 Nettoyage - Suppression des champs `Timestamp` inutilisés dans `Fact` et `JoinResult` (-50 lignes, -8 bytes/structure) |
 | `REFACTORING_INGEST_FILE_UNIQUE_2025-12-08.md` | 2025-12-08 | ⭐ Simplification majeure - Fusion `IngestFile()` unique, suppression de `ingestFileWithMetrics()` et des fonctions d'orchestration (-376 lignes) |
+| `REFACTORING_INGEST_FILE_SUMMARY.md` | 2025-12-08 | Résumé du refactoring IngestFile |
 | `REFACTORING_ADVANCED_BETA_2025-12-07.md` | 2025-12-07 | Refactoring de `advanced_beta.go` - Décomposition en modules |
 | `REFACTORING_NETWORK_OPTIMIZER_2025-12-07.md` | 2025-12-07 | Refactoring de `network_optimizer.go` - Séparation des stratégies |
 | `REFACTORING_CONSTRAINT_PIPELINE_2025-12-07.md` | 2025-12-07 | Refactoring de `ingestFileWithMetrics()` - Décomposition en orchestration modulaire |
 | `REFACTORING_ALPHA_AND_BINARY_JOIN_2025-12-07.md` | 2025-12-07 | Refactoring de `createAlphaNodeWithTerminal()` et `createBinaryJoinRule()` - Extract Method + Context Object |
 | `REFACTORING_BETA_CHAIN_AND_AGGREGATION_2025-12-07.md` | 2025-12-07 | Refactoring de `BuildChain()` et `extractMultiSourceAggregationInfo()` - Extract Method + Context Object |
+| `REFACTORING_BuildDecomposedChain_2025-12-07.md` | 2025-12-07 | Refactoring de BuildDecomposedChain |
+| `REFACTORING_RegisterMetrics_2025-12-07.md` | 2025-12-07 | Refactoring de RegisterMetrics |
+| `REFACTORING_extractAggregationInfoFromVariables_2025-12-07.md` | 2025-12-07 | Refactoring de extractAggregationInfoFromVariables |
+| `REFACTORING_4_COMPLEX_FUNCTIONS_2025-12-07.md` | 2025-12-07 | Refactoring de 4 fonctions complexes |
+| `REFACTORING_THREE_FUNCTIONS_2025-12-07.md` | 2025-12-07 | Refactoring de 3 fonctions |
+| `REFACTORING_3_FUNCTIONS_SUMMARY.md` | 2025-12-07 | Résumé refactoring 3 fonctions |
+| `REFACTORING_RegisterMetrics_SUMMARY.md` | 2025-12-07 | Résumé refactoring RegisterMetrics |
+| `REFACTORING_SESSION_2025-12-07.md` | 2025-12-07 | Session de refactoring |
 | `REFACTORING_SESSION_SUMMARY_2025-12-07.md` | 2025-12-07 | Résumé de session refactoring - 4 fonctions refactorisées |
+| `REFACTORING_SUMMARY.md` | 2025-12-07 | Résumé général des refactorings |
+| `REFACTORING_TRACKER_2025-12-07.md` | 2025-12-07 | Tracker des refactorings |
+| `MODIFICATION_INGEST_FUNCTIONS_2025-12-07.md` | 2025-12-07 | Modifications des fonctions d'ingestion |
 
 ### 📊 Statuts de Projet
 | Fichier | Date | Description |
@@ -71,17 +88,18 @@ Cette règle garantit :
 
 ## 📊 Statistiques
 
-- **Total de rapports** : 26
-- **Dernière mise à jour** : 2025-12-07
+- **Total de rapports** : 46
+- **Dernière mise à jour** : 2025-12-08
 - **Rapports de nettoyage** : 7
-- **Rapports d'analyse** : 2
-- **Rapports de refactoring** : 6
+- **Rapports d'analyse** : 6
+- **Rapports de refactoring** : 20
 - **Rapports de statut** : 2
 - **Résumés de sessions** : 2
 - **Rapports d'architecture** : 2
 - **Rapports de fonctionnalités** : 4
 - **Dashboards** : 1
 - **Certifications** : 1
+- **Rapports de build/tests** : 1
 
 ## 🎯 Types de Rapports
 
@@ -127,7 +145,10 @@ Si non versionné (via `.gitignore`) :
 ## 🔍 Navigation Rapide
 
 ### 🏆 Certificat de Validation
-→ `DEEP_CLEAN_CERTIFICATION_2025-12-07.md` ⭐ **CERTIFICATION OFFICIELLE**
+→ `DEEP_CLEAN_CERTIFICATION_2025-12-08.md` ⭐ **CERTIFICATION OFFICIELLE**
+
+### ✅ Rapport de Build et Tests
+→ `BUILD_AND_TEST_REPORT_2025-12-08.md` ⭐ **NOUVEAU - 100% tests passés après merge**
 
 ### 📊 Vue d'Ensemble Complète
 → `DASHBOARD_2025-12-07.md` ⭐ **RECOMMANDÉ - Commencez ici !**
@@ -148,11 +169,13 @@ Si non versionné (via `.gitignore`) :
 → `SESSION_SUMMARY_2024-12-07.md` et `SESSION_SUMMARY_2024-12-07_PART2.md`
 
 ### Rapports de Refactoring
+→ `REFACTORING_INGEST_FILE_UNIQUE_2025-12-08.md` - Consolidation IngestFile en fonction unique ⭐ **NOUVEAU**
+→ `REFACTORING_REMOVE_UNUSED_TIMESTAMPS_2025-12-08.md` - Suppression timestamps inutilisés ⭐ **NOUVEAU**
 → `REFACTORING_ADVANCED_BETA_2025-12-07.md` - Décomposition de `advanced_beta.go`
 → `REFACTORING_NETWORK_OPTIMIZER_2025-12-07.md` - Séparation des stratégies d'optimisation
 → `REFACTORING_CONSTRAINT_PIPELINE_2025-12-07.md` - Décomposition orchestration pipeline
 → `REFACTORING_ALPHA_AND_BINARY_JOIN_2025-12-07.md` - Alpha & Binary Join refactoring
-→ `REFACTORING_BETA_CHAIN_AND_AGGREGATION_2025-12-07.md` - Beta Chain & Aggregation refactoring ⭐ **NOUVEAU**
+→ `REFACTORING_BETA_CHAIN_AND_AGGREGATION_2025-12-07.md` - Beta Chain & Aggregation refactoring
 → `REFACTORING_SESSION_SUMMARY_2025-12-07.md` - Session summary (4 functions refactored)
 
 ## 🛠️ Maintenance
@@ -169,6 +192,6 @@ Les anciens rapports peuvent être déplacés dans un sous-répertoire `archive/
 
 ---
 
-**Dernière mise à jour** : 2025-12-07 12:15 CET
+**Dernière mise à jour** : 2025-12-08
 **Maintenu par** : Assistant IA + Équipe TSD  
 **Règle** : Tous les SUMMARY et STATUS vont ici, sans exception.

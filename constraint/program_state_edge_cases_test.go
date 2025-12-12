@@ -95,8 +95,8 @@ func TestProgramState_MergeTypes_EdgeCases(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				}
-				if tt.checkCount > 0 && len(ps.Types) != tt.checkCount {
-					t.Errorf("Expected %d types, got %d", tt.checkCount, len(ps.Types))
+				if tt.checkCount > 0 && ps.GetTypesCount() != tt.checkCount {
+					t.Errorf("Expected %d types, got %d", tt.checkCount, ps.GetTypesCount())
 				}
 			}
 		})
@@ -187,12 +187,12 @@ func TestProgramState_MergeRules_EdgeCases(t *testing.T) {
 			_ = ps.ParseAndMerge(rules1File)
 			_ = ps.ParseAndMerge(rules2File)
 
-			if len(ps.Rules) != tt.wantRules {
-				t.Errorf("Expected %d rules, got %d", tt.wantRules, len(ps.Rules))
+			if ps.GetRulesCount() != tt.wantRules {
+				t.Errorf("Expected %d rules, got %d", tt.wantRules, ps.GetRulesCount())
 			}
 
-			if len(ps.Errors) != tt.wantErrors {
-				t.Errorf("Expected %d errors, got %d", tt.wantErrors, len(ps.Errors))
+			if len(ps.GetErrors()) != tt.wantErrors {
+				t.Errorf("Expected %d errors, got %d", tt.wantErrors, len(ps.GetErrors()))
 			}
 		})
 	}
@@ -273,12 +273,12 @@ Person(id: "p3", age: 25)`,
 			// Parse facts (errors should be non-blocking)
 			_ = ps.ParseAndMerge(factsFile)
 
-			if len(ps.Facts) != tt.wantFacts {
-				t.Errorf("Expected %d facts, got %d", tt.wantFacts, len(ps.Facts))
+			if ps.GetFactsCount() != tt.wantFacts {
+				t.Errorf("Expected %d facts, got %d", tt.wantFacts, ps.GetFactsCount())
 			}
 
-			if len(ps.Errors) != tt.wantErrors {
-				t.Errorf("Expected %d errors, got %d", tt.wantErrors, len(ps.Errors))
+			if len(ps.GetErrors()) != tt.wantErrors {
+				t.Errorf("Expected %d errors, got %d", tt.wantErrors, len(ps.GetErrors()))
 			}
 		})
 	}
@@ -410,21 +410,21 @@ func TestProgramState_Reset_EdgeCases(t *testing.T) {
 	}
 
 	// Verify initial state
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type before reset, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type before reset, got %d", ps.GetTypesCount())
 	}
-	if len(ps.Rules) != 1 {
-		t.Errorf("Expected 1 rule before reset, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 1 {
+		t.Errorf("Expected 1 rule before reset, got %d", ps.GetRulesCount())
 	}
-	if len(ps.Facts) != 1 {
-		t.Errorf("Expected 1 fact before reset, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 1 {
+		t.Errorf("Expected 1 fact before reset, got %d", ps.GetFactsCount())
 	}
-	if len(ps.FilesParsed) != 3 {
-		t.Errorf("Expected 3 files parsed before reset, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 3 {
+		t.Errorf("Expected 3 files parsed before reset, got %d", len(ps.GetFilesParsed()))
 	}
 
 	// Mark a rule ID as used
-	ps.RuleIDs["r1"] = true
+	ps.SetRuleIDForTesting("r1")
 
 	// Parse reset file
 	if err := ps.ParseAndMerge(resetFile); err != nil {
@@ -432,26 +432,26 @@ func TestProgramState_Reset_EdgeCases(t *testing.T) {
 	}
 
 	// Verify state after reset
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type after reset, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type after reset, got %d", ps.GetTypesCount())
 	}
-	if _, exists := ps.Types["Person"]; exists {
+	if _, exists := ps.GetTypes()["Person"]; exists {
 		t.Error("Old type 'Person' should not exist after reset")
 	}
-	if _, exists := ps.Types["NewType"]; !exists {
+	if _, exists := ps.GetTypes()["NewType"]; !exists {
 		t.Error("New type 'NewType' should exist after reset")
 	}
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules after reset, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules after reset, got %d", ps.GetRulesCount())
 	}
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts after reset, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts after reset, got %d", ps.GetFactsCount())
 	}
-	if len(ps.RuleIDs) != 0 {
-		t.Errorf("Expected 0 rule IDs after reset, got %d", len(ps.RuleIDs))
+	if ps.GetRuleIDsCountForTesting() != 0 {
+		t.Errorf("Expected 0 rule IDs after reset, got %d", ps.GetRuleIDsCountForTesting())
 	}
-	if len(ps.FilesParsed) != 1 {
-		t.Errorf("Expected 1 file parsed after reset, got %d", len(ps.FilesParsed))
+	if len(ps.GetFilesParsed()) != 1 {
+		t.Errorf("Expected 1 file parsed after reset, got %d", len(ps.GetFilesParsed()))
 	}
 }
 
@@ -460,14 +460,14 @@ func TestProgramState_ValidateFieldAccesses_EdgeCases(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add a type
-	ps.Types["Person"] = &TypeDefinition{
+	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Type: "type",
 		Name: "Person",
 		Fields: []Field{
 			{Name: "id", Type: "string"},
 			{Name: "age", Type: "number"},
 		},
-	}
+	})
 
 	variables := map[string]string{
 		"p": "Person",
@@ -591,13 +591,13 @@ func TestProgramState_ToProgram_EdgeCases(t *testing.T) {
 		{
 			name: "State with only types",
 			setupState: func(ps *ProgramState) {
-				ps.Types["Person"] = &TypeDefinition{
+				ps.AddTypeForTesting("Person", &TypeDefinition{
 					Type: "type",
 					Name: "Person",
 					Fields: []Field{
 						{Name: "id", Type: "string"},
 					},
-				}
+				})
 			},
 			checkFunc: func(t *testing.T, p *Program) {
 				if len(p.Types) != 1 {
@@ -608,12 +608,12 @@ func TestProgramState_ToProgram_EdgeCases(t *testing.T) {
 		{
 			name: "State with multiple of each",
 			setupState: func(ps *ProgramState) {
-				ps.Types["T1"] = &TypeDefinition{Type: "type", Name: "T1"}
-				ps.Types["T2"] = &TypeDefinition{Type: "type", Name: "T2"}
-				ps.Rules = append(ps.Rules, &Expression{RuleId: "r1"})
-				ps.Rules = append(ps.Rules, &Expression{RuleId: "r2"})
-				ps.Facts = append(ps.Facts, &Fact{TypeName: "T1"})
-				ps.Facts = append(ps.Facts, &Fact{TypeName: "T2"})
+				ps.AddTypeForTesting("T1", &TypeDefinition{Type: "type", Name: "T1"})
+				ps.AddTypeForTesting("T2", &TypeDefinition{Type: "type", Name: "T2"})
+				ps.AddRuleForTesting(&Expression{RuleId: "r1"})
+				ps.AddRuleForTesting(&Expression{RuleId: "r2"})
+				ps.AddFactForTesting(&Fact{TypeName: "T1"})
+				ps.AddFactForTesting(&Fact{TypeName: "T2"})
 			},
 			checkFunc: func(t *testing.T, p *Program) {
 				if len(p.Types) != 2 {

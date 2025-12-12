@@ -48,13 +48,13 @@ rule r1 : {u: UnknownType} / u.name == "test" ==> log(u.id)
 	}
 
 	// Check that the rule was rejected (not added)
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules (invalid rule should be rejected), got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules (invalid rule should be rejected), got %d", ps.GetRulesCount())
 	}
 
 	// Check that valid type was still added
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type definition, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type definition, got %d", ps.GetTypesCount())
 	}
 }
 
@@ -93,8 +93,8 @@ rule r2 : {p: Person} / p.salary > 1000 ==> high_earner(p.id)
 	}
 
 	// Check that the rule was rejected
-	if len(ps.Rules) != 0 {
-		t.Errorf("Expected 0 rules (invalid rule should be rejected), got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 0 {
+		t.Errorf("Expected 0 rules (invalid rule should be rejected), got %d", ps.GetRulesCount())
 	}
 }
 
@@ -117,8 +117,8 @@ rule r3 : {p: Person} / p.age > 18 ==> adult(p.id, p.name)
 		t.Errorf("Expected no errors, got: %v", ps.GetErrors())
 	}
 
-	if len(ps.Rules) != 1 {
-		t.Errorf("Expected 1 rule, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 1 {
+		t.Errorf("Expected 1 rule, got %d", ps.GetRulesCount())
 	}
 }
 
@@ -157,13 +157,13 @@ UnknownType(id: "X001", data: "test")
 	}
 
 	// Check that the fact was rejected
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", ps.GetFactsCount())
 	}
 
 	// Check that valid type was still added
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type definition, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type definition, got %d", ps.GetTypesCount())
 	}
 }
 
@@ -202,8 +202,8 @@ Person(id: "P001", name: "Alice", salary: 50000)
 	}
 
 	// Check that the fact was rejected
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", ps.GetFactsCount())
 	}
 }
 
@@ -242,8 +242,8 @@ Person(id: "P001", name: "Alice", age: "twenty-five")
 	}
 
 	// Check that the fact was rejected
-	if len(ps.Facts) != 0 {
-		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 0 {
+		t.Errorf("Expected 0 facts (invalid fact should be rejected), got %d", ps.GetFactsCount())
 	}
 }
 
@@ -266,8 +266,8 @@ Person(id: "P001", name: "Alice", age: 25)
 		t.Errorf("Expected no errors, got: %v", ps.GetErrors())
 	}
 
-	if len(ps.Facts) != 1 {
-		t.Errorf("Expected 1 fact, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 1 {
+		t.Errorf("Expected 1 fact, got %d", ps.GetFactsCount())
 	}
 }
 
@@ -305,16 +305,16 @@ rule r3 : {pr: Product} / pr.price < 100 ==> affordable(pr.id)
 	}
 
 	// Check that valid items were still added
-	if len(ps.Types) != 2 {
-		t.Errorf("Expected 2 types, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 2 {
+		t.Errorf("Expected 2 types, got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 2 {
-		t.Errorf("Expected 2 valid facts (out of 3), got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 2 {
+		t.Errorf("Expected 2 valid facts (out of 3), got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 2 {
-		t.Errorf("Expected 2 valid rules (out of 3), got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 2 {
+		t.Errorf("Expected 2 valid rules (out of 3), got %d", ps.GetRulesCount())
 	}
 }
 
@@ -361,16 +361,16 @@ rule r2 : {p: Person} / p.salary > 0 ==> employed(p.id)
 		t.Errorf("Expected 2 errors, got %d: %v", ps.GetErrorCount(), ps.GetErrors())
 	}
 
-	if len(ps.Types) != 1 {
-		t.Errorf("Expected 1 type, got %d", len(ps.Types))
+	if ps.GetTypesCount() != 1 {
+		t.Errorf("Expected 1 type, got %d", ps.GetTypesCount())
 	}
 
-	if len(ps.Facts) != 1 {
-		t.Errorf("Expected 1 valid fact, got %d", len(ps.Facts))
+	if ps.GetFactsCount() != 1 {
+		t.Errorf("Expected 1 valid fact, got %d", ps.GetFactsCount())
 	}
 
-	if len(ps.Rules) != 1 {
-		t.Errorf("Expected 1 valid rule, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 1 {
+		t.Errorf("Expected 1 valid rule, got %d", ps.GetRulesCount())
 	}
 
 	// Verify error details
@@ -417,13 +417,13 @@ rule r2 : {p: Person} / p.age > 18 AND p.salary > 1000 ==> high_earner(p.id)
 		t.Error("Expected error for invalid field access")
 	}
 
-	if len(ps.Rules) != 1 {
-		t.Errorf("Expected 1 valid rule, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 1 {
+		t.Errorf("Expected 1 valid rule, got %d", ps.GetRulesCount())
 	}
 
 	// Check that the valid rule has ID "r1"
-	if ps.Rules[0].RuleId != "r1" {
-		t.Errorf("Expected valid rule to be r1, got %s", ps.Rules[0].RuleId)
+	if ps.GetRules()[0].RuleId != "r1" {
+		t.Errorf("Expected valid rule to be r1, got %s", ps.GetRules()[0].RuleId)
 	}
 }
 
@@ -449,12 +449,12 @@ rule r2 : {p: Person} / p.age > 18 ==> process(p.id, p.address)
 		t.Error("Expected error for invalid field access in action")
 	}
 
-	if len(ps.Rules) != 1 {
-		t.Errorf("Expected 1 valid rule, got %d", len(ps.Rules))
+	if ps.GetRulesCount() != 1 {
+		t.Errorf("Expected 1 valid rule, got %d", ps.GetRulesCount())
 	}
 
 	// Check that the valid rule has ID "r1"
-	if ps.Rules[0].RuleId != "r1" {
-		t.Errorf("Expected valid rule to be r1, got %s", ps.Rules[0].RuleId)
+	if ps.GetRules()[0].RuleId != "r1" {
+		t.Errorf("Expected valid rule to be r1, got %s", ps.GetRules()[0].RuleId)
 	}
 }
