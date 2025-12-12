@@ -91,3 +91,4 @@ coverage*.html
 
 # Scripts review environment
 scripts/review/.env
+diagnostic_*.log

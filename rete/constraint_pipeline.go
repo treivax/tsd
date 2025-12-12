@@ -167,7 +167,11 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 	}
 
 	// Convertir au format RETE
-	ctx.reteProgram = constraint.ConvertToReteProgram(program)
+	reteProgram, err := constraint.ConvertToReteProgram(program)
+	if err != nil {
+		return handleError(fmt.Errorf("❌ Erreur conversion programme RETE: %w", err))
+	}
+	ctx.reteProgram = reteProgram
 	reteResultMap, ok := ctx.reteProgram.(map[string]interface{})
 	if !ok {
 		return handleError(fmt.Errorf("❌ Format programme RETE invalide: %T", ctx.reteProgram))
