@@ -179,7 +179,11 @@ func (cp *ConstraintPipeline) convertToReteProgram(ctx *ingestionContext) error 
 	}
 
 	// Convertir au format RETE
-	ctx.reteProgram = constraint.ConvertToReteProgram(program)
+	reteProgram, err := constraint.ConvertToReteProgram(program)
+	if err != nil {
+		return fmt.Errorf("❌ Erreur conversion RETE: %w", err)
+	}
+	ctx.reteProgram = reteProgram
 	reteResultMap, ok := ctx.reteProgram.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("❌ Format programme RETE invalide: %T", ctx.reteProgram)
