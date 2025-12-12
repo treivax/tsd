@@ -134,9 +134,12 @@ test-unit: ## TEST - Tests unitaires (rapides, sans build tags)
 	@echo "$(GREEN)✅ Tests unitaires terminés$(NC)"
 
 test-fixtures: ## TEST - Tests des fixtures partagées
-	@echo "$(BLUE)📦 Exécution des tests fixtures...$(NC)"
-	@go test -v -timeout=$(TEST_TIMEOUT) ./tests/fixtures/...
-	@echo "$(GREEN)✅ Tests fixtures terminés$(NC)"
+	@echo "$(YELLOW)⚠️  Les fixtures sont des fichiers de données (.tsd), pas des tests Go$(NC)"
+	@echo "$(BLUE)📦 Utiliser 'make test-e2e' pour tester les fixtures$(NC)"
+	@echo "$(CYAN)📊 Fixtures disponibles:$(NC)"
+	@echo "   - Alpha: $$(find ./tests/fixtures/alpha -name '*.tsd' 2>/dev/null | wc -l) fichiers"
+	@echo "   - Beta: $$(find ./tests/fixtures/beta -name '*.tsd' 2>/dev/null | wc -l) fichiers"
+	@echo "   - Integration: $$(find ./tests/fixtures/integration -name '*.tsd' 2>/dev/null | wc -l) fichiers"
 
 test-e2e: ## TEST - Tests E2E (fixtures TSD)
 	@echo "$(BLUE)🎯 Exécution des tests E2E...$(NC)"
@@ -170,7 +173,7 @@ test-load: ## TEST - Tests de charge avec profiling
 	@go test -v -tags=performance -run=TestLoad -cpuprofile=cpu.prof -memprofile=mem.prof ./tests/performance/...
 	@echo "$(GREEN)✅ Profiles générés: cpu.prof, mem.prof$(NC)"
 
-test-all: test-unit test-fixtures test-integration test-e2e test-performance ## TEST - Tous les tests standards
+test-all: test-unit test-integration test-e2e test-performance ## TEST - Tous les tests standards
 	@echo ""
 	@echo "$(GREEN)🎉 TOUS LES TESTS STANDARDS RÉUSSIS$(NC)"
 
@@ -178,9 +181,6 @@ test-complete: ## TEST - TOUS les tests (tous les sous-répertoires de tests/)
 	@echo "$(BLUE)🚀 Exécution COMPLÈTE de tous les tests...$(NC)"
 	@echo "$(CYAN)📂 Tests unitaires...$(NC)"
 	@go test -v -short -timeout=$(TEST_TIMEOUT) ./constraint/... ./rete/... ./cmd/...
-	@echo ""
-	@echo "$(CYAN)📦 Tests fixtures...$(NC)"
-	@go test -v -timeout=$(TEST_TIMEOUT) ./tests/fixtures/...
 	@echo ""
 	@echo "$(CYAN)🔗 Tests intégration...$(NC)"
 	@go test -v -tags=integration -timeout=$(TEST_TIMEOUT) ./tests/integration/...

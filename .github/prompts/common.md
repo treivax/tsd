@@ -98,6 +98,9 @@ func ProcessOrder(id string, timeout time.Duration, rule DiscountRule) error {
 }
 ```
 
+#### Code généré - OBLIGATOIRE
+Ne modifie jamais le code généré par un outil tiers (typiquement parser.go dans tsd).
+
 #### 2. TESTS Fonctionnels RÉELS
 
 ❌ **Interdit** :

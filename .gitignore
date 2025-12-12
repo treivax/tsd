@@ -82,3 +82,4 @@ test_results.txt
 coverage.out
 coverage.html
 *.log
+scripts/review/.env
