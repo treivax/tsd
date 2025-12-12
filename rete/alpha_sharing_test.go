@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
 // TestAlphaSharing_SameCondition vérifie si les AlphaNodes avec la même condition sont partagés
 func TestAlphaSharing_SameCondition(t *testing.T) {
 	tempDir := t.TempDir()
@@ -62,6 +64,7 @@ rule r2 : {p: Person} / p.age > 18 ==> rule2_action(p.id)
 		t.Errorf("Attendu 2 TerminalNodes (un par règle), obtenu %d", terminalCount)
 	}
 }
+
 // TestAlphaSharing_DifferentConditions vérifie que des conditions différentes créent des AlphaNodes séparés
 func TestAlphaSharing_DifferentConditions(t *testing.T) {
 	tempDir := t.TempDir()
@@ -92,6 +95,7 @@ rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
 		t.Log("✅ Conditions différentes → AlphaNodes séparés (comportement correct)")
 	}
 }
+
 // TestAlphaSharing_ThreeRulesSameCondition vérifie le comportement avec 3 règles identiques
 func TestAlphaSharing_ThreeRulesSameCondition(t *testing.T) {
 	tempDir := t.TempDir()
@@ -131,6 +135,7 @@ rule r3 : {p: Person} / p.age > 18 ==> action3(p.id)
 		t.Log("   → Potentiel d'optimisation : 1 AlphaNode suffirait")
 	}
 }
+
 // TestAlphaSharing_WithFacts vérifie que le comportement est correct avec des faits
 func TestAlphaSharing_WithFacts(t *testing.T) {
 	tempDir := t.TempDir()
@@ -190,6 +195,7 @@ rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)
 	}
 	t.Log("\n✅ Les faits ont été correctement propagés")
 }
+
 // TestAlphaSharing_StructureVisualization affiche la structure pour comprendre le comportement
 func TestAlphaSharing_StructureVisualization(t *testing.T) {
 	tempDir := t.TempDir()

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestAlphaChainBuilder_ClearConnectionCache tests clearing the connection cache
 func TestAlphaChainBuilder_ClearConnectionCache(t *testing.T) {
 	t.Run("clear empty cache", func(t *testing.T) {
@@ -52,6 +54,7 @@ func TestAlphaChainBuilder_ClearConnectionCache(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaChainBuilder_GetConnectionCacheSize tests getting cache size
 func TestAlphaChainBuilder_GetConnectionCacheSize(t *testing.T) {
 	t.Run("size of new builder", func(t *testing.T) {
@@ -101,6 +104,7 @@ func TestAlphaChainBuilder_GetConnectionCacheSize(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaChainBuilder_GetMetrics tests retrieving metrics
 func TestAlphaChainBuilder_GetMetrics(t *testing.T) {
 	t.Run("metrics for new builder", func(t *testing.T) {
@@ -206,6 +210,7 @@ func TestAlphaChainBuilder_GetMetrics(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaChainBuilder_CacheAndMetricsIntegration tests cache and metrics together
 func TestAlphaChainBuilder_CacheAndMetricsIntegration(t *testing.T) {
 	storage := NewMemoryStorage()

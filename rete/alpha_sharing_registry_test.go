@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"sync"
 	"testing"
 )
+
 // TestAlphaSharingRegistry_NewRegistry tests the creation of a new registry
 func TestAlphaSharingRegistry_NewRegistry(t *testing.T) {
 	t.Run("default constructor", func(t *testing.T) {
@@ -46,6 +48,7 @@ func TestAlphaSharingRegistry_NewRegistry(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_GetOrCreateAlphaNode_Sharing tests node sharing behavior
 func TestAlphaSharingRegistry_GetOrCreateAlphaNode_Sharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -127,6 +130,7 @@ func TestAlphaSharingRegistry_GetOrCreateAlphaNode_Sharing(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_GetStats tests statistics collection
 func TestAlphaSharingRegistry_GetStats(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -238,6 +242,7 @@ func TestAlphaSharingRegistry_GetStats(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_RemoveNode tests node removal
 func TestAlphaSharingRegistry_RemoveNode(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -276,6 +281,7 @@ func TestAlphaSharingRegistry_RemoveNode(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_ListSharedAlphaNodes tests listing functionality
 func TestAlphaSharingRegistry_ListSharedAlphaNodes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -314,6 +320,7 @@ func TestAlphaSharingRegistry_ListSharedAlphaNodes(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_ResetRegistry tests registry reset
 func TestAlphaSharingRegistry_ResetRegistry(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -345,6 +352,7 @@ func TestAlphaSharingRegistry_ResetRegistry(t *testing.T) {
 		t.Errorf("hash cache should be empty after reset, got size %d", cacheSize)
 	}
 }
+
 // TestAlphaSharingRegistry_GetSharedAlphaNodeDetails tests detailed info retrieval
 func TestAlphaSharingRegistry_GetSharedAlphaNodeDetails(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -391,6 +399,7 @@ func TestAlphaSharingRegistry_GetSharedAlphaNodeDetails(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_ThreadSafety tests thread safety
 func TestAlphaSharingRegistry_ThreadSafety(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -428,6 +437,7 @@ func TestAlphaSharingRegistry_ThreadSafety(t *testing.T) {
 		t.Errorf("should have only 1 shared node after concurrent access, got %d", totalNodes)
 	}
 }
+
 // TestAlphaSharingRegistry_HashCache tests hash caching functionality
 func TestAlphaSharingRegistry_HashCache(t *testing.T) {
 	t.Run("with cache enabled", func(t *testing.T) {
@@ -496,6 +506,7 @@ func TestAlphaSharingRegistry_HashCache(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_ConditionNormalization tests condition normalization for sharing
 func TestAlphaSharingRegistry_ConditionNormalization(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -559,6 +570,7 @@ func TestAlphaSharingRegistry_ConditionNormalization(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_GetMetrics tests the GetMetrics method
 func TestAlphaSharingRegistry_GetMetrics(t *testing.T) {
 	t.Run("returns metrics instance", func(t *testing.T) {
@@ -623,6 +635,7 @@ func TestAlphaSharingRegistry_GetMetrics(t *testing.T) {
 		}
 	})
 }
+
 // TestAlphaSharingRegistry_GetConfig tests the GetConfig method
 func TestAlphaSharingRegistry_GetConfig(t *testing.T) {
 	t.Run("returns config instance", func(t *testing.T) {

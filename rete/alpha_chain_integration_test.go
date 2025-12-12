@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestAlphaChain_TwoRules_SameConditions_DifferentOrder teste que deux règles
 // avec les mêmes conditions dans un ordre différent partagent les mêmes AlphaNodes
 func TestAlphaChain_TwoRules_SameConditions_DifferentOrder(t *testing.T) {
@@ -80,6 +82,7 @@ rule r2 : {p: Person} / p.name == 'toto' AND p.age > 18 ==> print("B")
 	}
 	t.Logf("✓ Deux règles avec mêmes conditions (ordre différent) partagent correctement les AlphaNodes")
 }
+
 // TestAlphaChain_PartialSharing_ThreeRules teste le partage partiel
 // entre trois règles avec des préfixes communs
 func TestAlphaChain_PartialSharing_ThreeRules(t *testing.T) {
@@ -218,6 +221,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	}
 	t.Logf("✓ Partage partiel entre 3 règles fonctionne correctement")
 }
+
 // TestAlphaChain_FactPropagation_ThroughChain teste la propagation de faits
 // à travers une chaîne et vérifie que chaque condition n'est évaluée qu'une fois
 func TestAlphaChain_FactPropagation_ThroughChain(t *testing.T) {
@@ -316,6 +320,7 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 	}
 	t.Logf("✓ Propagation de faits à travers la chaîne fonctionne correctement")
 }
+
 // TestAlphaChain_RuleRemoval_PreservesShared teste la suppression de règles
 // en préservant les nœuds partagés
 func TestAlphaChain_RuleRemoval_PreservesShared(t *testing.T) {
@@ -401,6 +406,7 @@ rule r3 : {p: Person} / p.age > 18 ==> print("C")
 	}
 	t.Logf("✓ Suppression de règle préserve correctement les nœuds partagés")
 }
+
 // TestAlphaChain_ComplexScenario_FraudDetection teste un scénario complexe
 // de détection de fraude avec partage optimal
 func TestAlphaChain_ComplexScenario_FraudDetection(t *testing.T) {
@@ -560,6 +566,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 	}
 	t.Logf("✓ Scénario complexe de détection de fraude avec partage optimal")
 }
+
 // TestAlphaChain_OR_NotDecomposed vérifie qu'une expression OR
 // n'est pas décomposée en chaîne
 func TestAlphaChain_OR_NotDecomposed(t *testing.T) {
@@ -676,6 +683,7 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 	}
 	t.Logf("✓ Expression OR non décomposée, traitée comme un seul nœud normalisé")
 }
+
 // TestAlphaChain_NetworkStats_Accurate vérifie que GetNetworkStats()
 // reporte correctement les statistiques de partage
 func TestAlphaChain_NetworkStats_Accurate(t *testing.T) {
@@ -793,6 +801,7 @@ rule r5 : {p: Person} / p.age > 21 AND p.salary > 2000 ==> print("R5")
 	}
 	t.Logf("✓ GetNetworkStats() reporte des statistiques précises")
 }
+
 // TestAlphaChain_MixedConditions_ComplexSharing teste un mélange
 // de conditions simples et de chaînes avec partage complexe
 func TestAlphaChain_MixedConditions_ComplexSharing(t *testing.T) {
@@ -868,6 +877,7 @@ rule chain3 : {p: Person} / p.salary > 1000 AND p.city == 'Paris' ==> print("C3"
 	}
 	t.Logf("✓ Mélange de conditions simples et chaînes avec partage complexe")
 }
+
 // TestAlphaChain_EmptyNetwork_Stats teste les statistiques sur un réseau vide
 func TestAlphaChain_EmptyNetwork_Stats(t *testing.T) {
 	storage := NewMemoryStorage()

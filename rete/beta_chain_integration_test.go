@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
+
 // TestBetaChain_TwoRules_IdenticalJoins tests that two rules with identical join patterns
 // share the same JoinNode instances when Beta Sharing is enabled
 func TestBetaChain_TwoRules_IdenticalJoins(t *testing.T) {
@@ -85,6 +87,7 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Customer B")
 	t.Logf("Activated terminals: %d", activatedCount)
 	t.Logf("✓ Two rules with identical join patterns built successfully")
 }
+
 // TestBetaChain_ProgrammaticSharing tests Beta Sharing using programmatic network construction
 func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -157,6 +160,7 @@ func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 	t.Logf("  Hash: %s", hash1)
 	t.Logf("  Node shared: %v", shared2)
 }
+
 // TestBetaChain_PartialSharing_PrefixChains tests partial sharing with common prefixes
 func TestBetaChain_PartialSharing_PrefixChains(t *testing.T) {
 	tempDir := t.TempDir()
@@ -239,6 +243,7 @@ rule r3 : {p: Person, o: Order, pr: Product} / p.id == o.customer_id AND o.id ==
 	t.Logf("Activated terminals: %d of 3", activatedCount)
 	t.Logf("✓ Prefix sharing scenario with progressive rule complexity built successfully")
 }
+
 // TestBetaChain_ComplexRules_MultipleJoins tests complex scenarios with 5+ joins
 func TestBetaChain_ComplexRules_MultipleJoins(t *testing.T) {
 	tempDir := t.TempDir()
@@ -290,6 +295,7 @@ rule complex_supply_chain : {
 	}
 	t.Logf("✓ Complex rule with 5+ joins successfully built in %v", buildDuration)
 }
+
 // TestBetaChain_RuleRemoval_SharedNodes tests dynamic rule removal
 func TestBetaChain_RuleRemoval_SharedNodes(t *testing.T) {
 	tempDir := t.TempDir()
@@ -338,6 +344,7 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 2")
 	t.Logf("BetaNodes after removal: %d", afterRemovalBeta)
 	t.Logf("✓ Rule removal test completed")
 }
+
 // TestBetaChain_Lifecycle_ReferenceCount tests lifecycle management using programmatic API
 func TestBetaChain_Lifecycle_ReferenceCount(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -385,6 +392,7 @@ func TestBetaChain_Lifecycle_ReferenceCount(t *testing.T) {
 		stats["tracked_nodes"], stats["active_chains"])
 	t.Logf("✓ Lifecycle management tracks shared nodes")
 }
+
 // TestBetaChain_Regression_NoSharingBehavior tests that behavior is unchanged without sharing
 func TestBetaChain_Regression_NoSharingBehavior(t *testing.T) {
 	tempDir := t.TempDir()
@@ -440,6 +448,7 @@ rule discount : {p: Person, o: Order} / p.id == o.customer_id ==> print("Match f
 	t.Logf("Activated terminals: %d", activated)
 	t.Logf("✓ Regression test passed: network structure correct")
 }
+
 // TestBetaChain_Regression_ResultsIdentical tests that results are identical with/without sharing
 func TestBetaChain_Regression_ResultsIdentical(t *testing.T) {
 	tempDir := t.TempDir()
@@ -530,6 +539,7 @@ rule detailed : {c: Customer, o: Order, i: Item} / c.id == o.customer_id AND o.i
 	t.Logf("Total activations: %d", totalActivations)
 	t.Logf("✓ Results test completed")
 }
+
 // TestBetaChain_Performance_BuildTime tests build time characteristics
 func TestBetaChain_Performance_BuildTime(t *testing.T) {
 	if testing.Short() {
@@ -573,6 +583,7 @@ rule r5 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 5")
 	}
 	t.Logf("✓ Build time test completed in %v", duration)
 }
+
 // TestBetaChain_NoSharing_SeparateChains tests that rules without common patterns create separate chains
 func TestBetaChain_NoSharing_SeparateChains(t *testing.T) {
 	tempDir := t.TempDir()
@@ -602,6 +613,7 @@ rule rule2 : {pr: Product, i: Inventory} / pr.id == i.product_id ==> print("Rule
 	}
 	t.Logf("✓ Separate chains created for different patterns")
 }
+
 // TestBetaChain_FactPropagation_SharedChains tests fact propagation through potentially shared chains
 func TestBetaChain_FactPropagation_SharedChains(t *testing.T) {
 	tempDir := t.TempDir()
@@ -687,6 +699,7 @@ rule high_value : {p: Person, o: Order} / p.id == o.customer_id ==> print("High 
 	t.Logf("Total activations: %d", totalActivations)
 	t.Logf("✓ Fact propagation test completed")
 }
+
 // TestBetaChain_HashConsistency tests that identical patterns produce identical hashes
 func TestBetaChain_HashConsistency(t *testing.T) {
 	storage := NewMemoryStorage()

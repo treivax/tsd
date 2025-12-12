@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"reflect"
 	"testing"
 )
+
 // TestNormalizeConditionForSharing_Unwrap teste le déballe des wrappers "constraint"
 func TestNormalizeConditionForSharing_Unwrap(t *testing.T) {
 	tests := []struct {
@@ -77,6 +79,7 @@ func TestNormalizeConditionForSharing_Unwrap(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditionForSharing_TypeNormalization teste la normalisation des types
 func TestNormalizeConditionForSharing_TypeNormalization(t *testing.T) {
 	tests := []struct {
@@ -149,6 +152,7 @@ func TestNormalizeConditionForSharing_TypeNormalization(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditionForSharing_Combined teste les cas combinant unwrap et normalisation
 func TestNormalizeConditionForSharing_Combined(t *testing.T) {
 	tests := []struct {
@@ -205,6 +209,7 @@ func TestNormalizeConditionForSharing_Combined(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditionForSharing_Slices teste la normalisation des slices
 func TestNormalizeConditionForSharing_Slices(t *testing.T) {
 	tests := []struct {
@@ -275,6 +280,7 @@ func TestNormalizeConditionForSharing_Slices(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditionForSharing_Primitives teste les types primitifs
 func TestNormalizeConditionForSharing_Primitives(t *testing.T) {
 	tests := []struct {
@@ -312,6 +318,7 @@ func TestNormalizeConditionForSharing_Primitives(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditionForSharing_ComplexNested teste les structures complexes imbriquées
 func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 	input := map[string]interface{}{
@@ -359,6 +366,7 @@ func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 		t.Errorf("Want: %+v", expected)
 	}
 }
+
 // TestNormalizeConditionForSharing_RealWorldScenarios teste des scénarios réels
 func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 	t.Run("Simple rule condition (wrapped)", func(t *testing.T) {
@@ -429,6 +437,7 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 		}
 	})
 }
+
 // TestNormalizeConditionForSharing_Idempotence teste l'idempotence de la normalisation
 func TestNormalizeConditionForSharing_Idempotence(t *testing.T) {
 	input := map[string]interface{}{
@@ -450,6 +459,7 @@ func TestNormalizeConditionForSharing_Idempotence(t *testing.T) {
 		t.Errorf("Second pass: %+v", result2)
 	}
 }
+
 // TestNormalizeConditionForSharing_EdgeCases teste les cas limites
 func TestNormalizeConditionForSharing_EdgeCases(t *testing.T) {
 	tests := []struct {

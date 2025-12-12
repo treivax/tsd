@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestExtractConditions_SimpleComparison teste l'extraction d'une comparaison simple
 func TestExtractConditions_SimpleComparison(t *testing.T) {
 	// Test avec BinaryOperation
@@ -37,6 +39,7 @@ func TestExtractConditions_SimpleComparison(t *testing.T) {
 		t.Error("Hash ne doit pas être vide")
 	}
 }
+
 // TestExtractConditions_SimpleComparison_Map teste l'extraction d'une comparaison (format map)
 func TestExtractConditions_SimpleComparison_Map(t *testing.T) {
 	expr := map[string]interface{}{
@@ -67,6 +70,7 @@ func TestExtractConditions_SimpleComparison_Map(t *testing.T) {
 		t.Errorf("Attendu operator='==', obtenu '%s'", cond.Operator)
 	}
 }
+
 // TestExtractConditions_LogicalAND teste l'extraction d'une expression AND
 func TestExtractConditions_LogicalAND(t *testing.T) {
 	expr := constraint.LogicalExpression{
@@ -112,6 +116,7 @@ func TestExtractConditions_LogicalAND(t *testing.T) {
 		t.Error("Les deux conditions ne doivent pas avoir le même hash")
 	}
 }
+
 // TestExtractConditions_LogicalOR teste l'extraction d'une expression OR
 func TestExtractConditions_LogicalOR(t *testing.T) {
 	expr := map[string]interface{}{
@@ -159,6 +164,7 @@ func TestExtractConditions_LogicalOR(t *testing.T) {
 		t.Fatalf("Attendu 2 conditions, obtenu %d", len(conditions))
 	}
 }
+
 // TestExtractConditions_NestedExpressions teste l'extraction d'expressions imbriquées
 func TestExtractConditions_NestedExpressions(t *testing.T) {
 	// (p.age > 18 AND p.salary >= 50000) AND p.active == true
@@ -216,6 +222,7 @@ func TestExtractConditions_NestedExpressions(t *testing.T) {
 		hashSet[cond.Hash] = true
 	}
 }
+
 // TestExtractConditions_MixedOperators teste des opérateurs mélangés (AND et OR)
 func TestExtractConditions_MixedOperators(t *testing.T) {
 	expr := map[string]interface{}{
@@ -279,6 +286,7 @@ func TestExtractConditions_MixedOperators(t *testing.T) {
 		t.Fatalf("Attendu 3 conditions, obtenu %d", len(conditions))
 	}
 }
+
 // TestExtractConditions_ArithmeticOperations teste l'extraction d'opérations arithmétiques (via map)
 func TestExtractConditions_ArithmeticOperations(t *testing.T) {
 	// Les opérations arithmétiques sont traitées comme des BinaryOperations
@@ -306,6 +314,7 @@ func TestExtractConditions_ArithmeticOperations(t *testing.T) {
 		t.Errorf("Attendu operator='+', obtenu '%s'", cond.Operator)
 	}
 }
+
 // TestExtractConditions_ArithmeticInComparison teste une opération arithmétique dans une comparaison
 func TestExtractConditions_ArithmeticInComparison(t *testing.T) {
 	expr := constraint.BinaryOperation{
@@ -335,6 +344,7 @@ func TestExtractConditions_ArithmeticInComparison(t *testing.T) {
 		t.Errorf("Attendu type='binaryOperation', obtenu '%s'", cond.Type)
 	}
 }
+
 // TestCanonicalString_Deterministic teste que CanonicalString est déterministe
 func TestCanonicalString_Deterministic(t *testing.T) {
 	// Créer la même condition deux fois
@@ -360,6 +370,7 @@ func TestCanonicalString_Deterministic(t *testing.T) {
 		t.Errorf("Hash doit être identique pour des conditions identiques:\n  hash1='%s'\n  hash2='%s'", cond1.Hash, cond2.Hash)
 	}
 }
+
 // TestCanonicalString_Uniqueness teste que CanonicalString génère des strings uniques
 func TestCanonicalString_Uniqueness(t *testing.T) {
 	// Condition 1: p.age > 18
@@ -415,6 +426,7 @@ func TestCanonicalString_Uniqueness(t *testing.T) {
 		t.Error("cond1 et cond4 doivent avoir des hash différents")
 	}
 }
+
 // TestCanonicalString_Format teste le format de la string canonique
 func TestCanonicalString_Format(t *testing.T) {
 	cond := NewSimpleCondition(
@@ -444,6 +456,7 @@ func TestCanonicalString_Format(t *testing.T) {
 		t.Error("String doit contenir '18'")
 	}
 }
+
 // TestCanonicalString_MapFormat teste le format canonique avec des maps
 func TestCanonicalString_MapFormat(t *testing.T) {
 	cond := NewSimpleCondition(
@@ -474,6 +487,7 @@ func TestCanonicalString_MapFormat(t *testing.T) {
 		t.Error("String doit contenir '100'")
 	}
 }
+
 // TestCompareConditions teste la comparaison de conditions
 func TestCompareConditions(t *testing.T) {
 	cond1 := NewSimpleCondition(
@@ -501,6 +515,7 @@ func TestCompareConditions(t *testing.T) {
 		t.Error("cond1 et cond3 ne doivent pas être égales")
 	}
 }
+
 // TestDeduplicateConditions teste la déduplication de conditions
 func TestDeduplicateConditions(t *testing.T) {
 	cond1 := NewSimpleCondition(
@@ -527,6 +542,7 @@ func TestDeduplicateConditions(t *testing.T) {
 		t.Errorf("Attendu 2 conditions après déduplication, obtenu %d", len(deduplicated))
 	}
 }
+
 // TestExtractConditions_Constraint teste l'extraction depuis un Constraint
 func TestExtractConditions_Constraint(t *testing.T) {
 	expr := constraint.Constraint{
@@ -546,6 +562,7 @@ func TestExtractConditions_Constraint(t *testing.T) {
 		t.Fatalf("Attendu 1 condition, obtenu %d", len(conditions))
 	}
 }
+
 // TestExtractConditions_EmptyExpression teste les expressions vides
 func TestExtractConditions_EmptyExpression(t *testing.T) {
 	// Test avec un fieldAccess seul (pas une condition)
@@ -561,6 +578,7 @@ func TestExtractConditions_EmptyExpression(t *testing.T) {
 		t.Errorf("Attendu 0 conditions, obtenu %d", len(conditions))
 	}
 }
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && findSubstring(s, substr))
@@ -573,6 +591,7 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
 // TestExtractFromMap_Coverage tests various map expression types
 func TestExtractFromMap_Coverage(t *testing.T) {
 	tests := []struct {
@@ -715,6 +734,7 @@ func TestExtractFromMap_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractFromLogicalExpressionMap_Coverage tests logical expression map extraction
 func TestExtractFromLogicalExpressionMap_Coverage(t *testing.T) {
 	tests := []struct {
@@ -925,6 +945,7 @@ func TestExtractFromLogicalExpressionMap_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestCanonicalMap_Coverage tests canonical representation of map values
 func TestCanonicalMap_Coverage(t *testing.T) {
 	tests := []struct {
@@ -1002,6 +1023,7 @@ func TestCanonicalMap_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestCanonicalValue_Coverage tests canonical representation of various value types
 func TestCanonicalValue_Coverage(t *testing.T) {
 	tests := []struct {
@@ -1066,6 +1088,7 @@ func TestCanonicalValue_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractFromNOTConstraint tests extraction from NOT constraints
 func TestExtractFromNOTConstraint(t *testing.T) {
 	expr := constraint.NotConstraint{
@@ -1102,6 +1125,7 @@ func TestExtractFromNOTConstraint(t *testing.T) {
 		t.Errorf("Expected operator='NOT', got '%s'", cond.Operator)
 	}
 }
+
 // TestExtractFromNOTConstraintMap tests extraction from NOT constraint maps
 func TestExtractFromNOTConstraintMap(t *testing.T) {
 	tests := []struct {
@@ -1158,6 +1182,7 @@ func TestExtractFromNOTConstraintMap(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeORExpressionMap tests normalization of OR expression maps
 func TestNormalizeORExpressionMap(t *testing.T) {
 	tests := []struct {

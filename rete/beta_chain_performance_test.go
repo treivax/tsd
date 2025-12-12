@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 )
+
 // =============================================================================
 // Benchmark: Chain Construction Performance
 // =============================================================================
@@ -39,6 +41,7 @@ func BenchmarkBetaChainBuild_WithSharing(b *testing.B) {
 	b.ReportMetric(float64(metrics.TotalNodesReused), "nodes_reused")
 	b.ReportMetric(float64(metrics.TotalNodesCreated), "nodes_created")
 }
+
 // BenchmarkBetaChainBuild_WithoutSharing benchmarks chain building with sharing disabled
 func BenchmarkBetaChainBuild_WithoutSharing(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -64,22 +67,27 @@ func BenchmarkBetaChainBuild_WithoutSharing(b *testing.B) {
 	metrics := builder.GetMetrics()
 	b.ReportMetric(float64(metrics.TotalNodesCreated), "nodes_created")
 }
+
 // BenchmarkBetaChainBuild_SimilarPatterns_10Rules benchmarks with 10 similar rules
 func BenchmarkBetaChainBuild_SimilarPatterns_10Rules(b *testing.B) {
 	benchmarkWithRuleCount(b, 10, createSimilarPatterns, true)
 }
+
 // BenchmarkBetaChainBuild_SimilarPatterns_100Rules benchmarks with 100 similar rules
 func BenchmarkBetaChainBuild_SimilarPatterns_100Rules(b *testing.B) {
 	benchmarkWithRuleCount(b, 100, createSimilarPatterns, true)
 }
+
 // BenchmarkBetaChainBuild_MixedPatterns_10Rules benchmarks with 10 mixed rules
 func BenchmarkBetaChainBuild_MixedPatterns_10Rules(b *testing.B) {
 	benchmarkWithRuleCount(b, 10, createMixedPatterns, true)
 }
+
 // BenchmarkBetaChainBuild_MixedPatterns_100Rules benchmarks with 100 mixed rules
 func BenchmarkBetaChainBuild_MixedPatterns_100Rules(b *testing.B) {
 	benchmarkWithRuleCount(b, 100, createMixedPatterns, true)
 }
+
 // BenchmarkBetaChainBuild_ComplexRules benchmarks complex rules with 5+ joins
 func BenchmarkBetaChainBuild_ComplexRules(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -104,6 +112,7 @@ func BenchmarkBetaChainBuild_ComplexRules(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // =============================================================================
 // Benchmark: Join Cache Performance
 // =============================================================================
@@ -129,8 +138,8 @@ func BenchmarkJoinCache_Hits(b *testing.B) {
 			BaseNode: BaseNode{ID: fmt.Sprintf("join_%d", i)},
 		}
 		result := &JoinResult{
-			Matched:   true,
-			Token:     token,
+			Matched: true,
+			Token:   token,
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -158,6 +167,7 @@ func BenchmarkJoinCache_Hits(b *testing.B) {
 	hitRate := cache.GetHitRate() * 100
 	b.ReportMetric(hitRate, "hit_rate_%")
 }
+
 // BenchmarkJoinCache_Misses benchmarks join cache miss performance
 func BenchmarkJoinCache_Misses(b *testing.B) {
 	config := DefaultChainPerformanceConfig()
@@ -180,8 +190,8 @@ func BenchmarkJoinCache_Misses(b *testing.B) {
 			BaseNode: BaseNode{ID: fmt.Sprintf("join_%d", i)},
 		}
 		result := &JoinResult{
-			Matched:   true,
-			Token:     token,
+			Matched: true,
+			Token:   token,
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -211,6 +221,7 @@ func BenchmarkJoinCache_Misses(b *testing.B) {
 	b.ReportMetric(missRate, "miss_rate_%")
 	b.ReportMetric(float64(stats["misses"].(int64)), "misses")
 }
+
 // BenchmarkJoinCache_Evictions benchmarks cache behavior under eviction pressure
 func BenchmarkJoinCache_Evictions(b *testing.B) {
 	cacheSize := 100
@@ -235,8 +246,8 @@ func BenchmarkJoinCache_Evictions(b *testing.B) {
 			BaseNode: BaseNode{ID: fmt.Sprintf("evict_join_%d", i)},
 		}
 		result := &JoinResult{
-			Matched:   true,
-			Token:     token,
+			Matched: true,
+			Token:   token,
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -245,6 +256,7 @@ func BenchmarkJoinCache_Evictions(b *testing.B) {
 	b.ReportMetric(float64(stats["evictions"].(int64)), "evictions")
 	b.ReportMetric(float64(cache.GetSize()), "final_size")
 }
+
 // BenchmarkJoinCache_MixedWorkload benchmarks realistic mixed read/write workload
 func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 	config := DefaultChainPerformanceConfig()
@@ -267,8 +279,8 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 			BaseNode: BaseNode{ID: fmt.Sprintf("join_%d", i)},
 		}
 		result := &JoinResult{
-			Matched:   true,
-			Token:     token,
+			Matched: true,
+			Token:   token,
 		}
 		cache.SetJoinResult(token, fact, joinNode, result)
 	}
@@ -304,8 +316,8 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 				BaseNode: BaseNode{ID: fmt.Sprintf("join_%d", i)},
 			}
 			result := &JoinResult{
-				Matched:   true,
-				Token:     token,
+				Matched: true,
+				Token:   token,
 			}
 			cache.SetJoinResult(token, fact, joinNode, result)
 		}
@@ -316,6 +328,7 @@ func BenchmarkJoinCache_MixedWorkload(b *testing.B) {
 	b.ReportMetric(hitRate, "hit_rate_%")
 	b.ReportMetric(float64(stats["evictions"].(int64)), "evictions")
 }
+
 // =============================================================================
 // Benchmark: Join Order Optimization
 // =============================================================================
@@ -348,6 +361,7 @@ func BenchmarkJoinOrder_Optimal(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // BenchmarkJoinOrder_Suboptimal benchmarks suboptimal join order that needs reordering
 func BenchmarkJoinOrder_Suboptimal(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -377,6 +391,7 @@ func BenchmarkJoinOrder_Suboptimal(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // =============================================================================
 // Benchmark: Hash Computation
 // =============================================================================
@@ -407,6 +422,7 @@ func BenchmarkHashCompute_Simple(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkHashCompute_Complex benchmarks complex condition hashing via GetOrCreateJoinNode
 func BenchmarkHashCompute_Complex(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -444,6 +460,7 @@ func BenchmarkHashCompute_Complex(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkHashCompute_WithCache benchmarks hashing with cache enabled via GetOrCreateJoinNode
 func BenchmarkHashCompute_WithCache(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -477,6 +494,7 @@ func BenchmarkHashCompute_WithCache(b *testing.B) {
 		b.ReportMetric(hitRate, "cache_hit_%")
 	}
 }
+
 // =============================================================================
 // Benchmark: High Load Scenarios
 // =============================================================================
@@ -505,6 +523,7 @@ func BenchmarkBetaChainBuild_HighLoad_ManyFacts(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // BenchmarkBetaChainBuild_HighLoad_ManyRules benchmarks with many rules
 func BenchmarkBetaChainBuild_HighLoad_ManyRules(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -538,6 +557,7 @@ func BenchmarkBetaChainBuild_HighLoad_ManyRules(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // =============================================================================
 // Benchmark: Memory Usage
 // =============================================================================
@@ -564,6 +584,7 @@ func BenchmarkMemory_WithSharing(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // BenchmarkMemory_WithoutSharing benchmarks memory usage without sharing
 func BenchmarkMemory_WithoutSharing(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -587,6 +608,7 @@ func BenchmarkMemory_WithoutSharing(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // =============================================================================
 // Benchmark: Prefix Sharing Performance
 // =============================================================================
@@ -616,6 +638,7 @@ func BenchmarkPrefixSharing_Enabled(b *testing.B) {
 	reportBenchmarkMetrics(b, builder)
 	b.ReportMetric(float64(builder.GetPrefixCacheSize()), "prefix_cache_size")
 }
+
 // BenchmarkPrefixSharing_Disabled benchmarks with prefix sharing disabled
 func BenchmarkPrefixSharing_Disabled(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -640,6 +663,7 @@ func BenchmarkPrefixSharing_Disabled(b *testing.B) {
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -666,6 +690,7 @@ func benchmarkWithRuleCount(b *testing.B, ruleCount int, patternCreator func(int
 	b.StopTimer()
 	reportBenchmarkMetrics(b, builder)
 }
+
 // reportBenchmarkMetrics reports standard metrics for benchmarks
 func reportBenchmarkMetrics(b *testing.B, builder *BetaChainBuilder) {
 	metrics := builder.GetMetrics()
@@ -687,6 +712,7 @@ func reportBenchmarkMetrics(b *testing.B, builder *BetaChainBuilder) {
 		b.ReportMetric(prefixHitRate, "prefix_hit_%")
 	}
 }
+
 // createSimilarPatterns creates patterns with similar join conditions
 func createSimilarPatterns(count int) []JoinPattern {
 	patterns := make([]JoinPattern, count)
@@ -722,6 +748,7 @@ func createSimilarPatterns(count int) []JoinPattern {
 	}
 	return patterns
 }
+
 // createMixedPatterns creates patterns with varying complexity
 func createMixedPatterns(count int) []JoinPattern {
 	patterns := make([]JoinPattern, count)
@@ -762,6 +789,7 @@ func createMixedPatterns(count int) []JoinPattern {
 	}
 	return patterns
 }
+
 // createComplexPatterns creates complex patterns with multiple conditions
 func createComplexPatterns(count int) []JoinPattern {
 	patterns := make([]JoinPattern, count)
@@ -814,6 +842,7 @@ func createComplexPatterns(count int) []JoinPattern {
 	}
 	return patterns
 }
+
 // createPatternWithSelectivity creates a pattern with specific selectivity
 func createPatternWithSelectivity(leftVar, rightVar string, selectivity float64) JoinPattern {
 	return JoinPattern{
@@ -842,6 +871,7 @@ func createPatternWithSelectivity(leftVar, rightVar string, selectivity float64)
 		EstimatedCost: selectivity * 10,
 	}
 }
+
 // createPatternsWithCommonPrefix creates patterns that share common prefixes
 func createPatternsWithCommonPrefix(count int) []JoinPattern {
 	patterns := make([]JoinPattern, count)

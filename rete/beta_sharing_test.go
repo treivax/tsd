@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestBetaSharingRegistry_CreateWithDefaultConfig tests creating a registry with default config
 func TestBetaSharingRegistry_CreateWithDefaultConfig(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -19,6 +21,7 @@ func TestBetaSharingRegistry_CreateWithDefaultConfig(t *testing.T) {
 		t.Errorf("Expected HashCacheSize 1000, got %d", registry.config.HashCacheSize)
 	}
 }
+
 // TestBetaSharingRegistry_GetOrCreateJoinNode_Disabled tests behavior when sharing is disabled
 func TestBetaSharingRegistry_GetOrCreateJoinNode_Disabled(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -70,6 +73,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_Disabled(t *testing.T) {
 		t.Log("Note: Hashes may be the same (timestamp-based) but nodes are different")
 	}
 }
+
 // TestBetaSharingRegistry_GetOrCreateJoinNode_SameCondition tests sharing with identical conditions
 func TestBetaSharingRegistry_GetOrCreateJoinNode_SameCondition(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -122,6 +126,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_SameCondition(t *testing.T) {
 	}
 	t.Logf("✅ JoinNode shared correctly (hash: %s)", hash1)
 }
+
 // TestBetaSharingRegistry_GetOrCreateJoinNode_DifferentConditions tests different conditions create different nodes
 func TestBetaSharingRegistry_GetOrCreateJoinNode_DifferentConditions(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -180,6 +185,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_DifferentConditions(t *testing.
 	}
 	t.Logf("✅ Different conditions create separate nodes (hash1: %s, hash2: %s)", hash1, hash2)
 }
+
 // TestBetaSharingRegistry_RegisterJoinNode tests explicit node registration
 func TestBetaSharingRegistry_RegisterJoinNode(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -205,6 +211,7 @@ func TestBetaSharingRegistry_RegisterJoinNode(t *testing.T) {
 	}
 	t.Logf("✅ Node registered successfully")
 }
+
 // TestBetaSharingRegistry_ReleaseJoinNode tests node release and cleanup
 func TestBetaSharingRegistry_ReleaseJoinNode(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -243,6 +250,7 @@ func TestBetaSharingRegistry_ReleaseJoinNode(t *testing.T) {
 	}
 	t.Logf("✅ Node released and removed successfully")
 }
+
 // TestBetaSharingRegistry_GetSharingStats tests statistics collection
 func TestBetaSharingRegistry_GetSharingStats(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -279,6 +287,7 @@ func TestBetaSharingRegistry_GetSharingStats(t *testing.T) {
 	t.Logf("✅ Stats: %d requests, %d reuses, %d unique, ratio: %.2f",
 		stats.TotalRequests, stats.SharedReuses, stats.UniqueCreations, stats.SharingRatio)
 }
+
 // TestBetaSharingRegistry_ListSharedJoinNodes tests listing shared nodes
 func TestBetaSharingRegistry_ListSharedJoinNodes(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -303,6 +312,7 @@ func TestBetaSharingRegistry_ListSharedJoinNodes(t *testing.T) {
 	}
 	t.Logf("✅ Listed %d shared nodes: %v", len(nodes), nodes)
 }
+
 // TestBetaSharingRegistry_GetSharedJoinNodeDetails tests retrieving node details
 func TestBetaSharingRegistry_GetSharedJoinNodeDetails(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -335,6 +345,7 @@ func TestBetaSharingRegistry_GetSharedJoinNodeDetails(t *testing.T) {
 	}
 	t.Logf("✅ Node details retrieved: %+v", details)
 }
+
 // TestBetaSharingRegistry_ClearCache tests cache clearing
 func TestBetaSharingRegistry_ClearCache(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -347,6 +358,7 @@ func TestBetaSharingRegistry_ClearCache(t *testing.T) {
 	}
 	t.Logf("✅ Cache cleared successfully")
 }
+
 // TestBetaSharingRegistry_Shutdown tests shutdown cleanup
 func TestBetaSharingRegistry_Shutdown(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -370,6 +382,7 @@ func TestBetaSharingRegistry_Shutdown(t *testing.T) {
 	}
 	t.Logf("✅ Shutdown completed successfully")
 }
+
 // TestNormalizeJoinCondition tests condition normalization
 func TestNormalizeJoinCondition(t *testing.T) {
 	condition := map[string]interface{}{
@@ -387,6 +400,7 @@ func TestNormalizeJoinCondition(t *testing.T) {
 	}
 	t.Logf("✅ Condition normalized: %+v", normalized)
 }
+
 // TestComputeJoinHash tests hash computation
 func TestComputeJoinHash(t *testing.T) {
 	condition := map[string]interface{}{
@@ -413,6 +427,7 @@ func TestComputeJoinHash(t *testing.T) {
 	}
 	t.Logf("✅ Hash computed consistently: %s", hash1)
 }
+
 // TestDefaultJoinNodeNormalizer tests the default normalizer
 func TestDefaultJoinNodeNormalizer(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -438,6 +453,7 @@ func TestDefaultJoinNodeNormalizer(t *testing.T) {
 	}
 	t.Logf("✅ Signature normalized with sorted variables")
 }
+
 // TestDefaultJoinNodeHasher tests the default hasher
 func TestDefaultJoinNodeHasher(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -464,6 +480,7 @@ func TestDefaultJoinNodeHasher(t *testing.T) {
 	}
 	t.Logf("✅ Hasher with cache working correctly: %s", hash1)
 }
+
 // TestBetaBuildMetrics_AverageHashTimeNs tests metrics calculation
 func TestBetaBuildMetrics_AverageHashTimeNs(t *testing.T) {
 	metrics := &BetaBuildMetrics{}
@@ -482,6 +499,7 @@ func TestBetaBuildMetrics_AverageHashTimeNs(t *testing.T) {
 	}
 	t.Logf("✅ Average hash time: %d ns", avg)
 }
+
 // TestCanShareJoinNodes tests compatibility checking
 func TestCanShareJoinNodes(t *testing.T) {
 	sig1 := &JoinNodeSignature{
@@ -507,6 +525,7 @@ func TestCanShareJoinNodes(t *testing.T) {
 	}
 	t.Logf("✅ Compatibility checking works correctly")
 }
+
 // TestLRUCache tests the LRU cache implementation
 func TestLRUCache(t *testing.T) {
 	cache := NewLRUCache(2, 0) // Capacity of 2, no TTL
@@ -540,6 +559,7 @@ func TestLRUCache(t *testing.T) {
 	}
 	t.Logf("✅ LRU cache works correctly")
 }
+
 // BenchmarkBetaSharingRegistry_GetOrCreateJoinNode benchmarks node creation
 func BenchmarkBetaSharingRegistry_GetOrCreateJoinNode(b *testing.B) {
 	config := DefaultBetaSharingConfig()
@@ -559,6 +579,7 @@ func BenchmarkBetaSharingRegistry_GetOrCreateJoinNode(b *testing.B) {
 		registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
 	}
 }
+
 // BenchmarkComputeJoinHash benchmarks hash computation
 func BenchmarkComputeJoinHash(b *testing.B) {
 	condition := map[string]interface{}{

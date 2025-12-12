@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestAlphaSharingIntegration_TwoRulesSameCondition teste le partage d'AlphaNodes
 // entre deux règles ayant la même condition
 func TestAlphaSharingIntegration_TwoRulesSameCondition(t *testing.T) {
@@ -62,6 +64,7 @@ rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
 		}
 	}
 }
+
 // TestAlphaSharingIntegration_ThreeRulesMixedConditions teste le partage
 // avec des conditions mixtes (certaines identiques, d'autres différentes)
 func TestAlphaSharingIntegration_ThreeRulesMixedConditions(t *testing.T) {
@@ -115,6 +118,7 @@ rule drinking_check : {p: Person} / p.age > 21 ==> print("Can drink")
 		}
 	}
 }
+
 // TestAlphaSharingIntegration_FactPropagation teste que les faits se propagent
 // correctement à travers les AlphaNodes partagés vers tous les TerminalNodes
 func TestAlphaSharingIntegration_FactPropagation(t *testing.T) {
@@ -181,6 +185,7 @@ rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
 		}
 	}
 }
+
 // TestAlphaSharingIntegration_RuleRemoval teste la suppression de règles
 // avec gestion correcte des AlphaNodes partagés
 func TestAlphaSharingIntegration_RuleRemoval(t *testing.T) {
@@ -240,6 +245,7 @@ rule senior_check : {p: Person} / p.age > 65 ==> print("Senior")
 		t.Errorf("Devrait avoir 1 TerminalNode final, got %d", finalTerminalCount)
 	}
 }
+
 // TestAlphaSharingIntegration_DifferentTypes teste que les conditions
 // sur des types différents ne sont pas partagées (variables différentes)
 func TestAlphaSharingIntegration_DifferentTypes(t *testing.T) {
@@ -274,6 +280,7 @@ rule animal_old : {a: Animal} / a.age > 18 ==> print("Old animal")
 		t.Errorf("Devrait avoir 2 AlphaNodes (variables différentes: p vs a), got %d", totalAlphaNodes)
 	}
 }
+
 // TestAlphaSharingIntegration_NetworkReset teste que le reset
 // nettoie correctement le registre de partage
 func TestAlphaSharingIntegration_NetworkReset(t *testing.T) {
@@ -318,6 +325,7 @@ rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
 		t.Error("Devrait avoir 0 références de règles après reset")
 	}
 }
+
 // TestAlphaSharingIntegration_ComplexConditions teste le partage
 // avec des conditions plus complexes
 func TestAlphaSharingIntegration_ComplexConditions(t *testing.T) {

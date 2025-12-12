@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
+	"github.com/treivax/tsd/constraint"
 	"strings"
 	"testing"
-	"github.com/treivax/tsd/constraint"
 )
+
 // TestAnalyzeExpression_Simple teste l'analyse d'expressions simples
 func TestAnalyzeExpression_Simple(t *testing.T) {
 	tests := []struct {
@@ -60,6 +62,7 @@ func TestAnalyzeExpression_Simple(t *testing.T) {
 		})
 	}
 }
+
 // TestApplyDeMorganTransformation teste la transformation de De Morgan
 func TestApplyDeMorganTransformation(t *testing.T) {
 	tests := []struct {
@@ -278,6 +281,7 @@ func TestApplyDeMorganTransformation(t *testing.T) {
 		})
 	}
 }
+
 // TestShouldApplyDeMorgan teste la logique de décision pour appliquer De Morgan
 func TestShouldApplyDeMorgan(t *testing.T) {
 	tests := []struct {
@@ -361,6 +365,7 @@ func TestShouldApplyDeMorgan(t *testing.T) {
 		})
 	}
 }
+
 // TestOptimizationHints teste la génération de hints d'optimisation
 func TestOptimizationHints(t *testing.T) {
 	tests := []struct {
@@ -535,6 +540,7 @@ func TestOptimizationHints(t *testing.T) {
 		})
 	}
 }
+
 // TestGetExpressionInfo_WithOptimizationHints teste GetExpressionInfo avec hints
 func TestGetExpressionInfo_WithOptimizationHints(t *testing.T) {
 	tests := []struct {
@@ -646,6 +652,7 @@ func TestGetExpressionInfo_WithOptimizationHints(t *testing.T) {
 		})
 	}
 }
+
 // TestDeMorganTransformationRoundtrip teste que les transformations sont correctes
 func TestDeMorganTransformationRoundtrip(t *testing.T) {
 	tests := []struct {
@@ -696,6 +703,7 @@ func TestDeMorganTransformationRoundtrip(t *testing.T) {
 		})
 	}
 }
+
 // TestOptimizationHintsIntegration teste l'intégration complète
 func TestOptimizationHintsIntegration(t *testing.T) {
 	// Expression complexe: NOT((A OR B) AND C)
@@ -753,6 +761,7 @@ func TestOptimizationHintsIntegration(t *testing.T) {
 		t.Logf("Inner complexity: %d", info.InnerInfo.Complexity)
 	}
 }
+
 // TestAnalyzeExpression_AND teste l'analyse d'expressions AND
 func TestAnalyzeExpression_AND(t *testing.T) {
 	tests := []struct {
@@ -884,6 +893,7 @@ func TestAnalyzeExpression_AND(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_OR teste l'analyse d'expressions OR
 func TestAnalyzeExpression_OR(t *testing.T) {
 	tests := []struct {
@@ -1015,6 +1025,7 @@ func TestAnalyzeExpression_OR(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_Mixed_AND_OR teste l'analyse d'expressions mixtes
 func TestAnalyzeExpression_Mixed_AND_OR(t *testing.T) {
 	tests := []struct {
@@ -1182,6 +1193,7 @@ func TestAnalyzeExpression_Mixed_AND_OR(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_Arithmetic teste l'analyse d'expressions arithmétiques
 func TestAnalyzeExpression_Arithmetic(t *testing.T) {
 	tests := []struct {
@@ -1270,6 +1282,7 @@ func TestAnalyzeExpression_Arithmetic(t *testing.T) {
 		})
 	}
 }
+
 // TestCanDecompose_AllTypes teste la décomposabilité de tous les types
 func TestCanDecompose_AllTypes(t *testing.T) {
 	tests := []struct {
@@ -1317,6 +1330,7 @@ func TestCanDecompose_AllTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestShouldNormalize_AllTypes teste la nécessité de normalisation pour tous les types
 func TestShouldNormalize_AllTypes(t *testing.T) {
 	tests := []struct {
@@ -1364,6 +1378,7 @@ func TestShouldNormalize_AllTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestExpressionType_String teste la représentation textuelle des types
 func TestExpressionType_String(t *testing.T) {
 	tests := []struct {
@@ -1387,6 +1402,7 @@ func TestExpressionType_String(t *testing.T) {
 		})
 	}
 }
+
 // TestGetExpressionComplexity teste le calcul de complexité
 func TestGetExpressionComplexity(t *testing.T) {
 	tests := []struct {
@@ -1439,6 +1455,7 @@ func TestGetExpressionComplexity(t *testing.T) {
 		})
 	}
 }
+
 // TestRequiresBetaNode teste si un type nécessite des nœuds beta
 func TestRequiresBetaNode(t *testing.T) {
 	tests := []struct {
@@ -1486,6 +1503,7 @@ func TestRequiresBetaNode(t *testing.T) {
 		})
 	}
 }
+
 // TestGetExpressionInfo teste la récupération d'informations complètes
 func TestGetExpressionInfo(t *testing.T) {
 	// Test avec une condition simple
@@ -1569,6 +1587,7 @@ func TestGetExpressionInfo(t *testing.T) {
 		t.Errorf("GetExpressionInfo(nil) should return error")
 	}
 }
+
 // TestAnalyzeExpression_EdgeCases teste les cas limites
 func TestAnalyzeExpression_EdgeCases(t *testing.T) {
 	tests := []struct {
@@ -1683,6 +1702,7 @@ func TestAnalyzeExpression_EdgeCases(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_NOT teste l'analyse d'expressions NOT
 func TestAnalyzeExpression_NOT(t *testing.T) {
 	tests := []struct {
@@ -1789,6 +1809,7 @@ func TestAnalyzeExpression_NOT(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_NOT_Nested teste les expressions NOT imbriquées
 func TestAnalyzeExpression_NOT_Nested(t *testing.T) {
 	tests := []struct {
@@ -1893,6 +1914,7 @@ func TestAnalyzeExpression_NOT_Nested(t *testing.T) {
 		})
 	}
 }
+
 // TestGetExpressionInfo_NOT teste GetExpressionInfo avec expressions NOT
 func TestGetExpressionInfo_NOT(t *testing.T) {
 	// Test avec une expression NOT simple
@@ -1994,6 +2016,7 @@ func TestGetExpressionInfo_NOT(t *testing.T) {
 		t.Errorf("info2.RequiresBeta = true, want false")
 	}
 }
+
 // TestAnalyzeExpression_Parenthesized teste l'analyse d'expressions parenthésées
 func TestAnalyzeExpression_Parenthesized(t *testing.T) {
 	tests := []struct {
@@ -2148,6 +2171,7 @@ func TestAnalyzeExpression_Parenthesized(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeInnerExpression teste l'analyse des expressions internes
 func TestAnalyzeInnerExpression(t *testing.T) {
 	tests := []struct {
@@ -2297,6 +2321,7 @@ func TestAnalyzeInnerExpression(t *testing.T) {
 		})
 	}
 }
+
 // TestGetExpressionInfo_WithInnerInfo teste GetExpressionInfo avec analyse des expressions internes
 func TestGetExpressionInfo_WithInnerInfo(t *testing.T) {
 	tests := []struct {
@@ -2459,6 +2484,7 @@ func TestGetExpressionInfo_WithInnerInfo(t *testing.T) {
 		})
 	}
 }
+
 // TestNestedParenthesizedAndNOT teste les expressions avec parenthèses et NOT imbriqués
 func TestNestedParenthesizedAndNOT(t *testing.T) {
 	tests := []struct {

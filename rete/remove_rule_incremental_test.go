@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
+	"github.com/treivax/tsd/constraint"
 	"os"
 	"path/filepath"
 	"testing"
-	"github.com/treivax/tsd/constraint"
 )
+
 // TestRemoveRuleIncremental_FullPipeline teste la suppression de règle de manière incrémentale
 // en utilisant le pipeline complet : parsing → construction → assertion → suppression → vérification
 func TestRemoveRuleIncremental_FullPipeline(t *testing.T) {
@@ -134,6 +136,7 @@ Person(id:p3, name:Charlie, age:15)
 	t.Log("✅ Structure finale validée")
 	t.Log("\n✅ TEST COMPLET - Pipeline incrémental validé avec succès!")
 }
+
 // TestRemoveRuleIncremental_WithJoins teste la suppression de règles avec jointures
 func TestRemoveRuleIncremental_WithJoins(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE - AVEC JOINTURES")
@@ -202,6 +205,7 @@ Order(id:o2, customer_id:p2, amount:50)
 	t.Log("✅ Structure validée")
 	t.Log("\n✅ TEST JOINTURES - Suppression validée avec succès!")
 }
+
 // TestRemoveRuleIncremental_MultipleRemovals teste plusieurs suppressions successives
 func TestRemoveRuleIncremental_MultipleRemovals(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE - SUPPRESSIONS MULTIPLES")
@@ -288,6 +292,7 @@ Person(id:p1, age:55)
 	t.Logf("✅ État final: seule r3 reste (comme attendu)")
 	t.Log("\n✅ TEST SUPPRESSIONS MULTIPLES - Validé avec succès!")
 }
+
 // TestRemoveRuleIncremental_ParseOnly teste uniquement le parsing de la commande
 func TestRemoveRuleIncremental_ParseOnly(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE - PARSING UNIQUEMENT")

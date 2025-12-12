@@ -182,7 +182,6 @@ func validateLogicalOperations(
 	return nil
 }
 
-
 // safeBase64Decode safely decodes a base64 string with size limits
 func safeBase64Decode(encoded string) (string, error) {
 	// Check encoded string length first (base64 is ~4/3 of original)

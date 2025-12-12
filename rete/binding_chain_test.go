@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // ============================================================================
 // Tests de Création
 // ============================================================================
@@ -45,6 +47,7 @@ func TestBindingChain_CreateWithBinding(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: Création avec binding initial")
 }
+
 // ============================================================================
 // Tests d'Ajout
 // ============================================================================
@@ -122,6 +125,7 @@ func TestBindingChain_Add_Preserves_Parent(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: Immutabilité préservée")
 }
+
 // ============================================================================
 // Tests de Lecture
 // ============================================================================
@@ -214,6 +218,7 @@ func TestBindingChain_Variables(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: Variables retourne la liste correcte")
 }
+
 // ============================================================================
 // Tests de Conversion
 // ============================================================================
@@ -255,6 +260,7 @@ func TestBindingChain_ToMap_Empty(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: ToMap sur chaîne vide retourne map vide")
 }
+
 // ============================================================================
 // Tests de Merge
 // ============================================================================
@@ -294,6 +300,7 @@ func TestBindingChain_Merge_Conflicts(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: Merge gère les conflits correctement")
 }
+
 // ============================================================================
 // Tests de Edge Cases
 // ============================================================================
@@ -354,6 +361,84 @@ func TestBindingChain_Long_Chain(t *testing.T) {
 	}
 	t.Log("✅ Test réussi: Chaîne longue fonctionne correctement")
 }
+
+// ============================================================================
+// Tests de String et Debug
+// ============================================================================
+
+func TestBindingChain_String(t *testing.T) {
+	t.Log("🧪 TEST: String retourne représentation textuelle")
+	t.Log("=================================================")
+
+	userFact := &Fact{ID: "U001", Type: "User", Fields: map[string]interface{}{}}
+	orderFact := &Fact{ID: "O001", Type: "Order", Fields: map[string]interface{}{}}
+
+	// Test chaîne vide
+	emptyChain := NewBindingChain()
+	if emptyChain.String() != "BindingChain{}" {
+		t.Errorf("❌ String() sur chaîne vide devrait retourner 'BindingChain{}', got '%s'", emptyChain.String())
+	}
+
+	// Test avec bindings
+	chain := NewBindingChain()
+	chain = chain.Add("user", userFact)
+	chain = chain.Add("order", orderFact)
+
+	str := chain.String()
+	t.Logf("String representation: %s", str)
+
+	// Vérifier que la string contient les IDs
+	if len(str) == 0 {
+		t.Error("❌ String ne devrait pas être vide")
+	}
+
+	// Vérifier le format de base
+	if str[:13] != "BindingChain{" {
+		t.Errorf("❌ String devrait commencer par 'BindingChain{', got: %s", str)
+	}
+
+	t.Log("✅ Test réussi: String fonctionne correctement")
+}
+
+func TestBindingChain_Chain(t *testing.T) {
+	t.Log("🧪 TEST: Chain retourne toutes les variables (avec doublons)")
+	t.Log("===========================================================")
+
+	fact1 := &Fact{ID: "U001", Type: "User", Fields: map[string]interface{}{}}
+	fact2 := &Fact{ID: "U002", Type: "User", Fields: map[string]interface{}{}}
+	orderFact := &Fact{ID: "O001", Type: "Order", Fields: map[string]interface{}{}}
+
+	// Créer une chaîne avec shadowing
+	chain := NewBindingChain()
+	chain = chain.Add("u", fact1)
+	chain = chain.Add("order", orderFact)
+	chain = chain.Add("u", fact2) // Shadowing de "u"
+
+	allVars := chain.Chain()
+
+	// Chain() devrait retourner TOUTES les variables y compris les doublons
+	// ["u", "order", "u"]
+	if len(allVars) != 3 {
+		t.Errorf("❌ Chain devrait retourner 3 variables (avec doublons), got %d", len(allVars))
+	}
+
+	// Vérifier l'ordre (racine → tête)
+	expected := []string{"u", "order", "u"}
+	for i, v := range expected {
+		if i >= len(allVars) || allVars[i] != v {
+			t.Errorf("❌ Chain()[%d] devrait être '%s', got '%s'", i, v, allVars[i])
+		}
+	}
+
+	// Comparer avec Variables() qui déduplique
+	uniqueVars := chain.Variables()
+	if len(uniqueVars) != 2 {
+		t.Errorf("❌ Variables() devrait retourner 2 variables (dédupliquées), got %d", len(uniqueVars))
+	}
+
+	t.Log("✅ Test réussi: Chain retourne toutes les variables y compris doublons")
+}
+
 // ============================================================================
 // Tests de Benchmarks
 // ============================================================================

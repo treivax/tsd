@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestRETENetwork_TypesAndFactsOnly tests that creating a RETE network with only types and facts (no rules) is now allowed
 func TestRETENetwork_TypesAndFactsOnly(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_no_rules_test")
@@ -57,6 +59,7 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	}
 	t.Logf("✅ Successfully created network with types and facts but no rules")
 }
+
 // TestRETENetwork_OnlyTypes tests that creating a network with only type definitions is now allowed
 func TestRETENetwork_OnlyTypes(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_types_only_test")
@@ -95,6 +98,7 @@ type Order(id: string, personId: string, total:number)
 	}
 	t.Logf("✅ Successfully created network with only type definitions")
 }
+
 // TestRETENetwork_IncrementalTypesAndFacts tests incremental loading of types and facts without rules
 func TestRETENetwork_IncrementalTypesAndFacts(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_incremental_test")
@@ -157,6 +161,7 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 	t.Logf("   - Files parsed: %d", len(files))
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 }
+
 // TestRETENetwork_EmptyFile tests creating a network from an empty file
 // TestRETENetwork_EmptyFile tests that ingesting an empty file succeeds but creates empty network
 func TestRETENetwork_EmptyFile(t *testing.T) {
@@ -189,6 +194,7 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 	}
 	t.Logf("✅ Successfully handled empty file")
 }
+
 // TestRETENetwork_TypesAndFactsSeparateFiles tests types and facts in separate files
 func TestRETENetwork_TypesAndFactsSeparateFiles(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_separate_files_test")

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestBetaSharingRegistry_AddRuleToJoinNode tests adding rules to join nodes
 func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 	t.Run("add rule when sharing enabled", func(t *testing.T) {
@@ -78,6 +80,7 @@ func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_RemoveRuleFromJoinNode tests removing rules from join nodes
 func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove rule from node with multiple rules", func(t *testing.T) {
@@ -156,6 +159,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_GetJoinNodeRules tests retrieving rules for a node
 func TestBetaSharingRegistry_GetJoinNodeRules(t *testing.T) {
 	t.Run("get rules for node with rules", func(t *testing.T) {
@@ -200,6 +204,7 @@ func TestBetaSharingRegistry_GetJoinNodeRules(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_GetJoinNodeRefCount tests reference counting
 func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 	t.Run("refcount for node with multiple rules", func(t *testing.T) {
@@ -248,6 +253,7 @@ func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_UnregisterJoinNode tests unregistering nodes
 func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 	t.Run("unregister node with no rules", func(t *testing.T) {
@@ -297,6 +303,7 @@ func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_ReleaseJoinNodeByID tests releasing nodes by ID
 func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 	t.Run("release node with no rules", func(t *testing.T) {
@@ -389,6 +396,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingRegistry_RuleLifecycle tests complete rule lifecycle
 func TestBetaSharingRegistry_RuleLifecycle(t *testing.T) {
 	config := DefaultBetaSharingConfig()
@@ -440,6 +448,7 @@ func TestBetaSharingRegistry_RuleLifecycle(t *testing.T) {
 		t.Errorf("UnregisterJoinNode() error: %v", err)
 	}
 }
+
 // TestBetaSharingRegistry_ConcurrentRuleManagement tests thread safety
 func TestBetaSharingRegistry_ConcurrentRuleManagement(t *testing.T) {
 	config := DefaultBetaSharingConfig()

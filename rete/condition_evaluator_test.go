@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestConditionEvaluator_BinaryOp tests arithmetic operations
 func TestConditionEvaluator_BinaryOp(t *testing.T) {
 	fact := &Fact{
@@ -44,6 +46,7 @@ func TestConditionEvaluator_BinaryOp(t *testing.T) {
 		})
 	}
 }
+
 // TestConditionEvaluator_Comparison tests comparison operations
 func TestConditionEvaluator_Comparison(t *testing.T) {
 	fact := &Fact{
@@ -91,6 +94,7 @@ func TestConditionEvaluator_Comparison(t *testing.T) {
 		})
 	}
 }
+
 // TestConditionEvaluator_TempResult tests intermediate result resolution
 func TestConditionEvaluator_TempResult(t *testing.T) {
 	fact := &Fact{
@@ -125,6 +129,7 @@ func TestConditionEvaluator_TempResult(t *testing.T) {
 		t.Errorf("Expected 84.0, got %v", result)
 	}
 }
+
 // TestConditionEvaluator_MissingDependency tests error handling for missing dependencies
 func TestConditionEvaluator_MissingDependency(t *testing.T) {
 	fact := &Fact{
@@ -144,6 +149,7 @@ func TestConditionEvaluator_MissingDependency(t *testing.T) {
 		t.Fatal("Expected error for missing dependency, got nil")
 	}
 }
+
 // TestConditionEvaluator_NestedExpression tests complex nested expressions
 func TestConditionEvaluator_NestedExpression(t *testing.T) {
 	fact := &Fact{
@@ -174,6 +180,7 @@ func TestConditionEvaluator_NestedExpression(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, result)
 	}
 }
+
 // TestConditionEvaluator_FieldAccess tests field value extraction
 func TestConditionEvaluator_FieldAccess(t *testing.T) {
 	fact := &Fact{
@@ -211,6 +218,7 @@ func TestConditionEvaluator_FieldAccess(t *testing.T) {
 		})
 	}
 }
+
 // TestConditionEvaluator_WithTempResults tests operations using temp results
 func TestConditionEvaluator_WithTempResults(t *testing.T) {
 	fact := &Fact{
@@ -254,6 +262,7 @@ func TestConditionEvaluator_WithTempResults(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, result)
 	}
 }
+
 // TestConditionEvaluator_DivisionByZero tests division by zero error handling
 func TestConditionEvaluator_DivisionByZero(t *testing.T) {
 	fact := &Fact{

@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 	"time"
 )
+
 // TestMetricsIntegrationWithCache teste l'intégration des métriques avec le cache
 func TestMetricsIntegrationWithCache(t *testing.T) {
 	// Créer le cache avec métriques
@@ -68,6 +70,7 @@ func TestMetricsIntegrationWithCache(t *testing.T) {
 		t.Errorf("Expected cache size %d, got %d", stats.CurrentSize, global.CacheSize)
 	}
 }
+
 // TestMetricsIntegrationWithCircularDetector teste l'intégration avec le détecteur
 func TestMetricsIntegrationWithCircularDetector(t *testing.T) {
 	// Créer le détecteur
@@ -124,6 +127,7 @@ func TestMetricsIntegrationWithCircularDetector(t *testing.T) {
 		t.Error("Expected HasCircularDeps to be true")
 	}
 }
+
 // TestMetricsWithDecomposedChain teste les métriques avec une chaîne décomposée complète
 func TestMetricsWithDecomposedChain(t *testing.T) {
 	// Créer le cache
@@ -263,6 +267,7 @@ func TestMetricsWithDecomposedChain(t *testing.T) {
 		t.Errorf("Expected cache size 3, got %d", global.CacheSize)
 	}
 }
+
 // TestMetricsWithMultipleRulesAndCache teste plusieurs règles partageant le cache
 func TestMetricsWithMultipleRulesAndCache(t *testing.T) {
 	// Créer le cache partagé
@@ -382,6 +387,7 @@ func TestMetricsWithMultipleRulesAndCache(t *testing.T) {
 		t.Errorf("Expected %s to be fastest, got %s", rule3ID, slowestRules[2].RuleID)
 	}
 }
+
 // TestMetricsWithCacheEviction teste les métriques lors d'évictions de cache
 func TestMetricsWithCacheEviction(t *testing.T) {
 	// Créer un petit cache qui forcera des évictions
@@ -434,6 +440,7 @@ func TestMetricsWithCacheEviction(t *testing.T) {
 		t.Errorf("Expected 1 cache miss (evicted entry), got %d", rule.CacheMisses)
 	}
 }
+
 // TestMetricsSummaryIntegration teste le résumé avec tous les composants
 func TestMetricsSummaryIntegration(t *testing.T) {
 	// Créer tous les composants

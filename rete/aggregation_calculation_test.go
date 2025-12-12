@@ -1,11 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestAggregationCalculation_AVG tests AVG aggregation with int and float values
 func TestAggregationCalculation_AVG(t *testing.T) {
 	tempDir := t.TempDir()
@@ -77,6 +79,7 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 	}
 	t.Logf("✅ AVG aggregation calculated successfully with %d activations", activatedCount)
 }
+
 // TestAggregationCalculation_SUM tests SUM aggregation
 func TestAggregationCalculation_SUM(t *testing.T) {
 	tempDir := t.TempDir()
@@ -134,6 +137,7 @@ rule dept_total_salary : {d: Department, total_sal: SUM(e.salary)} / {e: Employe
 	}
 	t.Logf("✅ SUM aggregation calculated successfully")
 }
+
 // TestAggregationCalculation_COUNT tests COUNT aggregation
 func TestAggregationCalculation_COUNT(t *testing.T) {
 	tempDir := t.TempDir()
@@ -184,6 +188,7 @@ rule dept_emp_count : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / 
 	}
 	t.Logf("✅ COUNT aggregation calculated successfully")
 }
+
 // TestAggregationCalculation_MIN tests MIN aggregation
 func TestAggregationCalculation_MIN(t *testing.T) {
 	tempDir := t.TempDir()
@@ -251,6 +256,7 @@ rule dept_min_salary : {d: Department, min_sal: MIN(e.salary)} / {e: Employee} /
 	}
 	t.Logf("✅ MIN aggregation calculated successfully")
 }
+
 // TestAggregationCalculation_MAX tests MAX aggregation
 func TestAggregationCalculation_MAX(t *testing.T) {
 	tempDir := t.TempDir()
@@ -318,6 +324,7 @@ rule dept_max_salary : {d: Department, max_sal: MAX(e.salary)} / {e: Employee} /
 	}
 	t.Logf("✅ MAX aggregation calculated successfully")
 }
+
 // TestAggregationCalculation_MultipleAggregates tests multiple aggregations in one rule
 func TestAggregationCalculation_MultipleAggregates(t *testing.T) {
 	tempDir := t.TempDir()
@@ -385,6 +392,7 @@ rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary)
 	}
 	t.Logf("✅ Multiple aggregations calculated successfully")
 }
+
 // TestAggregationCalculation_EmptySet tests aggregation with no matching facts
 func TestAggregationCalculation_EmptySet(t *testing.T) {
 	tempDir := t.TempDir()

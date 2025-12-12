@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"strings"
 	"testing"
 )
+
 // TestValidateNetwork tests the validateNetwork function
 func TestValidateNetwork(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -85,6 +87,7 @@ func TestValidateNetwork(t *testing.T) {
 		}
 	})
 }
+
 // TestValidateAction tests the validateAction function
 func TestValidateAction(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -225,6 +228,7 @@ func TestValidateAction(t *testing.T) {
 		}
 	})
 }
+
 // TestValidateRuleExpression tests the validateRuleExpression function
 func TestValidateRuleExpression(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -316,6 +320,7 @@ func TestValidateRuleExpression(t *testing.T) {
 		}
 	})
 }
+
 // TestValidateTypeDefinition tests the validateTypeDefinition function
 func TestValidateTypeDefinition(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -502,6 +507,7 @@ func TestValidateTypeDefinition(t *testing.T) {
 		}
 	})
 }
+
 // TestValidateAggregationInfo tests the validateAggregationInfo function
 func TestValidateAggregationInfo(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -694,6 +700,7 @@ func TestValidateAggregationInfo(t *testing.T) {
 		}
 	})
 }
+
 // TestValidateJoinCondition tests the validateJoinCondition function
 func TestValidateJoinCondition(t *testing.T) {
 	pipeline := NewConstraintPipeline()

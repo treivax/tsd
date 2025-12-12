@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestCircularDependency_IntegrationWithDecomposer teste l'intégration avec le décomposeur
 func TestCircularDependency_IntegrationWithDecomposer(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -55,6 +57,7 @@ func TestCircularDependency_IntegrationWithDecomposer(t *testing.T) {
 	t.Logf("Validation report: Valid=%v, MaxDepth=%d, TotalNodes=%d",
 		report.Valid, report.MaxDepth, report.TotalNodes)
 }
+
 // TestCircularDependency_ComplexExpression teste une expression complexe
 func TestCircularDependency_ComplexExpression(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -145,6 +148,7 @@ func TestCircularDependency_ComplexExpression(t *testing.T) {
 		}
 	}
 }
+
 // TestCircularDependency_MultipleExpressions teste plusieurs expressions
 func TestCircularDependency_MultipleExpressions(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -201,6 +205,7 @@ func TestCircularDependency_MultipleExpressions(t *testing.T) {
 	stats := detector.GetStatistics()
 	t.Logf("Statistics: %+v", stats)
 }
+
 // TestCircularDependency_WithAlphaChainBuilder teste l'intégration complète
 func TestCircularDependency_WithAlphaChainBuilder(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -274,6 +279,7 @@ func TestCircularDependency_WithAlphaChainBuilder(t *testing.T) {
 	t.Logf("Post-build validation: Valid=%v, MaxDepth=%d, TotalNodes=%d",
 		report2.Valid, report2.MaxDepth, report2.TotalNodes)
 }
+
 // TestCircularDependency_DeepNesting teste une expression profondément imbriquée
 func TestCircularDependency_DeepNesting(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -353,6 +359,7 @@ func TestCircularDependency_DeepNesting(t *testing.T) {
 		t.Logf("Warnings: %v", report.Warnings)
 	}
 }
+
 // TestCircularDependency_Statistics teste les statistiques du graphe
 func TestCircularDependency_Statistics(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -415,6 +422,7 @@ func TestCircularDependency_Statistics(t *testing.T) {
 		t.Errorf("Expected %d nodes, got %d", len(decomposed), stats["total_nodes"])
 	}
 }
+
 // BenchmarkCircularDependency_Integration benchmark l'intégration complète
 func BenchmarkCircularDependency_Integration(b *testing.B) {
 	decomposer := NewArithmeticExpressionDecomposer()

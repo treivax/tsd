@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestExtractComponents tests the extractComponents function
 func TestExtractComponents(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -77,6 +79,7 @@ func TestExtractComponents(t *testing.T) {
 		}
 	})
 }
+
 // TestExtractAndStoreActions tests the extractAndStoreActions function
 func TestExtractAndStoreActions(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -230,6 +233,7 @@ func TestExtractAndStoreActions(t *testing.T) {
 		}
 	})
 }
+
 // TestAnalyzeConstraints tests the analyzeConstraints function
 func TestAnalyzeConstraints(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -276,6 +280,7 @@ func TestAnalyzeConstraints(t *testing.T) {
 		}
 	})
 }
+
 // TestDetectAggregation tests the detectAggregation function
 func TestDetectAggregation(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -336,6 +341,7 @@ func TestDetectAggregation(t *testing.T) {
 		}
 	})
 }
+
 // TestIsExistsConstraint tests the isExistsConstraint function
 func TestIsExistsConstraint(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -375,6 +381,7 @@ func TestIsExistsConstraint(t *testing.T) {
 		}
 	})
 }
+
 // TestGetStringField tests the standalone getStringField function
 func TestGetStringField(t *testing.T) {
 	t.Run("gets string field successfully", func(t *testing.T) {

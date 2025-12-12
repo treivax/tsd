@@ -1,8 +1,10 @@
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestConditionHashCached_Coverage tests the cached hash function
 func TestConditionHashCached_Coverage(t *testing.T) {
 	t.Parallel()
@@ -102,6 +104,7 @@ func TestConditionHashCached_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestAlphaSharingRegistry_ClearHashCache tests cache clearing
 func TestAlphaSharingRegistry_ClearHashCache(t *testing.T) {
 	t.Parallel()
@@ -126,6 +129,7 @@ func TestAlphaSharingRegistry_ClearHashCache(t *testing.T) {
 	stats := registry.GetHashCacheStats()
 	require.NotNil(t, stats)
 }
+
 // TestAlphaSharingRegistry_GetHashCacheStats tests cache statistics
 func TestAlphaSharingRegistry_GetHashCacheStats(t *testing.T) {
 	t.Parallel()
@@ -156,6 +160,7 @@ func TestAlphaSharingRegistry_GetHashCacheStats(t *testing.T) {
 		})
 	}
 }
+
 // TestNewAlphaSharingRegistryWithConfig_Coverage tests registry creation with various configs
 func TestNewAlphaSharingRegistryWithConfig_Coverage(t *testing.T) {
 	t.Parallel()
@@ -212,6 +217,7 @@ func TestNewAlphaSharingRegistryWithConfig_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestAlphaSharingRegistry_ResetCoverage tests registry reset functionality
 func TestAlphaSharingRegistry_ResetCoverage(t *testing.T) {
 	t.Parallel()

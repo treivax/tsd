@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestNewBetaChainBuilder tests the creation of a new BetaChainBuilder
 func TestNewBetaChainBuilder(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -35,6 +37,7 @@ func TestNewBetaChainBuilder(t *testing.T) {
 		t.Error("Expected prefix sharing to be enabled by default")
 	}
 }
+
 // TestNewBetaChainBuilderWithMetrics tests builder creation with shared metrics
 func TestNewBetaChainBuilderWithMetrics(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -48,6 +51,7 @@ func TestNewBetaChainBuilderWithMetrics(t *testing.T) {
 		t.Error("Expected builder.metrics to match provided metrics")
 	}
 }
+
 // TestBuildChain_EmptyPatterns tests that BuildChain fails with empty patterns
 func TestBuildChain_EmptyPatterns(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -62,6 +66,7 @@ func TestBuildChain_EmptyPatterns(t *testing.T) {
 		t.Error("Expected nil chain for empty patterns")
 	}
 }
+
 // TestBuildChain_SinglePattern tests building a chain with a single pattern
 func TestBuildChain_SinglePattern(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -120,6 +125,7 @@ func TestBuildChain_SinglePattern(t *testing.T) {
 		t.Errorf("Chain validation failed: %v", err)
 	}
 }
+
 // TestBuildChain_MultiplePatterns tests building a chain with multiple patterns
 func TestBuildChain_MultiplePatterns(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -184,6 +190,7 @@ func TestBuildChain_MultiplePatterns(t *testing.T) {
 		t.Errorf("Expected 2 nodes in chain, got %d", len(chain.Nodes))
 	}
 }
+
 // TestBuildChain_NodeReuse tests that identical patterns reuse nodes
 func TestBuildChain_NodeReuse(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -240,6 +247,7 @@ func TestBuildChain_NodeReuse(t *testing.T) {
 		t.Errorf("Expected refCount 2, got %d", refCount)
 	}
 }
+
 // TestEstimateSelectivity tests selectivity estimation
 func TestEstimateSelectivity(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -270,6 +278,7 @@ func TestEstimateSelectivity(t *testing.T) {
 		t.Error("Pattern with join conditions should be more selective")
 	}
 }
+
 // TestOptimizeJoinOrder tests join order optimization
 func TestOptimizeJoinOrder(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -308,6 +317,7 @@ func TestOptimizeJoinOrder(t *testing.T) {
 		t.Error("Original patterns should not be modified")
 	}
 }
+
 // TestBuildChain_WithOptimization tests that optimization is applied
 func TestBuildChain_WithOptimization(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -349,6 +359,7 @@ func TestBuildChain_WithOptimization(t *testing.T) {
 		t.Errorf("Expected 2 nodes in optimized chain, got %d", len(chain.Nodes))
 	}
 }
+
 // TestConnectionCache tests connection caching functionality
 func TestConnectionCache(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -371,6 +382,7 @@ func TestConnectionCache(t *testing.T) {
 	}
 	// Cache functionality verified - nodes are now connected
 }
+
 // TestPrefixCache tests prefix caching functionality
 func TestPrefixCache(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -406,6 +418,7 @@ func TestPrefixCache(t *testing.T) {
 		t.Errorf("Expected prefix cache size 0 after clear, got %d", size)
 	}
 }
+
 // TestDetermineJoinType tests join type determination
 func TestDetermineJoinType(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -450,6 +463,7 @@ func TestDetermineJoinType(t *testing.T) {
 		})
 	}
 }
+
 // TestChainValidation tests chain validation
 func TestChainValidation(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -510,6 +524,7 @@ func TestChainValidation(t *testing.T) {
 		})
 	}
 }
+
 // TestCountSharedNodes tests counting shared nodes
 func TestCountSharedNodes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -542,6 +557,7 @@ func TestCountSharedNodes(t *testing.T) {
 		t.Errorf("Expected 1 shared node, got %d", sharedCount)
 	}
 }
+
 // TestGetChainStats tests chain statistics
 func TestGetChainStats(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -572,6 +588,7 @@ func TestGetChainStats(t *testing.T) {
 		t.Error("Expected shared_nodes to be present")
 	}
 }
+
 // TestGetChainInfo tests chain info retrieval
 func TestGetChainInfo(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -605,6 +622,7 @@ func TestGetChainInfo(t *testing.T) {
 		t.Error("Expected summary to be string")
 	}
 }
+
 // TestMetricsRecording tests that metrics are properly recorded
 func TestMetricsRecording(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -641,6 +659,7 @@ func TestMetricsRecording(t *testing.T) {
 		t.Errorf("Expected at least 3 join nodes requested, got %d", metrics.TotalJoinNodesRequested)
 	}
 }
+
 // TestSetOptimizationEnabled tests enabling/disabling optimization
 func TestSetOptimizationEnabled(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -661,6 +680,7 @@ func TestSetOptimizationEnabled(t *testing.T) {
 		t.Error("Expected optimization to be enabled")
 	}
 }
+
 // TestSetPrefixSharingEnabled tests enabling/disabling prefix sharing
 func TestSetPrefixSharingEnabled(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -681,6 +701,7 @@ func TestSetPrefixSharingEnabled(t *testing.T) {
 		t.Error("Expected prefix sharing to be enabled")
 	}
 }
+
 // TestBuildChain_WithoutSharingRegistry tests fallback when no registry
 func TestBuildChain_WithoutSharingRegistry(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -706,6 +727,7 @@ func TestBuildChain_WithoutSharingRegistry(t *testing.T) {
 		t.Errorf("Expected 1 node, got %d", len(chain.Nodes))
 	}
 }
+
 // TestConcurrentBuildChain tests thread-safety with concurrent builds
 func TestConcurrentBuildChain(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -755,6 +777,7 @@ func TestConcurrentBuildChain(t *testing.T) {
 		t.Errorf("Expected at least 10 join node requests, got %d", metrics.TotalJoinNodesRequested)
 	}
 }
+
 // BenchmarkBuildChain benchmarks chain building
 func BenchmarkBuildChain(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -781,6 +804,7 @@ func BenchmarkBuildChain(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkBuildChain_Cascade benchmarks cascade chain building
 func BenchmarkBuildChain_Cascade(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -817,6 +841,7 @@ func BenchmarkBuildChain_Cascade(b *testing.B) {
 		}
 	}
 }
+
 // TestBetaBuildMetrics tests metrics structure and methods
 func TestBetaBuildMetrics(t *testing.T) {
 	metrics := &BetaBuildMetrics{}

@@ -4,17 +4,42 @@
 
 package rete
 
-// ExecutionContext contient le contexte d'exécution d'une action,
-// incluant les tokens et faits disponibles pour évaluation.
+// ExecutionContext contient le contexte d'exécution d'une action.
 //
-// Utilise maintenant BindingChain directement pour un accès immuable aux variables.
+// Le contexte fournit l'accès aux faits disponibles via BindingChain,
+// permettant l'évaluation des arguments d'action référençant des variables.
+//
+// Structure :
+//   - token : token contenant les faits déclencheurs
+//   - network : réseau RETE pour accès aux types et autres ressources
+//   - bindings : chaîne immuable de bindings variable → fact
+//
+// Utilisation :
+//
+//	ctx := NewExecutionContext(token, network)
+//	fact := ctx.GetVariable("user")  // Récupère le fait lié à "user"
+//
+// Propriétés :
+//   - Thread-safe grâce à l'immutabilité de BindingChain
+//   - Accès O(n) aux variables (n = nombre de bindings, typiquement < 10)
+//   - Pas de copie des faits, seulement des références
 type ExecutionContext struct {
 	token    *Token
 	network  *ReteNetwork
 	bindings *BindingChain
 }
 
-// NewExecutionContext crée un nouveau contexte d'exécution
+// NewExecutionContext crée un nouveau contexte d'exécution.
+//
+// Le contexte référence directement la chaîne de bindings du token,
+// sans copie, garantissant l'immutabilité et la performance.
+//
+// Paramètres :
+//   - token : token contenant les faits et bindings
+//   - network : réseau RETE pour accès aux types
+//
+// Retourne :
+//   - *ExecutionContext : contexte d'exécution initialisé
 func NewExecutionContext(token *Token, network *ReteNetwork) *ExecutionContext {
 	ctx := &ExecutionContext{
 		token:    token,
@@ -30,7 +55,26 @@ func NewExecutionContext(token *Token, network *ReteNetwork) *ExecutionContext {
 	return ctx
 }
 
-// GetVariable récupère un fait par nom de variable
+// GetVariable récupère un fait par nom de variable.
+//
+// Utilise la BindingChain pour rechercher le fait lié à la variable.
+// Retourne nil si la variable n'existe pas dans le contexte.
+//
+// Complexité : O(n) où n est le nombre de bindings (typiquement < 10)
+//
+// Paramètres :
+//   - name : nom de la variable (ex: "user", "order", "task")
+//
+// Retourne :
+//   - *Fact : pointeur vers le fait si trouvé, nil sinon
+//
+// Exemple :
+//
+//	user := ctx.GetVariable("user")
+//	if user == nil {
+//	    return fmt.Errorf("variable user non trouvée")
+//	}
+//	userName := user.Fields["name"]
 func (ctx *ExecutionContext) GetVariable(name string) *Fact {
 	if ctx.bindings == nil {
 		return nil

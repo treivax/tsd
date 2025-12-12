@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 func TestAlphaConditionEvaluator_evaluateConstraint(t *testing.T) {
 	fact := &Fact{
 		Type: "Person",

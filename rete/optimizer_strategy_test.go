@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestSimpleRuleRemovalStrategy_CanHandle tests strategy selection for simple rules
 func TestSimpleRuleRemovalStrategy_CanHandle(t *testing.T) {
 	network := createTestNetwork(t)
@@ -91,6 +93,7 @@ func TestSimpleRuleRemovalStrategy_CanHandle(t *testing.T) {
 		})
 	}
 }
+
 // TestAlphaChainRemovalStrategy_CanHandle tests strategy selection for alpha chains
 func TestAlphaChainRemovalStrategy_CanHandle(t *testing.T) {
 	network := createTestNetwork(t)
@@ -175,6 +178,7 @@ func TestAlphaChainRemovalStrategy_CanHandle(t *testing.T) {
 		})
 	}
 }
+
 // TestJoinRuleRemovalStrategy_CanHandle tests strategy selection for join rules
 func TestJoinRuleRemovalStrategy_CanHandle(t *testing.T) {
 	network := createTestNetwork(t)
@@ -256,6 +260,7 @@ func TestJoinRuleRemovalStrategy_CanHandle(t *testing.T) {
 		})
 	}
 }
+
 // TestDefaultStrategySelector_SelectStrategy tests the strategy selector
 func TestDefaultStrategySelector_SelectStrategy(t *testing.T) {
 	network := createTestNetwork(t)
@@ -341,6 +346,7 @@ func TestDefaultStrategySelector_SelectStrategy(t *testing.T) {
 		})
 	}
 }
+
 // TestStrategyNames verifies that each strategy has a unique name
 func TestStrategyNames(t *testing.T) {
 	network := createTestNetwork(t)
@@ -372,6 +378,7 @@ func TestStrategyNames(t *testing.T) {
 		}
 	}
 }
+
 // createTestNetwork creates a minimal RETE network for testing
 func createTestNetwork(t *testing.T) *ReteNetwork {
 	t.Helper()

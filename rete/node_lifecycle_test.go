@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestNodeLifecycle_Basic teste les opérations de base sur le cycle de vie d'un nœud
 func TestNodeLifecycle_Basic(t *testing.T) {
 	lifecycle := NewNodeLifecycle("alpha_1", "alpha")
@@ -22,6 +24,7 @@ func TestNodeLifecycle_Basic(t *testing.T) {
 		t.Error("HasReferences devrait être false initialement")
 	}
 }
+
 // TestNodeLifecycle_AddRuleReference teste l'ajout de références de règles
 func TestNodeLifecycle_AddRuleReference(t *testing.T) {
 	lifecycle := NewNodeLifecycle("alpha_1", "alpha")
@@ -44,6 +47,7 @@ func TestNodeLifecycle_AddRuleReference(t *testing.T) {
 		t.Errorf("RefCount devrait rester 2 (pas de duplication), obtenu %d", lifecycle.RefCount)
 	}
 }
+
 // TestNodeLifecycle_RemoveRuleReference teste la suppression de références de règles
 func TestNodeLifecycle_RemoveRuleReference(t *testing.T) {
 	lifecycle := NewNodeLifecycle("alpha_1", "alpha")
@@ -70,6 +74,7 @@ func TestNodeLifecycle_RemoveRuleReference(t *testing.T) {
 		t.Error("HasReferences devrait être false")
 	}
 }
+
 // TestNodeLifecycle_GetRules teste la récupération de la liste des règles
 func TestNodeLifecycle_GetRules(t *testing.T) {
 	lifecycle := NewNodeLifecycle("alpha_1", "alpha")
@@ -89,6 +94,7 @@ func TestNodeLifecycle_GetRules(t *testing.T) {
 		t.Error("Toutes les règles devraient être présentes")
 	}
 }
+
 // TestNodeLifecycle_GetRuleInfo teste la récupération d'informations sur une règle
 func TestNodeLifecycle_GetRuleInfo(t *testing.T) {
 	lifecycle := NewNodeLifecycle("alpha_1", "alpha")
@@ -109,6 +115,7 @@ func TestNodeLifecycle_GetRuleInfo(t *testing.T) {
 		t.Error("La règle rule_999 ne devrait pas exister")
 	}
 }
+
 // TestLifecycleManager_Basic teste les opérations de base du gestionnaire
 func TestLifecycleManager_Basic(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -116,6 +123,7 @@ func TestLifecycleManager_Basic(t *testing.T) {
 		t.Errorf("Le gestionnaire devrait être vide initialement, contient %d nœuds", len(manager.Nodes))
 	}
 }
+
 // TestLifecycleManager_RegisterNode teste l'enregistrement de nœuds
 func TestLifecycleManager_RegisterNode(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -141,6 +149,7 @@ func TestLifecycleManager_RegisterNode(t *testing.T) {
 		t.Errorf("Le gestionnaire devrait contenir 2 nœuds, contient %d", len(manager.Nodes))
 	}
 }
+
 // TestLifecycleManager_AddRuleToNode teste l'ajout de règles aux nœuds
 func TestLifecycleManager_AddRuleToNode(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -165,6 +174,7 @@ func TestLifecycleManager_AddRuleToNode(t *testing.T) {
 		t.Error("AddRuleToNode devrait échouer pour un nœud non enregistré")
 	}
 }
+
 // TestLifecycleManager_RemoveRuleFromNode teste la suppression de règles des nœuds
 func TestLifecycleManager_RemoveRuleFromNode(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -189,6 +199,7 @@ func TestLifecycleManager_RemoveRuleFromNode(t *testing.T) {
 		t.Error("shouldDelete devrait être true (plus de références)")
 	}
 }
+
 // TestLifecycleManager_RemoveNode teste la suppression de nœuds
 func TestLifecycleManager_RemoveNode(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -213,6 +224,7 @@ func TestLifecycleManager_RemoveNode(t *testing.T) {
 		t.Error("Le nœud alpha_1 ne devrait plus exister")
 	}
 }
+
 // TestLifecycleManager_GetNodesForRule teste la récupération des nœuds d'une règle
 func TestLifecycleManager_GetNodesForRule(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -240,6 +252,7 @@ func TestLifecycleManager_GetNodesForRule(t *testing.T) {
 		t.Errorf("rule_999 devrait avoir 0 nœud, obtenu %d", len(nodes3))
 	}
 }
+
 // TestLifecycleManager_CanRemoveNode teste la vérification de suppression
 func TestLifecycleManager_CanRemoveNode(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -256,6 +269,7 @@ func TestLifecycleManager_CanRemoveNode(t *testing.T) {
 		t.Error("alpha_1 devrait pouvoir être supprimé (plus de références)")
 	}
 }
+
 // TestLifecycleManager_GetStats teste les statistiques du gestionnaire
 func TestLifecycleManager_GetStats(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -285,6 +299,7 @@ func TestLifecycleManager_GetStats(t *testing.T) {
 		t.Errorf("total_references devrait être 2, obtenu %d", stats["total_references"].(int))
 	}
 }
+
 // TestLifecycleManager_Reset teste la réinitialisation du gestionnaire
 func TestLifecycleManager_Reset(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -303,6 +318,7 @@ func TestLifecycleManager_Reset(t *testing.T) {
 		t.Error("total_nodes devrait être 0 après Reset")
 	}
 }
+
 // TestLifecycleManager_GetRuleInfo teste la récupération d'informations sur une règle
 func TestLifecycleManager_GetRuleInfo(t *testing.T) {
 	manager := NewLifecycleManager()
@@ -329,6 +345,7 @@ func TestLifecycleManager_GetRuleInfo(t *testing.T) {
 		t.Errorf("NodeIDs devrait contenir 2 éléments, obtenu %d", len(info.NodeIDs))
 	}
 }
+
 // TestLifecycleManager_ConcurrentAccess teste l'accès concurrent (basique)
 func TestLifecycleManager_ConcurrentAccess(t *testing.T) {
 	manager := NewLifecycleManager()

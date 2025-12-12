@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestCastToNumber teste la conversion vers number
 func TestCastToNumber(t *testing.T) {
 	tests := []struct {
@@ -47,6 +49,7 @@ func TestCastToNumber(t *testing.T) {
 		})
 	}
 }
+
 // TestCastToString teste la conversion vers string
 func TestCastToString(t *testing.T) {
 	tests := []struct {
@@ -81,6 +84,7 @@ func TestCastToString(t *testing.T) {
 		})
 	}
 }
+
 // TestCastToBool teste la conversion vers bool
 func TestCastToBool(t *testing.T) {
 	tests := []struct {
@@ -131,6 +135,7 @@ func TestCastToBool(t *testing.T) {
 		})
 	}
 }
+
 // TestEvaluateCast teste la fonction générique de cast
 func TestEvaluateCast(t *testing.T) {
 	tests := []struct {
@@ -164,15 +169,27 @@ func TestEvaluateCast(t *testing.T) {
 		})
 	}
 }
+
 // TestCastInExpressions teste le cast dans des expressions plus complexes
 func TestCastInExpressions(t *testing.T) {
 	// Créer un évaluateur avec des données de test
-	eval := &AlphaConditionEvaluator{
-		Bindings: NewBindingChain().Add("p", {
-				ID:   "p1").Add("price", "99.99").Add("quantity", "5").Add("active", "true").Add("count", 10.0).Add("flag", true),
-			},
+	product := &Fact{
+		ID:   "p1",
+		Type: "Product",
+		Fields: map[string]interface{}{
+			"price":    "99.99",
+			"quantity": "5",
+			"active":   "true",
+			"count":    10.0,
+			"flag":     true,
 		},
 	}
+
+	eval := NewAlphaConditionEvaluator()
+	eval.variableBindings = map[string]*Fact{
+		"p": product,
+	}
+
 	tests := []struct {
 		name        string
 		castExpr    map[string]interface{}
@@ -274,6 +291,7 @@ func TestCastInExpressions(t *testing.T) {
 		})
 	}
 }
+
 // TestCastEdgeCases teste les cas limites et erreurs
 func TestCastEdgeCases(t *testing.T) {
 	t.Run("cast very large number to string", func(t *testing.T) {

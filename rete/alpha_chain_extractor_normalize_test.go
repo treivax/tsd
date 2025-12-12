@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestIsCommutative_AllOperators vérifie que IsCommutative identifie correctement
 // les opérateurs commutatifs et non-commutatifs
 func TestIsCommutative_AllOperators(t *testing.T) {
@@ -45,6 +47,7 @@ func TestIsCommutative_AllOperators(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditions_AND_OrderIndependent vérifie que A AND B et B AND A
 // normalisent au même ordre
 func TestNormalizeConditions_AND_OrderIndependent(t *testing.T) {
@@ -81,6 +84,7 @@ func TestNormalizeConditions_AND_OrderIndependent(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeConditions_OR_OrderIndependent vérifie que A OR B et B OR A
 // normalisent au même ordre
 func TestNormalizeConditions_OR_OrderIndependent(t *testing.T) {
@@ -117,6 +121,7 @@ func TestNormalizeConditions_OR_OrderIndependent(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeConditions_NonCommutative_PreserveOrder vérifie que les opérateurs
 // non-commutatifs préservent l'ordre original
 func TestNormalizeConditions_NonCommutative_PreserveOrder(t *testing.T) {
@@ -151,6 +156,7 @@ func TestNormalizeConditions_NonCommutative_PreserveOrder(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeConditions_EmptyAndSingle vérifie le comportement avec des cas limites
 func TestNormalizeConditions_EmptyAndSingle(t *testing.T) {
 	// Test avec liste vide
@@ -176,6 +182,7 @@ func TestNormalizeConditions_EmptyAndSingle(t *testing.T) {
 		t.Error("Single condition was modified")
 	}
 }
+
 // TestNormalizeConditions_ThreeConditions vérifie la normalisation avec 3+ conditions
 func TestNormalizeConditions_ThreeConditions(t *testing.T) {
 	// Créer trois conditions: C, A, B
@@ -227,6 +234,7 @@ func TestNormalizeConditions_ThreeConditions(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeExpression_ComplexNested vérifie la normalisation d'expressions complexes imbriquées
 func TestNormalizeExpression_ComplexNested(t *testing.T) {
 	// Expression: (age > 18 AND salary >= 50000) OR (status == "active")
@@ -261,6 +269,7 @@ func TestNormalizeExpression_ComplexNested(t *testing.T) {
 		t.Errorf("Expected LogicalExpression, got %T", normalized)
 	}
 }
+
 // TestNormalizeExpression_BinaryOperation vérifie la normalisation d'opérations binaires simples
 func TestNormalizeExpression_BinaryOperation(t *testing.T) {
 	expr := constraint.BinaryOperation{
@@ -282,6 +291,7 @@ func TestNormalizeExpression_BinaryOperation(t *testing.T) {
 		t.Errorf("Expected operator '>', got '%s'", binOp.Operator)
 	}
 }
+
 // TestNormalizeExpression_Map vérifie la normalisation d'expressions sous forme de map
 func TestNormalizeExpression_Map(t *testing.T) {
 	expr := map[string]interface{}{
@@ -310,6 +320,7 @@ func TestNormalizeExpression_Map(t *testing.T) {
 		t.Errorf("Expected type 'binaryOperation', got '%v'", normMap["type"])
 	}
 }
+
 // TestNormalizeExpression_Literals vérifie que les littéraux ne sont pas modifiés
 func TestNormalizeExpression_Literals(t *testing.T) {
 	tests := []struct {
@@ -346,6 +357,7 @@ func TestNormalizeExpression_Literals(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeConditions_DeterministicOrder vérifie que l'ordre est vraiment déterministe
 func TestNormalizeConditions_DeterministicOrder(t *testing.T) {
 	// Créer plusieurs conditions
@@ -380,6 +392,7 @@ func TestNormalizeConditions_DeterministicOrder(t *testing.T) {
 		}
 	}
 }
+
 // TestRebuildLogicalExpression_SingleCondition teste la reconstruction avec une seule condition
 func TestRebuildLogicalExpression_SingleCondition(t *testing.T) {
 	// Créer une condition simple
@@ -410,6 +423,7 @@ func TestRebuildLogicalExpression_SingleCondition(t *testing.T) {
 		t.Errorf("Expected operator '>', got '%s'", binOp.Operator)
 	}
 }
+
 // TestRebuildLogicalExpression_TwoConditions teste la reconstruction avec deux conditions
 func TestRebuildLogicalExpression_TwoConditions(t *testing.T) {
 	// Créer deux conditions
@@ -458,6 +472,7 @@ func TestRebuildLogicalExpression_TwoConditions(t *testing.T) {
 		t.Errorf("Expected Right operator '>=', got '%s'", rightOp.Operator)
 	}
 }
+
 // TestRebuildLogicalExpression_ThreeConditions teste la reconstruction avec trois conditions
 func TestRebuildLogicalExpression_ThreeConditions(t *testing.T) {
 	// Créer trois conditions
@@ -495,6 +510,7 @@ func TestRebuildLogicalExpression_ThreeConditions(t *testing.T) {
 		}
 	}
 }
+
 // TestRebuildLogicalExpression_Empty teste le cas d'erreur avec liste vide
 func TestRebuildLogicalExpression_Empty(t *testing.T) {
 	_, err := rebuildLogicalExpression([]SimpleCondition{}, "AND")
@@ -502,6 +518,7 @@ func TestRebuildLogicalExpression_Empty(t *testing.T) {
 		t.Error("Expected error for empty conditions, got nil")
 	}
 }
+
 // TestNormalizeExpression_WithReconstruction teste la normalisation complète avec reconstruction
 func TestNormalizeExpression_WithReconstruction(t *testing.T) {
 	// Expression : salary >= 50000 AND age > 18 (ordre inversé)
@@ -564,6 +581,7 @@ func TestNormalizeExpression_WithReconstruction(t *testing.T) {
 		t.Errorf("Expected second condition to be 'salary', got '%s'", rightField.Field)
 	}
 }
+
 // TestNormalizeExpression_PreservesSemantics teste que la normalisation préserve la sémantique
 func TestNormalizeExpression_PreservesSemantics(t *testing.T) {
 	// Créer deux expressions équivalentes dans des ordres différents
@@ -640,6 +658,7 @@ func TestNormalizeExpression_PreservesSemantics(t *testing.T) {
 		}
 	}
 }
+
 // TestRebuildLogicalExpressionMap_TwoConditions teste la reconstruction de map
 func TestRebuildLogicalExpressionMap_TwoConditions(t *testing.T) {
 	// Créer deux conditions
@@ -674,6 +693,7 @@ func TestRebuildLogicalExpressionMap_TwoConditions(t *testing.T) {
 		t.Errorf("Expected 1 operation, got %d", len(operations))
 	}
 }
+
 // TestNormalizeExpressionMap_WithReconstruction teste la normalisation de map avec reconstruction
 func TestNormalizeExpressionMap_WithReconstruction(t *testing.T) {
 	// Expression map : salary >= 50000 AND age > 18

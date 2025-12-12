@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestIngestFile tests the IngestFile wrapper function
 func TestIngestFile(t *testing.T) {
 	t.Run("returns metrics on success", func(t *testing.T) {
@@ -133,6 +135,7 @@ rule r2 : {o: Order} / o.id == "2" ==> log2(o.id)
 		}
 	})
 }
+
 // TestIsTerminalReachableFrom tests the isTerminalReachableFrom function
 func TestIsTerminalReachableFrom(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -285,6 +288,7 @@ func TestIsTerminalReachableFrom(t *testing.T) {
 		}
 	})
 }
+
 // TestIdentifyExpectedTypesForTerminal tests the identifyExpectedTypesForTerminal function
 func TestIdentifyExpectedTypesForTerminal(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -469,6 +473,7 @@ func TestIdentifyExpectedTypesForTerminal(t *testing.T) {
 		}
 	})
 }
+
 // TestPropagateToNewTerminals tests the propagateToNewTerminals function
 func TestPropagateToNewTerminals(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -680,6 +685,7 @@ func TestPropagateToNewTerminals(t *testing.T) {
 		}
 	})
 }
+
 // TestOrganizeFactsByType tests the organizeFactsByType helper function
 func TestOrganizeFactsByType(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -777,6 +783,7 @@ func TestOrganizeFactsByType(t *testing.T) {
 		}
 	})
 }
+
 // TestCollectExistingFacts tests the collectExistingFacts function
 func TestCollectExistingFacts(t *testing.T) {
 	pipeline := NewConstraintPipeline()
@@ -1077,6 +1084,7 @@ func TestCollectExistingFacts(t *testing.T) {
 		}
 	})
 }
+
 // TestIngestFile_ErrorPaths tests error handling in IngestFile
 func TestIngestFile_ErrorPaths(t *testing.T) {
 	t.Run("handles conversion error", func(t *testing.T) {
@@ -1305,6 +1313,7 @@ rule books : {i: Item} / i.category == "books" ==> log(i.id)
 		}
 	})
 }
+
 // TestProcessRuleRemovals tests the processRuleRemovals function
 func TestProcessRuleRemovals(t *testing.T) {
 	pipeline := NewConstraintPipeline()

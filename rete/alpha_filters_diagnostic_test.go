@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestAlphaFiltersDiagnostic_JoinRules verifies that alpha filters are created
 // for single-variable conditions in join rules
 func TestAlphaFiltersDiagnostic_JoinRules(t *testing.T) {
@@ -111,6 +113,7 @@ rule very_large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount
 		t.Errorf("Expected 1 activation for very_large_orders, got %d", len(veryLargeTokens))
 	}
 }
+
 // walkNode recursively walks the network and counts node types
 func walkNode(t *testing.T, node Node, depth int, alphaCount, passthroughCount *int) {
 	indent := ""

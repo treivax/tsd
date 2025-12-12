@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 	"time"
 )
+
 // TestChainBuildMetrics_NewAndBasic teste la création et les opérations de base
 func TestChainBuildMetrics_NewAndBasic(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -30,6 +32,7 @@ func TestChainBuildMetrics_NewAndBasic(t *testing.T) {
 		t.Errorf("SharingRatio initial devrait être 0.0, obtenu %.2f", snapshot.SharingRatio)
 	}
 }
+
 // TestChainBuildMetrics_RecordChainBuild teste l'enregistrement de construction de chaîne
 func TestChainBuildMetrics_RecordChainBuild(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -74,6 +77,7 @@ func TestChainBuildMetrics_RecordChainBuild(t *testing.T) {
 		t.Errorf("RuleID incorrect dans les détails: %s", snapshot.ChainDetails[0].RuleID)
 	}
 }
+
 // TestChainBuildMetrics_MultipleRecords teste plusieurs enregistrements
 func TestChainBuildMetrics_MultipleRecords(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -143,6 +147,7 @@ func TestChainBuildMetrics_MultipleRecords(t *testing.T) {
 			expectedAvgTime, snapshot.AverageBuildTime)
 	}
 }
+
 // TestChainBuildMetrics_HashCache teste les métriques de cache de hash
 func TestChainBuildMetrics_HashCache(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -171,6 +176,7 @@ func TestChainBuildMetrics_HashCache(t *testing.T) {
 			expectedEfficiency, efficiency)
 	}
 }
+
 // TestChainBuildMetrics_ConnectionCache teste les métriques de cache de connexion
 func TestChainBuildMetrics_ConnectionCache(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -195,6 +201,7 @@ func TestChainBuildMetrics_ConnectionCache(t *testing.T) {
 			expectedEfficiency, efficiency)
 	}
 }
+
 // TestChainBuildMetrics_Reset teste la réinitialisation des métriques
 func TestChainBuildMetrics_Reset(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -256,6 +263,7 @@ func TestChainBuildMetrics_Reset(t *testing.T) {
 		t.Errorf("ChainDetails devrait être vide après Reset, obtenu %d éléments", len(snapshot.ChainDetails))
 	}
 }
+
 // TestChainBuildMetrics_GetSummary teste le format du résumé
 func TestChainBuildMetrics_GetSummary(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -304,6 +312,7 @@ func TestChainBuildMetrics_GetSummary(t *testing.T) {
 		t.Errorf("hash_cache.size incorrect: %v", hashCache["size"])
 	}
 }
+
 // TestChainBuildMetrics_TopChainsByBuildTime teste le classement par temps de construction
 func TestChainBuildMetrics_TopChainsByBuildTime(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -340,6 +349,7 @@ func TestChainBuildMetrics_TopChainsByBuildTime(t *testing.T) {
 		}
 	}
 }
+
 // TestChainBuildMetrics_TopChainsByLength teste le classement par longueur
 func TestChainBuildMetrics_TopChainsByLength(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -376,6 +386,7 @@ func TestChainBuildMetrics_TopChainsByLength(t *testing.T) {
 		}
 	}
 }
+
 // TestChainBuildMetrics_EmptyTopChains teste les fonctions top avec aucune donnée
 func TestChainBuildMetrics_EmptyTopChains(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -388,6 +399,7 @@ func TestChainBuildMetrics_EmptyTopChains(t *testing.T) {
 		t.Errorf("topByLength devrait être vide, obtenu %d éléments", len(topByLength))
 	}
 }
+
 // TestChainBuildMetrics_AddHashComputeTime teste l'accumulation du temps de calcul de hash
 func TestChainBuildMetrics_AddHashComputeTime(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -401,6 +413,7 @@ func TestChainBuildMetrics_AddHashComputeTime(t *testing.T) {
 			expected, snapshot.TotalHashComputeTime)
 	}
 }
+
 // TestChainBuildMetrics_CacheEfficiencyZero teste l'efficacité avec aucune donnée
 func TestChainBuildMetrics_CacheEfficiencyZero(t *testing.T) {
 	metrics := NewChainBuildMetrics()
@@ -413,6 +426,7 @@ func TestChainBuildMetrics_CacheEfficiencyZero(t *testing.T) {
 		t.Errorf("Connection cache efficiency devrait être 0.0, obtenu %.2f", connEfficiency)
 	}
 }
+
 // TestChainBuildMetrics_ThreadSafety teste la sécurité des threads (basic)
 func TestChainBuildMetrics_ThreadSafety(t *testing.T) {
 	metrics := NewChainBuildMetrics()

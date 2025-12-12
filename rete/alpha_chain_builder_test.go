@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestBuildChain_SingleCondition teste la construction d'une chaîne avec une seule condition
 func TestBuildChain_SingleCondition(t *testing.T) {
 	// Créer un réseau RETE avec storage
@@ -57,6 +59,7 @@ func TestBuildChain_SingleCondition(t *testing.T) {
 		t.Errorf("Attendu 1 référence, obtenu %d", lifecycle.GetRefCount())
 	}
 }
+
 // TestBuildChain_TwoConditions_New teste la construction d'une chaîne avec deux conditions nouvelles
 func TestBuildChain_TwoConditions_New(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -110,6 +113,7 @@ func TestBuildChain_TwoConditions_New(t *testing.T) {
 		}
 	}
 }
+
 // TestBuildChain_TwoConditions_Reuse teste la réutilisation complète d'une chaîne
 func TestBuildChain_TwoConditions_Reuse(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -164,6 +168,7 @@ func TestBuildChain_TwoConditions_Reuse(t *testing.T) {
 		}
 	}
 }
+
 // TestBuildChain_PartialReuse teste le partage partiel d'une chaîne
 func TestBuildChain_PartialReuse(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -225,6 +230,7 @@ func TestBuildChain_PartialReuse(t *testing.T) {
 			lifecycle1Rule2.GetRefCount())
 	}
 }
+
 // TestBuildChain_CompleteReuse teste la réutilisation complète par plusieurs règles
 func TestBuildChain_CompleteReuse(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -269,6 +275,7 @@ func TestBuildChain_CompleteReuse(t *testing.T) {
 		t.Errorf("Attendu %d références, obtenu %d", ruleCount, lifecycle.GetRefCount())
 	}
 }
+
 // TestBuildChain_MultipleRules_SharedSubchain teste plusieurs règles avec sous-chaînes partagées
 func TestBuildChain_MultipleRules_SharedSubchain(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -340,6 +347,7 @@ func TestBuildChain_MultipleRules_SharedSubchain(t *testing.T) {
 			lifecycle2.GetRefCount())
 	}
 }
+
 // TestBuildChain_EmptyConditions teste le comportement avec une liste vide
 func TestBuildChain_EmptyConditions(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -353,6 +361,7 @@ func TestBuildChain_EmptyConditions(t *testing.T) {
 		t.Error("Attendu une erreur avec une liste de conditions vide")
 	}
 }
+
 // TestBuildChain_NilParent teste le comportement avec un parent nil
 func TestBuildChain_NilParent(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -366,6 +375,7 @@ func TestBuildChain_NilParent(t *testing.T) {
 		t.Error("Attendu une erreur avec un parent nil")
 	}
 }
+
 // TestAlphaChain_ValidateChain teste la validation d'une chaîne
 func TestAlphaChain_ValidateChain(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -386,6 +396,7 @@ func TestAlphaChain_ValidateChain(t *testing.T) {
 		t.Errorf("La chaîne devrait être valide: %v", err)
 	}
 }
+
 // TestAlphaChain_GetChainInfo teste la récupération d'informations sur la chaîne
 func TestAlphaChain_GetChainInfo(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -414,6 +425,7 @@ func TestAlphaChain_GetChainInfo(t *testing.T) {
 		t.Error("final_node_id incorrect")
 	}
 }
+
 // TestAlphaChainBuilder_CountSharedNodes teste le comptage des nœuds partagés
 func TestAlphaChainBuilder_CountSharedNodes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -438,6 +450,7 @@ func TestAlphaChainBuilder_CountSharedNodes(t *testing.T) {
 		t.Errorf("Deuxième chaîne: attendu 2 nœuds partagés, obtenu %d", sharedCount2)
 	}
 }
+
 // TestAlphaChainBuilder_GetChainStats teste la récupération de statistiques détaillées
 func TestAlphaChainBuilder_GetChainStats(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -488,6 +501,7 @@ func TestAlphaChainBuilder_GetChainStats(t *testing.T) {
 	// Ignorer chain1 pour éviter unused variable error
 	_ = chain1
 }
+
 // TestIsAlreadyConnected teste la fonction helper isAlreadyConnected
 func TestIsAlreadyConnected(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -518,6 +532,7 @@ func TestIsAlreadyConnected(t *testing.T) {
 		t.Error("child nil devrait retourner false")
 	}
 }
+
 // TestAlphaChainBuilder_BuildDecomposedChain tests decomposed chain building with metadata
 func TestAlphaChainBuilder_BuildDecomposedChain(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -610,6 +625,7 @@ func TestAlphaChainBuilder_BuildDecomposedChain(t *testing.T) {
 		t.Error("Expected FinalNode to be the last node")
 	}
 }
+
 // TestAlphaChainBuilder_DecomposedChainSharing tests node sharing with decomposed chains
 func TestAlphaChainBuilder_DecomposedChainSharing(t *testing.T) {
 	storage := NewMemoryStorage()

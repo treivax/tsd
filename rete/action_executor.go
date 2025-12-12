@@ -10,8 +10,23 @@ import (
 )
 
 // ActionExecutor gère l'exécution des actions déclenchées par les règles.
-// Il orchestre l'évaluation des arguments, la validation, et l'exécution
-// via le registry d'actions.
+//
+// Responsabilités :
+//   - Évaluation des arguments d'action (variables, expressions, etc.)
+//   - Validation des arguments selon le type attendu
+//   - Exécution via le registry d'actions (handlers personnalisés)
+//   - Logging des actions exécutées
+//
+// Architecture :
+//   - registry : enregistre les handlers d'actions disponibles
+//   - network : accès au réseau RETE pour types et autres ressources
+//   - logger : journalisation des exécutions
+//
+// Utilisation :
+//
+//	executor := NewActionExecutor(network, logger)
+//	executor.RegisterAction(customHandler)
+//	err := executor.ExecuteAction(action, token)
 type ActionExecutor struct {
 	network       *ReteNetwork
 	logger        *log.Logger
@@ -19,7 +34,16 @@ type ActionExecutor struct {
 	registry      *ActionRegistry
 }
 
-// NewActionExecutor crée un nouveau exécuteur d'actions
+// NewActionExecutor crée un nouveau exécuteur d'actions.
+//
+// Initialise le registry et enregistre les actions par défaut (print, etc.).
+//
+// Paramètres :
+//   - network : réseau RETE
+//   - logger : logger pour journalisation (utilise log.Default() si nil)
+//
+// Retourne :
+//   - *ActionExecutor : exécuteur initialisé
 func NewActionExecutor(network *ReteNetwork, logger *log.Logger) *ActionExecutor {
 	if logger == nil {
 		logger = log.Default()
@@ -38,6 +62,11 @@ func NewActionExecutor(network *ReteNetwork, logger *log.Logger) *ActionExecutor
 }
 
 // RegisterDefaultActions enregistre les actions par défaut disponibles.
+//
+// Actions enregistrées :
+//   - print : affichage de valeurs
+//
+// Cette méthode est appelée automatiquement par NewActionExecutor.
 func (ae *ActionExecutor) RegisterDefaultActions() {
 	// Enregistrer l'action print
 	printAction := NewPrintAction(nil)
@@ -61,7 +90,19 @@ func (ae *ActionExecutor) SetLogging(enabled bool) {
 	ae.enableLogging = enabled
 }
 
-// ExecuteAction exécute une action avec les faits fournis par le token
+// ExecuteAction exécute une action avec les faits fournis par le token.
+//
+// Process :
+//  1. Récupère tous les jobs de l'action
+//  2. Crée un contexte d'exécution avec les bindings du token
+//  3. Exécute chaque job en séquence
+//
+// Paramètres :
+//   - action : action à exécuter (peut contenir plusieurs jobs)
+//   - token : token contenant les faits et bindings disponibles
+//
+// Retourne :
+//   - error : erreur si l'exécution échoue
 func (ae *ActionExecutor) ExecuteAction(action *Action, token *Token) error {
 	if action == nil {
 		return fmt.Errorf("action is nil")
@@ -83,7 +124,22 @@ func (ae *ActionExecutor) ExecuteAction(action *Action, token *Token) error {
 	return nil
 }
 
-// executeJob exécute un job individuel
+// executeJob exécute un job individuel.
+//
+// Process :
+//  1. Log l'action (si activé)
+//  2. Évalue tous les arguments
+//  3. Recherche le handler dans le registry
+//  4. Valide les arguments (si handler définit une validation)
+//  5. Exécute le handler
+//
+// Paramètres :
+//   - job : job à exécuter
+//   - ctx : contexte d'exécution
+//   - jobIndex : index du job dans la séquence (pour debug)
+//
+// Retourne :
+//   - error : erreur si l'exécution échoue
 func (ae *ActionExecutor) executeJob(job JobCall, ctx *ExecutionContext, jobIndex int) error {
 	// Logger l'action
 	if ae.enableLogging {

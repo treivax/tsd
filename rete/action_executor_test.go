@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"strings"
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
 )
+
 func TestActionExecutor_evaluateComparison(t *testing.T) {
 	executor := NewActionExecutor(nil, nil)
 	tests := []struct {
@@ -328,6 +330,7 @@ func TestActionExecutor_areEqual(t *testing.T) {
 		})
 	}
 }
+
 // TestActionExecutor_BasicExecution teste l'exécution basique d'une action
 func TestActionExecutor_BasicExecution(t *testing.T) {
 	t.Parallel()
@@ -356,8 +359,8 @@ func TestActionExecutor_BasicExecution(t *testing.T) {
 	}
 	// Créer un token avec bindings
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Créer une action simple avec valeur littérale
@@ -382,6 +385,7 @@ func TestActionExecutor_BasicExecution(t *testing.T) {
 	require.NoError(t, err, "Action execution should succeed")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_VariableArgument teste l'utilisation d'une variable comme argument
 func TestActionExecutor_VariableArgument(t *testing.T) {
 	t.Parallel()
@@ -405,8 +409,8 @@ func TestActionExecutor_VariableArgument(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec variable complète
@@ -429,6 +433,7 @@ func TestActionExecutor_VariableArgument(t *testing.T) {
 	require.NoError(t, err, "Action with variable should execute successfully")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_FieldAccessArgument teste l'accès à un attribut
 func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 	t.Parallel()
@@ -454,8 +459,8 @@ func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec accès à un champ
@@ -479,6 +484,7 @@ func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 	require.NoError(t, err, "Action with field access should execute successfully")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_MultipleArguments teste plusieurs arguments de types différents
 func TestActionExecutor_MultipleArguments(t *testing.T) {
 	t.Parallel()
@@ -504,8 +510,8 @@ func TestActionExecutor_MultipleArguments(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec plusieurs types d'arguments
@@ -540,6 +546,7 @@ func TestActionExecutor_MultipleArguments(t *testing.T) {
 	require.NoError(t, err, "Action with multiple arguments should execute successfully")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_ArithmeticExpression teste les expressions arithmétiques
 func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 	t.Parallel()
@@ -563,8 +570,8 @@ func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec expression arithmétique
@@ -596,6 +603,7 @@ func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 	require.NoError(t, err, "Arithmetic expression should be evaluated successfully")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_MultipleJobs teste l'exécution de plusieurs jobs
 func TestActionExecutor_MultipleJobs(t *testing.T) {
 	t.Parallel()
@@ -619,8 +627,8 @@ func TestActionExecutor_MultipleJobs(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec trois jobs
@@ -658,6 +666,7 @@ func TestActionExecutor_MultipleJobs(t *testing.T) {
 	require.NoError(t, err, "Multiple jobs should execute in sequence successfully")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_ValidationErrors teste les erreurs de validation
 func TestActionExecutor_ValidationErrors(t *testing.T) {
 	t.Parallel()
@@ -761,8 +770,8 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 				},
 			}
 			token := &Token{
-				ID:    "token1",
-				Facts: []*Fact{fact},
+				ID:       "token1",
+				Facts:    []*Fact{fact},
 				Bindings: NewBindingChainWith("p", fact),
 			}
 			err := env.Network.ActionExecutor.ExecuteAction(tc.action, token)
@@ -778,6 +787,7 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 		})
 	}
 }
+
 // TestActionExecutor_Logging teste le logging des actions
 func TestActionExecutor_Logging(t *testing.T) {
 	t.Parallel()
@@ -799,8 +809,8 @@ func TestActionExecutor_Logging(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	action := &Action{
@@ -825,6 +835,7 @@ func TestActionExecutor_Logging(t *testing.T) {
 	require.NoError(t, err, "Action with logging disabled should succeed")
 	env.AssertNoErrors(t)
 }
+
 // TestActionExecutor_CustomLogger teste l'utilisation d'un logger personnalisé
 func TestActionExecutor_CustomLogger(t *testing.T) {
 	t.Parallel()
@@ -848,8 +859,8 @@ func TestActionExecutor_CustomLogger(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	action := &Action{
@@ -891,8 +902,8 @@ func TestActionExecutor_RegisterDefaultActions(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "t1",
-		Facts: []*Fact{fact},
+		ID:       "t1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("f", fact),
 	}
 	action := &Action{
@@ -1131,8 +1142,8 @@ func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "t1",
-		Facts: []*Fact{fact},
+		ID:       "t1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	ctx := NewExecutionContext(token, env.Network)
@@ -1256,10 +1267,12 @@ func TestActionExecutor_RegisterAction(t *testing.T) {
 	require.NotNil(t, handler, "Custom action should be in registry")
 	require.Equal(t, "customAction", handler.GetName(), "Handler name should match")
 }
+
 // mockActionHandler is a simple mock for testing
 type mockActionHandler struct {
 	name string
 }
+
 func (m *mockActionHandler) GetName() string {
 	return m.name
 }
@@ -1395,8 +1408,8 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "t1",
-		Facts: []*Fact{fact},
+		ID:       "t1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	ctx := NewExecutionContext(token, env.Network)
@@ -1507,10 +1520,13 @@ func TestActionExecutor_EvaluateArithmetic_ErrorPaths(t *testing.T) {
 	t.Parallel()
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-	ctx := &ExecutionContext{
-		network:  env.Network,
-		varCache: map[string]*Fact{},
+
+	emptyToken := &Token{
+		ID:       "empty",
+		Bindings: NewBindingChain(),
 	}
+	ctx := NewExecutionContext(emptyToken, env.Network)
+
 	tests := []struct {
 		name          string
 		argMap        map[string]interface{}

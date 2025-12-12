@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestAddFactCommand_ExecuteUndo tests the AddFact command execution and undo
 func TestAddFactCommand_ExecuteUndo(t *testing.T) {
 	t.Log("🔍 TEST : AddFactCommand Execute + Undo")
@@ -43,6 +45,7 @@ func TestAddFactCommand_ExecuteUndo(t *testing.T) {
 	}
 	t.Log("✅ AddFactCommand Execute + Undo successful")
 }
+
 // TestAddFactCommand_Idempotence tests that Execute+Undo+Execute produces same result
 func TestAddFactCommand_Idempotence(t *testing.T) {
 	t.Log("🔍 TEST : AddFactCommand idempotence")
@@ -70,6 +73,7 @@ func TestAddFactCommand_Idempotence(t *testing.T) {
 	}
 	t.Log("✅ AddFactCommand is idempotent")
 }
+
 // TestRemoveFactCommand_ExecuteUndo tests the RemoveFact command
 func TestRemoveFactCommand_ExecuteUndo(t *testing.T) {
 	t.Log("🔍 TEST : RemoveFactCommand Execute + Undo")
@@ -113,6 +117,7 @@ func TestRemoveFactCommand_ExecuteUndo(t *testing.T) {
 	}
 	t.Log("✅ RemoveFactCommand Execute + Undo successful")
 }
+
 // TestRemoveFactCommand_NonExistentFact tests removing a non-existent fact
 func TestRemoveFactCommand_NonExistentFact(t *testing.T) {
 	t.Log("🔍 TEST : RemoveFactCommand sur fait inexistant")
@@ -125,6 +130,7 @@ func TestRemoveFactCommand_NonExistentFact(t *testing.T) {
 	}
 	t.Log("✅ RemoveFactCommand correctly fails on non-existent fact")
 }
+
 // TestCommandString tests the String() method of commands
 func TestCommandString(t *testing.T) {
 	t.Log("🔍 TEST : Command String() representation")
@@ -151,6 +157,7 @@ func TestCommandString(t *testing.T) {
 	t.Logf("RemoveFactCommand: %s", removeStr)
 	t.Log("✅ Command String() works correctly")
 }
+
 // TestMultipleCommands tests executing multiple commands in sequence
 func TestMultipleCommands(t *testing.T) {
 	t.Log("🔍 TEST : Multiple commands in sequence")
@@ -186,6 +193,7 @@ func TestMultipleCommands(t *testing.T) {
 	}
 	t.Log("✅ Multiple commands executed and undone successfully")
 }
+
 // TestCommandError tests command error handling
 func TestCommandError(t *testing.T) {
 	t.Log("🔍 TEST : Command error handling")
@@ -203,6 +211,7 @@ func TestCommandError(t *testing.T) {
 	t.Logf("CommandError: %s", errStr)
 	t.Log("✅ Command error handling works correctly")
 }
+
 // TestCommandError_Unwrap tests the Unwrap method
 func TestCommandError_Unwrap(t *testing.T) {
 	t.Log("🔍 TEST : CommandError Unwrap")
@@ -226,6 +235,7 @@ func TestCommandError_Unwrap(t *testing.T) {
 	})
 	t.Log("✅ CommandError Unwrap works correctly")
 }
+
 // BenchmarkAddFactCommand benchmarks AddFact command execution
 func BenchmarkAddFactCommand(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -233,9 +243,9 @@ func BenchmarkAddFactCommand(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		fact := &Fact{
-			ID:        "bench_fact",
-			Type:      "BenchType",
-			Fields:    map[string]interface{}{"value": i},
+			ID:     "bench_fact",
+			Type:   "BenchType",
+			Fields: map[string]interface{}{"value": i},
 		}
 		cmd := NewAddFactCommand(storage, fact)
 		cmd.Execute()
@@ -243,6 +253,7 @@ func BenchmarkAddFactCommand(b *testing.B) {
 		storage.RemoveFact(fact.GetInternalID())
 	}
 }
+
 // BenchmarkRemoveFactCommand benchmarks RemoveFact command execution
 func BenchmarkRemoveFactCommand(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -251,9 +262,9 @@ func BenchmarkRemoveFactCommand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		fact := &Fact{
-			ID:        "bench_fact",
-			Type:      "BenchType",
-			Fields:    map[string]interface{}{"value": i},
+			ID:     "bench_fact",
+			Type:   "BenchType",
+			Fields: map[string]interface{}{"value": i},
 		}
 		storage.AddFact(fact)
 		b.StartTimer()

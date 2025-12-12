@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // Example conversion of coherence tests to use TestEnvironment
 // This demonstrates the pattern for converting existing tests
 func TestCoherence_StorageSync_WithTestEnv(t *testing.T) {

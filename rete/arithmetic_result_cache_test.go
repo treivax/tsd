@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 )
+
 // TestNewArithmeticResultCache teste la création du cache
 func TestNewArithmeticResultCache(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -28,6 +30,7 @@ func TestNewArithmeticResultCache(t *testing.T) {
 		t.Errorf("Expected empty cache, got size=%d", cache.GetSize())
 	}
 }
+
 // TestArithmeticCache_BasicSetAndGet teste les opérations de base
 func TestArithmeticCache_BasicSetAndGet(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -56,6 +59,7 @@ func TestArithmeticCache_BasicSetAndGet(t *testing.T) {
 		t.Errorf("Expected Misses=0, got %d", stats.Misses)
 	}
 }
+
 // TestArithmeticCache_CacheMiss teste les cache misses
 func TestArithmeticCache_CacheMiss(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -69,6 +73,7 @@ func TestArithmeticCache_CacheMiss(t *testing.T) {
 		t.Errorf("Expected Misses=1, got %d", stats.Misses)
 	}
 }
+
 // TestArithmeticCache_GenerateCacheKey teste la génération de clés
 func TestArithmeticCache_GenerateCacheKey(t *testing.T) {
 	tests := []struct {
@@ -127,6 +132,7 @@ func TestArithmeticCache_GenerateCacheKey(t *testing.T) {
 		})
 	}
 }
+
 // TestArithmeticCache_WithDependencies teste les méthodes avec dépendances
 func TestArithmeticCache_WithDependencies(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -157,6 +163,7 @@ func TestArithmeticCache_WithDependencies(t *testing.T) {
 		t.Error("Expected cache miss for different dependencies")
 	}
 }
+
 // TestArithmeticCache_LRUEviction teste l'éviction LRU
 func TestArithmeticCache_LRUEviction(t *testing.T) {
 	config := CacheConfig{
@@ -200,6 +207,7 @@ func TestArithmeticCache_LRUEviction(t *testing.T) {
 		t.Errorf("Expected Evictions=1, got %d", stats.Evictions)
 	}
 }
+
 // TestArithmeticCache_TTLExpiration teste l'expiration par TTL
 func TestArithmeticCache_TTLExpiration(t *testing.T) {
 	config := CacheConfig{
@@ -223,6 +231,7 @@ func TestArithmeticCache_TTLExpiration(t *testing.T) {
 		t.Error("Expected key1 to be expired")
 	}
 }
+
 // TestArithmeticCache_EnableDisable teste l'activation/désactivation dynamique
 func TestArithmeticCache_EnableDisable(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -257,6 +266,7 @@ func TestArithmeticCache_EnableDisable(t *testing.T) {
 		t.Error("Expected to find key1 after re-enabling cache")
 	}
 }
+
 // TestArithmeticCache_Clear teste le vidage du cache
 func TestArithmeticCache_Clear(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -281,6 +291,7 @@ func TestArithmeticCache_Clear(t *testing.T) {
 		}
 	}
 }
+
 // TestArithmeticCache_ConcurrentAccess teste la sécurité thread-safe
 func TestArithmeticCache_ConcurrentAccess(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -313,6 +324,7 @@ func TestArithmeticCache_ConcurrentAccess(t *testing.T) {
 		t.Error("Expected some Sets to be recorded")
 	}
 }
+
 // TestArithmeticCache_GetHitRate teste le calcul du taux de succès
 func TestArithmeticCache_GetHitRate(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -337,6 +349,7 @@ func TestArithmeticCache_GetHitRate(t *testing.T) {
 		t.Errorf("Expected hit rate ~%f, got %f", expected, hitRate)
 	}
 }
+
 // TestArithmeticCache_GetTopEntries teste la récupération des entrées les plus utilisées
 func TestArithmeticCache_GetTopEntries(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -367,6 +380,7 @@ func TestArithmeticCache_GetTopEntries(t *testing.T) {
 		t.Errorf("Expected second entry to have 5 hits, got %d", topEntries[1].HitCount)
 	}
 }
+
 // TestArithmeticCache_ResetStatistics teste la réinitialisation des stats
 func TestArithmeticCache_ResetStatistics(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -393,6 +407,7 @@ func TestArithmeticCache_ResetStatistics(t *testing.T) {
 		t.Errorf("Expected size=1 after stats reset, got %d", cache.GetSize())
 	}
 }
+
 // TestArithmeticCache_Purge teste le nettoyage des entrées expirées
 func TestArithmeticCache_Purge(t *testing.T) {
 	config := CacheConfig{
@@ -429,6 +444,7 @@ func TestArithmeticCache_Purge(t *testing.T) {
 		t.Error("Expected key3 to be present")
 	}
 }
+
 // TestArithmeticCache_AutoPurge teste le nettoyage automatique
 func TestArithmeticCache_AutoPurge(t *testing.T) {
 	config := CacheConfig{
@@ -449,6 +465,7 @@ func TestArithmeticCache_AutoPurge(t *testing.T) {
 		t.Errorf("Expected size=0 after auto-purge, got %d", cache.GetSize())
 	}
 }
+
 // TestArithmeticCache_EvictionCallback teste le callback d'éviction
 func TestArithmeticCache_EvictionCallback(t *testing.T) {
 	evictedKeys := make([]string, 0)
@@ -477,6 +494,7 @@ func TestArithmeticCache_EvictionCallback(t *testing.T) {
 	}
 	mu.Unlock()
 }
+
 // TestArithmeticCache_EstimateMemoryUsage teste l'estimation mémoire
 func TestArithmeticCache_EstimateMemoryUsage(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -499,6 +517,7 @@ func TestArithmeticCache_EstimateMemoryUsage(t *testing.T) {
 		t.Errorf("Expected at least %d bytes, got %d", cache.GetSize()*minBytesPerEntry, usage)
 	}
 }
+
 // TestArithmeticCache_GetSummary teste le résumé formaté
 func TestArithmeticCache_GetSummary(t *testing.T) {
 	config := DefaultCacheConfig()
@@ -527,6 +546,7 @@ func TestArithmeticCache_GetSummary(t *testing.T) {
 		t.Errorf("Expected size=1 in summary, got %v", summary["size"])
 	}
 }
+
 // BenchmarkArithmeticCache_Set benchmark les écritures
 func BenchmarkArithmeticCache_Set(b *testing.B) {
 	config := DefaultCacheConfig()
@@ -537,6 +557,7 @@ func BenchmarkArithmeticCache_Set(b *testing.B) {
 		cache.Set(key, i)
 	}
 }
+
 // BenchmarkArithmeticCache_Get_Hit benchmark les lectures avec hits
 func BenchmarkArithmeticCache_Get_Hit(b *testing.B) {
 	config := DefaultCacheConfig()
@@ -551,6 +572,7 @@ func BenchmarkArithmeticCache_Get_Hit(b *testing.B) {
 		cache.Get(key)
 	}
 }
+
 // BenchmarkArithmeticCache_Get_Miss benchmark les lectures avec misses
 func BenchmarkArithmeticCache_Get_Miss(b *testing.B) {
 	config := DefaultCacheConfig()
@@ -561,6 +583,7 @@ func BenchmarkArithmeticCache_Get_Miss(b *testing.B) {
 		cache.Get(key)
 	}
 }
+
 // BenchmarkArithmeticCache_WithDependencies benchmark avec dépendances
 func BenchmarkArithmeticCache_WithDependencies(b *testing.B) {
 	config := DefaultCacheConfig()

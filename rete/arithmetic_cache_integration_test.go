@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestArithmeticCache_Integration teste l'intégration du cache avec le réseau RETE
 func TestArithmeticCache_Integration(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -90,6 +92,7 @@ func TestArithmeticCache_Integration(t *testing.T) {
 		t.Error("Expected cache to be enabled")
 	}
 }
+
 // TestArithmeticCache_MultiRuleSharing teste le partage du cache entre plusieurs règles
 func TestArithmeticCache_MultiRuleSharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -128,6 +131,7 @@ func TestArithmeticCache_MultiRuleSharing(t *testing.T) {
 		t.Logf("Cache is active with %d sets", stats.Sets)
 	}
 }
+
 // TestArithmeticCache_Performance teste les performances du cache
 func TestArithmeticCache_Performance(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -191,6 +195,7 @@ func TestArithmeticCache_Performance(t *testing.T) {
 			hitRate*100, expectedMinHitRate*100)
 	}
 }
+
 // TestArithmeticCache_Disabled teste le comportement avec cache désactivé
 func TestArithmeticCache_Disabled(t *testing.T) {
 	storage := NewMemoryStorage()

@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"strings"
 	"testing"
 )
+
 // formatCondition formate une condition de manière lisible
 func formatCondition(cond interface{}) string {
 	condMap, ok := cond.(map[string]interface{})
@@ -47,6 +49,7 @@ func formatCondition(cond interface{}) string {
 		return fmt.Sprintf("%v", condMap)
 	}
 }
+
 // showExpressionTree affiche récursivement l'arbre AST d'une expression
 func showExpressionTree(expr interface{}, indent string) {
 	exprMap, ok := expr.(map[string]interface{})
@@ -85,6 +88,7 @@ func showExpressionTree(expr interface{}, indent string) {
 		fmt.Printf("%s%s: %v\n", indent, exprType, exprMap)
 	}
 }
+
 // TestArithmeticExpressionsE2E teste le pipeline complet avec expressions arithmétiques complexes
 // Ce test vérifie que les expressions arithmétiques dans les actions sont correctement évaluées
 func TestArithmeticExpressionsE2E(t *testing.T) {

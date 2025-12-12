@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestRemoveChain_AllNodesUnique_DeletesAll vérifie qu'une chaîne avec des nœuds
 // uniques (non partagés) est complètement supprimée
 func TestRemoveChain_AllNodesUnique_DeletesAll(t *testing.T) {
@@ -97,6 +99,7 @@ func TestRemoveChain_AllNodesUnique_DeletesAll(t *testing.T) {
 	t.Logf("✓ Chaîne unique supprimée complètement: %d AlphaNodes + %d TerminalNode",
 		initialAlphaCount, initialTerminalCount)
 }
+
 // TestRemoveChain_PartialSharing_DeletesOnlyUnused vérifie que seuls les nœuds
 // non partagés sont supprimés lors de la suppression d'une règle
 func TestRemoveChain_PartialSharing_DeletesOnlyUnused(t *testing.T) {
@@ -237,6 +240,7 @@ func TestRemoveChain_PartialSharing_DeletesOnlyUnused(t *testing.T) {
 	}
 	t.Logf("✓ Suppression partielle correcte: nœud partagé conservé, nœud unique supprimé")
 }
+
 // TestRemoveChain_CompleteSharing_DeletesNone vérifie que si deux règles
 // partagent tous leurs nœuds, la suppression d'une règle ne supprime aucun nœud
 func TestRemoveChain_CompleteSharing_DeletesNone(t *testing.T) {
@@ -344,6 +348,7 @@ func TestRemoveChain_CompleteSharing_DeletesNone(t *testing.T) {
 	}
 	t.Logf("✓ Partage complet: aucun AlphaNode supprimé, RefCount correctement décrémenté")
 }
+
 // TestRemoveRule_WithChain_CorrectCleanup vérifie que RemoveRule() gère
 // correctement la suppression d'une règle avec chaîne
 func TestRemoveRule_WithChain_CorrectCleanup(t *testing.T) {
@@ -457,6 +462,7 @@ func TestRemoveRule_WithChain_CorrectCleanup(t *testing.T) {
 	}
 	t.Logf("✓ Nettoyage complet: tous les nœuds supprimés du réseau, LifecycleManager et AlphaSharingManager")
 }
+
 // TestRemoveRule_MultipleChains_IndependentCleanup vérifie que la suppression
 // de plusieurs règles avec chaînes se fait indépendamment
 func TestRemoveRule_MultipleChains_IndependentCleanup(t *testing.T) {
@@ -614,6 +620,7 @@ func TestRemoveRule_MultipleChains_IndependentCleanup(t *testing.T) {
 	}
 	t.Logf("✓ Suppression indépendante: chaque règle supprimée sans affecter l'autre")
 }
+
 // TestRemoveRule_SimpleCondition_BackwardCompatibility vérifie que la suppression
 // de règles simples (sans chaîne) fonctionne toujours correctement
 func TestRemoveRule_SimpleCondition_BackwardCompatibility(t *testing.T) {

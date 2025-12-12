@@ -1,11 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestAggregationThreshold_GreaterThan tests aggregation with > threshold
 func TestAggregationThreshold_GreaterThan(t *testing.T) {
 	tempDir := t.TempDir()
@@ -72,6 +74,7 @@ rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 	}
 	t.Logf("✅ Threshold > correctly filters aggregation results")
 }
+
 // TestAggregationThreshold_GreaterThanOrEqual tests aggregation with >= threshold
 func TestAggregationThreshold_GreaterThanOrEqual(t *testing.T) {
 	tempDir := t.TempDir()
@@ -119,6 +122,7 @@ rule decent_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee}
 	}
 	t.Logf("✅ Threshold >= correctly handles equal values")
 }
+
 // TestAggregationThreshold_LessThan tests aggregation with < threshold
 func TestAggregationThreshold_LessThan(t *testing.T) {
 	tempDir := t.TempDir()
@@ -166,6 +170,7 @@ rule low_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 	}
 	t.Logf("✅ Threshold < correctly filters aggregation results")
 }
+
 // TestAggregationThreshold_MultipleConditions tests aggregation with multiple threshold conditions
 func TestAggregationThreshold_MultipleConditions(t *testing.T) {
 	tempDir := t.TempDir()
@@ -231,6 +236,7 @@ rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e
 	}
 	t.Logf("✅ Multiple threshold conditions work correctly")
 }
+
 // TestAggregationThreshold_COUNT tests COUNT aggregation with threshold
 func TestAggregationThreshold_COUNT(t *testing.T) {
 	tempDir := t.TempDir()
@@ -298,6 +304,7 @@ rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.de
 	}
 	t.Logf("✅ COUNT aggregation with threshold works correctly")
 }
+
 // TestAggregationThreshold_NoThreshold tests that aggregation without threshold fires always
 func TestAggregationThreshold_NoThreshold(t *testing.T) {
 	tempDir := t.TempDir()

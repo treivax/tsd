@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+const (
+	// DefaultJoinSelectivity represents the default selectivity estimate for join operations
+	// when no statistical information is available. A value of 0.5 means we assume
+	// that half of the potential join combinations will match the join conditions.
+	// This is a conservative middle-ground estimate used for join optimization.
+	DefaultJoinSelectivity = 0.5
+)
+
 // ============================================================================
 // Cascade Join Rule Creation (3+ variables) and Helper Functions
 // ============================================================================
@@ -110,7 +118,37 @@ func (jrb *JoinRuleBuilder) createCascadeJoinRuleWithBuilder(
 	return jrb.connectChainToNetworkWithAlpha(network, ruleID, chain, variableNames, variableTypes, terminalNode, alphaNodesByVariable)
 }
 
-// buildJoinPatterns creates join patterns for the beta chain
+// buildJoinPatterns creates join patterns for the beta chain.
+//
+// This function constructs a sequence of JoinPattern objects that define how
+// variables should be progressively joined in a cascade. For N variables, it
+// creates N-1 patterns where each pattern adds one new variable to the accumulated set.
+//
+// Algorithm:
+//  1. Pattern 1: Join first two variables (v[0] ⋈ v[1])
+//  2. Pattern i: Join accumulated variables with next variable (v[0..i] ⋈ v[i+1])
+//
+// Example for variables [u, o, p]:
+//
+//	Pattern 1: LeftVars=[u], RightVars=[o], AllVars=[u,o]
+//	Pattern 2: LeftVars=[u,o], RightVars=[p], AllVars=[u,o,p]
+//
+// Parameters:
+//   - variableNames: ordered list of variable names (e.g., ["u", "o", "p"])
+//   - variableTypes: corresponding types for each variable (e.g., ["User", "Order", "Product"])
+//   - condition: join condition that applies to all patterns (will be filtered per pattern if needed)
+//
+// Returns:
+//   - []JoinPattern: list of N-1 patterns defining the cascade join sequence
+//
+// Key properties:
+//   - Each pattern's AllVars incrementally grows: [v0,v1], [v0,v1,v2], [v0,v1,v2,v3], ...
+//   - Each pattern's LeftVars contains all previously joined variables
+//   - Each pattern's RightVars contains exactly one new variable
+//   - VarTypes maps ALL variables to their types (not just those in current pattern)
+//   - Selectivity is set to DefaultJoinSelectivity for optimization purposes
+//
+// Thread-safety: This function is read-only and thread-safe
 func (jrb *JoinRuleBuilder) buildJoinPatterns(
 	variableNames []string,
 	variableTypes []string,
@@ -128,7 +166,7 @@ func (jrb *JoinRuleBuilder) buildJoinPatterns(
 		AllVars:     []string{variableNames[0], variableNames[1]},
 		VarTypes:    varTypes,
 		Condition:   condition,
-		Selectivity: 0.5, // Default selectivity
+		Selectivity: DefaultJoinSelectivity,
 	})
 
 	// Patterns 2+: Each subsequent variable joins with accumulated results
@@ -145,7 +183,7 @@ func (jrb *JoinRuleBuilder) buildJoinPatterns(
 			AllVars:     allVars,
 			VarTypes:    varTypes,
 			Condition:   condition,
-			Selectivity: 0.5, // Default selectivity
+			Selectivity: DefaultJoinSelectivity,
 		})
 	}
 

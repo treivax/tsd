@@ -1,11 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestMultiSourceAggregation_TwoSources tests aggregation over two joined sources
 func TestMultiSourceAggregation_TwoSources(t *testing.T) {
 	tempDir := t.TempDir()
@@ -90,6 +92,7 @@ rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	}
 	t.Logf("✅ Multi-source aggregation with two sources completed with %d activations", activatedCount)
 }
+
 // TestMultiSourceAggregation_ThreeSources tests aggregation over three joined sources
 func TestMultiSourceAggregation_ThreeSources(t *testing.T) {
 	tempDir := t.TempDir()
@@ -165,6 +168,7 @@ rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(
 	}
 	t.Logf("✅ Multi-source aggregation with three sources completed with %d activations", activatedCount)
 }
+
 // TestMultiSourceAggregation_WithThreshold tests multi-source aggregation with thresholds
 func TestMultiSourceAggregation_WithThreshold(t *testing.T) {
 	tempDir := t.TempDir()
@@ -266,6 +270,7 @@ rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	}
 	t.Logf("✅ Multi-source aggregation with thresholds working correctly")
 }
+
 // TestMultiSourceAggregation_DifferentFunctions tests different aggregation functions
 func TestMultiSourceAggregation_DifferentFunctions(t *testing.T) {
 	tempDir := t.TempDir()

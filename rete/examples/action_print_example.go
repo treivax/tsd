@@ -117,8 +117,8 @@ func main() {
 	}
 
 	token2 := &rete.Token{
-		ID:    "token2",
-		Facts: []*rete.Fact{facts[0]},
+		ID:       "token2",
+		Facts:    []*rete.Fact{facts[0]},
 		Bindings: rete.NewBindingChainWith("p", facts[0]),
 	}
 
@@ -181,8 +181,8 @@ func main() {
 		}
 
 		token := &rete.Token{
-			ID:    fmt.Sprintf("token_%d", i+3),
-			Facts: []*rete.Fact{fact},
+			ID:       fmt.Sprintf("token_%d", i+3),
+			Facts:    []*rete.Fact{fact},
 			Bindings: rete.NewBindingChainWith("p", fact),
 		}
 
@@ -212,8 +212,8 @@ func main() {
 	}
 
 	token4 := &rete.Token{
-		ID:    "token_complete",
-		Facts: []*rete.Fact{facts[1]},
+		ID:       "token_complete",
+		Facts:    []*rete.Fact{facts[1]},
 		Bindings: rete.NewBindingChainWith("p", facts[1]),
 	}
 
@@ -243,8 +243,8 @@ func main() {
 	}
 
 	token5 := &rete.Token{
-		ID:    "token5",
-		Facts: []*rete.Fact{facts[2]},
+		ID:       "token5",
+		Facts:    []*rete.Fact{facts[2]},
 		Bindings: rete.NewBindingChainWith("p", facts[2]),
 	}
 

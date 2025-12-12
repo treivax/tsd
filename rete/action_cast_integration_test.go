@@ -2,16 +2,19 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // captureActionHandler is a simple action handler for testing
 type captureActionHandler struct {
 	name         string
 	capturedArgs *[]interface{}
 }
+
 func (c *captureActionHandler) GetName() string {
 	return c.name
 }
@@ -22,6 +25,7 @@ func (c *captureActionHandler) Execute(args []interface{}, ctx *ExecutionContext
 	*c.capturedArgs = args
 	return nil
 }
+
 // TestCastInActions teste l'utilisation des opérateurs de cast dans les actions
 func TestCastInActions(t *testing.T) {
 	t.Parallel()
@@ -209,6 +213,7 @@ func TestCastInActions(t *testing.T) {
 		assert.Equal(t, "20", result, "Cast should convert arithmetic result to string")
 	})
 }
+
 // TestCastErrorHandlingInActions teste la gestion des erreurs de cast dans les actions
 func TestCastErrorHandlingInActions(t *testing.T) {
 	t.Parallel()
@@ -321,6 +326,7 @@ func TestCastErrorHandlingInActions(t *testing.T) {
 		assert.Contains(t, err.Error(), "expression à caster manquante", "Error should mention missing expression")
 	})
 }
+
 // TestCastMultipleArgumentsInAction teste le cast avec plusieurs arguments
 func TestCastMultipleArgumentsInAction(t *testing.T) {
 	t.Parallel()

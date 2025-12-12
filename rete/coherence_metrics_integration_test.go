@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"sync"
 	"testing"
 	"time"
 )
+
 // delayedStorage wraps MemoryStorage with configurable write delay for testing retries
 type delayedStorage struct {
 	*MemoryStorage
@@ -15,6 +17,7 @@ type delayedStorage struct {
 	pendingFacts map[string]*Fact
 	startTimes   map[string]time.Time
 }
+
 // newDelayedStorage creates a storage with delayed writes
 func newDelayedStorage(delay time.Duration) *delayedStorage {
 	return &delayedStorage{
@@ -24,6 +27,7 @@ func newDelayedStorage(delay time.Duration) *delayedStorage {
 		startTimes:    make(map[string]time.Time),
 	}
 }
+
 // AddFact adds a fact immediately to pending, but delays visibility
 func (ds *delayedStorage) AddFact(fact *Fact) error {
 	ds.mu.Lock()
@@ -34,6 +38,7 @@ func (ds *delayedStorage) AddFact(fact *Fact) error {
 	// Immediately call parent to add
 	return ds.MemoryStorage.AddFact(fact)
 }
+
 // GetFact retrieves a fact only after the delay has passed
 func (ds *delayedStorage) GetFact(id string) *Fact {
 	ds.mu.RLock()
@@ -53,6 +58,7 @@ func (ds *delayedStorage) GetFact(id string) *Fact {
 	}
 	return ds.MemoryStorage.GetFact(id)
 }
+
 // Sync implements Storage.Sync with delay awareness
 func (ds *delayedStorage) Sync() error {
 	// Ensure any pending writes are visible
@@ -60,6 +66,7 @@ func (ds *delayedStorage) Sync() error {
 	defer ds.mu.Unlock()
 	return ds.MemoryStorage.Sync()
 }
+
 // TestCoherenceMetrics_Integration teste l'intégration complète du collecteur de métriques
 func TestCoherenceMetrics_Integration(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -114,6 +121,7 @@ func TestCoherenceMetrics_Integration(t *testing.T) {
 	}
 	t.Logf("✅ Métriques collectées avec succès:\n%s", metrics.Summary())
 }
+
 // TestCoherenceMetrics_WithRetries teste les métriques avec des retries
 func TestCoherenceMetrics_WithRetries(t *testing.T) {
 	storage := newDelayedStorage(25 * time.Millisecond)
@@ -149,6 +157,7 @@ func TestCoherenceMetrics_WithRetries(t *testing.T) {
 	t.Logf("✅ Temps d'attente: total=%v, moyen=%v, max=%v",
 		metrics.TotalWaitTime, metrics.AvgWaitTime, metrics.MaxWaitTime)
 }
+
 // TestCoherenceMetrics_MultiplePhases teste l'enregistrement de multiples phases
 func TestCoherenceMetrics_MultiplePhases(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -189,6 +198,7 @@ func TestCoherenceMetrics_MultiplePhases(t *testing.T) {
 	}
 	t.Logf("✅ %d phases enregistrées avec succès", len(metrics.PhaseMetrics))
 }
+
 // TestCoherenceMetrics_PreCommitChecks teste l'enregistrement des vérifications pré-commit
 func TestCoherenceMetrics_PreCommitChecks(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -208,6 +218,7 @@ func TestCoherenceMetrics_PreCommitChecks(t *testing.T) {
 		t.Errorf("PreCommitFailures: attendu 1, obtenu %d", metrics.PreCommitFailures)
 	}
 }
+
 // TestCoherenceMetrics_Rollback teste l'enregistrement d'un rollback
 func TestCoherenceMetrics_Rollback(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -237,6 +248,7 @@ func TestCoherenceMetrics_Rollback(t *testing.T) {
 	t.Logf("✅ Rollback enregistré: %s", metrics.RollbackReason)
 	t.Logf("Rapport de santé:\n%s", healthReport)
 }
+
 // TestCoherenceMetrics_JSONExport teste l'export JSON des métriques
 func TestCoherenceMetrics_JSONExport(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -275,6 +287,7 @@ func TestCoherenceMetrics_JSONExport(t *testing.T) {
 	}
 	t.Logf("✅ JSON exporté avec succès (%d bytes)", len(jsonStr))
 }
+
 // TestCoherenceMetrics_ConcurrentCollection teste la collecte de métriques en concurrence
 func TestCoherenceMetrics_ConcurrentCollection(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -303,6 +316,7 @@ func TestCoherenceMetrics_ConcurrentCollection(t *testing.T) {
 	}
 	t.Logf("✅ Collection concurrente réussie: %d faits", metrics.FactsPersisted)
 }
+
 // TestCoherenceMetrics_HealthThresholds teste les seuils de santé
 func TestCoherenceMetrics_HealthThresholds(t *testing.T) {
 	tests := []struct {
@@ -389,6 +403,7 @@ func TestCoherenceMetrics_HealthThresholds(t *testing.T) {
 		})
 	}
 }
+
 // containsString vérifie si une chaîne contient une sous-chaîne
 func containsString(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsStringHelper(s, substr))

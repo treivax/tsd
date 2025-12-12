@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestArithmeticAlphaExtraction_SingleVariable verifies that arithmetic expressions
 // with a single variable are extracted to AlphaNodes
 func TestArithmeticAlphaExtraction_SingleVariable(t *testing.T) {
@@ -76,6 +78,7 @@ rule expensive : {c: Commande} / c.price * 1.2 > 1000
 	})
 	t.Logf("✅ Arithmetic alpha extraction working correctly")
 }
+
 // TestArithmeticAlphaExtraction_ComplexNested verifies nested arithmetic expressions
 func TestArithmeticAlphaExtraction_ComplexNested(t *testing.T) {
 	tempDir := t.TempDir()
@@ -130,6 +133,7 @@ rule complex_calc : {o: Order} / (o.quantity * o.price - o.discount) / 2 > 50
 	}
 	t.Logf("✅ Complex nested arithmetic extraction working")
 }
+
 // TestArithmeticAlphaExtraction_MultiVariable verifies that multi-variable
 // arithmetic expressions correctly stay in JoinNodes (beta)
 func TestArithmeticAlphaExtraction_MultiVariable(t *testing.T) {
@@ -198,6 +202,7 @@ rule discount_calc : {p: Product, c: Customer, o: Order}
 	}
 	t.Logf("✅ Multi-variable arithmetic correctly in JoinNode")
 }
+
 // TestArithmeticAlphaExtraction_MixedConditions verifies rules with both
 // simple and arithmetic alpha conditions
 func TestArithmeticAlphaExtraction_MixedConditions(t *testing.T) {
@@ -274,6 +279,7 @@ rule valuable_heavy : {i: Item}
 	}
 	t.Logf("✅ Mixed conditions with arithmetic working correctly")
 }
+
 // TestArithmeticAlphaExtraction_EdgeCases tests edge cases and error conditions
 func TestArithmeticAlphaExtraction_EdgeCases(t *testing.T) {
 	tests := []struct {
@@ -360,6 +366,7 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 	}
 	t.Logf("✅ Edge cases handled correctly")
 }
+
 // BenchmarkArithmeticInAlpha benchmarks arithmetic evaluation in AlphaNodes
 func BenchmarkArithmeticInAlpha(b *testing.B) {
 	tempDir := b.TempDir()

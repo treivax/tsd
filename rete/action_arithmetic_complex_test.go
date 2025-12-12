@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
 	"log"
 	"math"
 	"testing"
 )
+
 // TestComplexArithmeticExpressionsWithMultipleLiterals teste les expressions complexes avec plusieurs littéraux
 func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 	tests := []struct {
@@ -298,6 +300,7 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 		})
 	}
 }
+
 // TestComplexExpressionInFactCreation teste une expression complexe dans la création de fait
 func TestComplexExpressionInFactCreation(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -351,10 +354,9 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{objet, boite},
+		ID:       "token1",
+		Facts:    []*Fact{objet, boite},
 		Bindings: NewBindingChain().Add("o", objet).Add("b", boite),
-		},
 	}
 	// Action : créer une vente avec un calcul complexe
 	// prixTotal: o.prix * (1 + 2.3 + 3) + b.prix - 1
@@ -439,6 +441,7 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 	t.Logf("   Formula: o.prix * (1 + 2.3 + 3) + b.prix - 1")
 	t.Logf("   = 100 * 6.3 + 15 - 1 = %.2f", expectedTotal)
 }
+
 // TestComplexExpressionWithModuloAndDecimals teste le modulo avec des décimales
 func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -504,6 +507,7 @@ func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 	// 2.3 % 53 = int(2.3) % int(53) = 2 % 53 = 2
 	t.Logf("✅ Modulo with decimals: 2.3 %% 53 = 2")
 }
+
 // TestRealWorldComplexExpression teste l'exemple complet de la règle
 func TestRealWorldComplexExpression(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -557,10 +561,9 @@ func TestRealWorldComplexExpression(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{objet, boite},
+		ID:       "token1",
+		Facts:    []*Fact{objet, boite},
 		Bindings: NewBindingChain().Add("o", objet).Add("b", boite),
-		},
 	}
 	t.Log("🧮 Test de l'expression complexe du monde réel")
 	t.Log("==============================================")

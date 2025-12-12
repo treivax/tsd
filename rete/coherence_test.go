@@ -2,13 +2,15 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
-	"sync"
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync"
+	"testing"
 )
+
 // TestCoherence_TransactionRollback teste que le rollback fonctionne correctement en cas d'incohérence
 func TestCoherence_TransactionRollback(t *testing.T) {
 	t.Parallel()
@@ -42,6 +44,7 @@ func TestCoherence_TransactionRollback(t *testing.T) {
 	assert.Nil(t, env.Storage.GetFact("TestType_F1"), "Le fait F1 doit être supprimé après rollback")
 	assert.Nil(t, env.Storage.GetFact("TestType_F2"), "Le fait F2 doit être supprimé après rollback")
 }
+
 // TestCoherence_StorageSync teste que Storage.Sync() fonctionne sans erreur
 func TestCoherence_StorageSync(t *testing.T) {
 	t.Parallel()
@@ -64,6 +67,7 @@ func TestCoherence_StorageSync(t *testing.T) {
 	assert.Equal(t, "F1", retrievedFact.ID)
 	assert.Equal(t, "TestType", retrievedFact.Type)
 }
+
 // TestCoherence_InternalIDCorrectness vérifie que les IDs internes sont correctement utilisés
 func TestCoherence_InternalIDCorrectness(t *testing.T) {
 	t.Parallel()
@@ -88,6 +92,7 @@ func TestCoherence_InternalIDCorrectness(t *testing.T) {
 	notFound := env.Storage.GetFact("TEST123")
 	assert.Nil(t, notFound, "Le fait ne doit PAS être trouvable avec l'ID simple")
 }
+
 // TestCoherence_FactSubmissionConsistency vérifie que SubmitFactsFromGrammar valide la cohérence
 func TestCoherence_FactSubmissionConsistency(t *testing.T) {
 	t.Parallel()
@@ -129,6 +134,7 @@ func TestCoherence_FactSubmissionConsistency(t *testing.T) {
 	assert.NotNil(t, env.Storage.GetFact("TestType_F2"))
 	assert.NotNil(t, env.Storage.GetFact("TestType_F3"))
 }
+
 // TestCoherence_ConcurrentFactAddition teste l'ajout concurrent de faits
 // Each goroutine uses its own isolated environment for thread safety
 func TestCoherence_ConcurrentFactAddition(t *testing.T) {
@@ -184,6 +190,7 @@ func TestCoherence_ConcurrentFactAddition(t *testing.T) {
 	expectedTotal := numGoroutines * factsPerGoroutine
 	assert.Equal(t, expectedTotal, totalFacts, "Le nombre total de faits doit être %d", expectedTotal)
 }
+
 // TestCoherence_SyncAfterMultipleAdditions teste la synchronisation après plusieurs ajouts
 func TestCoherence_SyncAfterMultipleAdditions(t *testing.T) {
 	t.Parallel()
@@ -213,6 +220,7 @@ func TestCoherence_SyncAfterMultipleAdditions(t *testing.T) {
 	assert.NotNil(t, fact50)
 	assert.NotNil(t, fact99)
 }
+
 // TestCoherence_ReadAfterWriteGuarantee teste la garantie read-after-write
 func TestCoherence_ReadAfterWriteGuarantee(t *testing.T) {
 	t.Parallel()

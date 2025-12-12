@@ -32,6 +32,63 @@ Programme TSD → AST → Réseau RETE → Exécution
 | **AccumulateNode** | Agrégations (count, sum, avg, etc.) |
 | **TerminalNode** | Déclenche les actions |
 
+### Système de Bindings Immuable ⭐
+
+**Nouvelle architecture (Décembre 2024)** : Remplacement du système de bindings mutable par une architecture immuable garantissant qu'aucune variable n'est jamais perdue lors des jointures en cascade.
+
+#### BindingChain - Chaîne Immuable
+
+Structure de données immuable basée sur le pattern "Cons List" pour garantir la préservation des bindings.
+
+```go
+// Créer une chaîne de bindings
+chain := NewBindingChain()
+chain = chain.Add("user", userFact)
+chain = chain.Add("order", orderFact)
+chain = chain.Add("product", productFact)
+
+// Récupérer un binding
+fact := chain.Get("order")
+```
+
+**Caractéristiques** :
+- ✅ **Immutabilité totale** : Impossible de perdre un binding une fois créé
+- ✅ **Thread-safe** : Pas de synchronisation nécessaire
+- ✅ **Structural sharing** : Efficacité mémoire
+- ✅ **Support N variables** : Testé jusqu'à N=10 variables
+
+#### Jointures Multi-Variables
+
+Les cascades de jointures préservent automatiquement tous les bindings :
+
+```
+Variables: [u: User, o: Order, p: Product]
+
+TypeNode(User) ──→ JoinNode1 ──→ JoinNode2 ──→ TerminalNode
+TypeNode(Order) ─────┘               ↑
+TypeNode(Product) ───────────────────┘
+
+Token à chaque étape:
+- JoinNode1 output: Bindings = [u, o]
+- JoinNode2 output: Bindings = [u, o, p]  ✅ Tous présents
+```
+
+**Performance** : Overhead <10% pour jointures 3+ variables
+
+**Documentation complète** : Voir [BINDINGS_DESIGN.md](../docs/architecture/BINDINGS_DESIGN.md)
+
+### Types de Nœuds
+
+| Nœud | Description |
+|------|-------------|
+| **RootNode** | Point d'entrée pour tous les faits |
+| **TypeNode** | Filtre et valide les faits par type |
+| **AlphaNode** | Évalue les conditions sur faits individuels |
+| **BetaNode** | Gère les jointures multi-faits |
+| **JoinNode** | Effectue les jointures conditionnelles |
+| **AccumulateNode** | Agrégations (count, sum, avg, etc.) |
+| **TerminalNode** | Déclenche les actions |
+
 ### Optimisations
 
 - ✅ **Alpha Chains** : Partage des nœuds alpha (40-60% réduction)

@@ -1,11 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestBackwardCompatibility_SimpleRules vérifie que les règles simples
 // fonctionnent toujours comme avant l'introduction des AlphaChains
 func TestBackwardCompatibility_SimpleRules(t *testing.T) {
@@ -63,6 +65,7 @@ rule young : {p: Person} / p.age < 18 ==> print("Young person")
 	}
 	t.Logf("✅ Règles simples: backward compatible")
 }
+
 // TestBackwardCompatibility_ExistingBehavior vérifie que le comportement
 // existant du réseau RETE n'a pas changé
 func TestBackwardCompatibility_ExistingBehavior(t *testing.T) {
@@ -141,6 +144,7 @@ rule vip_customer : {c: Customer} / c.vip == 1 ==> print("VIP customer")
 	}
 	t.Logf("✅ Comportement existant: backward compatible")
 }
+
 // TestNoRegression_AllPreviousTests exécute un ensemble de tests
 // qui valident qu'il n'y a pas de régression
 func TestNoRegression_AllPreviousTests(t *testing.T) {
@@ -254,6 +258,7 @@ rule active_account : {a: Account} / a.active == 1 ==> print("Active")`,
 		})
 	}
 }
+
 // TestBackwardCompatibility_TypeNodeSharing vérifie que le partage
 // des TypeNodes fonctionne toujours correctement
 func TestBackwardCompatibility_TypeNodeSharing(t *testing.T) {
@@ -315,6 +320,7 @@ rule r4 : {p: Person} / p.name == 'Alice' ==> print("R4")
 	}
 	t.Logf("✅ TypeNode sharing: backward compatible")
 }
+
 // TestBackwardCompatibility_LifecycleManagement vérifie que la gestion
 // du lifecycle des nœuds fonctionne toujours correctement
 func TestBackwardCompatibility_LifecycleManagement(t *testing.T) {
@@ -353,6 +359,7 @@ func TestBackwardCompatibility_LifecycleManagement(t *testing.T) {
 	}
 	t.Logf("✅ Lifecycle management: backward compatible")
 }
+
 // TestBackwardCompatibility_RuleRemoval vérifie que la suppression
 // de règles fonctionne toujours correctement
 func TestBackwardCompatibility_RuleRemoval(t *testing.T) {
@@ -406,6 +413,7 @@ rule teenager : {p: Person} / p.age >= 13 AND p.age < 18 ==> print("Teen")
 	}
 	t.Logf("✅ Rule removal: backward compatible")
 }
+
 // TestBackwardCompatibility_PerformanceCharacteristics vérifie que
 // les caractéristiques de performance sont maintenues ou améliorées
 func TestBackwardCompatibility_PerformanceCharacteristics(t *testing.T) {

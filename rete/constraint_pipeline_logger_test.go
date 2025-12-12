@@ -2,14 +2,16 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
 	"testing"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
+
 func TestConstraintPipeline_SilentLogging(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger(LogLevelSilent, &buf)
@@ -247,6 +249,7 @@ rule AllEvents : {e: Event} / e.id > 0 ==> print("Event found")
 	// Should contain the context in logs
 	assert.Contains(t, output, "[TestContext]", "Logs should include context")
 }
+
 // Helper function to create temporary constraint file for logger tests
 func createTempLoggerTestFile(t *testing.T, content string) string {
 	t.Helper()

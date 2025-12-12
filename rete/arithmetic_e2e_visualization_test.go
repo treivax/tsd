@@ -2,6 +2,7 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"testing"
 )
+
 // TestArithmeticE2E_NetworkVisualization creates a comprehensive visualization
 // of the RETE network structure for arithmetic alpha extraction, including
 // analysis of node sharing between rules
@@ -63,6 +65,7 @@ rule expensive_bulk : {p: Product, o: Order} /
 	// Test actual behavior with facts
 	testNetworkBehavior(t, network)
 }
+
 // printNetworkVisualization prints a visual representation of the network
 func printNetworkVisualization(t *testing.T, network *ReteNetwork) {
 	t.Log("\n" + strings.Repeat("=", 80))
@@ -88,6 +91,7 @@ func printNetworkVisualization(t *testing.T, network *ReteNetwork) {
 		t.Log("")
 	}
 }
+
 // walkAndPrintNode recursively walks and prints the node tree
 func walkAndPrintNode(t *testing.T, node Node, depth int, childIndex int, totalChildren int) {
 	indent := strings.Repeat("   ", depth)
@@ -102,6 +106,7 @@ func walkAndPrintNode(t *testing.T, node Node, depth int, childIndex int, totalC
 		walkAndPrintNode(t, child, depth+1, i+1, len(children))
 	}
 }
+
 // getNodeInfo returns detailed information about a node
 func getNodeInfo(node Node) string {
 	switch n := node.(type) {
@@ -131,6 +136,7 @@ func getNodeInfo(node Node) string {
 		return fmt.Sprintf("❓ Unknown: %s", node.GetID())
 	}
 }
+
 // analyzeNodeSharing analyzes which nodes are shared between rules
 func analyzeNodeSharing(t *testing.T, network *ReteNetwork) {
 	t.Log("\n" + strings.Repeat("=", 80))
@@ -212,6 +218,7 @@ func analyzeNodeSharing(t *testing.T, network *ReteNetwork) {
 		t.Log("   ✅ No duplicate conditions found (all unique)")
 	}
 }
+
 // extractRulesFromChildren extracts rule names from terminal nodes in children
 func extractRulesFromChildren(children []Node) []string {
 	rules := make(map[string]bool)
@@ -235,6 +242,7 @@ func extractRulesFromChildren(children []Node) []string {
 	}
 	return result
 }
+
 // groupNodesByCondition groups nodes that have identical conditions
 func groupNodesByCondition(network *ReteNetwork) map[string][]string {
 	groups := make(map[string][]string)
@@ -246,6 +254,7 @@ func groupNodesByCondition(network *ReteNetwork) map[string][]string {
 	}
 	return groups
 }
+
 // printNodeConnections prints detailed connection information
 func printNodeConnections(t *testing.T, network *ReteNetwork) {
 	t.Log("\n" + strings.Repeat("=", 80))
@@ -288,6 +297,7 @@ func printNodeConnections(t *testing.T, network *ReteNetwork) {
 		t.Logf("      Activations: %d", len(terminal.GetMemory().Tokens))
 	}
 }
+
 // testNetworkBehavior tests the actual behavior with sample facts
 func testNetworkBehavior(t *testing.T, network *ReteNetwork) {
 	t.Log("\n" + strings.Repeat("=", 80))
@@ -396,6 +406,7 @@ func testNetworkBehavior(t *testing.T, network *ReteNetwork) {
 		t.Log("\n🎉 ALL VERIFICATIONS PASSED!")
 	}
 }
+
 // TestArithmeticE2E_SharingOpportunities identifies potential sharing opportunities
 func TestArithmeticE2E_SharingOpportunities(t *testing.T) {
 	tempDir := t.TempDir()

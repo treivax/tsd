@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 func TestNewBuilderUtils(t *testing.T) {
 	t.Parallel()
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestConditionHash vérifie que le hashing de conditions est cohérent
 func TestConditionHash(t *testing.T) {
 	tests := []struct {
@@ -114,6 +116,7 @@ func TestConditionHash(t *testing.T) {
 		})
 	}
 }
+
 // TestAlphaSharingRegistry_GetOrCreate vérifie la création et le partage d'AlphaNodes
 func TestAlphaSharingRegistry_GetOrCreate(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -174,6 +177,7 @@ func TestAlphaSharingRegistry_GetOrCreate(t *testing.T) {
 		t.Error("Hash 3 devrait être différent de hash 1")
 	}
 }
+
 // TestAlphaSharingRegistry_RemoveAlphaNode vérifie la suppression d'AlphaNodes
 func TestAlphaSharingRegistry_RemoveAlphaNode(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -212,6 +216,7 @@ func TestAlphaSharingRegistry_RemoveAlphaNode(t *testing.T) {
 		t.Error("La suppression d'un nœud inexistant devrait retourner une erreur")
 	}
 }
+
 // TestAlphaSharingRegistry_Stats vérifie les statistiques
 func TestAlphaSharingRegistry_Stats(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -246,6 +251,7 @@ func TestAlphaSharingRegistry_Stats(t *testing.T) {
 		t.Errorf("Ratio de partage moyen devrait être 1.5, got %v", avgSharing)
 	}
 }
+
 // TestAlphaSharingRegistry_ListNodes vérifie le listage des nœuds
 func TestAlphaSharingRegistry_ListNodes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -279,6 +285,7 @@ func TestAlphaSharingRegistry_ListNodes(t *testing.T) {
 		t.Error("Les deux hash devraient être dans la liste")
 	}
 }
+
 // TestAlphaSharingRegistry_GetDetails vérifie les détails d'un nœud
 func TestAlphaSharingRegistry_GetDetails(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -318,6 +325,7 @@ func TestAlphaSharingRegistry_GetDetails(t *testing.T) {
 		t.Error("Les détails d'un nœud inexistant devraient être nil")
 	}
 }
+
 // TestAlphaSharingRegistry_Reset vérifie la réinitialisation
 func TestAlphaSharingRegistry_Reset(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -344,6 +352,7 @@ func TestAlphaSharingRegistry_Reset(t *testing.T) {
 		t.Error("La liste devrait être vide après reset")
 	}
 }
+
 // TestAlphaSharingRegistry_ConcurrentAccess vérifie la sécurité des accès concurrents
 func TestAlphaSharingRegistry_ConcurrentAccess(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -378,6 +387,7 @@ func TestAlphaSharingRegistry_ConcurrentAccess(t *testing.T) {
 		t.Errorf("Devrait avoir exactement 1 nœud partagé, got %v", stats["total_shared_alpha_nodes"])
 	}
 }
+
 // TestNormalizeCondition vérifie la normalisation des conditions
 func TestNormalizeCondition(t *testing.T) {
 	tests := []struct {

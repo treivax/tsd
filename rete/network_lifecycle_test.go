@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestNetworkLifecycle_RemoveSimpleRule teste la suppression d'une règle simple
 func TestNetworkLifecycle_RemoveSimpleRule(t *testing.T) {
 	tempDir := t.TempDir()
@@ -57,6 +59,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 	stats = network.GetNetworkStats()
 	t.Logf("Stats après suppression: %+v", stats)
 }
+
 // TestNetworkLifecycle_RemoveAllRulesForType teste la suppression de toutes les règles d'un type
 func TestNetworkLifecycle_RemoveAllRulesForType(t *testing.T) {
 	tempDir := t.TempDir()
@@ -96,6 +99,7 @@ rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
 	// Note: Le TypeNode reste car il est créé au niveau du type, pas de la règle
 	// C'est un comportement intentionnel pour permettre l'ajout dynamique de règles
 }
+
 // TestNetworkLifecycle_SharedNodeNotRemoved teste qu'un nœud partagé n'est pas supprimé
 func TestNetworkLifecycle_SharedNodeNotRemoved(t *testing.T) {
 	tempDir := t.TempDir()
@@ -138,6 +142,7 @@ rule r2 : {p: Person} / p.age < 65 ==> young(p.id)
 		t.Error("Le TypeNode Person ne devrait pas être supprimé (partagé)")
 	}
 }
+
 // TestNetworkLifecycle_GetRuleInfo teste la récupération d'informations sur une règle
 func TestNetworkLifecycle_GetRuleInfo(t *testing.T) {
 	tempDir := t.TempDir()
@@ -171,6 +176,7 @@ rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 		t.Errorf("Attendu au moins 2 nœuds pour la règle, obtenu %d", info.NodeCount)
 	}
 }
+
 // TestNetworkLifecycle_GetNetworkStats teste les statistiques du réseau
 func TestNetworkLifecycle_GetNetworkStats(t *testing.T) {
 	tempDir := t.TempDir()
@@ -212,6 +218,7 @@ rule r2 : {c: Company} / c.revenue > 1000000 ==> big_company(c.id)
 		t.Logf("Total de nœuds trackés par le lifecycle: %v", lifecycle)
 	}
 }
+
 // TestNetworkLifecycle_RemoveNonExistentRule teste la suppression d'une règle inexistante
 func TestNetworkLifecycle_RemoveNonExistentRule(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -223,6 +230,7 @@ func TestNetworkLifecycle_RemoveNonExistentRule(t *testing.T) {
 	}
 	t.Logf("Erreur attendue: %v", err)
 }
+
 // TestNetworkLifecycle_ResetClearsLifecycle teste que Reset nettoie le lifecycle
 func TestNetworkLifecycle_ResetClearsLifecycle(t *testing.T) {
 	tempDir := t.TempDir()
@@ -258,6 +266,7 @@ rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 		}
 	}
 }
+
 // TestNetworkLifecycle_MultipleRulesOnSameType teste la suppression partielle de règles
 func TestNetworkLifecycle_MultipleRulesOnSameType(t *testing.T) {
 	tempDir := t.TempDir()

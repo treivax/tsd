@@ -502,20 +502,110 @@ Fact → RootNode
 
 ### Token et Working Memory
 
+#### Structure Token (Nouvelle Architecture - Décembre 2024)
+
 ```go
 type Token struct {
-    ID        string
-    Facts     []map[string]interface{}
-    Variables map[string]interface{}
-    Parent    *Token
+    ID           string
+    Facts        []*Fact
+    Bindings     *BindingChain    // ✨ Chaîne immuable de bindings
+    NodeID       string
+    IsJoinResult bool
+    Metadata     TokenMetadata     // Traçabilité
 }
 
-type WorkingMemory struct {
-    Facts     map[string]map[string]interface{}  // type → facts
-    Tokens    map[string][]*Token                // node_id → tokens
-    mutex     sync.RWMutex
+type TokenMetadata struct {
+    CreatedAt    string
+    CreatedBy    string
+    JoinLevel    int              // Niveau de jointure (0=fait initial, 1+=jointures)
+    ParentTokens []string         // IDs des tokens parents
 }
 ```
+
+**Changement majeur** : `Bindings` utilise maintenant `*BindingChain` au lieu de `map[string]*Fact` pour garantir l'immutabilité et éviter la perte de bindings dans les cascades de jointures.
+
+#### Système de Bindings Immuable
+
+##### Architecture
+
+Le système de bindings utilise une structure de données immuable basée sur des chaînes (BindingChain) pour garantir qu'aucun binding ne peut être perdu lors de la propagation dans le réseau RETE.
+
+##### BindingChain - Chaîne Immuable
+
+Structure de données immuable représentant une chaîne de bindings variable → fact.
+
+```go
+type BindingChain struct {
+    Variable string          // Nom de la variable
+    Fact     *Fact          // Fait lié
+    Parent   *BindingChain  // Chaîne parente (nil si vide)
+}
+```
+
+**Caractéristiques** :
+- **Immutabilité** : Une fois créée, une BindingChain ne change jamais
+- **Structural Sharing** : Les chaînes partagent leur structure parente
+- **Composition** : `Add()` retourne une nouvelle chaîne qui pointe vers l'ancienne
+
+**Complexité** :
+- `Add(v, f)` : O(1)
+- `Get(v)` : O(n) où n = nombre de bindings
+- `Merge(other)` : O(m) où m = taille de other
+
+**Exemple d'utilisation** :
+```go
+// Créer une chaîne
+chain := NewBindingChain()
+chain = chain.Add("u", userFact)        // [u]
+chain = chain.Add("order", orderFact)   // [u, order]
+chain = chain.Add("task", taskFact)     // [u, order, task]
+
+// Récupérer un binding
+fact := chain.Get("order")  // retourne orderFact
+
+// Fusionner deux chaînes
+merged := chain1.Merge(chain2)
+```
+
+##### Jointures Multi-Variables
+
+Les cascades de jointures préservent tous les bindings grâce à l'immutabilité :
+
+```
+Variables: [u: User, o: Order, p: Product]
+
+JoinNode1 [u, o]  ──→  JoinNode2 [u, o, p]  ──→  TerminalNode
+
+Token à chaque étape :
+- Après JoinNode1 : Bindings = chain(u → o)
+- Après JoinNode2 : Bindings = chain(u → o → p)
+- Au TerminalNode : TOUS les bindings disponibles ✅
+```
+
+**Configuration des JoinNodes** :
+- `LeftVariables` : Variables provenant du côté gauche
+- `RightVariables` : Nouvelle(s) variable(s) à joindre
+- `AllVariables` : TOUTES les variables (cumulées) ← **CRITIQUE**
+
+**Garanties** :
+- ✅ Aucun binding perdu : L'immutabilité garantit la préservation
+- ✅ Thread-safe : Les structures immuables sont thread-safe par nature
+- ✅ Traçable : Métadonnées permettent de tracer la provenance
+- ✅ Scalable : Support de N variables (N ≥ 2, testé jusqu'à N=10)
+
+**Documentation complète** : Voir `docs/architecture/BINDINGS_DESIGN.md`
+
+#### Working Memory
+
+```go
+type WorkingMemory struct {
+    NodeID string
+    Facts  map[string]*Fact  // internalID → fact
+    Tokens map[string]*Token // tokenID → token
+}
+```
+
+**Identifiants internes** : Les faits utilisent un identifiant composite `Type_ID` pour garantir l'unicité par type.
 
 ---
 

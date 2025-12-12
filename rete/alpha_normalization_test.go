@@ -1,9 +1,11 @@
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation tests the []constraint.LogicalOperation path
 func TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation(t *testing.T) {
 	tests := []struct {
@@ -156,6 +158,7 @@ func TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation(t *testing.T
 		})
 	}
 }
+
 // TestNormalizeORExpression_Coverage tests OR expression normalization
 func TestNormalizeORExpression_Coverage(t *testing.T) {
 	tests := []struct {
@@ -265,6 +268,7 @@ func TestNormalizeORExpression_Coverage(t *testing.T) {
 		})
 	}
 }
+
 // TestCanonicalMap_SpecialTypes tests additional special type handling in canonicalMap
 func TestCanonicalMap_SpecialTypes(t *testing.T) {
 	tests := []struct {
@@ -348,6 +352,7 @@ func TestCanonicalMap_SpecialTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestCanonicalValue_AdditionalTypes tests additional type handling in canonicalValue
 func TestCanonicalValue_AdditionalTypes(t *testing.T) {
 	tests := []struct {
@@ -435,6 +440,7 @@ func TestCanonicalValue_AdditionalTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestAnalyzeExpression_Coverage tests expression type analysis
 func TestAnalyzeExpression_Coverage(t *testing.T) {
 	tests := []struct {

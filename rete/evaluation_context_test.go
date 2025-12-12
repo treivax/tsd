@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"sync"
 	"testing"
 )
+
 // TestEvaluationContext_NewContext tests context creation
 func TestEvaluationContext_NewContext(t *testing.T) {
 	fact := &Fact{
@@ -39,6 +41,7 @@ func TestEvaluationContext_NewContext(t *testing.T) {
 		t.Error("EvaluationPath should be empty initially")
 	}
 }
+
 // TestEvaluationContext_SetGet tests basic set/get operations
 func TestEvaluationContext_SetGet(t *testing.T) {
 	fact := &Fact{
@@ -74,6 +77,7 @@ func TestEvaluationContext_SetGet(t *testing.T) {
 		t.Error("nonexistent value should be nil")
 	}
 }
+
 // TestEvaluationContext_HasIntermediateResult tests existence checks
 func TestEvaluationContext_HasIntermediateResult(t *testing.T) {
 	fact := &Fact{
@@ -96,6 +100,7 @@ func TestEvaluationContext_HasIntermediateResult(t *testing.T) {
 		t.Error("temp_2 should not exist")
 	}
 }
+
 // TestEvaluationContext_EvaluationPath tests path tracking
 func TestEvaluationContext_EvaluationPath(t *testing.T) {
 	fact := &Fact{
@@ -125,6 +130,7 @@ func TestEvaluationContext_EvaluationPath(t *testing.T) {
 		t.Errorf("Expected path string %q, got %q", expected, pathString)
 	}
 }
+
 // TestEvaluationContext_Clone tests deep copying
 func TestEvaluationContext_Clone(t *testing.T) {
 	fact := &Fact{
@@ -175,6 +181,7 @@ func TestEvaluationContext_Clone(t *testing.T) {
 		t.Error("Original should have temp_4")
 	}
 }
+
 // TestEvaluationContext_Metadata tests metadata operations
 func TestEvaluationContext_Metadata(t *testing.T) {
 	fact := &Fact{
@@ -209,6 +216,7 @@ func TestEvaluationContext_Metadata(t *testing.T) {
 		t.Error("Non-existent metadata value should be nil")
 	}
 }
+
 // TestEvaluationContext_Reset tests context reset
 func TestEvaluationContext_Reset(t *testing.T) {
 	fact := &Fact{
@@ -244,6 +252,7 @@ func TestEvaluationContext_Reset(t *testing.T) {
 		t.Error("Metadata should not be cleared by reset")
 	}
 }
+
 // TestEvaluationContext_Size tests size reporting
 func TestEvaluationContext_Size(t *testing.T) {
 	fact := &Fact{
@@ -269,6 +278,7 @@ func TestEvaluationContext_Size(t *testing.T) {
 		t.Errorf("Size should still be 2, got %d", ctx.Size())
 	}
 }
+
 // TestEvaluationContext_GetAllResults tests getting all results
 func TestEvaluationContext_GetAllResults(t *testing.T) {
 	fact := &Fact{
@@ -299,6 +309,7 @@ func TestEvaluationContext_GetAllResults(t *testing.T) {
 		t.Error("Context should not be affected by modifications to returned map")
 	}
 }
+
 // TestEvaluationContext_String tests string representation
 func TestEvaluationContext_String(t *testing.T) {
 	fact := &Fact{
@@ -317,6 +328,7 @@ func TestEvaluationContext_String(t *testing.T) {
 	// Basic validation - just check it doesn't panic
 	t.Logf("Context string: %s", str)
 }
+
 // TestEvaluationContext_EmptyPath tests empty evaluation path
 func TestEvaluationContext_EmptyPath(t *testing.T) {
 	fact := &Fact{
@@ -331,6 +343,7 @@ func TestEvaluationContext_EmptyPath(t *testing.T) {
 		t.Errorf("Expected %q for empty path, got %q", expected, pathString)
 	}
 }
+
 // TestEvaluationContext_Concurrent tests thread-safety
 func TestEvaluationContext_Concurrent(t *testing.T) {
 	fact := &Fact{
@@ -394,6 +407,7 @@ func TestEvaluationContext_Concurrent(t *testing.T) {
 	// If we get here without panicking, thread-safety is working
 	t.Log("Concurrent operations completed successfully")
 }
+
 // TestEvaluationContext_MultipleTypes tests storing different value types
 func TestEvaluationContext_MultipleTypes(t *testing.T) {
 	fact := &Fact{
@@ -433,6 +447,7 @@ func TestEvaluationContext_MultipleTypes(t *testing.T) {
 		t.Errorf("Expected nil, got %v", nilVal)
 	}
 }
+
 // TestEvaluationContext_OverwriteValue tests overwriting existing values
 func TestEvaluationContext_OverwriteValue(t *testing.T) {
 	fact := &Fact{
@@ -458,6 +473,7 @@ func TestEvaluationContext_OverwriteValue(t *testing.T) {
 		t.Errorf("Expected 2 entries in path, got %d", len(ctx.EvaluationPath))
 	}
 }
+
 // TestEvaluationContext_NilFact tests context with nil fact
 func TestEvaluationContext_NilFact(t *testing.T) {
 	ctx := NewEvaluationContext(nil)
@@ -480,6 +496,7 @@ func TestEvaluationContext_NilFact(t *testing.T) {
 	}
 	t.Logf("String with nil fact: %s", str)
 }
+
 // BenchmarkEvaluationContext_SetGet benchmarks set/get operations
 func BenchmarkEvaluationContext_SetGet(b *testing.B) {
 	fact := &Fact{
@@ -495,6 +512,7 @@ func BenchmarkEvaluationContext_SetGet(b *testing.B) {
 		ctx.GetIntermediateResult(key)
 	}
 }
+
 // BenchmarkEvaluationContext_Clone benchmarks cloning
 func BenchmarkEvaluationContext_Clone(b *testing.B) {
 	fact := &Fact{
@@ -512,6 +530,7 @@ func BenchmarkEvaluationContext_Clone(b *testing.B) {
 		_ = ctx.Clone()
 	}
 }
+
 // BenchmarkEvaluationContext_ConcurrentAccess benchmarks concurrent access
 func BenchmarkEvaluationContext_ConcurrentAccess(b *testing.B) {
 	fact := &Fact{

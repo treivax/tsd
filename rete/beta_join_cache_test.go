@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"testing"
 	"time"
 )
+
 // TestNewBetaJoinCache tests cache creation
 func TestNewBetaJoinCache(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -21,6 +23,7 @@ func TestNewBetaJoinCache(t *testing.T) {
 		t.Error("Expected config to match")
 	}
 }
+
 // TestNewBetaJoinCache_NilConfig tests creation with nil config
 func TestNewBetaJoinCache_NilConfig(t *testing.T) {
 	cache := NewBetaJoinCache(nil)
@@ -31,6 +34,7 @@ func TestNewBetaJoinCache_NilConfig(t *testing.T) {
 		t.Error("Expected default config to be set")
 	}
 }
+
 // TestGetSetJoinResult tests basic cache get/set operations
 func TestGetSetJoinResult(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -57,9 +61,9 @@ func TestGetSetJoinResult(t *testing.T) {
 	}
 	// Set a result
 	expectedResult := &JoinResult{
-		Matched:   true,
-		Token:     leftToken,
-		JoinType:  "binary",
+		Matched:  true,
+		Token:    leftToken,
+		JoinType: "binary",
 	}
 	cache.SetJoinResult(leftToken, rightFact, joinNode, expectedResult)
 	// Now should be in cache
@@ -77,6 +81,7 @@ func TestGetSetJoinResult(t *testing.T) {
 		t.Errorf("Expected JoinType 'binary', got '%s'", result.JoinType)
 	}
 }
+
 // TestGetSetJoinResult_Disabled tests cache when disabled
 func TestGetSetJoinResult_Disabled(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -93,6 +98,7 @@ func TestGetSetJoinResult_Disabled(t *testing.T) {
 		t.Error("Expected no cache hit when cache is disabled")
 	}
 }
+
 // TestCacheHitMiss tests hit/miss tracking
 func TestCacheHitMiss(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -124,6 +130,7 @@ func TestCacheHitMiss(t *testing.T) {
 		t.Errorf("Expected 1 miss, got %d", stats["misses"])
 	}
 }
+
 // TestBetaJoinCache_GetHitRate tests hit rate calculation
 func TestBetaJoinCache_GetHitRate(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -161,6 +168,7 @@ func TestBetaJoinCache_GetHitRate(t *testing.T) {
 		t.Errorf("Expected hit rate ~%.2f, got %.2f", expectedRate, hitRate)
 	}
 }
+
 // TestCacheEviction tests LRU eviction behavior
 func TestCacheEviction(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -195,6 +203,7 @@ func TestCacheEviction(t *testing.T) {
 		t.Error("Expected third entry to be in cache")
 	}
 }
+
 // TestCacheTTL tests TTL expiration
 func TestCacheTTL(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -220,6 +229,7 @@ func TestCacheTTL(t *testing.T) {
 		t.Error("Expected cache miss after TTL expiration")
 	}
 }
+
 // TestInvalidateForFact tests fact invalidation
 func TestInvalidateForFact(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -247,6 +257,7 @@ func TestInvalidateForFact(t *testing.T) {
 		t.Error("Expected cache miss after invalidation")
 	}
 }
+
 // TestInvalidateForToken tests token invalidation
 func TestInvalidateForToken(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -274,6 +285,7 @@ func TestInvalidateForToken(t *testing.T) {
 		t.Error("Expected cache miss after invalidation")
 	}
 }
+
 // TestBetaJoinCache_Clear tests cache clearing
 func TestBetaJoinCache_Clear(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -308,6 +320,7 @@ func TestBetaJoinCache_Clear(t *testing.T) {
 		t.Error("Expected cache miss after clear")
 	}
 }
+
 // TestGetStats tests statistics retrieval
 func TestGetStats(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -330,6 +343,7 @@ func TestGetStats(t *testing.T) {
 		t.Errorf("Expected initial size 0, got %d", stats["size"])
 	}
 }
+
 // TestGetStats_Disabled tests stats when cache is disabled
 func TestGetStats_Disabled(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -340,6 +354,7 @@ func TestGetStats_Disabled(t *testing.T) {
 		t.Error("Expected enabled=false")
 	}
 }
+
 // TestGetSize tests size retrieval
 func TestGetSize(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -362,6 +377,7 @@ func TestGetSize(t *testing.T) {
 		t.Errorf("Expected size 3, got %d", cache.GetSize())
 	}
 }
+
 // TestCleanExpired tests cleaning of expired entries
 func TestCleanExpired(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -391,6 +407,7 @@ func TestCleanExpired(t *testing.T) {
 		t.Errorf("Expected size < 3 after cleaning, got %d", size)
 	}
 }
+
 // TestResetStats tests statistics reset
 func TestResetStats(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -420,6 +437,7 @@ func TestResetStats(t *testing.T) {
 		t.Errorf("Expected 0 misses after reset, got %d", stats["misses"])
 	}
 }
+
 // TestDifferentJoinNodes tests caching with different join nodes
 func TestDifferentJoinNodes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -447,6 +465,7 @@ func TestDifferentJoinNodes(t *testing.T) {
 		t.Error("Expected to retrieve correct result for joinNode2")
 	}
 }
+
 // TestBetaJoinCache_ConcurrentAccess tests thread-safety
 func TestBetaJoinCache_ConcurrentAccess(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -496,6 +515,7 @@ func TestBetaJoinCache_ConcurrentAccess(t *testing.T) {
 		t.Error("Cache should still be enabled after concurrent access")
 	}
 }
+
 // BenchmarkCacheGetHit benchmarks cache get with hit
 func BenchmarkCacheGetHit(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -513,6 +533,7 @@ func BenchmarkCacheGetHit(b *testing.B) {
 		cache.GetJoinResult(leftToken, rightFact, joinNode)
 	}
 }
+
 // BenchmarkCacheGetMiss benchmarks cache get with miss
 func BenchmarkCacheGetMiss(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -528,6 +549,7 @@ func BenchmarkCacheGetMiss(b *testing.B) {
 		cache.GetJoinResult(token, fact, joinNode)
 	}
 }
+
 // BenchmarkCacheSet benchmarks cache set
 func BenchmarkCacheSet(b *testing.B) {
 	storage := NewMemoryStorage()

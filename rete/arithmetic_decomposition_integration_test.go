@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestArithmeticDecomposition_IntegrationSimple tests decomposition with context evaluation
 func TestArithmeticDecomposition_IntegrationSimple(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -156,6 +158,7 @@ func TestArithmeticDecomposition_IntegrationSimple(t *testing.T) {
 		})
 	}
 }
+
 // TestArithmeticDecomposition_ActivateWithContext tests ActivateWithContext on decomposed chain
 func TestArithmeticDecomposition_ActivateWithContext(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -221,6 +224,7 @@ func TestArithmeticDecomposition_ActivateWithContext(t *testing.T) {
 	}
 	t.Log("✅ ActivateWithContext successfully propagated intermediate results")
 }
+
 // TestArithmeticDecomposition_TypeNodeActivation tests TypeNode creating context for decomposed chains
 func TestArithmeticDecomposition_TypeNodeActivation(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -275,6 +279,7 @@ func TestArithmeticDecomposition_TypeNodeActivation(t *testing.T) {
 	}
 	t.Log("✅ TypeNode successfully activated decomposed chain with context")
 }
+
 // TestArithmeticDecomposition_WithJoin tests decomposition in a 2-variable join rule
 func TestArithmeticDecomposition_WithJoin(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -434,15 +439,23 @@ func TestArithmeticDecomposition_WithJoin(t *testing.T) {
 		t.Logf("PassthroughC memory: %d facts", len(passthroughC.Memory.Facts))
 		// Debug: check token bindings
 		for tokenID, token := range joinNode.LeftMemory.Tokens {
-			t.Logf("Left token %s: bindings = %v, facts = %d", tokenID, getBindingKeys(token.Bindings), len(token.Facts))
-			for varName, fact := range token.Bindings {
-				t.Logf("  Binding %s -> %s (type: %s, fields: %v)", varName, fact.ID, fact.Type, fact.Fields)
+			vars := token.Bindings.Variables()
+			t.Logf("Left token %s: bindings = %v, facts = %d", tokenID, vars, len(token.Facts))
+			for _, varName := range vars {
+				fact := token.Bindings.Get(varName)
+				if fact != nil {
+					t.Logf("  Binding %s -> %s (type: %s, fields: %v)", varName, fact.ID, fact.Type, fact.Fields)
+				}
 			}
 		}
 		for tokenID, token := range joinNode.RightMemory.Tokens {
-			t.Logf("Right token %s: bindings = %v, facts = %d", tokenID, getBindingKeys(token.Bindings), len(token.Facts))
-			for varName, fact := range token.Bindings {
-				t.Logf("  Binding %s -> %s (type: %s, fields: %v)", varName, fact.ID, fact.Type, fact.Fields)
+			vars := token.Bindings.Variables()
+			t.Logf("Right token %s: bindings = %v, facts = %d", tokenID, vars, len(token.Facts))
+			for _, varName := range vars {
+				fact := token.Bindings.Get(varName)
+				if fact != nil {
+					t.Logf("  Binding %s -> %s (type: %s, fields: %v)", varName, fact.ID, fact.Type, fact.Fields)
+				}
 			}
 		}
 		// Check beta condition
@@ -451,10 +464,11 @@ func TestArithmeticDecomposition_WithJoin(t *testing.T) {
 		t.Log("✅ Join successful! Token created and propagated to terminal")
 	}
 }
-func getBindingKeys(bindings map[string]*Fact) []string {
-	keys := make([]string, 0, len(bindings))
-	for k := range bindings {
-		keys = append(keys, k)
+
+// getBindingKeys returns the list of variable names from a BindingChain
+func getBindingKeys(bindings *BindingChain) []string {
+	if bindings == nil {
+		return []string{}
 	}
-	return keys
+	return bindings.Variables()
 }

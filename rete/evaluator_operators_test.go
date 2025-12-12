@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestEvaluateArithmeticOperation(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
 	tests := []struct {

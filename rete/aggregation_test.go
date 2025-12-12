@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
+
 // TestPipeline_AVG teste le calcul de moyenne via le pipeline complet
 func TestPipeline_AVG(t *testing.T) {
 	// Créer fichier constraint temporaire
@@ -39,6 +41,7 @@ rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) 
 	}
 	t.Logf("✓ Test AVG: réseau créé avec %d nœuds terminaux", terminalCount)
 }
+
 // TestPipeline_SUM teste le calcul de somme via le pipeline complet
 func TestPipeline_SUM(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "sum_test.tsd")
@@ -66,6 +69,7 @@ rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 10
 	}
 	t.Logf("✓ Test SUM: réseau créé avec %d nœuds terminaux", terminalCount)
 }
+
 // TestPipeline_COUNT teste le comptage via le pipeline complet
 func TestPipeline_COUNT(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "count_test.tsd")
@@ -95,6 +99,7 @@ rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 	}
 	t.Logf("✓ Test COUNT: réseau créé avec %d nœuds terminaux", terminalCount)
 }
+
 // TestPipeline_MIN teste le minimum via le pipeline complet
 func TestPipeline_MIN(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "min_test.tsd")
@@ -122,6 +127,7 @@ rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary)
 	}
 	t.Logf("✓ Test MIN: réseau créé avec %d nœuds terminaux", terminalCount)
 }
+
 // TestPipeline_MAX teste le maximum via le pipeline complet
 func TestPipeline_MAX(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "max_test.tsd")

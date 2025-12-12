@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"math"
 	"testing"
 )
+
 // TestArithmeticEdgeCases tests edge cases in arithmetic expression evaluation
 func TestArithmeticEdgeCases(t *testing.T) {
 	tests := []struct {
@@ -242,6 +244,7 @@ func TestArithmeticEdgeCases(t *testing.T) {
 		})
 	}
 }
+
 // TestArithmeticWithInvalidTypes tests arithmetic operations with invalid types
 func TestArithmeticWithInvalidTypes(t *testing.T) {
 	tests := []struct {
@@ -303,6 +306,7 @@ func TestArithmeticWithInvalidTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestComplexNestedArithmetic tests nested arithmetic expressions
 func TestComplexNestedArithmetic(t *testing.T) {
 	// Create a simple evaluator with bindings
@@ -432,6 +436,7 @@ func TestComplexNestedArithmetic(t *testing.T) {
 		})
 	}
 }
+
 // TestArithmeticOperatorPrecedence tests that operator precedence is respected
 func TestArithmeticOperatorPrecedence(t *testing.T) {
 	// Note: Precedence should be handled by the parser, not the evaluator
@@ -473,6 +478,7 @@ func TestArithmeticOperatorPrecedence(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, resultFloat)
 	}
 }
+
 // Helper functions
 func toFloat64(v interface{}) (float64, bool) {
 	switch val := v.(type) {

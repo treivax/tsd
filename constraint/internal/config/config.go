@@ -57,15 +57,15 @@ var validLogFormats = map[string]bool{
 
 // Variables d'environnement supportées
 const (
-	EnvPrefix             = "CONSTRAINT_"
-	EnvMaxExpressions     = EnvPrefix + "MAX_EXPRESSIONS"
-	EnvMaxDepth           = EnvPrefix + "MAX_DEPTH"
-	EnvDebug              = EnvPrefix + "DEBUG"
-	EnvStrictMode         = EnvPrefix + "STRICT_MODE"
-	EnvLogLevel           = EnvPrefix + "LOG_LEVEL"
-	EnvLogFormat          = EnvPrefix + "LOG_FORMAT"
-	EnvLogOutput          = EnvPrefix + "LOG_OUTPUT"
-	EnvConfigFile         = EnvPrefix + "CONFIG_FILE"
+	EnvPrefix         = "CONSTRAINT_"
+	EnvMaxExpressions = EnvPrefix + "MAX_EXPRESSIONS"
+	EnvMaxDepth       = EnvPrefix + "MAX_DEPTH"
+	EnvDebug          = EnvPrefix + "DEBUG"
+	EnvStrictMode     = EnvPrefix + "STRICT_MODE"
+	EnvLogLevel       = EnvPrefix + "LOG_LEVEL"
+	EnvLogFormat      = EnvPrefix + "LOG_FORMAT"
+	EnvLogOutput      = EnvPrefix + "LOG_OUTPUT"
+	EnvConfigFile     = EnvPrefix + "CONFIG_FILE"
 )
 
 // Config représente la configuration complète du module constraint
@@ -261,11 +261,11 @@ func (cm *ConfigManager) String() string {
 func (cm *ConfigManager) Clone() *ConfigManager {
 	// Deep copy de la config
 	configCopy := *cm.config
-	
+
 	// Deep copy du slice AllowedOperators
 	configCopy.Validator.AllowedOperators = make([]string, len(cm.config.Validator.AllowedOperators))
 	copy(configCopy.Validator.AllowedOperators, cm.config.Validator.AllowedOperators)
-	
+
 	return &ConfigManager{
 		config:   &configCopy,
 		filePath: cm.filePath,

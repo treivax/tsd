@@ -8,7 +8,27 @@ import (
 	"fmt"
 )
 
-// evaluateArgument évalue un argument selon son type
+// evaluateArgument évalue un argument selon son type.
+//
+// Cette méthode analyse la structure de l'argument (provenant du parser TSD)
+// et retourne sa valeur évaluée dans le contexte d'exécution.
+//
+// Types d'arguments supportés :
+//   - Valeurs littérales : string, number, bool
+//   - Variables : référence à un fait lié (via BindingChain)
+//   - fieldAccess : accès à un attribut de fait (variable.field)
+//   - factCreation : création d'un nouveau fait
+//   - factModification : modification d'un fait existant
+//   - binaryOperation : opération arithmétique ou logique
+//   - cast : conversion de type explicite
+//
+// Paramètres :
+//   - arg : argument à évaluer (structure du parser)
+//   - ctx : contexte d'exécution contenant les bindings
+//
+// Retourne :
+//   - interface{} : valeur évaluée
+//   - error : erreur si l'évaluation échoue
 func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContext) (interface{}, error) {
 	// Cas 1: Valeur littérale simple (string, number, bool)
 	switch v := arg.(type) {
@@ -43,12 +63,18 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 		}
 		fact := ctx.GetVariable(varName)
 		if fact == nil {
-			// Debug: list available variables
+			// Message d'erreur détaillé avec liste des variables disponibles
 			availableVars := []string{}
 			if ctx.bindings != nil {
 				availableVars = ctx.bindings.Variables()
 			}
-			return nil, fmt.Errorf("variable '%s' non trouvée (variables disponibles: %v)", varName, availableVars)
+			return nil, fmt.Errorf(
+				"❌ Erreur d'exécution d'action:\n"+
+					"   Variable '%s' non trouvée dans le contexte\n"+
+					"   Variables disponibles: %v\n"+
+					"   Vérifiez que la règle déclare bien cette variable dans sa clause de pattern",
+				varName, availableVars,
+			)
 		}
 		return fact, nil
 
@@ -65,12 +91,18 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 
 		fact := ctx.GetVariable(objectName)
 		if fact == nil {
-			// Debug: list available variables
+			// Message d'erreur détaillé avec liste des variables disponibles
 			availableVars := []string{}
 			if ctx.bindings != nil {
 				availableVars = ctx.bindings.Variables()
 			}
-			return nil, fmt.Errorf("variable '%s' non trouvée (variables disponibles: %v)", objectName, availableVars)
+			return nil, fmt.Errorf(
+				"❌ Erreur d'exécution d'action:\n"+
+					"   Variable '%s' non trouvée dans le contexte\n"+
+					"   Variables disponibles: %v\n"+
+					"   Vérifiez que la règle déclare bien cette variable dans sa clause de pattern",
+				objectName, availableVars,
+			)
 		}
 
 		value, exists := fact.Fields[fieldName]
@@ -104,7 +136,18 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 	}
 }
 
-// evaluateArithmetic évalue une expression arithmétique (format legacy)
+// evaluateArithmetic évalue une expression arithmétique (format legacy).
+//
+// Format legacy supporté pour compatibilité avec ancien code.
+// Les nouvelles actions devraient utiliser evaluateBinaryOperation.
+//
+// Paramètres :
+//   - argMap : map contenant "operator", "left", "right"
+//   - ctx : contexte d'exécution
+//
+// Retourne :
+//   - interface{} : résultat de l'opération
+//   - error : erreur si l'opération échoue
 func (ae *ActionExecutor) evaluateArithmetic(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
 	operator, ok := argMap["operator"].(string)
 	if !ok {
@@ -124,7 +167,17 @@ func (ae *ActionExecutor) evaluateArithmetic(argMap map[string]interface{}, ctx 
 	return ae.evaluateArithmeticOperation(left, operator, right)
 }
 
-// evaluateBinaryOperation évalue une opération binaire (format du parser)
+// evaluateBinaryOperation évalue une opération binaire (format du parser).
+//
+// Supporte les opérations arithmétiques (+, -, *, /, %) et les comparaisons (==, !=, <, <=, >, >=).
+//
+// Paramètres :
+//   - argMap : map contenant "operator", "left", "right"
+//   - ctx : contexte d'exécution
+//
+// Retourne :
+//   - interface{} : résultat (nombre pour arithmétique, bool pour comparaison)
+//   - error : erreur si l'opération échoue
 func (ae *ActionExecutor) evaluateBinaryOperation(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
 	// Extraire et normaliser l'opérateur en utilisant l'utilitaire centralisé
 	operator, err := ExtractOperatorFromMap(argMap)
@@ -156,7 +209,19 @@ func (ae *ActionExecutor) evaluateBinaryOperation(argMap map[string]interface{},
 	}
 }
 
-// evaluateArithmeticOperation effectue une opération arithmétique ou une concaténation de strings
+// evaluateArithmeticOperation effectue une opération arithmétique ou une concaténation de strings.
+//
+// Cas spécial : l'opérateur + avec deux strings effectue une concaténation.
+// Tous les autres opérateurs nécessitent des nombres.
+//
+// Paramètres :
+//   - left : opérande gauche
+//   - operator : +, -, *, /, %
+//   - right : opérande droite
+//
+// Retourne :
+//   - interface{} : résultat (string si concaténation, float64 sinon)
+//   - error : erreur si types incompatibles ou division par zéro
 func (ae *ActionExecutor) evaluateArithmeticOperation(left interface{}, operator string, right interface{}) (interface{}, error) {
 	// Cas spécial pour l'opérateur + : si LES DEUX opérandes sont des strings, faire une concaténation
 	if operator == "+" {
@@ -203,7 +268,19 @@ func (ae *ActionExecutor) evaluateArithmeticOperation(left interface{}, operator
 	}
 }
 
-// evaluateComparison effectue une opération de comparaison
+// evaluateComparison effectue une opération de comparaison.
+//
+// Supporte : ==, !=, <, <=, >, >=
+// Les comparaisons numériques nécessitent que les deux opérandes soient des nombres.
+//
+// Paramètres :
+//   - left : opérande gauche
+//   - operator : opérateur de comparaison
+//   - right : opérande droite
+//
+// Retourne :
+//   - interface{} : résultat booléen
+//   - error : erreur si comparaison impossible
 func (ae *ActionExecutor) evaluateComparison(left interface{}, operator string, right interface{}) (interface{}, error) {
 	switch operator {
 	case "==":
@@ -230,7 +307,16 @@ func (ae *ActionExecutor) evaluateComparison(left interface{}, operator string, 
 	return nil, fmt.Errorf("opérateur de comparaison inconnu: %s", operator)
 }
 
-// areEqual compare deux valeurs pour l'égalité
+// areEqual compare deux valeurs pour l'égalité.
+//
+// Normalise les types numériques (int, int64, float64) avant comparaison.
+//
+// Paramètres :
+//   - left : première valeur
+//   - right : deuxième valeur
+//
+// Retourne :
+//   - bool : true si les valeurs sont égales
 func (ae *ActionExecutor) areEqual(left, right interface{}) bool {
 	// Normaliser les types numériques
 	leftNum, leftIsNum := toNumber(left)
@@ -244,7 +330,18 @@ func (ae *ActionExecutor) areEqual(left, right interface{}) bool {
 	return left == right
 }
 
-// evaluateCastExpression évalue une expression de cast dans une action
+// evaluateCastExpression évalue une expression de cast dans une action.
+//
+// Convertit une valeur d'un type vers un autre explicitement.
+// Utilise les fonctions de rete/evaluator_cast.go pour la conversion.
+//
+// Paramètres :
+//   - argMap : map contenant "castType" et "expression"
+//   - ctx : contexte d'exécution
+//
+// Retourne :
+//   - interface{} : valeur convertie
+//   - error : erreur si la conversion échoue
 func (ae *ActionExecutor) evaluateCastExpression(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
 	// Extraire le type de cast
 	castType, ok := argMap["castType"].(string)
@@ -273,7 +370,16 @@ func (ae *ActionExecutor) evaluateCastExpression(argMap map[string]interface{}, 
 	return result, nil
 }
 
-// toNumber convertit une valeur en nombre flottant si possible
+// toNumber convertit une valeur en nombre flottant si possible.
+//
+// Supporte : float64, int, int64, int32
+//
+// Paramètres :
+//   - v : valeur à convertir
+//
+// Retourne :
+//   - float64 : valeur convertie (0 si échec)
+//   - bool : true si conversion réussie
 func toNumber(v interface{}) (float64, bool) {
 	switch n := v.(type) {
 	case float64:

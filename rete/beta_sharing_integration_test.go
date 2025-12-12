@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestBetaSharingIntegration_BasicConfiguration tests that Beta sharing components
 // are properly initialized when enabled in configuration.
 func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
@@ -44,6 +46,7 @@ func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
 		}
 	})
 }
+
 // TestBetaSharingIntegration_BinaryJoinSharing tests that binary joins can be shared
 // between rules when using the same patterns.
 func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
@@ -116,6 +119,7 @@ func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 		t.Errorf("Expected sharing ratio > 0.3, got %.2f", stats.SharingRatio)
 	}
 }
+
 // TestBetaSharingIntegration_ChainBuilderMetrics tests that metrics are properly
 // collected when building chains with the BetaChainBuilder.
 func TestBetaSharingIntegration_ChainBuilderMetrics(t *testing.T) {
@@ -172,6 +176,7 @@ func TestBetaSharingIntegration_ChainBuilderMetrics(t *testing.T) {
 		t.Error("SharedJoinNodesReused should be at least 1 after building second chain")
 	}
 }
+
 // TestBetaSharingIntegration_BackwardCompatibility tests that existing functionality
 // TestBetaSharingIntegration_CascadeChain tests building a multi-join cascade chain.
 func TestBetaSharingIntegration_CascadeChain(t *testing.T) {
@@ -216,6 +221,7 @@ func TestBetaSharingIntegration_CascadeChain(t *testing.T) {
 		t.Error("First node should have children")
 	}
 }
+
 // TestBetaSharingIntegration_PrefixSharing tests that sharing works correctly.
 func TestBetaSharingIntegration_PrefixSharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -269,6 +275,7 @@ func TestBetaSharingIntegration_PrefixSharing(t *testing.T) {
 		t.Error("Chain2 should have a final node")
 	}
 }
+
 // TestBetaSharingIntegration_MetricsReset tests that metrics can be reset properly.
 func TestBetaSharingIntegration_MemoryManagement(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -304,6 +311,7 @@ func TestBetaSharingIntegration_MemoryManagement(t *testing.T) {
 	_ = network.GetBetaChainMetrics()
 	// We won't assert zero values since registry metrics persist
 }
+
 // TestBetaSharingIntegration_LifecycleIntegration tests that nodes are properly
 // registered with the LifecycleManager.
 func TestBetaSharingIntegration_LifecycleIntegration(t *testing.T) {
@@ -340,6 +348,7 @@ func TestBetaSharingIntegration_LifecycleIntegration(t *testing.T) {
 	// Note: Direct lifecycle verification would require exposing internal state
 	// or adding getter methods to LifecycleManager
 }
+
 // TestBetaSharingIntegration_ConfigValidation tests that configuration is properly
 // validated and applied.
 func TestBetaSharingIntegration_ConfigValidation(t *testing.T) {

@@ -2,17 +2,20 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
-	"time"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
+
 // TestNewMetricsCollector tests the creation of a new metrics collector
 func TestNewMetricsCollector(t *testing.T) {
 	collector := NewMetricsCollector()
 	require.NotNil(t, collector, "NewMetricsCollector should return a non-nil collector")
 }
+
 // TestMetricsCollector_RecordParsingDuration tests recording parsing duration
 func TestMetricsCollector_RecordParsingDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -21,6 +24,7 @@ func TestMetricsCollector_RecordParsingDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.ParsingDuration, "Parsing duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordValidationDuration tests recording validation duration
 func TestMetricsCollector_RecordValidationDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -29,6 +33,7 @@ func TestMetricsCollector_RecordValidationDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.ValidationDuration, "Validation duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordTypeCreationDuration tests recording type creation duration
 func TestMetricsCollector_RecordTypeCreationDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -37,6 +42,7 @@ func TestMetricsCollector_RecordTypeCreationDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.TypeCreationDuration, "Type creation duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordRuleCreationDuration tests recording rule creation duration
 func TestMetricsCollector_RecordRuleCreationDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -45,6 +51,7 @@ func TestMetricsCollector_RecordRuleCreationDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.RuleCreationDuration, "Rule creation duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordFactCollectionDuration tests recording fact collection duration
 func TestMetricsCollector_RecordFactCollectionDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -53,6 +60,7 @@ func TestMetricsCollector_RecordFactCollectionDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.FactCollectionDuration, "Fact collection duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordPropagationDuration tests recording propagation duration
 func TestMetricsCollector_RecordPropagationDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -61,6 +69,7 @@ func TestMetricsCollector_RecordPropagationDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.PropagationDuration, "Propagation duration should be recorded correctly")
 }
+
 // TestMetricsCollector_RecordFactSubmissionDuration tests recording fact submission duration
 func TestMetricsCollector_RecordFactSubmissionDuration(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -69,6 +78,7 @@ func TestMetricsCollector_RecordFactSubmissionDuration(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, duration, metrics.FactSubmissionDuration, "Fact submission duration should be recorded correctly")
 }
+
 // TestMetricsCollector_SetTypesAdded tests setting types added count
 func TestMetricsCollector_SetTypesAdded(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -76,6 +86,7 @@ func TestMetricsCollector_SetTypesAdded(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 5, metrics.TypesAdded, "Types added should be set correctly")
 }
+
 // TestMetricsCollector_SetRulesAdded tests setting rules added count
 func TestMetricsCollector_SetRulesAdded(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -83,6 +94,7 @@ func TestMetricsCollector_SetRulesAdded(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 15, metrics.RulesAdded, "Rules added should be set correctly")
 }
+
 // TestMetricsCollector_SetFactsSubmitted tests setting facts submitted count
 func TestMetricsCollector_SetFactsSubmitted(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -90,6 +102,7 @@ func TestMetricsCollector_SetFactsSubmitted(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 100, metrics.FactsSubmitted, "Facts submitted should be set correctly")
 }
+
 // TestMetricsCollector_SetExistingFactsCollected tests setting existing facts collected count
 func TestMetricsCollector_SetExistingFactsCollected(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -97,6 +110,7 @@ func TestMetricsCollector_SetExistingFactsCollected(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 50, metrics.ExistingFactsCollected, "Existing facts collected should be set correctly")
 }
+
 // TestMetricsCollector_SetFactsPropagated tests setting facts propagated count
 func TestMetricsCollector_SetFactsPropagated(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -104,6 +118,7 @@ func TestMetricsCollector_SetFactsPropagated(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 30, metrics.FactsPropagated, "Facts propagated should be set correctly")
 }
+
 // TestMetricsCollector_SetNewTerminalsAdded tests setting new terminals added count
 func TestMetricsCollector_SetNewTerminalsAdded(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -111,6 +126,7 @@ func TestMetricsCollector_SetNewTerminalsAdded(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 8, metrics.NewTerminalsAdded, "New terminals added should be set correctly")
 }
+
 // TestMetricsCollector_SetPropagationTargets tests setting propagation targets count
 func TestMetricsCollector_SetPropagationTargets(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -118,6 +134,7 @@ func TestMetricsCollector_SetPropagationTargets(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.Equal(t, 25, metrics.PropagationTargets, "Propagation targets should be set correctly")
 }
+
 // TestMetricsCollector_SetWasReset tests setting was reset flag
 func TestMetricsCollector_SetWasReset(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -125,6 +142,7 @@ func TestMetricsCollector_SetWasReset(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.True(t, metrics.WasReset, "Was reset should be true after setting")
 }
+
 // TestMetricsCollector_SetWasIncremental tests setting was incremental flag
 func TestMetricsCollector_SetWasIncremental(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -132,6 +150,7 @@ func TestMetricsCollector_SetWasIncremental(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.True(t, metrics.WasIncremental, "Was incremental should be true after setting")
 }
+
 // TestMetricsCollector_SetValidationSkipped tests setting validation skipped flag
 func TestMetricsCollector_SetValidationSkipped(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -139,6 +158,7 @@ func TestMetricsCollector_SetValidationSkipped(t *testing.T) {
 	metrics := collector.Finalize()
 	assert.True(t, metrics.ValidationSkipped, "Validation skipped should be true after setting")
 }
+
 // TestMetricsCollector_Finalize tests the finalization of metrics
 func TestMetricsCollector_Finalize(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -186,6 +206,7 @@ func TestMetricsCollector_Finalize(t *testing.T) {
 	// Verify total duration is calculated
 	assert.Greater(t, metrics.TotalDuration, 10*time.Millisecond, "Total duration should include elapsed time")
 }
+
 // TestMetricsCollector_FinalizeWithZeroValues tests finalization with default values
 func TestMetricsCollector_FinalizeWithZeroValues(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -212,6 +233,7 @@ func TestMetricsCollector_FinalizeWithZeroValues(t *testing.T) {
 	// Total duration should still be non-zero (time elapsed since creation)
 	assert.GreaterOrEqual(t, metrics.TotalDuration, time.Duration(0), "Total duration should be non-negative")
 }
+
 // TestMetricsCollector_MultipleRecordings tests updating metrics multiple times
 func TestMetricsCollector_MultipleRecordings(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -226,6 +248,7 @@ func TestMetricsCollector_MultipleRecordings(t *testing.T) {
 	assert.Equal(t, 150*time.Millisecond, metrics.ParsingDuration, "Last recorded parsing duration should be used")
 	assert.Equal(t, 7, metrics.TypesAdded, "Last set types added should be used")
 }
+
 // TestMetricsCollector_LargeValues tests handling large metric values
 func TestMetricsCollector_LargeValues(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -238,6 +261,7 @@ func TestMetricsCollector_LargeValues(t *testing.T) {
 	assert.Equal(t, 1000000, metrics.FactsSubmitted)
 	assert.Equal(t, 50000, metrics.PropagationTargets)
 }
+
 // TestMetricsCollector_CombinedScenario tests a realistic combined scenario
 func TestMetricsCollector_CombinedScenario(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -287,6 +311,7 @@ func TestMetricsCollector_CombinedScenario(t *testing.T) {
 	// Total duration should be at least the sleep time plus processing
 	assert.Greater(t, metrics.TotalDuration, 5*time.Millisecond)
 }
+
 // TestMetricsCollector_AllSetters tests all setter methods together
 func TestMetricsCollector_AllSetters(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -328,6 +353,7 @@ func TestMetricsCollector_AllSetters(t *testing.T) {
 	assert.True(t, metrics.WasIncremental)
 	assert.True(t, metrics.ValidationSkipped)
 }
+
 // TestMetricsCollector_RecordNetworkState tests recording network state
 func TestMetricsCollector_RecordNetworkState(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -353,6 +379,7 @@ func TestMetricsCollector_RecordNetworkState(t *testing.T) {
 	assert.Equal(t, 1, metrics.TotalAlphaNodes, "Should have 1 alpha node")
 	assert.Equal(t, 2, metrics.TotalBetaNodes, "Should have 2 beta nodes")
 }
+
 // TestMetricsCollector_GetMetrics tests getting a copy of current metrics
 func TestMetricsCollector_GetMetrics(t *testing.T) {
 	collector := NewMetricsCollector()
@@ -371,6 +398,7 @@ func TestMetricsCollector_GetMetrics(t *testing.T) {
 	metrics2 := collector.GetMetrics()
 	assert.Equal(t, 5, metrics2.TypesAdded, "Original value should be preserved")
 }
+
 // TestIngestionMetrics_String tests the String method
 func TestIngestionMetrics_String(t *testing.T) {
 	metrics := &IngestionMetrics{
@@ -408,6 +436,7 @@ func TestIngestionMetrics_String(t *testing.T) {
 	assert.Contains(t, str, "true", "Should contain incremental flag")
 	assert.NotEmpty(t, str, "String should not be empty")
 }
+
 // TestIngestionMetrics_Summary tests the Summary method
 func TestIngestionMetrics_Summary(t *testing.T) {
 	metrics := &IngestionMetrics{
@@ -428,6 +457,7 @@ func TestIngestionMetrics_Summary(t *testing.T) {
 	assert.Contains(t, summary, "3", "Should contain new terminals")
 	assert.NotEmpty(t, summary, "Summary should not be empty")
 }
+
 // TestIngestionMetrics_IsEfficient tests the IsEfficient method
 func TestIngestionMetrics_IsEfficient(t *testing.T) {
 	tests := []struct {
@@ -516,6 +546,7 @@ func TestIngestionMetrics_IsEfficient(t *testing.T) {
 		})
 	}
 }
+
 // TestIngestionMetrics_GetBottleneck tests the GetBottleneck method
 func TestIngestionMetrics_GetBottleneck(t *testing.T) {
 	tests := []struct {

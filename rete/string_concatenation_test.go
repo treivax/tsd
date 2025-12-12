@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestStringConcatenation teste la concaténation de chaînes avec l'opérateur +
 func TestStringConcatenation(t *testing.T) {
 	t.Parallel()
@@ -225,6 +227,7 @@ func TestStringConcatenation(t *testing.T) {
 		assert.Equal(t, "test", result, "Should handle empty strings")
 	})
 }
+
 // TestStringConcatenationInConditions teste la concaténation dans les conditions
 func TestStringConcatenationInConditions(t *testing.T) {
 	t.Parallel()
@@ -269,6 +272,7 @@ func TestStringConcatenationInConditions(t *testing.T) {
 		assert.Equal(t, rightVal, leftVal, "Concatenated string should match expected value")
 	})
 }
+
 // TestMixedArithmeticAndStringOps teste que les opérations numériques et strings ne se mélangent pas
 func TestMixedArithmeticAndStringOps(t *testing.T) {
 	t.Parallel()

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestNewAlphaNode(t *testing.T) {
 	storage := NewMemoryStorage()
 	condition := map[string]interface{}{
@@ -103,7 +105,7 @@ func TestAlphaNodePassthroughLeft(t *testing.T) {
 			if len(token.Facts) != 1 {
 				t.Errorf("Expected 1 fact in token, got %d", len(token.Facts))
 			}
-			if token.Bindings["p"] == nil {
+			if token.Bindings.Get("p") == nil {
 				t.Error("Expected binding for variable 'p'")
 			}
 			return nil
@@ -240,6 +242,7 @@ func TestAlphaNodeMemoryIsolation(t *testing.T) {
 		t.Error("Node2 should not have fact f1")
 	}
 }
+
 // MockNode for testing
 type MockNode struct {
 	BaseNode
@@ -247,6 +250,7 @@ type MockNode struct {
 	activateRight   func(*Fact) error
 	activateRetract func(string) error
 }
+
 func (m *MockNode) ActivateLeft(token *Token) error {
 	if m.activateLeft != nil {
 		return m.activateLeft(token)

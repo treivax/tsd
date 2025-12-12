@@ -26,9 +26,9 @@ const (
 	AppName    = "constraint-parser"
 
 	// Default values
-	DefaultConfigPath = ""
+	DefaultConfigPath   = ""
 	DefaultOutputFormat = "json"
-	StdinPlaceholder = "-"
+	StdinPlaceholder    = "-"
 )
 
 // CLIConfig contient la configuration de la ligne de commande

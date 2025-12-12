@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 	"time"
 )
+
 // Tests for network_validator.go
 func TestValidateNetwork_ValidStructure(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -66,6 +68,7 @@ func TestValidateMemoryConsistency_EmptyNetwork(t *testing.T) {
 		t.Errorf("ValidateMemoryConsistency() failed: %v", err)
 	}
 }
+
 // Tests for network_builder.go
 func TestNewReteNetwork_Initialization(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -134,6 +137,7 @@ func TestNewReteNetworkWithConfig_CustomConfig(t *testing.T) {
 		t.Errorf("BetaHashCacheMaxSize = %d, want 500", network.Config.BetaHashCacheMaxSize)
 	}
 }
+
 // Tests for network_manager.go
 func TestSubmitFact_Basic(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -252,6 +256,7 @@ func TestRepropagateExistingFact_TypeNotFound(t *testing.T) {
 		t.Error("Expected error for unknown type")
 	}
 }
+
 // Tests for network.go (getters/setters)
 func TestGetChainMetrics(t *testing.T) {
 	storage := NewMemoryStorage()

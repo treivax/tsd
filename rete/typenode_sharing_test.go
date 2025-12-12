@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
 // TestTypeNodeSharing_TwoSimpleRulesSameType vérifie qu'un seul TypeNode est créé
 // pour deux règles simples portant sur un même type
 func TestTypeNodeSharing_TwoSimpleRulesSameType(t *testing.T) {
@@ -84,6 +86,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id, p.name)
 	}
 	t.Log("✅ Vérification réussie: Un seul TypeNode créé pour deux règles simples sur le même type")
 }
+
 // TestTypeNodeSharing_ThreeRulesSameType vérifie qu'un seul TypeNode est créé
 // pour trois règles simples portant sur un même type
 func TestTypeNodeSharing_ThreeRulesSameType(t *testing.T) {
@@ -126,6 +129,7 @@ rule r3 : {e: Employee} / e.salary >= 30000 AND e.salary <= 50000 ==> mid_earner
 	}
 	t.Log("✅ Vérification réussie: Un seul TypeNode créé pour trois règles simples sur le même type")
 }
+
 // TestTypeNodeSharing_TwoDifferentTypes vérifie que deux TypeNodes distincts
 // sont créés pour deux règles portant sur deux types différents
 func TestTypeNodeSharing_TwoDifferentTypes(t *testing.T) {
@@ -175,6 +179,7 @@ rule r2 : {c: Company} / c.revenue > 1000000 ==> big_company(c.id)
 	}
 	t.Log("✅ Vérification réussie: Deux TypeNodes distincts créés pour deux types différents")
 }
+
 // TestTypeNodeSharing_MixedRules vérifie le partage de TypeNode
 // avec un mélange de règles simples et de règles de jointure
 func TestTypeNodeSharing_MixedRules(t *testing.T) {
@@ -225,6 +230,7 @@ rule r3 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 	}
 	t.Log("✅ Vérification réussie: TypeNodes correctement partagés dans un scénario mixte")
 }
+
 // TestTypeNodeSharing_VisualizeNetwork crée un réseau et affiche sa structure détaillée
 // pour visualiser comment les TypeNodes sont partagés
 func TestTypeNodeSharing_VisualizeNetwork(t *testing.T) {
@@ -301,6 +307,7 @@ rule r2 : {p: Person} / p.age < 65 ==> not_retired(p.id)
 		t.Errorf("Le TypeNode Person devrait avoir 2 enfants, obtenu %d", len(children))
 	}
 }
+
 // TestTypeNodeSharing_WithFactSubmission vérifie que le partage de TypeNode
 // fonctionne correctement lors de la soumission de faits
 func TestTypeNodeSharing_WithFactSubmission(t *testing.T) {

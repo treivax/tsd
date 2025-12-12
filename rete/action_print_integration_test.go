@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
 	"strings"
 	"testing"
 )
+
 // TestPrintActionIntegration_SimpleRule teste l'action print dans une règle simple
 func TestPrintActionIntegration_SimpleRule(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION PRINT ACTION - RÈGLE SIMPLE")
@@ -46,8 +48,8 @@ func TestPrintActionIntegration_SimpleRule(t *testing.T) {
 	}
 	// Créer un token avec bindings
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Créer une action print
@@ -79,6 +81,7 @@ func TestPrintActionIntegration_SimpleRule(t *testing.T) {
 	}
 	t.Log("✅ Test d'intégration règle simple réussi")
 }
+
 // TestPrintActionIntegration_MultipleJobs teste l'action print avec plusieurs jobs
 func TestPrintActionIntegration_MultipleJobs(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION PRINT ACTION - PLUSIEURS JOBS")
@@ -111,8 +114,8 @@ func TestPrintActionIntegration_MultipleJobs(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action avec plusieurs jobs print
@@ -160,6 +163,7 @@ func TestPrintActionIntegration_MultipleJobs(t *testing.T) {
 	}
 	t.Log("✅ Test d'intégration plusieurs jobs réussi")
 }
+
 // TestPrintActionIntegration_WithNumbers teste l'action print avec des nombres
 func TestPrintActionIntegration_WithNumbers(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION PRINT ACTION - AVEC NOMBRES")
@@ -190,8 +194,8 @@ func TestPrintActionIntegration_WithNumbers(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("prod", fact),
 	}
 	// Règle qui affiche le prix
@@ -222,6 +226,7 @@ func TestPrintActionIntegration_WithNumbers(t *testing.T) {
 	}
 	t.Log("✅ Test d'intégration avec nombres réussi")
 }
+
 // TestPrintActionIntegration_UndefinedAction teste le comportement avec une action non définie
 func TestPrintActionIntegration_UndefinedAction(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION - ACTION NON DÉFINIE")
@@ -246,8 +251,8 @@ func TestPrintActionIntegration_UndefinedAction(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Action non définie
@@ -274,6 +279,7 @@ func TestPrintActionIntegration_UndefinedAction(t *testing.T) {
 	}
 	t.Log("✅ Test action non définie réussi (loguée uniquement)")
 }
+
 // TestPrintActionIntegration_MixedActions teste un mélange d'actions définies et non définies
 func TestPrintActionIntegration_MixedActions(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION - ACTIONS MIXTES")
@@ -301,8 +307,8 @@ func TestPrintActionIntegration_MixedActions(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("e", fact),
 	}
 	// Action avec print (définie) et custom_action (non définie)
@@ -343,6 +349,7 @@ func TestPrintActionIntegration_MixedActions(t *testing.T) {
 	}
 	t.Log("✅ Test actions mixtes réussi")
 }
+
 // TestPrintActionIntegration_WithFact teste l'action print avec un fait complet
 func TestPrintActionIntegration_WithFact(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION PRINT ACTION - AVEC FAIT COMPLET")
@@ -372,8 +379,8 @@ func TestPrintActionIntegration_WithFact(t *testing.T) {
 		},
 	}
 	token := &Token{
-		ID:    "token1",
-		Facts: []*Fact{fact},
+		ID:       "token1",
+		Facts:    []*Fact{fact},
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	// Imprimer le fait complet (variable)

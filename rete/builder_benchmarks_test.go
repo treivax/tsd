@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // BenchmarkBuilderUtils_CreateTerminalNode benchmarks terminal node creation
 func BenchmarkBuilderUtils_CreateTerminalNode(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -16,6 +18,7 @@ func BenchmarkBuilderUtils_CreateTerminalNode(b *testing.B) {
 		_ = utils.CreateTerminalNode(network, "test_rule", action)
 	}
 }
+
 // BenchmarkBuilderUtils_ConnectTypeNodeToBetaNode benchmarks type node connections
 func BenchmarkBuilderUtils_ConnectTypeNodeToBetaNode(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -31,6 +34,7 @@ func BenchmarkBuilderUtils_ConnectTypeNodeToBetaNode(b *testing.B) {
 		utils.ConnectTypeNodeToBetaNode(network, "test_rule", "p", "Person", betaNode, NodeSideLeft)
 	}
 }
+
 // BenchmarkTypeBuilder_CreateTypeDefinition benchmarks type definition creation
 func BenchmarkTypeBuilder_CreateTypeDefinition(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -50,6 +54,7 @@ func BenchmarkTypeBuilder_CreateTypeDefinition(b *testing.B) {
 		_ = tb.CreateTypeDefinition("Employee", typeMap)
 	}
 }
+
 // BenchmarkTypeBuilder_CreateTypeNodes benchmarks creating multiple type nodes
 func BenchmarkTypeBuilder_CreateTypeNodes(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -83,6 +88,7 @@ func BenchmarkTypeBuilder_CreateTypeNodes(b *testing.B) {
 		_ = tb.CreateTypeNodes(network, types, storage)
 	}
 }
+
 // BenchmarkAlphaRuleBuilder_CreateAlphaRule benchmarks alpha rule creation
 func BenchmarkAlphaRuleBuilder_CreateAlphaRule(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -109,6 +115,7 @@ func BenchmarkAlphaRuleBuilder_CreateAlphaRule(b *testing.B) {
 		_ = arb.CreateAlphaRule(network, "alpha_rule", variables, variableNames, variableTypes, condition, action)
 	}
 }
+
 // BenchmarkJoinRuleBuilder_CreateBinaryJoin benchmarks binary join creation
 func BenchmarkJoinRuleBuilder_CreateBinaryJoin(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -133,6 +140,7 @@ func BenchmarkJoinRuleBuilder_CreateBinaryJoin(b *testing.B) {
 		_ = jrb.CreateJoinRule(network, "join_rule", variableNames, variableTypes, condition, action)
 	}
 }
+
 // BenchmarkJoinRuleBuilder_CreateCascadeJoin benchmarks cascade join creation (3 variables)
 func BenchmarkJoinRuleBuilder_CreateCascadeJoin(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -154,6 +162,7 @@ func BenchmarkJoinRuleBuilder_CreateCascadeJoin(b *testing.B) {
 		_ = jrb.CreateJoinRule(network, "cascade_rule", variableNames, variableTypes, condition, action)
 	}
 }
+
 // BenchmarkJoinRuleBuilder_CreateCascadeJoin4Vars benchmarks cascade join with 4 variables
 func BenchmarkJoinRuleBuilder_CreateCascadeJoin4Vars(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -174,6 +183,7 @@ func BenchmarkJoinRuleBuilder_CreateCascadeJoin4Vars(b *testing.B) {
 		_ = jrb.CreateJoinRule(network, "cascade_4_rule", variableNames, variableTypes, condition, action)
 	}
 }
+
 // BenchmarkExistsRuleBuilder_CreateExistsRule benchmarks EXISTS rule creation
 func BenchmarkExistsRuleBuilder_CreateExistsRule(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -204,6 +214,7 @@ func BenchmarkExistsRuleBuilder_CreateExistsRule(b *testing.B) {
 		_ = erb.CreateExistsRule(network, "exists_rule", exprMap, condition, action)
 	}
 }
+
 // BenchmarkAccumulatorRuleBuilder_CreateAccumulatorRule benchmarks accumulator rule creation
 func BenchmarkAccumulatorRuleBuilder_CreateAccumulatorRule(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -240,6 +251,7 @@ func BenchmarkAccumulatorRuleBuilder_CreateAccumulatorRule(b *testing.B) {
 		_ = arb.CreateAccumulatorRule(network, "accum_rule", variables, variableNames, variableTypes, aggInfo, action)
 	}
 }
+
 // BenchmarkAccumulatorRuleBuilder_CreateMultiSourceRule benchmarks multi-source accumulator
 func BenchmarkAccumulatorRuleBuilder_CreateMultiSourceRule(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -274,6 +286,7 @@ func BenchmarkAccumulatorRuleBuilder_CreateMultiSourceRule(b *testing.B) {
 		_ = arb.CreateMultiSourceAccumulatorRule(network, "multi_rule", aggInfo, action)
 	}
 }
+
 // BenchmarkNetworkConstruction_SmallNetwork benchmarks building a small network (3 types, 2 rules)
 func BenchmarkNetworkConstruction_SmallNetwork(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -303,6 +316,7 @@ func BenchmarkNetworkConstruction_SmallNetwork(b *testing.B) {
 		_ = arb.CreateAlphaRule(network, "rule2", []map[string]interface{}{{"name": "e"}}, []string{"e"}, []string{"Employee"}, map[string]interface{}{}, action)
 	}
 }
+
 // BenchmarkNetworkConstruction_MediumNetwork benchmarks building a medium network (5 types, 5 rules)
 func BenchmarkNetworkConstruction_MediumNetwork(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -336,6 +350,7 @@ func BenchmarkNetworkConstruction_MediumNetwork(b *testing.B) {
 		_ = jrb.CreateJoinRule(network, "join2", []string{"e", "d"}, []string{"Employee", "Department"}, map[string]interface{}{}, action)
 	}
 }
+
 // BenchmarkNetworkConstruction_LargeNetwork benchmarks building a large network (10 types, 15 rules)
 func BenchmarkNetworkConstruction_LargeNetwork(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -371,6 +386,7 @@ func BenchmarkNetworkConstruction_LargeNetwork(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkBetaSharing_WithSharing benchmarks join creation with beta sharing enabled
 func BenchmarkBetaSharing_WithSharing(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -396,6 +412,7 @@ func BenchmarkBetaSharing_WithSharing(b *testing.B) {
 		_ = jrb.CreateJoinRule(network, "rule2", []string{"p", "e"}, []string{"Person", "Employee"}, condition, action2)
 	}
 }
+
 // BenchmarkBetaSharing_WithoutSharing benchmarks join creation without beta sharing
 func BenchmarkBetaSharing_WithoutSharing(b *testing.B) {
 	storage := NewMemoryStorage()

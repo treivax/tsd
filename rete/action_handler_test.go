@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
 	"strings"
 	"testing"
 )
+
 // TestActionRegistry_Basic teste les fonctionnalités de base du registry
 func TestActionRegistry_Basic(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - FONCTIONNALITÉS DE BASE")
@@ -39,6 +41,7 @@ func TestActionRegistry_Basic(t *testing.T) {
 	}
 	t.Log("✅ Tests de base réussis")
 }
+
 // TestActionRegistry_Unregister teste la désinscription d'actions
 func TestActionRegistry_Unregister(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - DÉSINSCRIPTION")
@@ -61,6 +64,7 @@ func TestActionRegistry_Unregister(t *testing.T) {
 	}
 	t.Log("✅ Test de désinscription réussi")
 }
+
 // TestActionRegistry_Multiple teste l'enregistrement multiple
 func TestActionRegistry_Multiple(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - ENREGISTREMENT MULTIPLE")
@@ -85,6 +89,7 @@ func TestActionRegistry_Multiple(t *testing.T) {
 	}
 	t.Log("✅ Test d'enregistrement multiple réussi")
 }
+
 // TestActionRegistry_Clear teste le nettoyage du registry
 func TestActionRegistry_Clear(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - NETTOYAGE")
@@ -104,6 +109,7 @@ func TestActionRegistry_Clear(t *testing.T) {
 	}
 	t.Log("✅ Test de nettoyage réussi")
 }
+
 // TestPrintAction_StringArgument teste l'action print avec une chaîne
 func TestPrintAction_StringArgument(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - ARGUMENT STRING")
@@ -127,6 +133,7 @@ func TestPrintAction_StringArgument(t *testing.T) {
 	}
 	t.Log("✅ Test avec argument string réussi")
 }
+
 // TestPrintAction_NumberArgument teste l'action print avec un nombre
 func TestPrintAction_NumberArgument(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - ARGUMENT NUMBER")
@@ -146,6 +153,7 @@ func TestPrintAction_NumberArgument(t *testing.T) {
 	}
 	t.Log("✅ Test avec argument number réussi")
 }
+
 // TestPrintAction_BooleanArgument teste l'action print avec un booléen
 func TestPrintAction_BooleanArgument(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - ARGUMENT BOOLEAN")
@@ -165,6 +173,7 @@ func TestPrintAction_BooleanArgument(t *testing.T) {
 	}
 	t.Log("✅ Test avec argument boolean réussi")
 }
+
 // TestPrintAction_FactArgument teste l'action print avec un fait
 func TestPrintAction_FactArgument(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - ARGUMENT FACT")
@@ -192,6 +201,7 @@ func TestPrintAction_FactArgument(t *testing.T) {
 	}
 	t.Log("✅ Test avec argument fact réussi")
 }
+
 // TestPrintAction_NoArguments teste l'action print sans arguments
 func TestPrintAction_NoArguments(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - SANS ARGUMENTS")
@@ -208,6 +218,7 @@ func TestPrintAction_NoArguments(t *testing.T) {
 	}
 	t.Log("✅ Test sans arguments réussi (erreur attendue)")
 }
+
 // TestPrintAction_Validate teste la validation de l'action print
 func TestPrintAction_Validate(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - VALIDATION")
@@ -227,6 +238,7 @@ func TestPrintAction_Validate(t *testing.T) {
 	}
 	t.Log("✅ Test de validation réussi")
 }
+
 // TestActionExecutor_WithRegistry teste l'intégration du registry dans l'executor
 func TestActionExecutor_WithRegistry(t *testing.T) {
 	t.Log("🧪 TEST ACTION EXECUTOR - AVEC REGISTRY")
@@ -246,6 +258,7 @@ func TestActionExecutor_WithRegistry(t *testing.T) {
 	}
 	t.Log("✅ Test d'intégration réussi")
 }
+
 // TestActionExecutor_CustomAction teste l'enregistrement d'une action personnalisée
 func TestActionExecutor_CustomAction(t *testing.T) {
 	t.Log("🧪 TEST ACTION EXECUTOR - ACTION PERSONNALISÉE")
@@ -265,6 +278,7 @@ func TestActionExecutor_CustomAction(t *testing.T) {
 	}
 	t.Log("✅ Test d'action personnalisée réussi")
 }
+
 // TestActionExecutor_UndefinedAction teste le comportement avec une action non définie
 func TestActionExecutor_UndefinedAction(t *testing.T) {
 	t.Log("🧪 TEST ACTION EXECUTOR - ACTION NON DÉFINIE")
@@ -287,6 +301,7 @@ func TestActionExecutor_UndefinedAction(t *testing.T) {
 	}
 	t.Log("✅ Test d'action non définie réussi")
 }
+
 // MockActionHandler est un handler de test
 type MockActionHandler struct {
 	name           string
@@ -294,6 +309,7 @@ type MockActionHandler struct {
 	validateCalled bool
 	lastArgs       []interface{}
 }
+
 func (m *MockActionHandler) Execute(args []interface{}, ctx *ExecutionContext) error {
 	m.executeCalled = true
 	m.lastArgs = args
@@ -306,6 +322,7 @@ func (m *MockActionHandler) Validate(args []interface{}) error {
 	m.validateCalled = true
 	return nil
 }
+
 // TestActionRegistry_NilHandler teste l'enregistrement d'un handler nil
 func TestActionRegistry_NilHandler(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - HANDLER NIL")
@@ -317,6 +334,7 @@ func TestActionRegistry_NilHandler(t *testing.T) {
 	}
 	t.Log("✅ Test handler nil réussi")
 }
+
 // TestActionRegistry_EmptyName teste l'enregistrement d'un handler avec nom vide
 func TestActionRegistry_EmptyName(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - NOM VIDE")
@@ -329,6 +347,7 @@ func TestActionRegistry_EmptyName(t *testing.T) {
 	}
 	t.Log("✅ Test nom vide réussi")
 }
+
 // TestPrintAction_SetOutput teste le changement de sortie
 func TestPrintAction_SetOutput(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - CHANGEMENT DE SORTIE")
@@ -357,6 +376,7 @@ func TestPrintAction_SetOutput(t *testing.T) {
 	}
 	t.Log("✅ Test changement de sortie réussi")
 }
+
 // TestPrintAction_IntegerTypes teste l'action print avec différents types d'entiers
 func TestPrintAction_IntegerTypes(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - TYPES D'ENTIERS")
@@ -390,6 +410,7 @@ func TestPrintAction_IntegerTypes(t *testing.T) {
 	}
 	t.Log("✅ Test types d'entiers réussi")
 }
+
 // TestActionRegistry_GetAll teste la récupération de tous les handlers
 func TestActionRegistry_GetAll(t *testing.T) {
 	t.Log("🧪 TEST ACTION REGISTRY - GET ALL")
@@ -413,6 +434,7 @@ func TestActionRegistry_GetAll(t *testing.T) {
 	}
 	t.Log("✅ Test GetAll réussi")
 }
+
 // TestPrintAction_NilFact teste l'action print avec un fait nil
 func TestPrintAction_NilFact(t *testing.T) {
 	t.Log("🧪 TEST PRINT ACTION - FAIT NIL")

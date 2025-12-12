@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"runtime"
 	"testing"
 	"time"
 )
+
 // Helper: Build a test network with N facts
 func buildTestNetworkWithFacts(size int) *ReteNetwork {
 	storage := NewMemoryStorage()
@@ -35,6 +37,7 @@ func buildTestNetworkWithFacts(size int) *ReteNetwork {
 	}
 	return network
 }
+
 // Helper: Create a unique test fact
 func createUniqueTestFact() *Fact {
 	return &Fact{
@@ -46,6 +49,7 @@ func createUniqueTestFact() *Fact {
 		},
 	}
 }
+
 // TestTransaction_CommitAppliesChanges tests that commit applies all changes
 func TestTransaction_CommitAppliesChanges(t *testing.T) {
 	t.Log("🔍 VALIDATION : Commit doit appliquer les changements")
@@ -79,6 +83,7 @@ func TestTransaction_CommitAppliesChanges(t *testing.T) {
 	}
 	t.Logf("✅ Commit successful: %d facts added, total now %d", len(facts), actualCount)
 }
+
 // TestTransaction_RollbackRevertsAllChanges tests that rollback reverts all changes
 func TestTransaction_RollbackRevertsAllChanges(t *testing.T) {
 	t.Log("🔍 VALIDATION : Rollback doit annuler TOUTES les modifications")
@@ -145,6 +150,7 @@ func TestTransaction_RollbackRevertsAllChanges(t *testing.T) {
 	}
 	t.Logf("✅ Rollback successful: state restored to %d facts", beforeCount)
 }
+
 // TestTransaction_MultipleOperations tests transactions with many operations
 func TestTransaction_MultipleOperations(t *testing.T) {
 	t.Log("🔍 TEST : Transaction avec multiples opérations")
@@ -176,6 +182,7 @@ func TestTransaction_MultipleOperations(t *testing.T) {
 	}
 	t.Logf("✅ Transaction with %d operations successful", commandCount)
 }
+
 // TestTransaction_CannotCommitTwice tests that committing twice fails
 func TestTransaction_CannotCommitTwice(t *testing.T) {
 	t.Log("🔍 TEST : Impossible de commit deux fois")
@@ -194,6 +201,7 @@ func TestTransaction_CannotCommitTwice(t *testing.T) {
 	}
 	t.Log("✅ Cannot commit twice - correct behavior")
 }
+
 // TestTransaction_CannotRollbackAfterCommit tests that rollback after commit fails
 func TestTransaction_CannotRollbackAfterCommit(t *testing.T) {
 	t.Log("🔍 TEST : Impossible de rollback après commit")
@@ -212,6 +220,7 @@ func TestTransaction_CannotRollbackAfterCommit(t *testing.T) {
 	}
 	t.Log("✅ Cannot rollback after commit - correct behavior")
 }
+
 // TestTransaction_CannotRollbackTwice tests that rolling back twice fails
 func TestTransaction_CannotRollbackTwice(t *testing.T) {
 	t.Log("🔍 TEST : Impossible de rollback deux fois")
@@ -230,6 +239,7 @@ func TestTransaction_CannotRollbackTwice(t *testing.T) {
 	}
 	t.Log("✅ Cannot rollback twice - correct behavior")
 }
+
 // TestTransaction_EmptyTransaction tests an empty transaction
 func TestTransaction_EmptyTransaction(t *testing.T) {
 	t.Log("🔍 TEST : Transaction vide")
@@ -250,6 +260,7 @@ func TestTransaction_EmptyTransaction(t *testing.T) {
 	}
 	t.Log("✅ Empty transaction handled correctly")
 }
+
 // TestTransaction_GetCommandCount tests command counting
 func TestTransaction_GetCommandCount(t *testing.T) {
 	t.Log("🔍 TEST : Comptage des commandes")
@@ -273,6 +284,7 @@ func TestTransaction_GetCommandCount(t *testing.T) {
 	}
 	t.Log("✅ Command counting works correctly")
 }
+
 // TestTransaction_GetDuration tests duration tracking
 func TestTransaction_GetDuration(t *testing.T) {
 	t.Log("🔍 TEST : Durée de transaction")
@@ -286,6 +298,7 @@ func TestTransaction_GetDuration(t *testing.T) {
 	}
 	t.Logf("✅ Transaction duration: %v", duration)
 }
+
 // TestTransaction_String tests string representation
 func TestTransaction_String(t *testing.T) {
 	t.Log("🔍 TEST : Représentation string")
@@ -303,6 +316,7 @@ func TestTransaction_String(t *testing.T) {
 	t.Logf("After commit: %s", str)
 	t.Log("✅ String representation works")
 }
+
 // TestTransaction_MemoryFootprint tests memory footprint estimation
 func TestTransaction_MemoryFootprint(t *testing.T) {
 	t.Log("🔍 TEST : Empreinte mémoire")
@@ -334,6 +348,7 @@ func TestTransaction_MemoryFootprint(t *testing.T) {
 	network.SetTransaction(nil)
 	t.Log("✅ Memory footprint estimation works")
 }
+
 // TestTransaction_WithoutNetwork tests transaction without setting on network
 func TestTransaction_WithoutNetwork(t *testing.T) {
 	t.Log("🔍 TEST : Transaction sans réseau")
@@ -356,6 +371,7 @@ func TestTransaction_WithoutNetwork(t *testing.T) {
 	}
 	t.Log("✅ Transaction without network works correctly")
 }
+
 // TestTransaction_ConcurrentAccess tests basic thread safety
 func TestTransaction_ConcurrentAccess(t *testing.T) {
 	t.Log("🔍 TEST : Accès concurrent (basique)")
@@ -386,6 +402,7 @@ func TestTransaction_ConcurrentAccess(t *testing.T) {
 	network.SetTransaction(nil)
 	t.Log("✅ Basic concurrent access works (no panic)")
 }
+
 // TestTransaction_BeginTransactionIsO1 tests that BeginTransaction is O(1)
 func TestTransaction_BeginTransactionIsO1(t *testing.T) {
 	t.Log("🔍 TEST : BeginTransaction est O(1)")
@@ -409,6 +426,7 @@ func TestTransaction_BeginTransactionIsO1(t *testing.T) {
 		t.Logf("✅ BeginTransaction est O(1): ratio=%.2f", ratio)
 	}
 }
+
 // TestTransaction_GetCommands tests getting commands list
 func TestTransaction_GetCommands(t *testing.T) {
 	t.Log("🔍 TEST : Récupération de la liste des commandes")

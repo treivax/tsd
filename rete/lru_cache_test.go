@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 )
+
 // TestNewLRUCache teste la création d'un cache LRU
 func TestNewLRUCache(t *testing.T) {
 	cache := NewLRUCache(100, 0)
@@ -21,6 +23,7 @@ func TestNewLRUCache(t *testing.T) {
 		t.Errorf("Longueur initiale devrait être 0, obtenu %d", cache.Len())
 	}
 }
+
 // TestNewLRUCache_ZeroCapacity teste la création avec capacité 0
 func TestNewLRUCache_ZeroCapacity(t *testing.T) {
 	cache := NewLRUCache(0, 0)
@@ -28,6 +31,7 @@ func TestNewLRUCache_ZeroCapacity(t *testing.T) {
 		t.Error("Capacité devrait être > 0 même avec input 0")
 	}
 }
+
 // TestLRUCache_SetGet teste Set et Get
 func TestLRUCache_SetGet(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -52,6 +56,7 @@ func TestLRUCache_SetGet(t *testing.T) {
 		t.Error("nonexistent ne devrait pas exister")
 	}
 }
+
 // TestLRUCache_Update teste la mise à jour d'une valeur existante
 func TestLRUCache_Update(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -65,6 +70,7 @@ func TestLRUCache_Update(t *testing.T) {
 		t.Error("Valeur devrait être mise à jour")
 	}
 }
+
 // TestLRUCache_Eviction teste l'éviction LRU
 func TestLRUCache_Eviction(t *testing.T) {
 	cache := NewLRUCache(3, 0) // Capacité de 3
@@ -96,6 +102,7 @@ func TestLRUCache_Eviction(t *testing.T) {
 		t.Error("key4 devrait être présent")
 	}
 }
+
 // TestLRUCache_LRUOrder teste l'ordre LRU
 func TestLRUCache_LRUOrder(t *testing.T) {
 	cache := NewLRUCache(3, 0)
@@ -115,6 +122,7 @@ func TestLRUCache_LRUOrder(t *testing.T) {
 		t.Error("key1 devrait être présent")
 	}
 }
+
 // TestLRUCache_Delete teste la suppression
 func TestLRUCache_Delete(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -138,6 +146,7 @@ func TestLRUCache_Delete(t *testing.T) {
 		t.Error("Delete devrait retourner false pour clé inexistante")
 	}
 }
+
 // TestLRUCache_Clear teste le vidage du cache
 func TestLRUCache_Clear(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -155,6 +164,7 @@ func TestLRUCache_Clear(t *testing.T) {
 		}
 	}
 }
+
 // TestLRUCache_Stats teste les statistiques
 func TestLRUCache_Stats(t *testing.T) {
 	cache := NewLRUCache(3, 0)
@@ -185,6 +195,7 @@ func TestLRUCache_Stats(t *testing.T) {
 		t.Errorf("Capacity devrait être 3, obtenu %d", stats.Capacity)
 	}
 }
+
 // TestLRUCache_HitRate teste le calcul du taux de hits
 func TestLRUCache_HitRate(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -204,6 +215,7 @@ func TestLRUCache_HitRate(t *testing.T) {
 		t.Errorf("HitRate devrait être %f, obtenu %f", expected, rate)
 	}
 }
+
 // TestLRUCache_TTL teste l'expiration avec TTL
 func TestLRUCache_TTL(t *testing.T) {
 	ttl := 100 * time.Millisecond
@@ -220,6 +232,7 @@ func TestLRUCache_TTL(t *testing.T) {
 		t.Error("key1 devrait avoir expiré")
 	}
 }
+
 // TestLRUCache_CleanExpired teste le nettoyage des éléments expirés
 func TestLRUCache_CleanExpired(t *testing.T) {
 	ttl := 100 * time.Millisecond
@@ -238,6 +251,7 @@ func TestLRUCache_CleanExpired(t *testing.T) {
 		t.Errorf("Cache devrait être vide après nettoyage, obtenu %d", cache.Len())
 	}
 }
+
 // TestLRUCache_CleanExpired_NoTTL teste CleanExpired sans TTL
 func TestLRUCache_CleanExpired_NoTTL(t *testing.T) {
 	cache := NewLRUCache(10, 0) // Pas de TTL
@@ -251,6 +265,7 @@ func TestLRUCache_CleanExpired_NoTTL(t *testing.T) {
 		t.Error("Les éléments ne devraient pas être supprimés sans TTL")
 	}
 }
+
 // TestLRUCache_Keys teste Keys()
 func TestLRUCache_Keys(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -272,6 +287,7 @@ func TestLRUCache_Keys(t *testing.T) {
 		}
 	}
 }
+
 // TestLRUCache_OldestNewest teste Oldest() et Newest()
 func TestLRUCache_OldestNewest(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -303,6 +319,7 @@ func TestLRUCache_OldestNewest(t *testing.T) {
 		t.Errorf("Oldest devrait maintenant être key2, obtenu %s", oldest)
 	}
 }
+
 // TestLRUCache_Contains teste Contains()
 func TestLRUCache_Contains(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -321,6 +338,7 @@ func TestLRUCache_Contains(t *testing.T) {
 		t.Error("Contains ne devrait pas incrémenter les hits")
 	}
 }
+
 // TestLRUCache_ThreadSafety teste la sécurité des threads
 func TestLRUCache_ThreadSafety(t *testing.T) {
 	cache := NewLRUCache(100, 0)
@@ -349,6 +367,7 @@ func TestLRUCache_ThreadSafety(t *testing.T) {
 		t.Error("Cache devrait fonctionner après accès concurrents")
 	}
 }
+
 // TestLRUCacheStats_Methods teste les méthodes de LRUCacheStats
 func TestLRUCacheStats_Methods(t *testing.T) {
 	stats := LRUCacheStats{
@@ -375,6 +394,7 @@ func TestLRUCacheStats_Methods(t *testing.T) {
 		t.Errorf("FillRate devrait être %f, obtenu %f", expectedFillRate, rate)
 	}
 }
+
 // TestLRUCacheStats_ZeroValues teste les méthodes avec valeurs nulles
 func TestLRUCacheStats_ZeroValues(t *testing.T) {
 	stats := LRUCacheStats{}
@@ -388,6 +408,7 @@ func TestLRUCacheStats_ZeroValues(t *testing.T) {
 		t.Errorf("FillRate devrait être 0.0 pour stats vides, obtenu %f", rate)
 	}
 }
+
 // TestLRUCache_ResetStats teste la réinitialisation des stats
 func TestLRUCache_ResetStats(t *testing.T) {
 	cache := NewLRUCache(10, 0)
@@ -420,6 +441,7 @@ func TestLRUCache_ResetStats(t *testing.T) {
 		t.Error("Size ne devrait pas être 0 (reset n'efface pas le cache)")
 	}
 }
+
 // BenchmarkLRUCache_Set benchmark les opérations Set
 func BenchmarkLRUCache_Set(b *testing.B) {
 	cache := NewLRUCache(1000, 0)
@@ -429,6 +451,7 @@ func BenchmarkLRUCache_Set(b *testing.B) {
 		cache.Set(key, i)
 	}
 }
+
 // BenchmarkLRUCache_Get benchmark les opérations Get
 func BenchmarkLRUCache_Get(b *testing.B) {
 	cache := NewLRUCache(1000, 0)
@@ -442,6 +465,7 @@ func BenchmarkLRUCache_Get(b *testing.B) {
 		cache.Get(key)
 	}
 }
+
 // BenchmarkLRUCache_SetGet benchmark les opérations mixtes
 func BenchmarkLRUCache_SetGet(b *testing.B) {
 	cache := NewLRUCache(1000, 0)

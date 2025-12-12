@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestNewJoinRuleBuilder(t *testing.T) {
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
@@ -155,6 +157,7 @@ func TestJoinRuleBuilder_createBinaryJoinRule(t *testing.T) {
 		}
 	})
 }
+
 // TestJoinRuleBuilder_createCascadeJoinRuleLegacy removed - legacy mode no longer supported
 // Beta sharing is now always enabled
 func TestJoinRuleBuilder_buildJoinPatterns(t *testing.T) {

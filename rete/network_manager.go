@@ -14,6 +14,10 @@ import (
 func (rn *ReteNetwork) SubmitFact(fact *Fact) error {
 	rn.logger.Debug("🔥 Soumission fait: %s", fact.String())
 
+	// Debug logging for E2E debugging
+	debugLogger := GetDebugLogger()
+	debugLogger.LogFactSubmission(fact.Type, fact.ID, fact.Fields)
+
 	// Vérifier si une transaction est active
 	tx := rn.GetTransaction()
 	if tx != nil && tx.IsActive {
@@ -134,6 +138,12 @@ func (rn *ReteNetwork) SubmitFactsFromGrammarWithMetrics(facts []map[string]inte
 func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]interface{}, metricsCollector *CoherenceMetricsCollector) error {
 	if len(facts) == 0 {
 		return nil
+	}
+
+	// Debug: dump network structure before fact submission
+	debugLogger := GetDebugLogger()
+	if debugLogger.IsEnabled() {
+		debugLogger.LogNetworkStructure(rn)
 	}
 
 	// Démarrer la phase de soumission si collecteur disponible

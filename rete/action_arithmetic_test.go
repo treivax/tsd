@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
 	"log"
 	"testing"
 )
+
 // TestArithmeticExpressionsInActions teste l'utilisation d'expressions arithmétiques dans les actions
 func TestArithmeticExpressionsInActions(t *testing.T) {
 	tests := []struct {
@@ -68,10 +70,9 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 				}
 				// Créer un token avec ces bindings
 				token := &Token{
-					ID:    "token1",
-					Facts: []*Fact{adulte, enfant},
-		Bindings: NewBindingChain().Add("a", adulte).Add("e", enfant),
-					},
+					ID:       "token1",
+					Facts:    []*Fact{adulte, enfant},
+					Bindings: NewBindingChain().Add("a", adulte).Add("e", enfant),
 				}
 				return token
 			},
@@ -527,12 +528,13 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 		})
 	}
 }
+
 // TestArithmeticExpressionEvaluation teste l'évaluation directe des expressions arithmétiques
 func TestArithmeticExpressionEvaluation(t *testing.T) {
 	tests := []struct {
 		name        string
 		expr        map[string]interface{}
-		bindings    map[string]*Fact
+		bindings    *BindingChain
 		expected    float64
 		expectError bool
 	}{
@@ -544,7 +546,7 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 				"left":     map[string]interface{}{"type": "number", "value": float64(5)},
 				"right":    map[string]interface{}{"type": "number", "value": float64(3)},
 			},
-			bindings:    map[string]*Fact{},
+			bindings:    NewBindingChain(),
 			expected:    8.0,
 			expectError: false,
 		},
@@ -564,19 +566,18 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 					"field":  "value",
 				},
 			},
-			bindings: map[string]*Fact{
-				"a": {
+			bindings: NewBindingChain().
+				Add("a", &Fact{
 					ID:     "a1",
 					Type:   "Test",
 					Fields: map[string]interface{}{"value": float64(100)},
-				},
-				"b": {
+				}).
+				Add("b", &Fact{
 					ID:     "b1",
 					Type:   "Test",
-					Fields: map[string]interface{}{"value": float64(25)},
-				},
-			},
-			expected:    75.0,
+					Fields: map[string]interface{}{"value": float64(30)},
+				}),
+			expected:    70.0,
 			expectError: false,
 		},
 		{
@@ -587,7 +588,7 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 				"left":     map[string]interface{}{"type": "number", "value": float64(7)},
 				"right":    map[string]interface{}{"type": "number", "value": float64(6)},
 			},
-			bindings:    map[string]*Fact{},
+			bindings:    NewBindingChain(),
 			expected:    42.0,
 			expectError: false,
 		},
@@ -599,7 +600,7 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 				"left":     map[string]interface{}{"type": "number", "value": float64(100)},
 				"right":    map[string]interface{}{"type": "number", "value": float64(4)},
 			},
-			bindings:    map[string]*Fact{},
+			bindings:    NewBindingChain(),
 			expected:    25.0,
 			expectError: false,
 		},
@@ -611,7 +612,7 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 				"left":     map[string]interface{}{"type": "number", "value": float64(17)},
 				"right":    map[string]interface{}{"type": "number", "value": float64(5)},
 			},
-			bindings:    map[string]*Fact{},
+			bindings:    NewBindingChain(),
 			expected:    2.0,
 			expectError: false,
 		},
@@ -655,6 +656,7 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 		})
 	}
 }
+
 // TestCompleteScenario_ParentChildAge teste le scénario complet de l'exemple fourni
 func TestCompleteScenario_ParentChildAge(t *testing.T) {
 	storage := NewMemoryStorage()

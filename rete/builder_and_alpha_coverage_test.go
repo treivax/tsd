@@ -1,8 +1,10 @@
 package rete
+
 import (
 	"strings"
 	"testing"
 )
+
 // TestAlphaChainBuilderGetMetrics tests the GetMetrics function
 func TestAlphaChainBuilderGetMetrics(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -23,6 +25,7 @@ func TestAlphaChainBuilderGetMetrics(t *testing.T) {
 		t.Error("expected non-negative TotalNodesCreated")
 	}
 }
+
 // TestAlphaChainBuilderGetConnectionCacheSize tests the GetConnectionCacheSize function
 func TestAlphaChainBuilderGetConnectionCacheSize(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -37,6 +40,7 @@ func TestAlphaChainBuilderGetConnectionCacheSize(t *testing.T) {
 		t.Errorf("unexpected initial cache size: %d", size)
 	}
 }
+
 // TestAlphaChainBuilderClearConnectionCache tests the ClearConnectionCache function
 func TestAlphaChainBuilderClearConnectionCache(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -50,6 +54,7 @@ func TestAlphaChainBuilderClearConnectionCache(t *testing.T) {
 		t.Errorf("expected cache size 0 after clear, got %d", size)
 	}
 }
+
 // TestBetaChainBuilderGetConnectionCacheSize tests the GetConnectionCacheSize function on BetaChainBuilder
 func TestBetaChainBuilderGetConnectionCacheSize(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -60,6 +65,7 @@ func TestBetaChainBuilderGetConnectionCacheSize(t *testing.T) {
 		t.Errorf("expected non-negative cache size, got %d", size)
 	}
 }
+
 // TestComputeJoinNodeHash tests the ComputeJoinNodeHash function
 func TestComputeJoinNodeHash(t *testing.T) {
 	tests := []struct {
@@ -142,6 +148,7 @@ func TestComputeJoinNodeHash(t *testing.T) {
 		})
 	}
 }
+
 // TestComputeSHA256Hash tests the ComputeSHA256Hash function
 func TestComputeSHA256Hash(t *testing.T) {
 	tests := []struct {
@@ -190,6 +197,7 @@ func TestComputeSHA256Hash(t *testing.T) {
 		})
 	}
 }
+
 // TestComputeJoinNodeHashConsistency verifies that identical signatures produce identical hashes
 func TestComputeJoinNodeHashConsistency(t *testing.T) {
 	canonical := &CanonicalJoinSignature{
@@ -224,6 +232,7 @@ func TestComputeJoinNodeHashConsistency(t *testing.T) {
 		}
 	}
 }
+
 // TestComputeSHA256HashDifferentInputs verifies that different inputs produce different hashes
 func TestComputeSHA256HashDifferentInputs(t *testing.T) {
 	data1 := []byte("input1")
@@ -242,6 +251,7 @@ func TestComputeSHA256HashDifferentInputs(t *testing.T) {
 		t.Error("expected different hashes for different inputs (2 vs 3)")
 	}
 }
+
 // TestComputeSHA256HashEmptyVsNonEmpty verifies empty and non-empty produce different hashes
 func TestComputeSHA256HashEmptyVsNonEmpty(t *testing.T) {
 	emptyHash := ComputeSHA256Hash([]byte{})

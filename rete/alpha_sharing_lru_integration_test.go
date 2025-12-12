@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"testing"
 	"time"
 )
+
 // TestAlphaSharingLRUIntegration_DefaultConfig teste l'intégration avec la configuration par défaut
 func TestAlphaSharingLRUIntegration_DefaultConfig(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -60,6 +62,7 @@ func TestAlphaSharingLRUIntegration_DefaultConfig(t *testing.T) {
 		t.Errorf("Taille cache stats = %v, attendu 1", stats["size"])
 	}
 }
+
 // TestAlphaSharingLRUIntegration_HighPerformance teste avec la config haute performance
 func TestAlphaSharingLRUIntegration_HighPerformance(t *testing.T) {
 	config := HighPerformanceConfig()
@@ -120,6 +123,7 @@ func TestAlphaSharingLRUIntegration_HighPerformance(t *testing.T) {
 		t.Errorf("Hit rate trop faible: %.2f", hitRate)
 	}
 }
+
 // TestAlphaSharingLRUIntegration_LRUEviction teste l'éviction LRU
 func TestAlphaSharingLRUIntegration_LRUEviction(t *testing.T) {
 	// Configuration avec petite capacité pour tester l'éviction
@@ -172,6 +176,7 @@ func TestAlphaSharingLRUIntegration_LRUEviction(t *testing.T) {
 		t.Errorf("Pas assez de misses détectés après éviction: %d", metrics.HashCacheMisses-initialMisses)
 	}
 }
+
 // TestAlphaSharingLRUIntegration_TTLExpiration teste l'expiration TTL
 func TestAlphaSharingLRUIntegration_TTLExpiration(t *testing.T) {
 	// Configuration avec TTL court
@@ -216,6 +221,7 @@ func TestAlphaSharingLRUIntegration_TTLExpiration(t *testing.T) {
 		t.Errorf("Cache misses = %d, attendu %d", metrics.HashCacheMisses, initialMisses+1)
 	}
 }
+
 // TestAlphaSharingLRUIntegration_CleanExpired teste le nettoyage des entrées expirées
 func TestAlphaSharingLRUIntegration_CleanExpired(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -252,6 +258,7 @@ func TestAlphaSharingLRUIntegration_CleanExpired(t *testing.T) {
 		t.Errorf("Taille cache après nettoyage = %d, attendu 0", registry.GetHashCacheSize())
 	}
 }
+
 // TestAlphaSharingLRUIntegration_DisabledCache teste avec cache désactivé
 func TestAlphaSharingLRUIntegration_DisabledCache(t *testing.T) {
 	config := DisabledCachesConfig()
@@ -288,6 +295,7 @@ func TestAlphaSharingLRUIntegration_DisabledCache(t *testing.T) {
 		t.Errorf("Cache misses devrait être 0, obtenu %d", metrics.HashCacheMisses)
 	}
 }
+
 // TestAlphaSharingLRUIntegration_ClearCache teste le vidage du cache
 func TestAlphaSharingLRUIntegration_ClearCache(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -322,6 +330,7 @@ func TestAlphaSharingLRUIntegration_ClearCache(t *testing.T) {
 		t.Errorf("Stats size = %v, attendu 0", stats["size"])
 	}
 }
+
 // TestAlphaSharingLRUIntegration_ReteNetwork teste l'intégration avec ReteNetwork
 func TestAlphaSharingLRUIntegration_ReteNetwork(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -384,6 +393,7 @@ func TestAlphaSharingLRUIntegration_ReteNetwork(t *testing.T) {
 		t.Error("Hit rate devrait être > 0")
 	}
 }
+
 // TestAlphaSharingLRUIntegration_LowMemoryConfig teste la config basse mémoire
 func TestAlphaSharingLRUIntegration_LowMemoryConfig(t *testing.T) {
 	config := LowMemoryConfig()
@@ -421,6 +431,7 @@ func TestAlphaSharingLRUIntegration_LowMemoryConfig(t *testing.T) {
 		t.Errorf("Évictions = %d, attendu au moins %d", evictions, minExpectedEvictions)
 	}
 }
+
 // TestAlphaSharingLRUIntegration_ConcurrentAccess teste l'accès concurrent
 func TestAlphaSharingLRUIntegration_ConcurrentAccess(t *testing.T) {
 	config := DefaultChainPerformanceConfig()

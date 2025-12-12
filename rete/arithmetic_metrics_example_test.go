@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"time"
 )
+
 // ExampleArithmeticDecompositionMetrics_basicUsage démontre l'utilisation de base des métriques
 func ExampleArithmeticDecompositionMetrics_basicUsage() {
 	// Créer les métriques avec configuration par défaut
@@ -23,6 +25,7 @@ func ExampleArithmeticDecompositionMetrics_basicUsage() {
 	// Total evaluations: 1
 	// Average time: 150µs
 }
+
 // ExampleArithmeticDecompositionMetrics_withCache démontre l'utilisation avec le cache
 func ExampleArithmeticDecompositionMetrics_withCache() {
 	// Créer le cache
@@ -54,6 +57,7 @@ func ExampleArithmeticDecompositionMetrics_withCache() {
 	// Output:
 	// Cache hit rate: 50%
 }
+
 // ExampleArithmeticDecompositionMetrics_chainStructure démontre l'enregistrement de structure
 func ExampleArithmeticDecompositionMetrics_chainStructure() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())
@@ -74,6 +78,7 @@ func ExampleArithmeticDecompositionMetrics_chainStructure() {
 	// Atomic steps: 2
 	// Max dependency depth: 1
 }
+
 // ExampleArithmeticDecompositionMetrics_topRules démontre le classement des règles
 func ExampleArithmeticDecompositionMetrics_topRules() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())
@@ -96,6 +101,7 @@ func ExampleArithmeticDecompositionMetrics_topRules() {
 	// Slowest rule: slow_rule (avg: 100µs)
 	// Second slowest: medium_rule (avg: 50µs)
 }
+
 // ExampleArithmeticDecompositionMetrics_globalMetrics démontre les métriques globales
 func ExampleArithmeticDecompositionMetrics_globalMetrics() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())
@@ -116,6 +122,7 @@ func ExampleArithmeticDecompositionMetrics_globalMetrics() {
 	// Total evaluations: 3
 	// Average chain length: 3.0
 }
+
 // ExampleArithmeticDecompositionMetrics_summary démontre le résumé complet
 func ExampleArithmeticDecompositionMetrics_summary() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())
@@ -136,6 +143,7 @@ func ExampleArithmeticDecompositionMetrics_summary() {
 	// Cache hits: 1
 	// Cache size: 10
 }
+
 // ExampleArithmeticDecompositionMetrics_withCircularDetection démontre la détection de cycles
 func ExampleArithmeticDecompositionMetrics_withCircularDetection() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())
@@ -156,6 +164,7 @@ func ExampleArithmeticDecompositionMetrics_withCircularDetection() {
 	// Cycles detected: 2
 	// Total validations: 1
 }
+
 // ExampleArithmeticDecompositionMetrics_histogram démontre les histogrammes
 func ExampleArithmeticDecompositionMetrics_histogram() {
 	config := DefaultMetricsConfig()
@@ -178,6 +187,7 @@ func ExampleArithmeticDecompositionMetrics_histogram() {
 	// Min time: 5µs
 	// Max time: 350µs
 }
+
 // ExampleArithmeticDecompositionMetrics_fullIntegration démontre une intégration complète
 func ExampleArithmeticDecompositionMetrics_fullIntegration() {
 	// Setup complet avec tous les composants
@@ -255,6 +265,7 @@ func ExampleArithmeticDecompositionMetrics_fullIntegration() {
 	// Graph validations: 1
 	// Cache size: 2
 }
+
 // ExampleArithmeticDecompositionMetrics_performance démontre le suivi des performances
 func ExampleArithmeticDecompositionMetrics_performance() {
 	metrics := NewArithmeticDecompositionMetrics(DefaultMetricsConfig())

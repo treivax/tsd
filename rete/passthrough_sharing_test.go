@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
+
 // TestPassthroughNodeKey tests the key generation for passthrough nodes
 func TestPassthroughNodeKey(t *testing.T) {
 	tests := []struct {
@@ -56,6 +58,7 @@ func TestPassthroughNodeKey(t *testing.T) {
 		})
 	}
 }
+
 // TestGetOrCreatePassthroughAlphaNode_SameTypeSameSide tests that passthrough nodes are shared
 func TestGetOrCreatePassthroughAlphaNode_SameTypeSameSide(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -77,6 +80,7 @@ func TestGetOrCreatePassthroughAlphaNode_SameTypeSameSide(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, alpha1, registeredNode)
 }
+
 // TestGetOrCreatePassthroughAlphaNode_SameTypeDifferentSide tests different sides create different nodes
 func TestGetOrCreatePassthroughAlphaNode_SameTypeDifferentSide(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -91,6 +95,7 @@ func TestGetOrCreatePassthroughAlphaNode_SameTypeDifferentSide(t *testing.T) {
 	assert.Equal(t, "passthrough_rule1_p_Person_right", alphaRight.ID)
 	assert.Equal(t, 2, len(network.PassthroughRegistry))
 }
+
 // TestGetOrCreatePassthroughAlphaNode_DifferentTypes tests different types create different nodes
 func TestGetOrCreatePassthroughAlphaNode_DifferentTypes(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -105,6 +110,7 @@ func TestGetOrCreatePassthroughAlphaNode_DifferentTypes(t *testing.T) {
 	assert.Equal(t, "passthrough_rule1_o_Order_left", alphaOrder.ID)
 	assert.Equal(t, 2, len(network.PassthroughRegistry))
 }
+
 // TestGetOrCreatePassthroughAlphaNode_NoSide tests passthrough without side specification
 func TestGetOrCreatePassthroughAlphaNode_NoSide(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -120,6 +126,7 @@ func TestGetOrCreatePassthroughAlphaNode_NoSide(t *testing.T) {
 	assert.Equal(t, alpha1, alpha2)
 	assert.Equal(t, 1, len(network.PassthroughRegistry))
 }
+
 // TestGetOrCreatePassthroughAlphaNode_Condition tests the condition structure
 func TestGetOrCreatePassthroughAlphaNode_Condition(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -140,6 +147,7 @@ func TestGetOrCreatePassthroughAlphaNode_Condition(t *testing.T) {
 	_, hasSide := condMap2["side"]
 	assert.False(t, hasSide)
 }
+
 // TestGetOrCreatePassthroughAlphaNode_VariableName tests that variable name doesn't affect sharing
 func TestGetOrCreatePassthroughAlphaNode_VariableName(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -157,6 +165,7 @@ func TestGetOrCreatePassthroughAlphaNode_VariableName(t *testing.T) {
 	assert.NotEqual(t, alpha1, alpha3)
 	assert.Equal(t, 3, len(network.PassthroughRegistry))
 }
+
 // TestConnectTypeNodeToBetaNode_Sharing tests that ConnectTypeNodeToBetaNode creates per-rule passthroughs
 func TestConnectTypeNodeToBetaNode_Sharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -181,6 +190,7 @@ func TestConnectTypeNodeToBetaNode_Sharing(t *testing.T) {
 	alphaNode1 := typeNode.GetChildren()[0].(*AlphaNode)
 	assert.Equal(t, 1, len(alphaNode1.GetChildren()))
 }
+
 // TestConnectTypeNodeToBetaNode_DifferentSides tests that different sides create different nodes
 func TestConnectTypeNodeToBetaNode_DifferentSides(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -202,6 +212,7 @@ func TestConnectTypeNodeToBetaNode_DifferentSides(t *testing.T) {
 	// TypeNode should have 2 children (one for each side)
 	assert.Equal(t, 2, len(typeNode.GetChildren()))
 }
+
 // TestNetworkReset_ClearsPassthroughRegistry tests that Reset clears the passthrough registry
 func TestNetworkReset_ClearsPassthroughRegistry(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -216,6 +227,7 @@ func TestNetworkReset_ClearsPassthroughRegistry(t *testing.T) {
 	// Registry should be empty
 	assert.Equal(t, 0, len(network.PassthroughRegistry))
 }
+
 // TestPassthroughSharing_MultipleRulesSameTypes tests realistic scenario with multiple rules
 // Updated to reflect per-rule passthrough behavior
 func TestPassthroughSharing_MultipleRulesSameTypes(t *testing.T) {
@@ -251,6 +263,7 @@ func TestPassthroughSharing_MultipleRulesSameTypes(t *testing.T) {
 	assert.Equal(t, "passthrough_rule1_p_Person_left", personPassthrough.ID)
 	assert.Equal(t, "passthrough_rule1_o_Order_right", orderPassthrough.ID)
 }
+
 // TestPassthroughSharing_NoDoubleConnection tests that connecting twice doesn't create duplicate edges
 func TestPassthroughSharing_NoDoubleConnection(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -275,6 +288,7 @@ func TestPassthroughSharing_NoDoubleConnection(t *testing.T) {
 	alphaNode := typeNode.GetChildren()[0].(*AlphaNode)
 	assert.NotNil(t, alphaNode)
 }
+
 // TestPassthroughRegistry_InitializedInNewNetwork tests that new networks have initialized registry
 func TestPassthroughRegistry_InitializedInNewNetwork(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -282,6 +296,7 @@ func TestPassthroughRegistry_InitializedInNewNetwork(t *testing.T) {
 	assert.NotNil(t, network.PassthroughRegistry)
 	assert.Equal(t, 0, len(network.PassthroughRegistry))
 }
+
 // TestPassthroughSharing_RegistryConsistency tests registry consistency after operations
 func TestPassthroughSharing_RegistryConsistency(t *testing.T) {
 	storage := NewMemoryStorage()

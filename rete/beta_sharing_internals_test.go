@@ -1,9 +1,11 @@
 package rete
+
 import (
 	"strings"
 	"sync"
 	"testing"
 )
+
 // TestComputeHashDirect tests the computeHashDirect function with various scenarios
 func TestComputeHashDirect(t *testing.T) {
 	tests := []struct {
@@ -157,6 +159,7 @@ func TestComputeHashDirect(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizeSignatureFallback tests the normalizeSignatureFallback function
 func TestNormalizeSignatureFallback(t *testing.T) {
 	tests := []struct {
@@ -302,6 +305,7 @@ func TestNormalizeSignatureFallback(t *testing.T) {
 		})
 	}
 }
+
 // TestCanonicalJoinSignatureToJSON tests the ToJSON method
 func TestCanonicalJoinSignatureToJSON(t *testing.T) {
 	tests := []struct {
@@ -410,6 +414,7 @@ func TestCanonicalJoinSignatureToJSON(t *testing.T) {
 		})
 	}
 }
+
 // TestRecordCacheHitAndMiss tests the RecordCacheHit and RecordCacheMiss functions
 func TestRecordCacheHitAndMiss(t *testing.T) {
 	t.Run("record cache hits", func(t *testing.T) {
@@ -488,6 +493,7 @@ func TestRecordCacheHitAndMiss(t *testing.T) {
 		}
 	})
 }
+
 // TestNewNormalizationContext tests the NewNormalizationContext function
 func TestNewNormalizationContext(t *testing.T) {
 	tests := []struct {
@@ -547,6 +553,7 @@ func TestNewNormalizationContext(t *testing.T) {
 		})
 	}
 }
+
 // TestNormalizationContextSeenNodes tests the seenNodes tracking in NormalizationContext
 func TestNormalizationContextSeenNodes(t *testing.T) {
 	config := BetaSharingConfig{
@@ -574,6 +581,7 @@ func TestNormalizationContextSeenNodes(t *testing.T) {
 		t.Error("node3 should be marked as seen")
 	}
 }
+
 // TestComputeHashDirectConsistency verifies hash consistency across multiple calls
 func TestComputeHashDirectConsistency(t *testing.T) {
 	config := BetaSharingConfig{
@@ -615,6 +623,7 @@ func TestComputeHashDirectConsistency(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeSignatureFallbackDifferentOrders verifies that normalization produces
 // the same result for signatures with variables in different orders
 func TestNormalizeSignatureFallbackDifferentOrders(t *testing.T) {

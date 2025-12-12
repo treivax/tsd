@@ -272,8 +272,8 @@ func TestExecutionResults(t *testing.T) {
 // TestActivation tests Activation structure
 func TestActivation(t *testing.T) {
 	fact := Fact{
-		ID:         TestFactID,
-		Type:       TestFactType,
+		ID:     TestFactID,
+		Type:   TestFactType,
 		Fields: map[string]interface{}{"name": "Alice"},
 	}
 
@@ -378,8 +378,8 @@ func TestFact(t *testing.T) {
 	}
 
 	fact := Fact{
-		ID:         TestFactID,
-		Type:       TestFactType,
+		ID:     TestFactID,
+		Type:   TestFactType,
 		Fields: attrs,
 	}
 
@@ -546,8 +546,8 @@ func TestExecutionResults_EmptyActivations(t *testing.T) {
 // TestFact_EmptyAttributes tests Fact with empty attributes
 func TestFact_EmptyAttributes(t *testing.T) {
 	fact := Fact{
-		ID:         TestFactID,
-		Type:       TestFactType,
+		ID:     TestFactID,
+		Type:   TestFactType,
 		Fields: map[string]interface{}{},
 	}
 

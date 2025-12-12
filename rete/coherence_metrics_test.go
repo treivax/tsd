@@ -2,6 +2,7 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"encoding/json"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 )
+
 // TestNewCoherenceMetricsCollector vérifie la création d'un nouveau collecteur
 func TestNewCoherenceMetricsCollector(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -28,6 +30,7 @@ func TestNewCoherenceMetricsCollector(t *testing.T) {
 		t.Error("StartTime devrait être initialisé")
 	}
 }
+
 // TestRecordFactOperations teste l'enregistrement des opérations sur les faits
 func TestRecordFactOperations(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -66,6 +69,7 @@ func TestRecordFactOperations(t *testing.T) {
 		t.Errorf("TerminalActivations: attendu 2, obtenu %d", metrics.TerminalActivations)
 	}
 }
+
 // TestRecordSynchronizationMetrics teste l'enregistrement des métriques de synchronisation
 func TestRecordSynchronizationMetrics(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -96,6 +100,7 @@ func TestRecordSynchronizationMetrics(t *testing.T) {
 		t.Errorf("TotalTimeouts: attendu 2, obtenu %d", metrics.TotalTimeouts)
 	}
 }
+
 // TestRecordWaitTime teste l'enregistrement des temps d'attente
 func TestRecordWaitTime(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -116,6 +121,7 @@ func TestRecordWaitTime(t *testing.T) {
 		t.Errorf("MinWaitTime: attendu 5ms, obtenu %v", metrics.MinWaitTime)
 	}
 }
+
 // TestRecordTimings teste l'enregistrement des temps système
 func TestRecordTimings(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -131,6 +137,7 @@ func TestRecordTimings(t *testing.T) {
 		t.Errorf("TotalSubmissionTime: attendu %v, obtenu %v", submissionTime, metrics.TotalSubmissionTime)
 	}
 }
+
 // TestRecordPreCommitCheck teste l'enregistrement des vérifications pré-commit
 func TestRecordPreCommitCheck(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -149,6 +156,7 @@ func TestRecordPreCommitCheck(t *testing.T) {
 		t.Errorf("PreCommitFailures: attendu 1, obtenu %d", metrics.PreCommitFailures)
 	}
 }
+
 // TestPhaseMetrics teste la gestion des métriques par phase
 func TestPhaseMetrics(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -190,6 +198,7 @@ func TestPhaseMetrics(t *testing.T) {
 		t.Error("La phase validation ne devrait pas avoir réussi")
 	}
 }
+
 // TestTransactionTracking teste le suivi des transactions
 func TestTransactionTracking(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -208,6 +217,7 @@ func TestTransactionTracking(t *testing.T) {
 		t.Errorf("RollbackReason: attendu '%s', obtenu '%s'", rollbackReason, metrics.RollbackReason)
 	}
 }
+
 // TestFinalize teste la finalisation des métriques
 func TestFinalize(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -235,6 +245,7 @@ func TestFinalize(t *testing.T) {
 		t.Errorf("AvgWaitTime: attendu %v, obtenu %v", expectedAvg, metrics.AvgWaitTime)
 	}
 }
+
 // TestCoherenceMetricsConcurrentAccess teste l'accès concurrent aux métriques
 func TestCoherenceMetricsConcurrentAccess(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -266,6 +277,7 @@ func TestCoherenceMetricsConcurrentAccess(t *testing.T) {
 		t.Errorf("TotalVerifyAttempts: attendu %d, obtenu %d", expectedCount, metrics.TotalVerifyAttempts)
 	}
 }
+
 // TestJSONExport teste l'export JSON des métriques
 func TestJSONExport(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -291,6 +303,7 @@ func TestJSONExport(t *testing.T) {
 		t.Errorf("transaction_id incorrect dans JSON")
 	}
 }
+
 // TestSummary teste la génération du résumé
 func TestSummary(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -314,6 +327,7 @@ func TestSummary(t *testing.T) {
 		t.Error("Le résumé devrait mentionner les retries")
 	}
 }
+
 // TestIsHealthy teste la détection de santé du système
 func TestIsHealthy(t *testing.T) {
 	tests := []struct {
@@ -404,6 +418,7 @@ func TestIsHealthy(t *testing.T) {
 		})
 	}
 }
+
 // TestGetHealthReport teste la génération du rapport de santé
 func TestGetHealthReport(t *testing.T) {
 	// Système sain
@@ -439,6 +454,7 @@ func TestGetHealthReport(t *testing.T) {
 		t.Error("Le rapport devrait mentionner le rollback")
 	}
 }
+
 // TestStringFormatting teste le formatage de la chaîne complète
 func TestStringFormatting(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -476,6 +492,7 @@ func TestStringFormatting(t *testing.T) {
 		t.Error("La sortie devrait contenir le nom de la phase")
 	}
 }
+
 // TestAvgWaitTimeCalculation teste le calcul du temps d'attente moyen
 func TestAvgWaitTimeCalculation(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()
@@ -498,6 +515,7 @@ func TestAvgWaitTimeCalculation(t *testing.T) {
 		t.Errorf("AvgWaitTime: attendu %v, obtenu %v", expectedAvg, metrics2.AvgWaitTime)
 	}
 }
+
 // TestEndPhaseWithoutStart teste EndPhase appelé sans StartPhase
 func TestEndPhaseWithoutStart(t *testing.T) {
 	collector := NewCoherenceMetricsCollector()

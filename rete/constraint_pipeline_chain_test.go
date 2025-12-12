@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestPipeline_SimpleCondition_NoChange vérifie que les conditions simples
 // utilisent toujours le comportement actuel (pas de chaîne)
 func TestPipeline_SimpleCondition_NoChange(t *testing.T) {
@@ -64,6 +66,7 @@ func TestPipeline_SimpleCondition_NoChange(t *testing.T) {
 	}
 	t.Logf("✓ Condition simple traitée correctement sans décomposition")
 }
+
 // TestPipeline_AND_CreatesChain vérifie qu'une expression AND
 // est décomposée en chaîne d'AlphaNodes
 func TestPipeline_AND_CreatesChain(t *testing.T) {
@@ -155,6 +158,7 @@ func TestPipeline_AND_CreatesChain(t *testing.T) {
 	}
 	t.Logf("✓ Expression AND décomposée en chaîne de %d nœuds", len(network.AlphaNodes))
 }
+
 // TestPipeline_OR_SingleNode vérifie qu'une expression OR
 // crée un seul AlphaNode normalisé (pas de chaîne)
 func TestPipeline_OR_SingleNode(t *testing.T) {
@@ -234,6 +238,7 @@ func TestPipeline_OR_SingleNode(t *testing.T) {
 	}
 	t.Logf("✓ Expression OR traitée avec un seul nœud normalisé")
 }
+
 // TestPipeline_TwoRules_ShareChain vérifie que deux règles
 // avec des conditions communes partagent les nœuds de la chaîne
 func TestPipeline_TwoRules_ShareChain(t *testing.T) {
@@ -355,6 +360,7 @@ func TestPipeline_TwoRules_ShareChain(t *testing.T) {
 	}
 	t.Logf("✓ Deux règles partagent correctement la chaîne de %d nœuds", alphaNodesAfterRule2)
 }
+
 // TestPipeline_ErrorHandling_FallbackToSimple vérifie que le système
 // revient au comportement simple en cas d'erreur
 func TestPipeline_ErrorHandling_FallbackToSimple(t *testing.T) {
@@ -397,6 +403,7 @@ func TestPipeline_ErrorHandling_FallbackToSimple(t *testing.T) {
 	}
 	t.Logf("✓ Fallback vers comportement simple fonctionne correctement")
 }
+
 // TestPipeline_ComplexAND_ThreeConditions vérifie qu'une expression
 // AND avec 3 conditions crée une chaîne de 3 nœuds
 func TestPipeline_ComplexAND_ThreeConditions(t *testing.T) {
@@ -492,6 +499,7 @@ func TestPipeline_ComplexAND_ThreeConditions(t *testing.T) {
 	}
 	t.Logf("✓ Expression AND avec 3 conditions décomposée en chaîne de %d nœuds", len(network.AlphaNodes))
 }
+
 // TestPipeline_Arithmetic_NoChain vérifie qu'une expression arithmétique
 // n'est pas décomposée en chaîne
 func TestPipeline_Arithmetic_NoChain(t *testing.T) {

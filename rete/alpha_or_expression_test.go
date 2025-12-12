@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
+	"github.com/treivax/tsd/constraint"
 	"os"
 	"testing"
-	"github.com/treivax/tsd/constraint"
 )
+
 // TestOR_SingleNode_NotDecomposed vérifie qu'une expression OR n'est pas décomposée
 // en plusieurs AlphaNodes mais reste un seul nœud atomique
 func TestOR_SingleNode_NotDecomposed(t *testing.T) {
@@ -95,6 +97,7 @@ func TestOR_SingleNode_NotDecomposed(t *testing.T) {
 	}
 	t.Logf("✓ Expression OR crée un seul AlphaNode (non décomposée)")
 }
+
 // TestOR_Normalization_OrderIndependent vérifie que l'ordre des termes OR
 // n'affecte pas le hash après normalisation (partage possible)
 func TestOR_Normalization_OrderIndependent(t *testing.T) {
@@ -201,6 +204,7 @@ func TestOR_Normalization_OrderIndependent(t *testing.T) {
 	t.Logf("✓ Normalisation OR indépendante de l'ordre des termes")
 	t.Logf("  Hash commun: %s", hash1)
 }
+
 // TestMixedAND_OR_SingleNode vérifie qu'une expression mixte (AND + OR)
 // crée un seul AlphaNode normalisé
 func TestMixedAND_OR_SingleNode(t *testing.T) {
@@ -302,6 +306,7 @@ func TestMixedAND_OR_SingleNode(t *testing.T) {
 	}
 	t.Logf("✓ Expression mixte (AND+OR) crée un seul AlphaNode normalisé")
 }
+
 // TestOR_FactPropagation_Correct vérifie que les faits se propagent correctement
 // à travers un AlphaNode contenant une expression OR
 func TestOR_FactPropagation_Correct(t *testing.T) {
@@ -456,6 +461,7 @@ func TestOR_FactPropagation_Correct(t *testing.T) {
 	t.Logf("✓ Propagation correcte des faits à travers l'AlphaNode OR")
 	t.Logf("  Faits propagés: %d sur 4", len(facts))
 }
+
 // TestOR_SharingBetweenRules vérifie que deux règles avec la même expression OR
 // (mais dans un ordre différent) partagent le même AlphaNode après normalisation
 func TestOR_SharingBetweenRules(t *testing.T) {

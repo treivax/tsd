@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"strings"
 	"testing"
 )
+
 // TestBugRETE001_ReproduceIssue verifies that the bug where alpha and beta conditions
 // were not separated in the RETE network structure has been FIXED.
 //
@@ -148,6 +150,7 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 	// This test documents the bug - it passes if the bug is present
 	// After the fix, this test should FAIL, indicating the bug is fixed
 }
+
 // TestBugRETE001_VerifyFix verifies that the bug has been fixed
 // This test should PASS after the correction
 func TestBugRETE001_VerifyFix(t *testing.T) {
@@ -260,6 +263,7 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 80))
 }
+
 // TestBugRETE001_VerifyExpectedBehavior documents what the expected behavior should be
 func TestBugRETE001_VerifyExpectedBehavior(t *testing.T) {
 	t.Log("📋 COMPORTEMENT ATTENDU (après correction)")
@@ -299,6 +303,7 @@ func TestBugRETE001_VerifyExpectedBehavior(t *testing.T) {
 	// This test is purely documentary
 	t.Skip("Test documentaire - pas d'assertions")
 }
+
 // TestBugRETE001_PerformanceImpact demonstrates the performance impact of the bug
 func TestBugRETE001_PerformanceImpact(t *testing.T) {
 	t.Log("📊 IMPACT PERFORMANCE DU BUG")

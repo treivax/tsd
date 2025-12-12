@@ -70,15 +70,26 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 
 // ActivateLeft traite les tokens de la gauche (généralement des AlphaNodes)
 func (jn *JoinNode) ActivateLeft(token *Token) error {
+	logger := GetDebugLogger()
+
+	logger.Log("[JOIN_%s] ActivateLeft: token vars=%v", jn.ID, token.GetVariables())
+	logger.LogBindings(fmt.Sprintf("JOIN_%s ActivateLeft", jn.ID), token.Bindings)
+
 	// Stocker le token dans la mémoire gauche
 	jn.mutex.Lock()
 	jn.LeftMemory.AddToken(token)
+	leftSize := len(jn.LeftMemory.Tokens)
+	rightSize := len(jn.RightMemory.Tokens)
 	jn.mutex.Unlock()
+
+	logger.Log("[JOIN_%s] After adding to LeftMemory: left=%d, right=%d", jn.ID, leftSize, rightSize)
 
 	// Essayer de joindre avec tous les tokens de la mémoire droite
 	rightTokens := jn.RightMemory.GetTokens()
+	logger.Log("[JOIN_%s] Attempting join with %d right tokens", jn.ID, len(rightTokens))
 
 	for _, rightToken := range rightTokens {
+		logger.Log("[JOIN_%s] Trying join: left_vars=%v + right_vars=%v", jn.ID, token.GetVariables(), rightToken.GetVariables())
 		if joinedToken := jn.performJoinWithTokens(token, rightToken); joinedToken != nil {
 
 			// Stocker uniquement les tokens de jointure réussie
@@ -88,11 +99,15 @@ func (jn *JoinNode) ActivateLeft(token *Token) error {
 			jn.Memory.AddToken(joinedToken) // Pour compatibilité avec le comptage
 			jn.mutex.Unlock()
 
+			logger.Log("[JOIN_%s] ✓ Join successful, propagating token with vars=%v", jn.ID, joinedToken.GetVariables())
+
 			if err := jn.PropagateToChildren(nil, joinedToken); err != nil {
 				return err
 			}
 		}
 	}
+
+	logger.LogMemorySizes(jn.ID, len(jn.LeftMemory.Tokens), len(jn.RightMemory.Tokens), len(jn.ResultMemory.Tokens))
 	return nil
 }
 
@@ -147,11 +162,19 @@ func (jn *JoinNode) ActivateRetract(factID string) error {
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
 func (jn *JoinNode) ActivateRight(fact *Fact) error {
+	logger := GetDebugLogger()
+
+	logger.Log("[JOIN_%s] ActivateRight: fact type=%s, id=%s", jn.ID, fact.Type, fact.ID)
+
 	// Convertir le fait en token pour la mémoire droite
 	factVar := jn.getVariableForFact(fact)
 	if factVar == "" {
+		logger.Log("[JOIN_%s] Fact type %s not applicable to this JoinNode (expected RightVars=%v)",
+			jn.ID, fact.Type, jn.RightVariables)
 		return nil // Fait non applicable à ce JoinNode
 	}
+
+	logger.Log("[JOIN_%s] Fact mapped to variable: %s", jn.ID, factVar)
 
 	factToken := &Token{
 		ID:       fmt.Sprintf("right_token_%s_%s", jn.ID, fact.ID),
@@ -163,12 +186,18 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 	// Stocker le token dans la mémoire droite
 	jn.mutex.Lock()
 	jn.RightMemory.AddToken(factToken)
+	leftSize := len(jn.LeftMemory.Tokens)
+	rightSize := len(jn.RightMemory.Tokens)
 	jn.mutex.Unlock()
+
+	logger.Log("[JOIN_%s] After adding to RightMemory: left=%d, right=%d", jn.ID, leftSize, rightSize)
 
 	// Essayer de joindre avec tous les tokens de la mémoire gauche
 	leftTokens := jn.LeftMemory.GetTokens()
+	logger.Log("[JOIN_%s] Attempting join with %d left tokens", jn.ID, len(leftTokens))
 
 	for _, leftToken := range leftTokens {
+		logger.Log("[JOIN_%s] Trying join: left_vars=%v + right_vars=%v", jn.ID, leftToken.GetVariables(), factToken.GetVariables())
 		if joinedToken := jn.performJoinWithTokens(leftToken, factToken); joinedToken != nil {
 
 			// Stocker uniquement les tokens de jointure réussie
@@ -178,11 +207,15 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 			jn.Memory.AddToken(joinedToken) // Pour compatibilité avec le comptage
 			jn.mutex.Unlock()
 
+			logger.Log("[JOIN_%s] ✓ Join successful, propagating token with vars=%v", jn.ID, joinedToken.GetVariables())
+
 			if err := jn.PropagateToChildren(nil, joinedToken); err != nil {
 				return err
 			}
 		}
 	}
+
+	logger.LogMemorySizes(jn.ID, len(jn.LeftMemory.Tokens), len(jn.RightMemory.Tokens), len(jn.ResultMemory.Tokens))
 	return nil
 }
 
@@ -191,8 +224,11 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 // IMPORTANT: Cette fonction utilise maintenant BindingChain.Merge() pour combiner
 // les bindings de manière immuable, garantissant qu'aucun binding n'est perdu.
 func (jn *JoinNode) performJoinWithTokens(token1 *Token, token2 *Token) *Token {
+	logger := GetDebugLogger()
+
 	// Vérifier que les tokens ont des variables différentes
 	if !jn.tokensHaveDifferentVariables(token1, token2) {
+		logger.Log("[JOIN_%s] Tokens have same variables, skipping join", jn.ID)
 		return nil
 	}
 
@@ -200,10 +236,19 @@ func (jn *JoinNode) performJoinWithTokens(token1 *Token, token2 *Token) *Token {
 	// Merge garantit que tous les bindings des deux tokens sont préservés
 	combinedBindings := token1.Bindings.Merge(token2.Bindings)
 
+	logger.LogJoinNode(jn.ID, "performJoinWithTokens", map[string]interface{}{
+		"token1_vars":   token1.GetVariables(),
+		"token2_vars":   token2.GetVariables(),
+		"combined_vars": combinedBindings.Variables(),
+	})
+
 	// Valider les conditions de jointure
 	if !jn.evaluateJoinConditions(combinedBindings) {
+		logger.Log("[JOIN_%s] Join conditions failed", jn.ID)
 		return nil // Jointure échoue
 	}
+
+	logger.Log("[JOIN_%s] ✓ Join successful, combined vars: %v", jn.ID, combinedBindings.Variables())
 
 	// Créer et retourner le token joint avec la chaîne combinée
 	return &Token{
@@ -415,13 +460,20 @@ func isAlphaCondition(condition map[string]interface{}) bool {
 //
 // Accepte maintenant BindingChain au lieu de map[string]*Fact.
 func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
-	for _, joinCondition := range jn.JoinConditions {
+	logger := GetDebugLogger()
+
+	logger.Log("[JOIN_%s] Evaluating %d join conditions", jn.ID, len(jn.JoinConditions))
+	logger.LogBindings(fmt.Sprintf("JOIN_%s", jn.ID), bindings)
+
+	for i, joinCondition := range jn.JoinConditions {
 		leftFact := bindings.Get(joinCondition.LeftVar)
 		rightFact := bindings.Get(joinCondition.RightVar)
 
 		// Skip conditions that reference variables not available at this join level
 		// (This happens in cascade joins where later variables aren't joined yet)
 		if leftFact == nil || rightFact == nil {
+			logger.Log("[JOIN_%s] Condition[%d] SKIP: leftVar=%s (found=%v), rightVar=%s (found=%v)",
+				jn.ID, i, joinCondition.LeftVar, leftFact != nil, joinCondition.RightVar, rightFact != nil)
 			continue // Skip this condition - variables not available at this level
 		}
 
@@ -431,17 +483,29 @@ func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
 
 		// Vérifier que les champs existent
 		if !leftExists || !rightExists {
+			logger.Log("[JOIN_%s] Condition[%d] FAIL: field not found - %s.%s (exists=%v), %s.%s (exists=%v)",
+				jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftExists,
+				joinCondition.RightVar, joinCondition.RightField, rightExists)
 			return false
 		}
 
 		// Évaluer l'opérateur
+		result := false
 		switch joinCondition.Operator {
 		case "==":
-			if leftValue != rightValue {
+			result = (leftValue == rightValue)
+			if !result {
+				logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) == %s.%s (%v)",
+					jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftValue,
+					joinCondition.RightVar, joinCondition.RightField, rightValue)
 				return false
 			}
 		case "!=":
-			if leftValue == rightValue {
+			result = (leftValue != rightValue)
+			if !result {
+				logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) != %s.%s (%v)",
+					jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftValue,
+					joinCondition.RightVar, joinCondition.RightField, rightValue)
 				return false
 			}
 		case "<":
@@ -493,10 +557,17 @@ func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
 				return false
 			}
 		default:
+			logger.Log("[JOIN_%s] Condition[%d] FAIL: unknown operator %s", jn.ID, i, joinCondition.Operator)
 			return false
 		}
+
+		logger.Log("[JOIN_%s] Condition[%d] PASS: %s.%s %s %s.%s",
+			jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField,
+			joinCondition.Operator,
+			joinCondition.RightVar, joinCondition.RightField)
 	}
 
+	logger.Log("[JOIN_%s] ✓ All join conditions passed", jn.ID)
 	return true
 }
 

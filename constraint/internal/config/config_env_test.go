@@ -223,10 +223,10 @@ func TestGetConfigFilePath(t *testing.T) {
 
 func TestMergeConfig(t *testing.T) {
 	tests := []struct {
-		name     string
-		base     *Config
-		source   *Config
-		checkFn  func(*testing.T, *Config)
+		name    string
+		base    *Config
+		source  *Config
+		checkFn func(*testing.T, *Config)
 	}{
 		{
 			name:   "merge nil source",

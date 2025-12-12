@@ -1,6 +1,7 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 package rete
+
 import (
 	"fmt"
 	"math/rand"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 )
+
 // =============================================================================
 // Benchmark: Multi-Source Aggregation Performance
 // =============================================================================
@@ -23,6 +25,7 @@ func BenchmarkMultiSourceAggregation_TwoSources_SmallScale(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_TwoSources_MediumScale benchmarks 2-source aggregation with medium dataset
 func BenchmarkMultiSourceAggregation_TwoSources_MediumScale(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -33,6 +36,7 @@ func BenchmarkMultiSourceAggregation_TwoSources_MediumScale(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_TwoSources_LargeScale benchmarks 2-source aggregation with large dataset
 func BenchmarkMultiSourceAggregation_TwoSources_LargeScale(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -43,6 +47,7 @@ func BenchmarkMultiSourceAggregation_TwoSources_LargeScale(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_ThreeSources_SmallScale benchmarks 3-source aggregation with small dataset
 func BenchmarkMultiSourceAggregation_ThreeSources_SmallScale(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -54,6 +59,7 @@ func BenchmarkMultiSourceAggregation_ThreeSources_SmallScale(b *testing.B) {
 		NumSources:      3,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_ThreeSources_MediumScale benchmarks 3-source aggregation with medium dataset
 func BenchmarkMultiSourceAggregation_ThreeSources_MediumScale(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -65,6 +71,7 @@ func BenchmarkMultiSourceAggregation_ThreeSources_MediumScale(b *testing.B) {
 		NumSources:      3,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_ThreeSources_LargeScale benchmarks 3-source aggregation with large dataset
 func BenchmarkMultiSourceAggregation_ThreeSources_LargeScale(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -76,6 +83,7 @@ func BenchmarkMultiSourceAggregation_ThreeSources_LargeScale(b *testing.B) {
 		NumSources:      3,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_ManyAggregates benchmarks with many aggregation functions
 func BenchmarkMultiSourceAggregation_ManyAggregates(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -86,6 +94,7 @@ func BenchmarkMultiSourceAggregation_ManyAggregates(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_HighFanout benchmarks high fanout scenario (many source facts per main fact)
 func BenchmarkMultiSourceAggregation_HighFanout(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -96,6 +105,7 @@ func BenchmarkMultiSourceAggregation_HighFanout(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_LowFanout benchmarks low fanout scenario (few source facts per main fact)
 func BenchmarkMultiSourceAggregation_LowFanout(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{
@@ -106,6 +116,7 @@ func BenchmarkMultiSourceAggregation_LowFanout(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_WithThresholds benchmarks aggregation with threshold evaluation
 func BenchmarkMultiSourceAggregation_WithThresholds(b *testing.B) {
 	benchmarkMultiSourceAggregationWithThresholds(b, BenchmarkConfig{
@@ -116,6 +127,7 @@ func BenchmarkMultiSourceAggregation_WithThresholds(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_Retraction benchmarks fact retraction and recomputation
 func BenchmarkMultiSourceAggregation_Retraction(b *testing.B) {
 	benchmarkMultiSourceAggregationRetraction(b, BenchmarkConfig{
@@ -126,6 +138,7 @@ func BenchmarkMultiSourceAggregation_Retraction(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_IncrementalUpdate benchmarks incremental fact addition
 func BenchmarkMultiSourceAggregation_IncrementalUpdate(b *testing.B) {
 	benchmarkMultiSourceAggregationIncremental(b, BenchmarkConfig{
@@ -136,6 +149,7 @@ func BenchmarkMultiSourceAggregation_IncrementalUpdate(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_Memory_SmallScale measures memory usage for small scale
 func BenchmarkMultiSourceAggregation_Memory_SmallScale(b *testing.B) {
 	benchmarkMultiSourceAggregationMemory(b, BenchmarkConfig{
@@ -146,6 +160,7 @@ func BenchmarkMultiSourceAggregation_Memory_SmallScale(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_Memory_LargeScale measures memory usage for large scale
 func BenchmarkMultiSourceAggregation_Memory_LargeScale(b *testing.B) {
 	benchmarkMultiSourceAggregationMemory(b, BenchmarkConfig{
@@ -156,6 +171,7 @@ func BenchmarkMultiSourceAggregation_Memory_LargeScale(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // =============================================================================
 // Benchmark Configuration
 // =============================================================================
@@ -167,6 +183,7 @@ type BenchmarkConfig struct {
 	NumAggVars      int
 	NumSources      int
 }
+
 // =============================================================================
 // Core Benchmark Functions
 // =============================================================================
@@ -427,6 +444,7 @@ func benchmarkMultiSourceAggregationMemory(b *testing.B, config BenchmarkConfig)
 	b.ReportMetric(float64(memAfter.Mallocs-memBefore.Mallocs), "mallocs")
 	b.ReportMetric(float64(memAfter.TotalAlloc-memBefore.TotalAlloc)/1024/1024, "MB_total_alloc")
 }
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -517,6 +535,7 @@ func generateSourceFacts(factType, prefix, foreignKey string, numParents, count 
 	}
 	return facts
 }
+
 // =============================================================================
 // Profiling Helpers
 // =============================================================================
@@ -531,6 +550,7 @@ func BenchmarkMultiSourceAggregation_Profile(b *testing.B) {
 		NumSources:      2,
 	})
 }
+
 // BenchmarkMultiSourceAggregation_ThreeSources_Profile runs a 3-source profiling benchmark
 func BenchmarkMultiSourceAggregation_ThreeSources_Profile(b *testing.B) {
 	benchmarkMultiSourceAggregation(b, BenchmarkConfig{

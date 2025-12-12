@@ -2,14 +2,16 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
+
 // TestPhase2_BasicSynchronization vérifie que tous les faits sont immédiatement visibles après soumission
 func TestPhase2_BasicSynchronization(t *testing.T) {
 	t.Parallel()
@@ -35,6 +37,7 @@ func TestPhase2_BasicSynchronization(t *testing.T) {
 		}
 	}
 }
+
 // TestPhase2_EmptyFactList vérifie que soumettre une liste vide ne cause pas d'erreur
 func TestPhase2_EmptyFactList(t *testing.T) {
 	t.Parallel()
@@ -44,6 +47,7 @@ func TestPhase2_EmptyFactList(t *testing.T) {
 	err := env.Network.SubmitFactsFromGrammar(facts)
 	require.NoError(t, err, "Soumettre une liste vide doit réussir")
 }
+
 // TestPhase2_SingleFact vérifie la synchronisation pour un seul fait
 func TestPhase2_SingleFact(t *testing.T) {
 	t.Parallel()
@@ -61,6 +65,7 @@ func TestPhase2_SingleFact(t *testing.T) {
 	fact := env.Storage.GetFact("Product_single")
 	assert.NotNil(t, fact)
 }
+
 // TestPhase2_WaitForFactPersistence vérifie que waitForFactPersistence fonctionne correctement
 func TestPhase2_WaitForFactPersistence(t *testing.T) {
 	t.Parallel()
@@ -77,6 +82,7 @@ func TestPhase2_WaitForFactPersistence(t *testing.T) {
 	err := env.Network.waitForFactPersistence(fact, 1*time.Second)
 	require.NoError(t, err, "Le fait devrait être trouvé immédiatement")
 }
+
 // TestPhase2_WaitForFactPersistence_Timeout vérifie que le timeout fonctionne
 func TestPhase2_WaitForFactPersistence_Timeout(t *testing.T) {
 	t.Parallel()
@@ -98,6 +104,7 @@ func TestPhase2_WaitForFactPersistence_Timeout(t *testing.T) {
 	assert.Contains(t, err.Error(), "timeout", "Le message d'erreur devrait mentionner le timeout")
 	assert.GreaterOrEqual(t, duration, 100*time.Millisecond, "Devrait attendre au moins le timeout")
 }
+
 // TestPhase2_RetryMechanism vérifie que le mécanisme de retry fonctionne
 func TestPhase2_RetryMechanism(t *testing.T) {
 	t.Parallel()
@@ -122,6 +129,7 @@ func TestPhase2_RetryMechanism(t *testing.T) {
 	assert.GreaterOrEqual(t, duration, 50*time.Millisecond, "Devrait attendre au moins le délai de persistance")
 	assert.Less(t, duration, 200*time.Millisecond, "Ne devrait pas attendre trop longtemps")
 }
+
 // TestPhase2_ConcurrentReadsAfterWrite vérifie que les lectures concurrentes après écriture fonctionnent
 func TestPhase2_ConcurrentReadsAfterWrite(t *testing.T) {
 	t.Parallel()
@@ -152,6 +160,7 @@ func TestPhase2_ConcurrentReadsAfterWrite(t *testing.T) {
 		require.NoError(t, err, "Toutes les goroutines devraient voir le fait")
 	}
 }
+
 // TestPhase2_MultipleFactsBatch vérifie la soumission d'un grand lot de faits
 func TestPhase2_MultipleFactsBatch(t *testing.T) {
 	t.Parallel()
@@ -178,6 +187,7 @@ func TestPhase2_MultipleFactsBatch(t *testing.T) {
 		assert.NotNil(t, fact, "Fait %d doit être visible", i)
 	}
 }
+
 // TestPhase2_TimeoutPerFact vérifie que le timeout par fait est calculé correctement
 func TestPhase2_TimeoutPerFact(t *testing.T) {
 	t.Parallel()
@@ -199,6 +209,7 @@ func TestPhase2_TimeoutPerFact(t *testing.T) {
 	// Devrait être rapide car tous les faits sont persistés immédiatement
 	assert.Less(t, duration, 2*time.Second, "Devrait être rapide avec persistance immédiate")
 }
+
 // TestPhase2_RaceConditionSafety vérifie la sécurité avec le race detector
 func TestPhase2_RaceConditionSafety(t *testing.T) {
 	t.Parallel()
@@ -236,6 +247,7 @@ func TestPhase2_RaceConditionSafety(t *testing.T) {
 		assert.NotNil(t, fact, "Fait %d doit être visible", i)
 	}
 }
+
 // TestPhase2_BackoffStrategy vérifie que le backoff exponentiel fonctionne
 func TestPhase2_BackoffStrategy(t *testing.T) {
 	t.Parallel()
@@ -261,6 +273,7 @@ func TestPhase2_BackoffStrategy(t *testing.T) {
 	assert.GreaterOrEqual(t, duration, 80*time.Millisecond, "Devrait utiliser le backoff")
 	t.Logf("Persistance trouvée après %v (avec backoff exponentiel)", duration)
 }
+
 // TestPhase2_ConfigurableParameters vérifie que les paramètres sont configurables
 func TestPhase2_ConfigurableParameters(t *testing.T) {
 	t.Parallel()
@@ -278,6 +291,7 @@ func TestPhase2_ConfigurableParameters(t *testing.T) {
 	assert.Equal(t, 5*time.Millisecond, env.Network.VerifyRetryDelay)
 	assert.Equal(t, 20, env.Network.MaxVerifyRetries)
 }
+
 // TestPhase2_ErrorHandling vérifie la gestion des erreurs lors de la soumission
 func TestPhase2_ErrorHandling(t *testing.T) {
 	t.Parallel()
@@ -291,6 +305,7 @@ func TestPhase2_ErrorHandling(t *testing.T) {
 	// Devrait gérer gracieusement (le type devient "unknown")
 	require.NoError(t, err, "Devrait gérer les faits sans type explicite")
 }
+
 // TestPhase2_PerformanceOverhead mesure l'overhead de la Phase 2
 func TestPhase2_PerformanceOverhead(t *testing.T) {
 	if testing.Short() {
@@ -319,6 +334,7 @@ func TestPhase2_PerformanceOverhead(t *testing.T) {
 	assert.Less(t, avgPerFact, 10*time.Millisecond,
 		"Overhead moyen par fait devrait être < 10ms")
 }
+
 // TestPhase2_IntegrationWithPhase1 vérifie que Phase 2 est compatible avec Phase 1
 func TestPhase2_IntegrationWithPhase1(t *testing.T) {
 	t.Parallel()
@@ -338,6 +354,7 @@ func TestPhase2_IntegrationWithPhase1(t *testing.T) {
 	assert.Equal(t, "integration_fact", fact.ID)
 	assert.Equal(t, "Product", fact.Type)
 }
+
 // TestPhase2_MinimumTimeoutPerFact vérifie que le timeout minimum est respecté
 func TestPhase2_MinimumTimeoutPerFact(t *testing.T) {
 	t.Parallel()

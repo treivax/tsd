@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestComplexArithmeticInConstraints teste les expressions arithmétiques complexes dans les contraintes (prémisses)
 func TestComplexArithmeticInConstraints(t *testing.T) {
 	tests := []struct {
@@ -351,6 +353,7 @@ func TestComplexArithmeticInConstraints(t *testing.T) {
 		})
 	}
 }
+
 // TestComplexExpressionConstraintTypes teste différents types d'opérations dans les contraintes
 func TestComplexExpressionConstraintTypes(t *testing.T) {
 	tests := []struct {
@@ -488,6 +491,7 @@ func TestComplexExpressionConstraintTypes(t *testing.T) {
 		})
 	}
 }
+
 // TestRealWorldConstraintExpression teste l'exemple complet de contrainte
 func TestRealWorldConstraintExpression(t *testing.T) {
 	t.Log("🧮 Test de contrainte complexe du monde réel")

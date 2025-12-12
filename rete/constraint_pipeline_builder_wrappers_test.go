@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestConstraintPipeline_createAlphaRule tests the createAlphaRule wrapper
 func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 	tests := []struct {
@@ -199,6 +201,7 @@ func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createJoinRule tests the createJoinRule wrapper
 func TestConstraintPipeline_createJoinRule(t *testing.T) {
 	tests := []struct {
@@ -413,6 +416,7 @@ func TestConstraintPipeline_createJoinRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createExistsRule tests the createExistsRule wrapper
 func TestConstraintPipeline_createExistsRule(t *testing.T) {
 	tests := []struct {
@@ -641,6 +645,7 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_extractExistsVariables tests the extractExistsVariables wrapper
 func TestConstraintPipeline_extractExistsVariables(t *testing.T) {
 	tests := []struct {
@@ -754,6 +759,7 @@ func TestConstraintPipeline_extractExistsVariables(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_extractExistsConditions tests the extractExistsConditions wrapper
 func TestConstraintPipeline_extractExistsConditions(t *testing.T) {
 	tests := []struct {
@@ -855,6 +861,7 @@ func TestConstraintPipeline_extractExistsConditions(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_connectExistsNodeToTypeNodes tests the connectExistsNodeToTypeNodes wrapper
 func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 	tests := []struct {
@@ -924,6 +931,7 @@ func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createAccumulatorRule tests the createAccumulatorRule wrapper
 func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 	tests := []struct {
@@ -1070,6 +1078,7 @@ func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createMultiSourceAccumulatorRule tests the createMultiSourceAccumulatorRule wrapper
 func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 	tests := []struct {
@@ -1336,6 +1345,7 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createPassthroughAlphaNode tests the createPassthroughAlphaNode wrapper
 func TestConstraintPipeline_createPassthroughAlphaNode(t *testing.T) {
 	tests := []struct {
@@ -1394,6 +1404,7 @@ func TestConstraintPipeline_createPassthroughAlphaNode(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_connectTypeNodeToBetaNode tests the connectTypeNodeToBetaNode wrapper
 func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 	tests := []struct {
@@ -1471,6 +1482,7 @@ func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_getVariableInfo tests the getVariableInfo helper
 func TestConstraintPipeline_getVariableInfo(t *testing.T) {
 	tests := []struct {

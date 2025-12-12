@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // ========== TESTS DE BASE ==========
 func TestFact_Creation(t *testing.T) {
 	fact := &Fact{
@@ -342,6 +344,7 @@ func TestExistsNode_ActivateRetract(t *testing.T) {
 		t.Errorf("Expected 0 facts in exists memory after retract, got %d", len(existsFacts))
 	}
 }
+
 // ========== TEST DE PROPAGATION INCRÉMENTALE ==========
 // TestIncrementalPropagation teste la propagation incrémentale multi-niveaux
 // Vérifie que l'ajout séquentiel de faits propage correctement à travers les niveaux alpha et beta

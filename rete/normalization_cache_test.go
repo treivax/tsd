@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
+	"github.com/treivax/tsd/constraint"
 	"sync"
 	"testing"
 	"time"
-	"github.com/treivax/tsd/constraint"
 )
+
 // TestNewNormalizationCache teste la création d'un nouveau cache
 func TestNewNormalizationCache(t *testing.T) {
 	cache := NewNormalizationCache(100)
@@ -27,6 +29,7 @@ func TestNewNormalizationCache(t *testing.T) {
 		t.Errorf("Expected eviction strategy 'lru', got '%s'", cache.eviction)
 	}
 }
+
 // TestCacheEnableDisable teste l'activation/désactivation du cache
 func TestCacheEnableDisable(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -45,6 +48,7 @@ func TestCacheEnableDisable(t *testing.T) {
 		t.Error("Cache should be enabled after Enable()")
 	}
 }
+
 // TestCacheGetSet teste les opérations de base Get/Set
 func TestCacheGetSet(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -65,6 +69,7 @@ func TestCacheGetSet(t *testing.T) {
 		t.Errorf("Expected value '%v', got '%v'", value, retrieved)
 	}
 }
+
 // TestCacheStats teste les statistiques du cache
 func TestCacheStats(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -98,6 +103,7 @@ func TestCacheStats(t *testing.T) {
 		t.Errorf("Expected hit rate %.2f, got %.2f", expectedHitRate, stats.HitRate)
 	}
 }
+
 // TestCacheClear teste le vidage du cache
 func TestCacheClear(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -118,6 +124,7 @@ func TestCacheClear(t *testing.T) {
 		t.Error("Expected cache miss after Clear")
 	}
 }
+
 // TestCacheResetStats teste la réinitialisation des statistiques
 func TestCacheResetStats(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -140,6 +147,7 @@ func TestCacheResetStats(t *testing.T) {
 		t.Errorf("Expected size 1 after ResetStats, got %d", stats.Size)
 	}
 }
+
 // TestCacheEvictionLRU teste l'éviction LRU
 func TestCacheEvictionLRU(t *testing.T) {
 	cache := NewNormalizationCache(3)
@@ -172,6 +180,7 @@ func TestCacheEvictionLRU(t *testing.T) {
 		t.Error("Expected key4 to be present")
 	}
 }
+
 // TestCacheDisabledGetSet teste que Get/Set ne font rien quand le cache est désactivé
 func TestCacheDisabledGetSet(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -184,6 +193,7 @@ func TestCacheDisabledGetSet(t *testing.T) {
 		t.Error("Expected cache miss when disabled")
 	}
 }
+
 // TestComputeCacheKey teste le calcul de clés de cache
 func TestComputeCacheKey(t *testing.T) {
 	// Créer deux expressions identiques
@@ -218,6 +228,7 @@ func TestComputeCacheKey(t *testing.T) {
 		t.Error("Expected different keys for different expressions")
 	}
 }
+
 // TestNormalizeExpressionWithCache teste la normalisation avec cache
 func TestNormalizeExpressionWithCache(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -272,6 +283,7 @@ func TestNormalizeExpressionWithCache(t *testing.T) {
 		}
 	}
 }
+
 // TestNormalizeExpressionWithCacheDisabled teste avec cache désactivé
 func TestNormalizeExpressionWithCacheDisabled(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -293,6 +305,7 @@ func TestNormalizeExpressionWithCacheDisabled(t *testing.T) {
 		t.Errorf("Expected 0 hits and misses when disabled, got %d hits, %d misses", stats.Hits, stats.Misses)
 	}
 }
+
 // TestCacheConcurrency teste l'accès concurrent au cache
 func TestCacheConcurrency(t *testing.T) {
 	cache := NewNormalizationCache(100)
@@ -323,6 +336,7 @@ func TestCacheConcurrency(t *testing.T) {
 		t.Errorf("Cache size exceeds max: %d > %d", stats.Size, cache.maxSize)
 	}
 }
+
 // TestGlobalCache teste le cache global
 func TestGlobalCache(t *testing.T) {
 	// Créer et définir le cache global
@@ -351,6 +365,7 @@ func TestGlobalCache(t *testing.T) {
 	// Nettoyer
 	SetGlobalCache(nil)
 }
+
 // TestSetCacheMaxSize teste le changement de taille max
 func TestSetCacheMaxSize(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -370,6 +385,7 @@ func TestSetCacheMaxSize(t *testing.T) {
 		t.Errorf("Expected size <= 5 after SetCacheMaxSize, got %d", cache.Size())
 	}
 }
+
 // TestSetEvictionStrategy teste le changement de stratégie d'éviction
 func TestSetEvictionStrategy(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -382,6 +398,7 @@ func TestSetEvictionStrategy(t *testing.T) {
 		t.Errorf("Expected eviction 'fifo', got '%s'", cache.eviction)
 	}
 }
+
 // TestCacheStatsString teste la méthode String de CacheStats
 func TestCacheStatsString(t *testing.T) {
 	stats := CacheStats{
@@ -402,6 +419,7 @@ func TestCacheStatsString(t *testing.T) {
 		t.Error("String should contain stats values")
 	}
 }
+
 // TestCachePerformance teste les performances du cache
 func TestCachePerformance(t *testing.T) {
 	if testing.Short() {
@@ -456,6 +474,7 @@ func TestCachePerformance(t *testing.T) {
 		t.Errorf("Expected hit rate > 0.99, got %.2f", stats.HitRate)
 	}
 }
+
 // containsSubstring vérifie si une string contient une sous-string
 func containsSubstring(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsSubstringAt(s, substr))
@@ -468,6 +487,7 @@ func containsSubstringAt(s, substr string) bool {
 	}
 	return false
 }
+
 // TestNewNormalizationCacheWithEviction teste la création avec stratégie d'éviction
 func TestNewNormalizationCacheWithEviction(t *testing.T) {
 	tests := []struct {
@@ -492,6 +512,7 @@ func TestNewNormalizationCacheWithEviction(t *testing.T) {
 		})
 	}
 }
+
 // TestGetHitRate teste le calcul du taux de succès
 func TestGetHitRate(t *testing.T) {
 	cache := NewNormalizationCache(10)
@@ -501,9 +522,9 @@ func TestGetHitRate(t *testing.T) {
 	}
 	// Ajouter une entrée et générer des hits/misses
 	cache.Set("key1", "value1")
-	cache.Get("key1") // hit
-	cache.Get("key2") // miss
-	cache.Get("key1") // hit
+	cache.Get("key1")         // hit
+	cache.Get("key2")         // miss
+	cache.Get("key1")         // hit
 	expectedRate := 2.0 / 3.0 // 2 hits, 1 miss
 	if rate := cache.GetHitRate(); rate != expectedRate {
 		t.Errorf("Expected hit rate %.2f, got %.2f", expectedRate, rate)

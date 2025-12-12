@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"testing"
 	"time"
 )
+
 func TestNewIndexedFactStorage(t *testing.T) {
 	config := IndexConfig{
 		IndexedFields:        []string{"name", "age"},

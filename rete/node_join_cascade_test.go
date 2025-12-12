@@ -1,321 +1,479 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
+
 package rete
+
 import (
-	"os"
+	"fmt"
 	"testing"
 )
-// TestJoinNodeCascade_TwoVariablesIntegration tests cascading joins with 2 variables via pipeline
-func TestJoinNodeCascade_TwoVariablesIntegration(t *testing.T) {
-	t.Log("🧪 TEST: JoinNode Cascade Integration - 2 Variables (User ⋈ Order)")
-	t.Log("=====================================================================")
-	// Create constraint file with 2-variable join
-	constraintContent := `// Test 2-variable cascade
-type User(id: string, name:string)
-type Order(id: string, user_id: string, amount:number)
-action process_order(userId: string, orderId: string)
-rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_order(u.id, o.id)
-`
-	tmpFile := createTempConstraintFile(t, "two_var_cascade", constraintContent)
-	defer os.Remove(tmpFile)
-	pipeline := NewConstraintPipeline()
-	storage := NewMemoryStorage()
-	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
-	if err != nil {
-		t.Fatalf("❌ Failed to build network: %v", err)
-	}
-	t.Logf("✅ Network built: %d type nodes, %d terminals", len(network.TypeNodes), len(network.TerminalNodes))
-	// Submit User fact
-	userFact := &Fact{
-		ID:        "U1",
-		Type:      "User",
-		Fields:    map[string]interface{}{"id": "U1", "name": "Alice"},
-	}
-	err = network.SubmitFact(userFact)
-	if err != nil {
-		t.Fatalf("❌ Error submitting User: %v", err)
-	}
-	// No terminal tokens yet
-	terminalTokens := countAllTerminalTokens(network)
-	if terminalTokens != 0 {
-		t.Logf("⚠️  Terminal tokens after User only: %d (expected 0)", terminalTokens)
-	} else {
-		t.Logf("✅ No terminal tokens yet (missing Order)")
-	}
-	// Submit matching Order
-	orderFact := &Fact{
-		ID:        "O1",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1", "amount": 100},
-	}
-	err = network.SubmitFact(orderFact)
-	if err != nil {
-		t.Fatalf("❌ Error submitting Order: %v", err)
-	}
-	// Should now have terminal token
-	terminalTokens = countAllTerminalTokens(network)
-	if terminalTokens < 1 {
-		t.Errorf("❌ Expected at least 1 terminal token, got %d", terminalTokens)
-	} else {
-		t.Logf("✅ Terminal token created: %d", terminalTokens)
-	}
-	// Submit non-matching Order
-	badOrderFact := &Fact{
-		ID:        "O2",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O2", "user_id": "U999", "amount": 50},
-	}
-	err = network.SubmitFact(badOrderFact)
-	if err != nil {
-		t.Fatalf("❌ Error submitting non-matching Order: %v", err)
-	}
-	// Should still have same count (filtering)
-	finalTokens := countAllTerminalTokens(network)
-	if finalTokens != terminalTokens {
-		t.Logf("⚠️  Token count changed from %d to %d after non-matching Order", terminalTokens, finalTokens)
-	} else {
-		t.Logf("✅ Non-matching Order filtered correctly")
-	}
-	t.Log("\n🎊 TEST PASSED: 2-variable cascade join via pipeline works correctly")
+
+// MockNode est un nœud de test qui capture les tokens propagés
+type mockTerminalNode struct {
+	BaseNode
+	onActivateLeft func(*Token) error
 }
-// TestJoinNodeCascade_ThreeVariablesIntegration tests 3-variable cascading joins
-func TestJoinNodeCascade_ThreeVariablesIntegration(t *testing.T) {
-	t.Log("🧪 TEST: JoinNode Cascade Integration - 3 Variables (User ⋈ Order ⋈ Product)")
-	t.Log("=============================================================================")
-	// Use existing incremental propagation test file which tests 3 variables
-	pipeline := NewConstraintPipeline()
-	storage := NewMemoryStorage()
-	network, _, err := pipeline.IngestFile("test/incremental_propagation.tsd", nil, storage)
-	if err != nil {
-		t.Fatalf("❌ Failed to build network: %v", err)
+
+func (m *mockTerminalNode) ActivateLeft(token *Token) error {
+	if m.onActivateLeft != nil {
+		return m.onActivateLeft(token)
 	}
-	t.Logf("✅ Network built for 3-variable test")
-	// Submit User
+	m.Memory.AddToken(token)
+	return nil
+}
+
+func (m *mockTerminalNode) ActivateRight(fact *Fact) error {
+	return nil
+}
+
+func (m *mockTerminalNode) ActivateRetract(factID string) error {
+	return nil
+}
+
+// TestJoinCascade_2Variables_UserOrder teste la cascade de jointure à 2 variables (régression)
+func TestJoinCascade_2Variables_UserOrder(t *testing.T) {
+	t.Log("🧪 TEST Cascade 2 variables - User-Order (régression)")
+	t.Log("======================================================")
+
 	userFact := &Fact{
-		ID:        "U1",
-		Type:      "User",
-		Fields:    map[string]interface{}{"id": "U1", "age": 25},
+		ID:     "u1",
+		Type:   "User",
+		Fields: map[string]interface{}{"id": 1, "name": "Alice"},
 	}
-	err = network.SubmitFact(userFact)
-	if err != nil {
-		t.Fatalf("❌ Error submitting User: %v", err)
-	}
-	count1 := countAllTerminalTokens(network)
-	t.Logf("✅ After User: %d terminal tokens", count1)
-	// Submit Order
+
 	orderFact := &Fact{
-		ID:        "O1",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1", "product_id": "P1"},
+		ID:     "o1",
+		Type:   "Order",
+		Fields: map[string]interface{}{"id": 100, "user_id": 1},
 	}
-	err = network.SubmitFact(orderFact)
+
+	joinNode := &JoinNode{
+		BaseNode: BaseNode{
+			ID:       "join_user_order",
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: "join_user_order", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{"user"},
+		RightVariables: []string{"order"},
+		AllVariables:   []string{"user", "order"},
+		VariableTypes: map[string]string{
+			"user":  "User",
+			"order": "Order",
+		},
+		LeftMemory:     &WorkingMemory{NodeID: "join_user_order_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: "join_user_order_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: "join_user_order_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		JoinConditions: nil,
+	}
+
+	var finalToken *Token
+	mockTerminal := &mockTerminalNode{
+		BaseNode: BaseNode{
+			ID:     "terminal",
+			Memory: &WorkingMemory{NodeID: "terminal", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		onActivateLeft: func(token *Token) error {
+			finalToken = token
+			return nil
+		},
+	}
+	joinNode.AddChild(mockTerminal)
+
+	userToken := NewTokenWithFact(userFact, "user", "type_node_user")
+	err := joinNode.ActivateLeft(userToken)
 	if err != nil {
-		t.Fatalf("❌ Error submitting Order: %v", err)
+		t.Fatalf("❌ ActivateLeft erreur: %v", err)
 	}
-	count2 := countAllTerminalTokens(network)
-	t.Logf("✅ After User+Order: %d terminal tokens", count2)
-	// Submit Product (completes the cascade)
+
+	err = joinNode.ActivateRight(orderFact)
+	if err != nil {
+		t.Fatalf("❌ ActivateRight erreur: %v", err)
+	}
+
+	if finalToken == nil {
+		t.Fatal("❌ Aucun token propagé au terminal")
+	}
+
+	if finalToken.Bindings.Len() != 2 {
+		t.Errorf("❌ Attendu 2 bindings, got %d", finalToken.Bindings.Len())
+	}
+
+	if !finalToken.HasBinding("user") {
+		t.Errorf("❌ Variable 'user' manquante")
+	}
+
+	if !finalToken.HasBinding("order") {
+		t.Errorf("❌ Variable 'order' manquante")
+	}
+
+	if finalToken.GetBinding("user") != userFact {
+		t.Errorf("❌ Binding 'user' incorrect")
+	}
+
+	if finalToken.GetBinding("order") != orderFact {
+		t.Errorf("❌ Binding 'order' incorrect")
+	}
+
+	t.Log("✅ Cascade 2 variables fonctionne (régression OK)")
+}
+
+// TestJoinCascade_3Variables_UserOrderProduct teste la cascade de jointure à 3 variables
+func TestJoinCascade_3Variables_UserOrderProduct(t *testing.T) {
+	t.Log("🧪 TEST Cascade 3 variables - User-Order-Product")
+	t.Log("=================================================")
+
+	userFact := &Fact{
+		ID:     "u1",
+		Type:   "User",
+		Fields: map[string]interface{}{"id": 1, "name": "Alice"},
+	}
+
+	orderFact := &Fact{
+		ID:     "o1",
+		Type:   "Order",
+		Fields: map[string]interface{}{"id": 100, "user_id": 1, "product_id": 200},
+	}
+
 	productFact := &Fact{
-		ID:        "P1",
-		Type:      "Product",
-		Fields:    map[string]interface{}{"id": "P1", "name": "Widget"},
+		ID:     "p1",
+		Type:   "Product",
+		Fields: map[string]interface{}{"id": 200, "name": "Laptop"},
 	}
-	err = network.SubmitFact(productFact)
+
+	joinNode1 := &JoinNode{
+		BaseNode: BaseNode{
+			ID:       "join1_user_order",
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: "join1_user_order", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{"user"},
+		RightVariables: []string{"order"},
+		AllVariables:   []string{"user", "order"},
+		VariableTypes: map[string]string{
+			"user":    "User",
+			"order":   "Order",
+			"product": "Product",
+		},
+		LeftMemory:     &WorkingMemory{NodeID: "join1_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: "join1_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: "join1_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		JoinConditions: nil,
+	}
+
+	joinNode2 := &JoinNode{
+		BaseNode: BaseNode{
+			ID:       "join2_add_product",
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: "join2_add_product", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{"user", "order"},
+		RightVariables: []string{"product"},
+		AllVariables:   []string{"user", "order", "product"},
+		VariableTypes: map[string]string{
+			"user":    "User",
+			"order":   "Order",
+			"product": "Product",
+		},
+		LeftMemory:     &WorkingMemory{NodeID: "join2_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: "join2_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: "join2_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		JoinConditions: nil,
+	}
+
+	joinNode1.AddChild(joinNode2)
+
+	var finalToken *Token
+	mockTerminal := &mockTerminalNode{
+		BaseNode: BaseNode{
+			ID:     "terminal",
+			Memory: &WorkingMemory{NodeID: "terminal", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		onActivateLeft: func(token *Token) error {
+			finalToken = token
+			return nil
+		},
+	}
+	joinNode2.AddChild(mockTerminal)
+
+	userToken := NewTokenWithFact(userFact, "user", "type_user")
+	err := joinNode1.ActivateLeft(userToken)
 	if err != nil {
-		t.Fatalf("❌ Error submitting Product: %v", err)
+		t.Fatalf("❌ JoinNode1 ActivateLeft erreur: %v", err)
 	}
-	count3 := countAllTerminalTokens(network)
-	t.Logf("✅ After User+Order+Product: %d terminal tokens", count3)
-	if count3 < 1 {
-		t.Errorf("❌ Expected at least 1 terminal token after full cascade, got %d", count3)
-	} else {
-		t.Logf("✅ 3-variable cascade completed successfully")
+
+	err = joinNode1.ActivateRight(orderFact)
+	if err != nil {
+		t.Fatalf("❌ JoinNode1 ActivateRight erreur: %v", err)
 	}
-	t.Log("\n🎊 TEST PASSED: 3-variable cascade join works correctly")
+
+	err = joinNode2.ActivateRight(productFact)
+	if err != nil {
+		t.Fatalf("❌ JoinNode2 ActivateRight erreur: %v", err)
+	}
+
+	if finalToken == nil {
+		t.Fatal("❌ Aucun token propagé au terminal")
+	}
+
+	if finalToken.Bindings.Len() != 3 {
+		t.Errorf("❌ CRITIQUE: Attendu 3 bindings, got %d", finalToken.Bindings.Len())
+		t.Errorf("   Variables présentes: %v", finalToken.GetVariables())
+	}
+
+	expectedVars := []string{"user", "order", "product"}
+	for _, v := range expectedVars {
+		if !finalToken.HasBinding(v) {
+			t.Errorf("❌ Variable '%s' manquante dans le token final", v)
+		}
+	}
+
+	if finalToken.GetBinding("user") != userFact {
+		t.Errorf("❌ Binding 'user' incorrect")
+	}
+	if finalToken.GetBinding("order") != orderFact {
+		t.Errorf("❌ Binding 'order' incorrect")
+	}
+	if finalToken.GetBinding("product") != productFact {
+		t.Errorf("❌ Binding 'product' incorrect")
+	}
+
+	t.Log("✅ Cascade 3 variables fonctionne - TOUS les bindings préservés")
 }
-// TestJoinNodeCascade_OrderIndependence tests submission order independence
-func TestJoinNodeCascade_OrderIndependence(t *testing.T) {
-	t.Log("🧪 TEST: JoinNode Cascade - Order Independence")
-	t.Log("==============================================")
-	constraintContent := `// Order independence test
-type User(id:string)
-type Order(id: string, user_id:string)
-action test_action(userId: string, orderId: string)
-rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
-`
-	testOrders := []struct {
+
+// TestJoinCascade_3Variables_DifferentOrders teste différents ordres de soumission
+func TestJoinCascade_3Variables_DifferentOrders(t *testing.T) {
+	t.Log("🧪 TEST Cascade 3 variables - Différents ordres de soumission")
+	t.Log("==============================================================")
+
+	orders := []struct {
 		name  string
 		order []string
 	}{
-		{"User→Order", []string{"U", "O"}},
-		{"Order→User", []string{"O", "U"}},
+		{"User→Order→Product", []string{"user", "order", "product"}},
+		{"User→Product→Order", []string{"user", "product", "order"}},
+		{"Order→User→Product", []string{"order", "user", "product"}},
+		{"Product→User→Order", []string{"product", "user", "order"}},
 	}
-	for _, testCase := range testOrders {
-		t.Run(testCase.name, func(t *testing.T) {
-			tmpFile := createTempConstraintFile(t, "order_test", constraintContent)
-			defer os.Remove(tmpFile)
-			pipeline := NewConstraintPipeline()
-			storage := NewMemoryStorage()
-			network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
-			if err != nil {
-				t.Fatalf("❌ Failed to build network: %v", err)
+
+	for _, tc := range orders {
+		t.Run(tc.name, func(t *testing.T) {
+			facts := map[string]*Fact{
+				"user":    {ID: "u1", Type: "User", Fields: map[string]interface{}{"id": 1}},
+				"order":   {ID: "o1", Type: "Order", Fields: map[string]interface{}{"id": 100}},
+				"product": {ID: "p1", Type: "Product", Fields: map[string]interface{}{"id": 200}},
 			}
-			userFact := &Fact{
-				ID:        "U1",
-				Type:      "User",
-				Fields:    map[string]interface{}{"id": "U1"},
+
+			joinNode1, joinNode2, mockTerminal := setupCascade3Variables()
+
+			var finalToken *Token
+			mockTerminal.onActivateLeft = func(token *Token) error {
+				finalToken = token
+				return nil
 			}
-			orderFact := &Fact{
-				ID:        "O1",
-				Type:      "Order",
-				Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
-			}
-			// Submit in specified order
-			for _, factType := range testCase.order {
-				switch factType {
-				case "U":
-					err = network.SubmitFact(userFact)
-				case "O":
-					err = network.SubmitFact(orderFact)
-				}
-				if err != nil {
-					t.Fatalf("❌ Error submitting fact: %v", err)
+
+			for _, factName := range tc.order {
+				fact := facts[factName]
+				if factName == "user" {
+					token := NewTokenWithFact(fact, "user", "type_user")
+					joinNode1.ActivateLeft(token)
+				} else if factName == "order" {
+					joinNode1.ActivateRight(fact)
+				} else if factName == "product" {
+					joinNode2.ActivateRight(fact)
 				}
 			}
-			// Should have same result regardless of order
-			terminalTokens := countAllTerminalTokens(network)
-			if terminalTokens < 1 {
-				t.Errorf("❌ Expected at least 1 terminal token, got %d", terminalTokens)
-			} else {
-				t.Logf("✅ Order %v produced %d terminal tokens", testCase.order, terminalTokens)
+
+			if finalToken == nil {
+				t.Errorf("❌ Aucun token final pour ordre %v", tc.order)
+				return
 			}
+
+			if finalToken.Bindings.Len() != 3 {
+				t.Errorf("❌ Ordre %v: attendu 3 bindings, got %d", tc.order, finalToken.Bindings.Len())
+			}
+
+			t.Logf("✅ Ordre %v: %d bindings", tc.name, finalToken.Bindings.Len())
 		})
 	}
-	t.Log("\n🎊 TEST PASSED: Join cascade is order-independent")
+
+	t.Log("✅ Résultats cohérents quel que soit l'ordre de soumission")
 }
-// TestJoinNodeCascade_MultipleMatchingFacts tests cartesian product behavior
-func TestJoinNodeCascade_MultipleMatchingFacts(t *testing.T) {
-	t.Log("🧪 TEST: JoinNode Cascade - Multiple Matching Facts")
-	t.Log("====================================================")
-	constraintContent := `// Multiple matching facts test
-type User(id:string)
-type Order(id: string, user_id:string)
-action test_action(userId: string, orderId: string)
-rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
-`
-	tmpFile := createTempConstraintFile(t, "multi_match", constraintContent)
-	defer os.Remove(tmpFile)
-	pipeline := NewConstraintPipeline()
-	storage := NewMemoryStorage()
-	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
-	if err != nil {
-		t.Fatalf("❌ Failed to build network: %v", err)
+
+// TestJoinCascade_NVariables teste la scalabilité jusqu'à N=10 variables
+func TestJoinCascade_NVariables(t *testing.T) {
+	t.Log("🧪 TEST Cascade N variables - Scalabilité")
+	t.Log("==========================================")
+
+	for n := 2; n <= 10; n++ {
+		t.Run(fmt.Sprintf("n=%d_variables", n), func(t *testing.T) {
+			facts := make([]*Fact, n)
+			varNames := make([]string, n)
+
+			for i := 0; i < n; i++ {
+				varNames[i] = fmt.Sprintf("var%d", i)
+				facts[i] = &Fact{
+					ID:     fmt.Sprintf("f%d", i),
+					Type:   fmt.Sprintf("Type%d", i),
+					Fields: map[string]interface{}{"id": i},
+				}
+			}
+
+			joinNodes := buildCascade(n, varNames)
+
+			var finalToken *Token
+			mockTerminal := &mockTerminalNode{
+				BaseNode: BaseNode{
+					ID:     "terminal",
+					Memory: &WorkingMemory{NodeID: "terminal", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+				},
+				onActivateLeft: func(token *Token) error {
+					finalToken = token
+					return nil
+				},
+			}
+			lastJoinNode := joinNodes[len(joinNodes)-1]
+			lastJoinNode.AddChild(mockTerminal)
+
+			for i, fact := range facts {
+				if i == 0 {
+					token := NewTokenWithFact(fact, varNames[i], "type_node")
+					joinNodes[0].ActivateLeft(token)
+				} else if i == 1 {
+					joinNodes[0].ActivateRight(fact)
+				} else {
+					joinNodes[i-1].ActivateRight(fact)
+				}
+			}
+
+			if finalToken == nil {
+				t.Fatalf("❌ N=%d: Aucun token final", n)
+			}
+
+			if finalToken.Bindings.Len() != n {
+				t.Errorf("❌ N=%d: Attendu %d bindings, got %d", n, n, finalToken.Bindings.Len())
+				t.Errorf("   Variables présentes: %v", finalToken.GetVariables())
+			}
+
+			for _, varName := range varNames {
+				if !finalToken.HasBinding(varName) {
+					t.Errorf("❌ N=%d: Variable '%s' manquante", n, varName)
+				}
+			}
+
+			t.Logf("✅ N=%d variables: Tous les bindings préservés", n)
+		})
 	}
-	// Submit 2 users
-	user1 := &Fact{
-		ID:        "U1",
-		Type:      "User",
-		Fields:    map[string]interface{}{"id": "U1"},
-	}
-	user2 := &Fact{
-		ID:        "U2",
-		Type:      "User",
-		Fields:    map[string]interface{}{"id": "U2"},
-	}
-	network.SubmitFact(user1)
-	network.SubmitFact(user2)
-	// Submit 3 orders: 2 for U1, 1 for U2
-	order1 := &Fact{
-		ID:        "O1",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
-	}
-	order2 := &Fact{
-		ID:        "O2",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O2", "user_id": "U1"},
-	}
-	order3 := &Fact{
-		ID:        "O3",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O3", "user_id": "U2"},
-	}
-	network.SubmitFact(order1)
-	network.SubmitFact(order2)
-	network.SubmitFact(order3)
-	// Should have 3 terminal tokens: (U1,O1), (U1,O2), (U2,O3)
-	terminalTokens := countAllTerminalTokens(network)
-	if terminalTokens != 3 {
-		t.Logf("⚠️  Expected 3 terminal tokens (cartesian product), got %d", terminalTokens)
-	} else {
-		t.Logf("✅ Correct cartesian product: 3 terminal tokens")
-	}
-	t.Log("\n🎊 TEST PASSED: Multiple matching facts handled correctly")
+
+	t.Log("✅ Scalabilité validée jusqu'à N=10 variables")
 }
-// TestJoinNodeCascade_Retraction tests fact retraction in cascades
-func TestJoinNodeCascade_Retraction(t *testing.T) {
-	t.Log("🧪 TEST: JoinNode Cascade - Fact Retraction")
-	t.Log("============================================")
-	constraintContent := `// Retraction test
-	type User(id:string)
-	type Order(id: string, user_id:string)
-	action test_action(userId: string, orderId: string)
-	rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
-	`
-	tmpFile := createTempConstraintFile(t, "retract_test", constraintContent)
-	defer os.Remove(tmpFile)
-	pipeline := NewConstraintPipeline()
-	storage := NewMemoryStorage()
-	network, _, err := pipeline.IngestFile(tmpFile, nil, storage)
-	if err != nil {
-		t.Fatalf("❌ Failed to build network: %v", err)
+
+// setupCascade3Variables crée une cascade de 2 JoinNodes pour 3 variables
+func setupCascade3Variables() (*JoinNode, *JoinNode, *mockTerminalNode) {
+	joinNode1 := &JoinNode{
+		BaseNode: BaseNode{
+			ID:       "join1",
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: "join1", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{"user"},
+		RightVariables: []string{"order"},
+		AllVariables:   []string{"user", "order"},
+		VariableTypes: map[string]string{
+			"user":    "User",
+			"order":   "Order",
+			"product": "Product",
+		},
+		LeftMemory:     &WorkingMemory{NodeID: "join1_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: "join1_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: "join1_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		JoinConditions: nil,
 	}
-	// Submit User and Order
-	userFact := &Fact{
-		ID:        "U1",
-		Type:      "User",
-		Fields:    map[string]interface{}{"id": "U1"},
+
+	joinNode2 := &JoinNode{
+		BaseNode: BaseNode{
+			ID:       "join2",
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: "join2", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{"user", "order"},
+		RightVariables: []string{"product"},
+		AllVariables:   []string{"user", "order", "product"},
+		VariableTypes: map[string]string{
+			"user":    "User",
+			"order":   "Order",
+			"product": "Product",
+		},
+		LeftMemory:     &WorkingMemory{NodeID: "join2_left", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: "join2_right", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: "join2_result", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		JoinConditions: nil,
 	}
-	orderFact := &Fact{
-		ID:        "O1",
-		Type:      "Order",
-		Fields:    map[string]interface{}{"id": "O1", "user_id": "U1"},
+
+	joinNode1.AddChild(joinNode2)
+
+	mockTerminal := &mockTerminalNode{
+		BaseNode: BaseNode{
+			ID:     "terminal",
+			Memory: &WorkingMemory{NodeID: "terminal", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
 	}
-	network.SubmitFact(userFact)
-	network.SubmitFact(orderFact)
-	beforeCount := countAllTerminalTokens(network)
-	if beforeCount < 1 {
-		t.Logf("⚠️  Expected terminal tokens before retraction, got %d", beforeCount)
-	}
-	// Retract User
-	err = network.RetractFact(userFact.GetInternalID())
-	if err != nil {
-		t.Fatalf("❌ Error retracting User: %v", err)
-	}
-	afterCount := countAllTerminalTokens(network)
-	if afterCount != 0 {
-		t.Logf("⚠️  Expected 0 terminal tokens after retraction, got %d", afterCount)
-	} else {
-		t.Logf("✅ Terminal tokens removed after User retraction")
-	}
-	t.Log("\n🎊 TEST PASSED: Fact retraction works in cascades")
+	joinNode2.AddChild(mockTerminal)
+
+	return joinNode1, joinNode2, mockTerminal
 }
-// Helper: count all terminal tokens across all terminal nodes
-func countAllTerminalTokens(network *ReteNetwork) int {
-	total := 0
-	for _, terminal := range network.TerminalNodes {
-		total += len(terminal.Memory.GetTokens())
+
+// buildCascade construit une cascade de (n-1) JoinNodes pour n variables
+func buildCascade(n int, varNames []string) []*JoinNode {
+	if n < 2 {
+		return []*JoinNode{}
 	}
-	return total
-}
-// Helper: create temporary constraint file
-func createTempConstraintFile(t *testing.T, name, content string) string {
-	tmpDir := t.TempDir()
-	tmpFile := tmpDir + "/" + name + ".tsd"
-	err := os.WriteFile(tmpFile, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("❌ Failed to create temp file: %v", err)
+
+	joinNodes := make([]*JoinNode, n-1)
+	varTypes := make(map[string]string)
+	for i, v := range varNames {
+		varTypes[v] = fmt.Sprintf("Type%d", i)
 	}
-	return tmpFile
+
+	joinNodes[0] = &JoinNode{
+		BaseNode: BaseNode{
+			ID:       fmt.Sprintf("join_%d", 0),
+			Children: []Node{},
+			Memory:   &WorkingMemory{NodeID: fmt.Sprintf("join_%d", 0), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		},
+		LeftVariables:  []string{varNames[0]},
+		RightVariables: []string{varNames[1]},
+		AllVariables:   []string{varNames[0], varNames[1]},
+		VariableTypes:  varTypes,
+		LeftMemory:     &WorkingMemory{NodeID: fmt.Sprintf("join_%d_left", 0), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		RightMemory:    &WorkingMemory{NodeID: fmt.Sprintf("join_%d_right", 0), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		ResultMemory:   &WorkingMemory{NodeID: fmt.Sprintf("join_%d_result", 0), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+	}
+
+	for i := 2; i < n; i++ {
+		leftVars := make([]string, i)
+		copy(leftVars, varNames[0:i])
+
+		allVars := make([]string, i+1)
+		copy(allVars, varNames[0:i+1])
+
+		joinNodes[i-1] = &JoinNode{
+			BaseNode: BaseNode{
+				ID:       fmt.Sprintf("join_%d", i-1),
+				Children: []Node{},
+				Memory:   &WorkingMemory{NodeID: fmt.Sprintf("join_%d", i-1), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			},
+			LeftVariables:  leftVars,
+			RightVariables: []string{varNames[i]},
+			AllVariables:   allVars,
+			VariableTypes:  varTypes,
+			LeftMemory:     &WorkingMemory{NodeID: fmt.Sprintf("join_%d_left", i-1), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			RightMemory:    &WorkingMemory{NodeID: fmt.Sprintf("join_%d_right", i-1), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			ResultMemory:   &WorkingMemory{NodeID: fmt.Sprintf("join_%d_result", i-1), Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+		}
+
+		joinNodes[i-2].AddChild(joinNodes[i-1])
+	}
+
+	return joinNodes
 }

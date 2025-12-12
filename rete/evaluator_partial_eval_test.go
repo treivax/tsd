@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestPartialEval_UnboundVariables tests that partial eval mode tolerates unbound variables
 func TestPartialEval_UnboundVariables(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Unbound Variables")
@@ -70,6 +72,7 @@ func TestPartialEval_UnboundVariables(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Partial eval mode handles unbound variables appropriately")
 }
+
 // TestPartialEval_LogicalExpressions tests partial eval with AND/OR operators
 func TestPartialEval_LogicalExpressions(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Logical Expressions")
@@ -142,6 +145,7 @@ func TestPartialEval_LogicalExpressions(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Partial eval handles logical expressions correctly")
 }
+
 // TestPartialEval_MixedBoundUnbound tests conditions with both bound and unbound variables
 func TestPartialEval_MixedBoundUnbound(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Mixed Bound/Unbound Variables")
@@ -208,6 +212,7 @@ func TestPartialEval_MixedBoundUnbound(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Partial eval handles mixed bound/unbound variables")
 }
+
 // TestPartialEval_ComparisonOperators tests various comparison operators in partial eval mode
 func TestPartialEval_ComparisonOperators(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Comparison Operators")
@@ -265,6 +270,7 @@ func TestPartialEval_ComparisonOperators(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: All comparison operators work in partial eval mode")
 }
+
 // TestPartialEval_StringComparisons tests string field comparisons
 func TestPartialEval_StringComparisons(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - String Comparisons")
@@ -328,6 +334,7 @@ func TestPartialEval_StringComparisons(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: String comparisons work in partial eval mode")
 }
+
 // TestPartialEval_NestedFieldAccess tests nested field access in partial eval mode
 func TestPartialEval_NestedFieldAccess(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Nested Field Access")
@@ -390,6 +397,7 @@ func TestPartialEval_NestedFieldAccess(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Nested field access works in partial eval mode")
 }
+
 // TestPartialEval_NormalModeComparison tests difference between normal and partial eval modes
 func TestPartialEval_NormalModeComparison(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval vs Normal Mode Comparison")
@@ -441,6 +449,7 @@ func TestPartialEval_NormalModeComparison(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Partial eval mode behavior differs from normal mode")
 }
+
 // TestPartialEval_ArithmeticExpressions tests arithmetic operations in partial eval mode
 func TestPartialEval_ArithmeticExpressions(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Arithmetic Expressions")
@@ -492,6 +501,7 @@ func TestPartialEval_ArithmeticExpressions(t *testing.T) {
 	}
 	t.Log("\n🎊 TEST PASSED: Arithmetic expressions work in partial eval mode")
 }
+
 // TestPartialEval_EdgeCases tests edge cases and error conditions
 func TestPartialEval_EdgeCases(t *testing.T) {
 	t.Log("🧪 TEST: Partial Eval Mode - Edge Cases")

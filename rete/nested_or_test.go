@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/treivax/tsd/constraint"
+	"testing"
 )
+
 // TestAnalyzeNestedOR_Simple vérifie l'analyse d'expressions OR simples
 func TestAnalyzeNestedOR_Simple(t *testing.T) {
 	t.Log("🧪 TEST ANALYSE OR SIMPLE")
@@ -40,6 +42,7 @@ func TestAnalyzeNestedOR_Simple(t *testing.T) {
 	}
 	t.Log("✅ Analyse OR simple correcte")
 }
+
 // TestAnalyzeNestedOR_Flat vérifie l'analyse d'expressions OR plates
 func TestAnalyzeNestedOR_Flat(t *testing.T) {
 	t.Log("🧪 TEST ANALYSE OR PLAT")
@@ -112,6 +115,7 @@ func TestAnalyzeNestedOR_Flat(t *testing.T) {
 	t.Log("✅ Analyse OR plat correcte")
 	t.Logf("  Termes OR: %d", analysis.ORTermCount)
 }
+
 // TestAnalyzeNestedOR_Nested vérifie l'analyse d'expressions OR imbriquées
 func TestAnalyzeNestedOR_Nested(t *testing.T) {
 	t.Log("🧪 TEST ANALYSE OR IMBRIQUÉ")
@@ -190,6 +194,7 @@ func TestAnalyzeNestedOR_Nested(t *testing.T) {
 	t.Logf("  Profondeur: %d", analysis.NestingDepth)
 	t.Logf("  Termes OR: %d", analysis.ORTermCount)
 }
+
 // TestAnalyzeNestedOR_MixedANDOR vérifie l'analyse d'expressions mixtes
 func TestAnalyzeNestedOR_MixedANDOR(t *testing.T) {
 	t.Log("🧪 TEST ANALYSE MIXTE AND/OR")
@@ -261,6 +266,7 @@ func TestAnalyzeNestedOR_MixedANDOR(t *testing.T) {
 	t.Logf("  Complexité: %v", analysis.Complexity)
 	t.Logf("  Termes OR: %d, AND: %d", analysis.ORTermCount, analysis.ANDTermCount)
 }
+
 // TestAnalyzeNestedOR_DNFCandidate vérifie la détection de candidats DNF
 func TestAnalyzeNestedOR_DNFCandidate(t *testing.T) {
 	t.Log("🧪 TEST DÉTECTION CANDIDAT DNF")
@@ -355,6 +361,7 @@ func TestAnalyzeNestedOR_DNFCandidate(t *testing.T) {
 	t.Log("✅ Détection candidat DNF correcte")
 	t.Logf("  Hint: %s", analysis.OptimizationHint)
 }
+
 // TestFlattenNestedOR_Simple vérifie l'aplatissement d'OR imbriqués simples
 func TestFlattenNestedOR_Simple(t *testing.T) {
 	t.Log("🧪 TEST APLATISSEMENT OR SIMPLE")
@@ -416,6 +423,7 @@ func TestFlattenNestedOR_Simple(t *testing.T) {
 	t.Log("✅ Aplatissement OR simple réussi")
 	t.Logf("  Termes après aplatissement: %d", totalTerms)
 }
+
 // TestFlattenNestedOR_Deep vérifie l'aplatissement d'OR profondément imbriqués
 func TestFlattenNestedOR_Deep(t *testing.T) {
 	t.Log("🧪 TEST APLATISSEMENT OR PROFOND")
@@ -484,6 +492,7 @@ func TestFlattenNestedOR_Deep(t *testing.T) {
 	t.Log("✅ Aplatissement OR profond réussi")
 	t.Logf("  Termes après aplatissement: %d", totalTerms)
 }
+
 // TestNormalizeNestedOR_Complete vérifie la normalisation complète
 func TestNormalizeNestedOR_Complete(t *testing.T) {
 	t.Log("🧪 TEST NORMALISATION COMPLÈTE")
@@ -539,6 +548,7 @@ func TestNormalizeNestedOR_Complete(t *testing.T) {
 	t.Log("✅ Normalisation complète réussie")
 	t.Logf("  Termes normalisés: %d", totalTerms)
 }
+
 // TestNormalizeNestedOR_OrderIndependent vérifie l'indépendance d'ordre
 func TestNormalizeNestedOR_OrderIndependent(t *testing.T) {
 	t.Log("🧪 TEST INDÉPENDANCE D'ORDRE")
@@ -644,6 +654,7 @@ func TestNormalizeNestedOR_OrderIndependent(t *testing.T) {
 	t.Log("✅ Normalisation indépendante de l'ordre")
 	t.Logf("  Hash commun: %s", hash1)
 }
+
 // TestIntegration_NestedOR_SingleAlphaNode vérifie l'intégration complète
 func TestIntegration_NestedOR_SingleAlphaNode(t *testing.T) {
 	t.Log("🧪 TEST INTÉGRATION OR IMBRIQUÉ")
@@ -720,6 +731,7 @@ func TestIntegration_NestedOR_SingleAlphaNode(t *testing.T) {
 	t.Logf("  AlphaNodes: %d", len(network.AlphaNodes))
 	t.Logf("  TerminalNodes: %d", len(network.TerminalNodes))
 }
+
 // TestIntegration_NestedOR_Sharing vérifie le partage entre règles imbriquées
 func TestIntegration_NestedOR_Sharing(t *testing.T) {
 	t.Log("🧪 TEST PARTAGE OR IMBRIQUÉ")

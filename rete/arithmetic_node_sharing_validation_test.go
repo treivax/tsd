@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"testing"
 )
+
 // TestArithmeticDecomposition_NodeSharingValidation validates that identical
 // arithmetic sub-expressions in decomposed chains are properly shared across rules
 func TestArithmeticDecomposition_NodeSharingValidation(t *testing.T) {
@@ -201,6 +203,7 @@ func TestArithmeticDecomposition_NodeSharingValidation(t *testing.T) {
 	}
 	t.Log("✅ Node sharing in decomposed chains validated successfully")
 }
+
 // TestArithmeticDecomposition_MultiRuleSharing tests sharing across 3+ rules
 func TestArithmeticDecomposition_MultiRuleSharing(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -301,6 +304,7 @@ func TestArithmeticDecomposition_MultiRuleSharing(t *testing.T) {
 		t.Log("✅ Sharing working correctly for multi-rule scenario")
 	}
 }
+
 // TestArithmeticDecomposition_PartialSharing tests rules with partial overlap
 func TestArithmeticDecomposition_PartialSharing(t *testing.T) {
 	storage := NewMemoryStorage()

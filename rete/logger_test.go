@@ -2,13 +2,15 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"bytes"
-	"strings"
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
 )
+
 func TestLogger_Levels(t *testing.T) {
 	tests := []struct {
 		name          string

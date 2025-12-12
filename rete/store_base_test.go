@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestNewMemoryStorage(t *testing.T) {
 	storage := NewMemoryStorage()
 	if storage == nil {

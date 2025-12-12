@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"testing"
 	"time"
 )
+
 // TestPerformance_LargeRuleset_100Rules teste les performances avec 100 règles similaires
 func TestPerformance_LargeRuleset_100Rules(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -76,6 +78,7 @@ func TestPerformance_LargeRuleset_100Rules(t *testing.T) {
 			metrics.GetHashCacheEfficiency()*100)
 	}
 }
+
 // TestPerformance_LargeRuleset_1000Rules teste les performances avec 1000 règles variées
 func TestPerformance_LargeRuleset_1000Rules(t *testing.T) {
 	if testing.Short() {
@@ -140,6 +143,7 @@ func TestPerformance_LargeRuleset_1000Rules(t *testing.T) {
 		t.Errorf("Temps moyen de construction trop élevé: %.2fms (attendu < 1ms)", avgBuildTimeMs)
 	}
 }
+
 // TestMetrics_Accurate vérifie la précision des métriques
 func TestMetrics_Accurate(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -201,6 +205,7 @@ func TestMetrics_Accurate(t *testing.T) {
 			expectedSharingRatio, snapshot.SharingRatio)
 	}
 }
+
 // TestMetrics_HashCache vérifie le fonctionnement du cache de hash
 func TestMetrics_HashCache(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -247,6 +252,7 @@ func TestMetrics_HashCache(t *testing.T) {
 		t.Errorf("Efficacité du cache trop faible: %.2f%% (attendu >= 30%%)", efficiency*100)
 	}
 }
+
 // TestMetrics_GetSummary vérifie le format du résumé des métriques
 func TestMetrics_GetSummary(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -300,6 +306,7 @@ func TestMetrics_GetSummary(t *testing.T) {
 	}
 	t.Logf("Résumé des métriques: %+v", summary)
 }
+
 // TestMetrics_TopChains vérifie les fonctions de classement des chaînes
 func TestMetrics_TopChains(t *testing.T) {
 	storage := NewMemoryStorage()
@@ -355,11 +362,13 @@ func TestMetrics_TopChains(t *testing.T) {
 		t.Logf("  %d. %s - temps: %v", i+1, chain.RuleID, chain.BuildTime)
 	}
 }
+
 // Fonction helper pour sélectionner un opérateur basé sur les indices
 func selectOperator(i, j int) string {
 	operators := []string{"==", "!=", ">", "<", ">=", "<="}
 	return operators[(i+j)%len(operators)]
 }
+
 // Benchmarks
 // BenchmarkChainBuild_SimilarRules benchmark la construction avec règles similaires
 func BenchmarkChainBuild_SimilarRules(b *testing.B) {
@@ -389,6 +398,7 @@ func BenchmarkChainBuild_SimilarRules(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkChainBuild_VariedRules benchmark la construction avec règles variées
 func BenchmarkChainBuild_VariedRules(b *testing.B) {
 	storage := NewMemoryStorage()
@@ -412,6 +422,7 @@ func BenchmarkChainBuild_VariedRules(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkHashCompute benchmark le calcul de hash
 func BenchmarkHashCompute(b *testing.B) {
 	condition := map[string]interface{}{
@@ -428,6 +439,7 @@ func BenchmarkHashCompute(b *testing.B) {
 		}
 	}
 }
+
 // BenchmarkHashComputeCached benchmark le calcul de hash avec cache
 func BenchmarkHashComputeCached(b *testing.B) {
 	registry := NewAlphaSharingRegistry()

@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestWorkingMemory_RemoveToken tests removing a token from working memory
 func TestWorkingMemory_RemoveToken(t *testing.T) {
 	wm := &WorkingMemory{
@@ -29,6 +31,7 @@ func TestWorkingMemory_RemoveToken(t *testing.T) {
 	wm.RemoveToken("non_existent")
 	assert.Len(t, wm.Tokens, 1, "Should still have 1 token")
 }
+
 // TestWorkingMemory_GetFactsByVariable tests getting facts by variable
 func TestWorkingMemory_GetFactsByVariable(t *testing.T) {
 	wm := &WorkingMemory{
@@ -47,6 +50,7 @@ func TestWorkingMemory_GetFactsByVariable(t *testing.T) {
 	assert.Contains(t, facts, fact1, "Should contain fact1")
 	assert.Contains(t, facts, fact2, "Should contain fact2")
 }
+
 // TestWorkingMemory_GetTokensByVariable tests getting tokens by variable
 func TestWorkingMemory_GetTokensByVariable(t *testing.T) {
 	wm := &WorkingMemory{
@@ -65,6 +69,7 @@ func TestWorkingMemory_GetTokensByVariable(t *testing.T) {
 	assert.Contains(t, tokens, token1, "Should contain token1")
 	assert.Contains(t, tokens, token2, "Should contain token2")
 }
+
 // TestFact_Clone tests cloning a fact
 func TestFact_Clone(t *testing.T) {
 	original := &Fact{
@@ -88,6 +93,7 @@ func TestFact_Clone(t *testing.T) {
 	assert.Equal(t, "Bob", clone.Fields["name"], "Clone should have new value")
 	assert.Equal(t, 40, clone.Fields["age"], "Clone should have new value")
 }
+
 // TestFact_CloneWithEmptyFields tests cloning a fact with empty fields
 func TestFact_CloneWithEmptyFields(t *testing.T) {
 	original := &Fact{
@@ -102,6 +108,7 @@ func TestFact_CloneWithEmptyFields(t *testing.T) {
 	assert.NotNil(t, clone.Fields, "Fields should be initialized")
 	assert.Empty(t, clone.Fields, "Fields should be empty")
 }
+
 // TestWorkingMemory_Clone tests cloning working memory
 func TestWorkingMemory_Clone(t *testing.T) {
 	original := &WorkingMemory{
@@ -140,6 +147,7 @@ func TestWorkingMemory_Clone(t *testing.T) {
 	require.NotNil(t, clonedToken1, "Cloned token should exist")
 	assert.Equal(t, token1.ID, clonedToken1.ID, "Token ID should match")
 }
+
 // TestWorkingMemory_CloneEmpty tests cloning empty working memory
 func TestWorkingMemory_CloneEmpty(t *testing.T) {
 	original := &WorkingMemory{
@@ -155,6 +163,7 @@ func TestWorkingMemory_CloneEmpty(t *testing.T) {
 	assert.Empty(t, clone.Facts, "Facts should be empty")
 	assert.Empty(t, clone.Tokens, "Tokens should be empty")
 }
+
 // TestToken_Clone tests cloning a token
 func TestToken_Clone(t *testing.T) {
 	fact1 := &Fact{ID: "fact1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
@@ -163,7 +172,7 @@ func TestToken_Clone(t *testing.T) {
 		ID:           "token1",
 		Facts:        []*Fact{fact1, fact2},
 		NodeID:       "test_node",
-		Bindings:     map[string]*Fact{"p": fact1, "o": fact2},
+		Bindings:     NewBindingChain().Add("p", fact1).Add("o", fact2),
 		IsJoinResult: true,
 	}
 	// Clone the token
@@ -174,14 +183,15 @@ func TestToken_Clone(t *testing.T) {
 	assert.Equal(t, original.NodeID, clone.NodeID, "NodeID should match")
 	assert.Equal(t, original.IsJoinResult, clone.IsJoinResult, "IsJoinResult should match")
 	assert.Len(t, clone.Facts, 2, "Should have 2 facts")
-	assert.Len(t, clone.Bindings, 2, "Should have 2 bindings")
+	assert.Equal(t, 2, clone.Bindings.Len(), "Should have 2 bindings")
 	// Verify facts are copied (shallow copy)
 	assert.Equal(t, fact1, clone.Facts[0], "First fact should match")
 	assert.Equal(t, fact2, clone.Facts[1], "Second fact should match")
-	// Verify bindings are copied
-	assert.Equal(t, fact1, clone.Bindings["p"], "Binding 'p' should match")
-	assert.Equal(t, fact2, clone.Bindings["o"], "Binding 'o' should match")
+	// Verify bindings are copied (immutable, same reference is OK)
+	assert.Equal(t, fact1, clone.Bindings.Get("p"), "Binding 'p' should match")
+	assert.Equal(t, fact2, clone.Bindings.Get("o"), "Binding 'o' should match")
 }
+
 // TestToken_CloneEmpty tests cloning an empty token
 func TestToken_CloneEmpty(t *testing.T) {
 	original := &Token{
@@ -195,10 +205,10 @@ func TestToken_CloneEmpty(t *testing.T) {
 	assert.Equal(t, original.ID, clone.ID)
 	assert.Equal(t, original.NodeID, clone.NodeID)
 	assert.NotNil(t, clone.Facts, "Facts should be initialized")
-	assert.NotNil(t, clone.Bindings, "Bindings should be initialized")
+	assert.Equal(t, 0, clone.Bindings.Len(), "Bindings should be empty")
 	assert.Empty(t, clone.Facts, "Facts should be empty")
-	assert.Empty(t, clone.Bindings, "Bindings should be empty")
 }
+
 // TestToken_CloneIndependence tests that cloned token is independent
 func TestToken_CloneIndependence(t *testing.T) {
 	fact := &Fact{ID: "fact1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
@@ -209,19 +219,23 @@ func TestToken_CloneIndependence(t *testing.T) {
 		Bindings: NewBindingChainWith("p", fact),
 	}
 	clone := original.Clone()
-	// Modify clone's slices and maps
+	// Note: BindingChain is immutable, so we create a NEW chain
+	// This test needs to be updated to reflect the immutability
 	newFact := &Fact{ID: "fact2", Type: "Order"}
 	clone.Facts = append(clone.Facts, newFact)
-	clone.Bindings["o"] = newFact
+	clone.Bindings = clone.Bindings.Add("o", newFact)
+
 	// Verify original is unchanged
 	assert.Len(t, original.Facts, 1, "Original should still have 1 fact")
-	assert.Len(t, original.Bindings, 1, "Original should still have 1 binding")
-	assert.Nil(t, original.Bindings["o"], "Original should not have 'o' binding")
+	assert.Equal(t, 1, original.Bindings.Len(), "Original should still have 1 binding")
+	assert.Nil(t, original.Bindings.Get("o"), "Original should not have 'o' binding")
+
 	// Verify clone has new values
 	assert.Len(t, clone.Facts, 2, "Clone should have 2 facts")
-	assert.Len(t, clone.Bindings, 2, "Clone should have 2 bindings")
-	assert.NotNil(t, clone.Bindings["o"], "Clone should have 'o' binding")
+	assert.Equal(t, 2, clone.Bindings.Len(), "Clone should have 2 bindings")
+	assert.NotNil(t, clone.Bindings.Get("o"), "Clone should have 'o' binding")
 }
+
 // TestWorkingMemory_ComplexClone tests cloning with complex nested structures
 func TestWorkingMemory_ComplexClone(t *testing.T) {
 	wm := &WorkingMemory{

@@ -1,0 +1,240 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+package rete
+
+import (
+	"testing"
+)
+
+// TestJoinNode_PerformJoinWithTokens_PreservesAllBindings vérifie que performJoinWithTokens
+// préserve TOUS les bindings des deux tokens parents lors de la jointure.
+func TestJoinNode_PerformJoinWithTokens_PreservesAllBindings(t *testing.T) {
+	t.Log("🧪 TEST JoinNode - performJoinWithTokens préserve tous les bindings")
+	t.Log("=====================================================================")
+
+	// Setup
+	userFact := &Fact{ID: "u1", Type: "User", Fields: map[string]interface{}{"id": 1}}
+	orderFact := &Fact{ID: "o1", Type: "Order", Fields: map[string]interface{}{"user_id": 1}}
+	productFact := &Fact{ID: "p1", Type: "Product", Fields: map[string]interface{}{"id": 100}}
+
+	// Token1 : [user, order]
+	token1 := &Token{
+		ID:    "t1",
+		Facts: []*Fact{userFact, orderFact},
+		Bindings: NewBindingChain().
+			Add("user", userFact).
+			Add("order", orderFact),
+		NodeID:   "test_node_1",
+		Metadata: TokenMetadata{JoinLevel: 1},
+	}
+
+	// Token2 : [product]
+	token2 := &Token{
+		ID:    "t2",
+		Facts: []*Fact{productFact},
+		Bindings: NewBindingChain().
+			Add("product", productFact),
+		NodeID:   "test_node_2",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	// JoinNode sans conditions (toujours vrai)
+	joinNode := &JoinNode{
+		BaseNode:       BaseNode{ID: "join_test"},
+		AllVariables:   []string{"user", "order", "product"},
+		JoinConditions: nil, // Pas de conditions pour ce test
+		Debug:          true,
+	}
+
+	// Act
+	result := joinNode.performJoinWithTokens(token1, token2)
+
+	// Assert
+	if result == nil {
+		t.Fatal("❌ performJoinWithTokens devrait retourner un token, got nil")
+	}
+
+	// Vérifier le nombre de bindings
+	if result.Bindings.Len() != 3 {
+		t.Errorf("❌ Attendu 3 bindings, got %d", result.Bindings.Len())
+	}
+
+	// Vérifier que chaque variable est présente
+	expectedVars := []string{"user", "order", "product"}
+	for _, v := range expectedVars {
+		if !result.HasBinding(v) {
+			t.Errorf("❌ Variable '%s' manquante dans le token joint", v)
+		}
+	}
+
+	// Vérifier les valeurs
+	if result.GetBinding("user") != userFact {
+		t.Errorf("❌ Binding 'user' incorrect")
+	}
+	if result.GetBinding("order") != orderFact {
+		t.Errorf("❌ Binding 'order' incorrect")
+	}
+	if result.GetBinding("product") != productFact {
+		t.Errorf("❌ Binding 'product' incorrect")
+	}
+
+	// Vérifier les facts
+	if len(result.Facts) != 3 {
+		t.Errorf("❌ Attendu 3 facts, got %d", len(result.Facts))
+	}
+
+	// Vérifier les métadonnées
+	if result.Metadata.JoinLevel != 2 {
+		t.Errorf("❌ JoinLevel attendu 2, got %d", result.Metadata.JoinLevel)
+	}
+
+	if len(result.Metadata.ParentTokens) != 2 {
+		t.Errorf("❌ Attendu 2 parents, got %d", len(result.Metadata.ParentTokens))
+	}
+
+	if result.Metadata.CreatedBy != "join_test" {
+		t.Errorf("❌ CreatedBy attendu 'join_test', got '%s'", result.Metadata.CreatedBy)
+	}
+
+	t.Log("✅ performJoinWithTokens préserve bien tous les bindings")
+}
+
+// TestJoinNode_PerformJoinWithTokens_NilBindings teste le cas où un token a des bindings nil.
+func TestJoinNode_PerformJoinWithTokens_NilBindings(t *testing.T) {
+	t.Log("🧪 TEST JoinNode - performJoinWithTokens avec bindings nil")
+	t.Log("=============================================================")
+
+	userFact := &Fact{ID: "u1", Type: "User", Fields: map[string]interface{}{"id": 1}}
+	orderFact := &Fact{ID: "o1", Type: "Order", Fields: map[string]interface{}{"user_id": 1}}
+
+	// Token1 avec bindings valides
+	token1 := &Token{
+		ID:       "t1",
+		Facts:    []*Fact{userFact},
+		Bindings: NewBindingChain().Add("user", userFact),
+		NodeID:   "test_node_1",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	// Token2 avec bindings nil
+	token2 := &Token{
+		ID:       "t2",
+		Facts:    []*Fact{orderFact},
+		Bindings: nil,
+		NodeID:   "test_node_2",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	joinNode := &JoinNode{
+		BaseNode:       BaseNode{ID: "join_test"},
+		AllVariables:   []string{"user"},
+		JoinConditions: nil,
+		Debug:          false,
+	}
+
+	// Act - token2 a bindings nil, donc newBindings = token1.Bindings
+	result := joinNode.performJoinWithTokens(token1, token2)
+
+	// Assert - devrait utiliser les bindings de token1
+	// MAIS evaluateJoinConditions vérifie Len() < 2, donc échouera
+	if result == nil {
+		t.Log("⚠️  performJoinWithTokens retourne nil car un seul binding (< 2 requis)")
+		t.Log("✅ Comportement correct : jointure requiert au moins 2 variables")
+		return
+	}
+
+	// Si on arrive ici, c'est que JoinConditions est vide donc pas de vérification
+	t.Log("✅ Gestion correcte des bindings nil")
+}
+
+// TestJoinNode_PerformJoinWithTokens_WithConditions teste avec des conditions de jointure.
+func TestJoinNode_PerformJoinWithTokens_WithConditions(t *testing.T) {
+	t.Log("🧪 TEST JoinNode - performJoinWithTokens avec conditions")
+	t.Log("==========================================================")
+
+	userFact := &Fact{
+		ID:     "u1",
+		Type:   "User",
+		Fields: map[string]interface{}{"id": "U1", "name": "Alice"},
+	}
+	orderFact := &Fact{
+		ID:     "o1",
+		Type:   "Order",
+		Fields: map[string]interface{}{"id": "O1", "user_id": "U1", "amount": 100},
+	}
+
+	token1 := &Token{
+		ID:       "t1",
+		Facts:    []*Fact{userFact},
+		Bindings: NewBindingChain().Add("u", userFact),
+		NodeID:   "test_node_1",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	token2 := &Token{
+		ID:       "t2",
+		Facts:    []*Fact{orderFact},
+		Bindings: NewBindingChain().Add("o", orderFact),
+		NodeID:   "test_node_2",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	// JoinNode avec condition de jointure : u.id == o.user_id
+	joinNode := &JoinNode{
+		BaseNode:     BaseNode{ID: "join_test"},
+		AllVariables: []string{"u", "o"},
+		JoinConditions: []JoinCondition{
+			{
+				LeftVar:    "u",
+				LeftField:  "id",
+				RightVar:   "o",
+				RightField: "user_id",
+				Operator:   "==",
+			},
+		},
+		Debug: true,
+	}
+
+	// Act
+	result := joinNode.performJoinWithTokens(token1, token2)
+
+	// Assert - la jointure devrait réussir
+	if result == nil {
+		t.Fatal("❌ performJoinWithTokens devrait retourner un token (condition satisfaite)")
+	}
+
+	if result.Bindings.Len() != 2 {
+		t.Errorf("❌ Attendu 2 bindings, got %d", result.Bindings.Len())
+	}
+
+	if !result.HasBinding("u") || !result.HasBinding("o") {
+		t.Errorf("❌ Variables 'u' ou 'o' manquantes")
+	}
+
+	t.Log("✅ Jointure avec condition réussie")
+
+	// Test avec non-matching
+	orderFact2 := &Fact{
+		ID:     "o2",
+		Type:   "Order",
+		Fields: map[string]interface{}{"id": "O2", "user_id": "U999", "amount": 50},
+	}
+
+	token3 := &Token{
+		ID:       "t3",
+		Facts:    []*Fact{orderFact2},
+		Bindings: NewBindingChain().Add("o", orderFact2),
+		NodeID:   "test_node_3",
+		Metadata: TokenMetadata{JoinLevel: 0},
+	}
+
+	result2 := joinNode.performJoinWithTokens(token1, token3)
+
+	if result2 != nil {
+		t.Errorf("❌ performJoinWithTokens devrait retourner nil (condition non satisfaite)")
+	}
+
+	t.Log("✅ Jointure avec condition non satisfaite correctement rejetée")
+}

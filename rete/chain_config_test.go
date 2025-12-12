@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 	"time"
 )
+
 // TestDefaultChainPerformanceConfig teste la configuration par défaut
 func TestDefaultChainPerformanceConfig(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -44,6 +46,7 @@ func TestDefaultChainPerformanceConfig(t *testing.T) {
 		t.Errorf("PrometheusPrefix devrait être 'tsd_rete', obtenu %s", config.PrometheusPrefix)
 	}
 }
+
 // TestHighPerformanceConfig teste la configuration haute performance
 func TestHighPerformanceConfig(t *testing.T) {
 	config := HighPerformanceConfig()
@@ -63,6 +66,7 @@ func TestHighPerformanceConfig(t *testing.T) {
 		t.Error("PrometheusEnabled devrait être true en haute performance")
 	}
 }
+
 // TestLowMemoryConfig teste la configuration mémoire réduite
 func TestLowMemoryConfig(t *testing.T) {
 	config := LowMemoryConfig()
@@ -79,6 +83,7 @@ func TestLowMemoryConfig(t *testing.T) {
 		t.Error("MetricsDetailedChains devrait être false en mémoire réduite")
 	}
 }
+
 // TestDisabledCachesConfig teste la configuration sans caches
 func TestDisabledCachesConfig(t *testing.T) {
 	config := DisabledCachesConfig()
@@ -92,6 +97,7 @@ func TestDisabledCachesConfig(t *testing.T) {
 		t.Errorf("HashCacheMaxSize devrait être 0, obtenu %d", config.HashCacheMaxSize)
 	}
 }
+
 // TestChainPerformanceConfig_Validate teste la validation
 func TestChainPerformanceConfig_Validate(t *testing.T) {
 	tests := []struct {
@@ -180,6 +186,7 @@ func TestChainPerformanceConfig_Validate(t *testing.T) {
 		})
 	}
 }
+
 // TestChainPerformanceConfig_Clone teste le clonage
 func TestChainPerformanceConfig_Clone(t *testing.T) {
 	original := DefaultChainPerformanceConfig()
@@ -202,6 +209,7 @@ func TestChainPerformanceConfig_Clone(t *testing.T) {
 		t.Error("La modification du clone affecte l'original")
 	}
 }
+
 // TestChainPerformanceConfig_GetCacheInfo teste GetCacheInfo
 func TestChainPerformanceConfig_GetCacheInfo(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -226,6 +234,7 @@ func TestChainPerformanceConfig_GetCacheInfo(t *testing.T) {
 		t.Error("prometheus manquant dans l'info")
 	}
 }
+
 // TestChainPerformanceConfig_EstimateMemoryUsage teste l'estimation mémoire
 func TestChainPerformanceConfig_EstimateMemoryUsage(t *testing.T) {
 	tests := []struct {
@@ -272,6 +281,7 @@ func TestChainPerformanceConfig_EstimateMemoryUsage(t *testing.T) {
 		})
 	}
 }
+
 // TestChainPerformanceConfig_String teste la représentation textuelle
 func TestChainPerformanceConfig_String(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
@@ -285,6 +295,7 @@ func TestChainPerformanceConfig_String(t *testing.T) {
 	}
 	t.Logf("String representation: %s", str)
 }
+
 // TestCacheEvictionPolicy teste les constantes de politique d'éviction
 func TestCacheEvictionPolicy(t *testing.T) {
 	policies := []CacheEvictionPolicy{
@@ -305,6 +316,7 @@ func TestCacheEvictionPolicy(t *testing.T) {
 		t.Error("LRU et LFU ont la même valeur")
 	}
 }
+
 // TestChainPerformanceConfig_NilClone teste le clonage d'une config nil
 func TestChainPerformanceConfig_NilClone(t *testing.T) {
 	var config *ChainPerformanceConfig

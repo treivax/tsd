@@ -1,7 +1,9 @@
 package rete
+
 import (
 	"testing"
 )
+
 // TestDecomposeRecursive tests the decomposeRecursive function coverage
 func TestDecomposeRecursive(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -70,6 +72,7 @@ func TestDecomposeRecursive(t *testing.T) {
 		})
 	}
 }
+
 // TestSimplifySteps tests the SimplifySteps function (currently 0% coverage)
 func TestSimplifySteps(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -99,6 +102,7 @@ func TestSimplifySteps(t *testing.T) {
 		t.Errorf("SimplifySteps changed number of steps: got %d, want %d", len(simplified), len(result.Steps))
 	}
 }
+
 // TestValidateDecomposition tests the ValidateDecomposition function (currently 0% coverage)
 func TestValidateDecomposition(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -146,6 +150,7 @@ func TestValidateDecomposition(t *testing.T) {
 		})
 	}
 }
+
 // TestFormatSteps tests the FormatSteps function (currently 0% coverage)
 func TestFormatSteps(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -167,6 +172,7 @@ func TestFormatSteps(t *testing.T) {
 		t.Error("FormatSteps should return non-empty string for decomposed expression")
 	}
 }
+
 // TestGetDecompositionStats tests the GetDecompositionStats function (currently 0% coverage)
 func TestGetDecompositionStats(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -200,6 +206,7 @@ func TestGetDecompositionStats(t *testing.T) {
 		}
 	}
 }
+
 // TestDecomposeExpressionEdgeCases tests edge cases for expression decomposition
 func TestDecomposeExpressionEdgeCases(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -262,6 +269,7 @@ func TestDecomposeExpressionEdgeCases(t *testing.T) {
 		})
 	}
 }
+
 // TestShouldDecomposeComplexity tests ShouldDecompose with various complexity levels
 func TestShouldDecomposeComplexity(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -318,6 +326,7 @@ func TestShouldDecomposeComplexity(t *testing.T) {
 		})
 	}
 }
+
 // TestGetComplexity tests the GetComplexity function
 func TestGetComplexity(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -369,6 +378,7 @@ func TestGetComplexity(t *testing.T) {
 		})
 	}
 }
+
 // TestValidateDecompositionNilCases tests ValidateDecomposition with nil inputs
 func TestValidateDecompositionNilCases(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -402,6 +412,7 @@ func TestValidateDecompositionNilCases(t *testing.T) {
 		})
 	}
 }
+
 // TestGetDecompositionStatsNil tests GetDecompositionStats with nil input
 func TestGetDecompositionStatsNil(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestArithmeticDecomposer_SimpleExpression tests simple expression decomposition
 func TestArithmeticDecomposer_SimpleExpression(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -44,6 +46,7 @@ func TestArithmeticDecomposer_SimpleExpression(t *testing.T) {
 		t.Errorf("Step 1 should have no dependencies, got %v", step1.Dependencies)
 	}
 }
+
 // TestArithmeticDecomposer_ComplexExpression tests complex nested expression
 func TestArithmeticDecomposer_ComplexExpression(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -168,6 +171,7 @@ func TestArithmeticDecomposer_ComplexExpression(t *testing.T) {
 		t.Errorf("Step 5: Expected operator >, got %s", steps[4].Operator)
 	}
 }
+
 // TestArithmeticDecomposer_ShouldDecompose tests complexity threshold
 func TestArithmeticDecomposer_ShouldDecompose(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -209,6 +213,7 @@ func TestArithmeticDecomposer_ShouldDecompose(t *testing.T) {
 		t.Error("Complex expression should decompose")
 	}
 }
+
 // TestArithmeticDecomposer_Dependencies tests dependency extraction
 func TestArithmeticDecomposer_Dependencies(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -252,6 +257,7 @@ func TestArithmeticDecomposer_Dependencies(t *testing.T) {
 		}
 	}
 }
+
 // TestArithmeticDecomposer_DecomposeExpression tests legacy API
 func TestArithmeticDecomposer_DecomposeExpression(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -272,6 +278,7 @@ func TestArithmeticDecomposer_DecomposeExpression(t *testing.T) {
 		t.Errorf("Expected 1 step, got %d", len(decomposed.Steps))
 	}
 }
+
 // BenchmarkArithmeticDecomposer_SimpleExpression benchmarks simple decomposition
 func BenchmarkArithmeticDecomposer_SimpleExpression(b *testing.B) {
 	decomposer := NewArithmeticExpressionDecomposer()
@@ -286,6 +293,7 @@ func BenchmarkArithmeticDecomposer_SimpleExpression(b *testing.B) {
 		_, _ = decomposer.DecomposeToDecomposedConditions(expr)
 	}
 }
+
 // BenchmarkArithmeticDecomposer_ComplexExpression benchmarks complex decomposition
 func BenchmarkArithmeticDecomposer_ComplexExpression(b *testing.B) {
 	decomposer := NewArithmeticExpressionDecomposer()

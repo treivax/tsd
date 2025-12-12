@@ -2,10 +2,12 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"os"
 	"testing"
 )
+
 // TestRemoveRuleCommand_ParseAndExecute vérifie que la commande remove rule fonctionne de bout en bout
 func TestRemoveRuleCommand_ParseAndExecute(t *testing.T) {
 	t.Log("🧪 TEST INTEGRATION REMOVE RULE COMMAND")
@@ -71,6 +73,7 @@ remove rule adult_check
 	}
 	t.Log("✅ Test réussi - Commande remove rule fonctionne de bout en bout")
 }
+
 // TestRemoveRuleCommand_MultipleRules vérifie la suppression de plusieurs règles
 func TestRemoveRuleCommand_MultipleRules(t *testing.T) {
 	t.Log("🧪 TEST REMOVE MULTIPLE RULES")
@@ -121,6 +124,7 @@ remove rule rule3
 	}
 	t.Log("✅ Test réussi - Suppression de plusieurs règles fonctionne")
 }
+
 // TestRemoveRuleCommand_WithSharedAlphaNodes vérifie que la suppression n'affecte pas les nœuds partagés
 func TestRemoveRuleCommand_WithSharedAlphaNodes(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE WITH SHARED ALPHA NODES")
@@ -171,6 +175,7 @@ remove rule adult_rule
 	}
 	t.Log("✅ Test réussi - Les nœuds partagés sont préservés")
 }
+
 // TestRemoveRuleCommand_NonExistentRule vérifie le comportement avec une règle inexistante
 func TestRemoveRuleCommand_NonExistentRule(t *testing.T) {
 	t.Log("🧪 TEST REMOVE NON-EXISTENT RULE")
@@ -208,6 +213,7 @@ remove rule non_existent_rule
 	}
 	t.Log("✅ Test réussi - Gestion correcte d'une règle inexistante")
 }
+
 // TestRemoveRuleCommand_AfterFactSubmission vérifie la suppression après soumission de faits
 func TestRemoveRuleCommand_AfterFactSubmission(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE AFTER FACT SUBMISSION")

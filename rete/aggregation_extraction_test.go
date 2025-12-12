@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestParseAggregationExpression tests the parseAggregationExpression function
 func TestParseAggregationExpression(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -76,6 +78,7 @@ func TestParseAggregationExpression(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractAggregationFunction tests the extractAggregationFunction function
 func TestExtractAggregationFunction(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -148,6 +151,7 @@ func TestExtractAggregationFunction(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractAggregationField tests the extractAggregationField function
 func TestExtractAggregationField(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -236,6 +240,7 @@ func TestExtractAggregationField(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractSourceType tests the extractSourceType function
 func TestExtractSourceType(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -314,6 +319,7 @@ func TestExtractSourceType(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractJoinFields tests the extractJoinFields function
 func TestExtractJoinFields(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -377,6 +383,7 @@ func TestExtractJoinFields(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractThresholdConditions tests the extractThresholdConditions function
 func TestExtractThresholdConditions(t *testing.T) {
 	cp := &ConstraintPipeline{}
@@ -459,6 +466,7 @@ func TestExtractThresholdConditions(t *testing.T) {
 		})
 	}
 }
+
 // TestExtractAggregationInfoFromVariables_Integration tests the refactored orchestrator function
 func TestExtractAggregationInfoFromVariables_Integration(t *testing.T) {
 	cp := &ConstraintPipeline{}

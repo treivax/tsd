@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
-	"time"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
+
 // TestDefaultTransactionOptions tests default options
 func TestDefaultTransactionOptions(t *testing.T) {
 	t.Parallel()
@@ -18,6 +20,7 @@ func TestDefaultTransactionOptions(t *testing.T) {
 	assert.Equal(t, 10, opts.MaxVerifyRetries)
 	assert.True(t, opts.VerifyOnCommit)
 }
+
 // TestTransactionOptions_Validate tests option validation
 func TestTransactionOptions_Validate(t *testing.T) {
 	t.Parallel()
@@ -92,6 +95,7 @@ func TestTransactionOptions_Validate(t *testing.T) {
 		})
 	}
 }
+
 // TestTransactionOptions_Clone tests option cloning
 func TestTransactionOptions_Clone(t *testing.T) {
 	t.Parallel()
@@ -120,6 +124,7 @@ func TestTransactionOptions_Clone(t *testing.T) {
 		assert.Equal(t, 15, opts.MaxVerifyRetries, "Original should not be modified")
 	})
 }
+
 // TestDefaultNetworkCoherenceConfig tests default network config
 func TestDefaultNetworkCoherenceConfig(t *testing.T) {
 	t.Parallel()
@@ -131,6 +136,7 @@ func TestDefaultNetworkCoherenceConfig(t *testing.T) {
 	assert.True(t, config.DefaultOptions.VerifyOnCommit)
 	assert.True(t, config.EnableMetrics)
 }
+
 // TestCoherenceMetrics_Basic tests basic metrics tracking
 func TestCoherenceMetrics_Basic(t *testing.T) {
 	t.Parallel()
@@ -141,6 +147,7 @@ func TestCoherenceMetrics_Basic(t *testing.T) {
 	assert.Equal(t, 0, metrics.TotalVerifyAttempts)
 	assert.Equal(t, 0, metrics.TotalRetries)
 }
+
 // TestTransactionWithOptions tests transaction creation with options
 func TestTransactionWithOptions(t *testing.T) {
 	t.Parallel()
@@ -177,6 +184,7 @@ func TestTransactionWithOptions(t *testing.T) {
 		assert.Equal(t, 30*time.Second, tx.Options.SubmissionTimeout)
 	})
 }
+
 // TestCoherenceMetrics_ConcurrentAccess tests thread-safe metrics
 func TestCoherenceMetrics_ConcurrentAccess(t *testing.T) {
 	if testing.Short() {
@@ -204,6 +212,7 @@ func TestCoherenceMetrics_ConcurrentAccess(t *testing.T) {
 	assert.Equal(t, 1000, metrics.FactsSubmitted)
 	assert.Equal(t, 1000, metrics.FactsPersisted)
 }
+
 // TestTransactionOptions_EdgeCases tests edge cases
 func TestTransactionOptions_EdgeCases(t *testing.T) {
 	t.Parallel()

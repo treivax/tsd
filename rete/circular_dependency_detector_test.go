@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 // TestNewCircularDependencyDetector teste la création du détecteur
 func TestNewCircularDependencyDetector(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -21,6 +23,7 @@ func TestNewCircularDependencyDetector(t *testing.T) {
 		t.Error("Expected metadata to be initialized")
 	}
 }
+
 // TestCircularDependency_NoCycle teste un graphe sans cycle
 func TestCircularDependency_NoCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -33,6 +36,7 @@ func TestCircularDependency_NoCycle(t *testing.T) {
 		t.Errorf("Expected no cycle, but cycle detected: %v", detector.GetCyclePath())
 	}
 }
+
 // TestCircularDependency_SimpleCycle teste un cycle simple
 func TestCircularDependency_SimpleCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -63,6 +67,7 @@ func TestCircularDependency_SimpleCycle(t *testing.T) {
 		t.Errorf("Expected cycle to contain A and B, got %v", cyclePath)
 	}
 }
+
 // TestCircularDependency_SelfCycle teste un cycle sur soi-même
 func TestCircularDependency_SelfCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -78,6 +83,7 @@ func TestCircularDependency_SelfCycle(t *testing.T) {
 		t.Errorf("Expected cycle path with at least 2 nodes (start and end), got %d", len(cyclePath))
 	}
 }
+
 // TestCircularDependency_ComplexCycle teste un cycle complexe
 func TestCircularDependency_ComplexCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -96,6 +102,7 @@ func TestCircularDependency_ComplexCycle(t *testing.T) {
 		t.Errorf("Expected cycle path with at least 3 nodes, got %d", len(cyclePath))
 	}
 }
+
 // TestCircularDependency_MultiplePaths teste un graphe avec plusieurs chemins
 func TestCircularDependency_MultiplePaths(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -114,6 +121,7 @@ func TestCircularDependency_MultiplePaths(t *testing.T) {
 		t.Errorf("Expected no cycle in diamond graph, but cycle detected: %v", detector.GetCyclePath())
 	}
 }
+
 // TestCircularDependency_DisconnectedGraph teste un graphe déconnecté
 func TestCircularDependency_DisconnectedGraph(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -130,6 +138,7 @@ func TestCircularDependency_DisconnectedGraph(t *testing.T) {
 	}
 	t.Logf("Cycle in disconnected graph: %s", detector.FormatCyclePath())
 }
+
 // TestCircularDependency_EmptyGraph teste un graphe vide
 func TestCircularDependency_EmptyGraph(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -138,6 +147,7 @@ func TestCircularDependency_EmptyGraph(t *testing.T) {
 		t.Error("Expected no cycle in empty graph")
 	}
 }
+
 // TestCircularDependency_Validate teste la validation complète
 func TestCircularDependency_Validate(t *testing.T) {
 	tests := []struct {
@@ -208,6 +218,7 @@ func TestCircularDependency_Validate(t *testing.T) {
 		})
 	}
 }
+
 // TestCircularDependency_MaxDepth teste le calcul de la profondeur maximale
 func TestCircularDependency_MaxDepth(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -228,6 +239,7 @@ func TestCircularDependency_MaxDepth(t *testing.T) {
 	}
 	t.Logf("Max depth for chain of 5 nodes: %d", report.MaxDepth)
 }
+
 // TestCircularDependency_TopologicalSort teste le tri topologique
 func TestCircularDependency_TopologicalSort(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -265,6 +277,7 @@ func TestCircularDependency_TopologicalSort(t *testing.T) {
 		t.Errorf("Expected temp_2 before temp_3, got indices %d, %d", idx2, idx3)
 	}
 }
+
 // TestCircularDependency_TopologicalSort_WithCycle teste que le tri échoue avec un cycle
 func TestCircularDependency_TopologicalSort_WithCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -277,6 +290,7 @@ func TestCircularDependency_TopologicalSort_WithCycle(t *testing.T) {
 	}
 	t.Logf("Expected error: %v", err)
 }
+
 // TestCircularDependency_GetDependencyChain teste la récupération de la chaîne complète
 func TestCircularDependency_GetDependencyChain(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -315,6 +329,7 @@ func TestCircularDependency_GetDependencyChain(t *testing.T) {
 		t.Errorf("Expected all nodes in chain, got %v", chain)
 	}
 }
+
 // TestCircularDependency_GetStatistics teste les statistiques
 func TestCircularDependency_GetStatistics(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -334,6 +349,7 @@ func TestCircularDependency_GetStatistics(t *testing.T) {
 	}
 	t.Logf("Graph statistics: %+v", stats)
 }
+
 // TestCircularDependency_Clear teste la réinitialisation
 func TestCircularDependency_Clear(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -354,6 +370,7 @@ func TestCircularDependency_Clear(t *testing.T) {
 		t.Errorf("Expected 0 colors after clear, got %d", len(detector.colors))
 	}
 }
+
 // TestCircularDependency_ValidateAlphaChain teste la validation d'une chaîne d'alpha nodes
 func TestCircularDependency_ValidateAlphaChain(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -404,6 +421,7 @@ func TestCircularDependency_ValidateAlphaChain(t *testing.T) {
 	t.Logf("Alpha chain validation report: Valid=%v, MaxDepth=%d, TotalNodes=%d",
 		report.Valid, report.MaxDepth, report.TotalNodes)
 }
+
 // TestCircularDependency_ValidateAlphaChain_WithCycle teste la détection de cycle dans une chaîne
 func TestCircularDependency_ValidateAlphaChain_WithCycle(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -441,6 +459,7 @@ func TestCircularDependency_ValidateAlphaChain_WithCycle(t *testing.T) {
 	t.Logf("Cycle detection report: Valid=%v, Error=%s, Cycle=%v",
 		report.Valid, report.ErrorMessage, report.CyclePath)
 }
+
 // TestCircularDependency_AddNodeWithMetadata teste l'ajout de métadonnées
 func TestCircularDependency_AddNodeWithMetadata(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -459,6 +478,7 @@ func TestCircularDependency_AddNodeWithMetadata(t *testing.T) {
 		t.Errorf("Expected expression 'a * b', got '%s'", detector.metadata["temp_1"].Expression)
 	}
 }
+
 // TestCircularDependency_RealWorldScenario teste un scénario réel d'expression arithmétique
 func TestCircularDependency_RealWorldScenario(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -490,6 +510,7 @@ func TestCircularDependency_RealWorldScenario(t *testing.T) {
 	}
 	t.Logf("Execution order (topological sort): %v", sorted)
 }
+
 // TestCircularDependency_String teste la représentation textuelle
 func TestCircularDependency_String(t *testing.T) {
 	detector := NewCircularDependencyDetector()
@@ -501,6 +522,7 @@ func TestCircularDependency_String(t *testing.T) {
 	}
 	t.Logf("String representation:\n%s", str)
 }
+
 // BenchmarkCircularDependency_DetectCycles benchmark la détection de cycles
 func BenchmarkCircularDependency_DetectCycles(b *testing.B) {
 	detector := NewCircularDependencyDetector()
@@ -517,6 +539,7 @@ func BenchmarkCircularDependency_DetectCycles(b *testing.B) {
 		detector.DetectCycles()
 	}
 }
+
 // BenchmarkCircularDependency_Validate benchmark la validation complète
 func BenchmarkCircularDependency_Validate(b *testing.B) {
 	detector := NewCircularDependencyDetector()

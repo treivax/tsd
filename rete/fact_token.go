@@ -67,17 +67,26 @@ func ParseInternalID(internalID string) (string, string, bool) {
 	return "", "", false
 }
 
+// TokenMetadata contient les métadonnées d'un token pour traçage et debug.
+type TokenMetadata struct {
+	CreatedAt    string   `json:"created_at,omitempty"`    // Timestamp de création
+	CreatedBy    string   `json:"created_by,omitempty"`    // ID du nœud créateur
+	JoinLevel    int      `json:"join_level,omitempty"`    // Niveau de jointure (0 = fact initial, 1+ = jointures)
+	ParentTokens []string `json:"parent_tokens,omitempty"` // IDs des tokens parents (pour jointures)
+}
+
 // Token représente un token dans le réseau RETE avec bindings immuables.
 //
 // Changement majeur: Bindings utilise maintenant BindingChain au lieu de map[string]*Fact
 // pour garantir l'immutabilité et éviter la perte de bindings lors des jointures en cascade.
 type Token struct {
-	ID           string         `json:"id"`
-	Facts        []*Fact        `json:"facts"`
-	NodeID       string         `json:"node_id"`
-	Parent       *Token         `json:"parent,omitempty"`
-	Bindings     *BindingChain  `json:"-"`                        // Chaîne immuable de bindings (non sérialisable)
-	IsJoinResult bool           `json:"is_join_result,omitempty"` // Indique si c'est un token de jointure réussie
+	ID           string        `json:"id"`
+	Facts        []*Fact       `json:"facts"`
+	NodeID       string        `json:"node_id"`
+	Parent       *Token        `json:"parent,omitempty"`
+	Bindings     *BindingChain `json:"-"`                        // Chaîne immuable de bindings (non sérialisable)
+	IsJoinResult bool          `json:"is_join_result,omitempty"` // Indique si c'est un token de jointure réussie
+	Metadata     TokenMetadata `json:"metadata,omitempty"`       // Métadonnées pour traçage
 }
 
 // WorkingMemory représente la mémoire de travail d'un nœud
@@ -205,11 +214,18 @@ func (t *Token) Clone() *Token {
 		NodeID:       t.NodeID,
 		Bindings:     t.Bindings, // Immuable, pas besoin de cloner
 		IsJoinResult: t.IsJoinResult,
+		Metadata:     t.Metadata, // Copie de la structure
 	}
 
 	// Copier les faits
 	for i, fact := range t.Facts {
 		clone.Facts[i] = fact.Clone()
+	}
+
+	// Copier les ParentTokens si présents
+	if len(t.Metadata.ParentTokens) > 0 {
+		clone.Metadata.ParentTokens = make([]string, len(t.Metadata.ParentTokens))
+		copy(clone.Metadata.ParentTokens, t.Metadata.ParentTokens)
 	}
 
 	// Note: Parent n'est pas cloné pour éviter récursion infinie
@@ -261,4 +277,49 @@ func (t *Token) GetVariables() []string {
 		return []string{}
 	}
 	return t.Bindings.Variables()
+}
+
+// generateTokenID génère un ID unique pour un token.
+//
+// Format: "token_<timestamp>_<counter>"
+// Cette fonction utilise un compteur atomique pour garantir l'unicité.
+var tokenCounter uint64
+
+func generateTokenID() string {
+	// Utiliser un compteur atomique simple pour l'unicité
+	// Dans une implémentation production, utiliser atomic.AddUint64
+	tokenCounter++
+	return fmt.Sprintf("token_%d", tokenCounter)
+}
+
+// NewTokenWithFact crée un nouveau token avec un seul binding.
+//
+// Fonction utilitaire pour créer un token initial avec un fait unique,
+// typiquement utilisé lors de la première activation d'un JoinNode.
+//
+// Paramètres:
+//   - fact: pointeur vers le fait à lier
+//   - variable: nom de la variable à lier au fait
+//   - nodeID: ID du nœud créateur du token
+//
+// Retourne:
+//   - *Token: nouveau token avec le binding spécifié
+//
+// Exemple:
+//
+//	userFact := &Fact{ID: "u1", Type: "User", Fields: map[string]interface{}{"id": 1}}
+//	token := NewTokenWithFact(userFact, "user", "type_node_user")
+//	fmt.Println(token.HasBinding("user"))  // true
+//	fmt.Println(token.GetBinding("user") == userFact)  // true
+func NewTokenWithFact(fact *Fact, variable string, nodeID string) *Token {
+	return &Token{
+		ID:       generateTokenID(),
+		Facts:    []*Fact{fact},
+		NodeID:   nodeID,
+		Bindings: NewBindingChainWith(variable, fact),
+		Metadata: TokenMetadata{
+			CreatedBy: nodeID,
+			JoinLevel: 0,
+		},
+	}
 }

@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 )
+
 // TestNewArithmeticDecompositionMetrics teste la création de métriques
 func TestNewArithmeticDecompositionMetrics(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -25,6 +27,7 @@ func TestNewArithmeticDecompositionMetrics(t *testing.T) {
 		t.Error("Expected histogram buckets to be configured")
 	}
 }
+
 // TestRecordActivation teste l'enregistrement d'activations
 func TestRecordActivation(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -52,6 +55,7 @@ func TestRecordActivation(t *testing.T) {
 		t.Errorf("Expected 3 global activations, got %d", global.TotalActivations)
 	}
 }
+
 // TestRecordEvaluation teste l'enregistrement d'évaluations
 func TestRecordEvaluation(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -92,6 +96,7 @@ func TestRecordEvaluation(t *testing.T) {
 		t.Errorf("Expected avg time %v, got %v", expectedAvg, rule.AvgEvaluationTime)
 	}
 }
+
 // TestRecordEvaluationHistogram teste l'histogramme des temps
 func TestRecordEvaluationHistogram(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -125,6 +130,7 @@ func TestRecordEvaluationHistogram(t *testing.T) {
 		t.Errorf("Expected bucket 250 to have 1 entry, got %d", rule.EvaluationTimeHistogram[250])
 	}
 }
+
 // TestRecordCacheHitMiss teste l'enregistrement des cache hits/misses
 func TestRecordCacheHitMiss(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -163,6 +169,7 @@ func TestRecordCacheHitMiss(t *testing.T) {
 		t.Errorf("Expected global hit rate %.2f, got %.2f", expectedHitRate, global.CacheGlobalHitRate)
 	}
 }
+
 // TestRecordChainStructure teste l'enregistrement de la structure de chaîne
 func TestRecordChainStructure(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -209,6 +216,7 @@ func TestRecordChainStructure(t *testing.T) {
 		t.Errorf("Expected 2 comparison nodes, got %d", global.TotalComparisonNodes)
 	}
 }
+
 // TestRecordCircularDependency teste l'enregistrement de dépendances circulaires
 func TestRecordCircularDependency(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -234,6 +242,7 @@ func TestRecordCircularDependency(t *testing.T) {
 		t.Errorf("Expected 1 cycle detected, got %d", global.CyclesDetected)
 	}
 }
+
 // TestRecordGraphValidation teste l'enregistrement de validations de graphe
 func TestRecordGraphValidation(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -252,6 +261,7 @@ func TestRecordGraphValidation(t *testing.T) {
 		t.Errorf("Expected max graph depth 8, got %d", global.MaxGraphDepth)
 	}
 }
+
 // TestUpdateCacheStatistics teste la mise à jour des stats de cache
 func TestUpdateCacheStatistics(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -268,6 +278,7 @@ func TestUpdateCacheStatistics(t *testing.T) {
 		t.Errorf("Expected cache memory usage 1MB, got %d", global.CacheMemoryUsage)
 	}
 }
+
 // TestGetAllRuleMetrics teste la récupération de toutes les métriques
 func TestGetAllRuleMetrics(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -288,6 +299,7 @@ func TestGetAllRuleMetrics(t *testing.T) {
 		}
 	}
 }
+
 // TestGetTopRulesByEvaluations teste le classement par nombre d'évaluations
 func TestGetTopRulesByEvaluations(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -310,6 +322,7 @@ func TestGetTopRulesByEvaluations(t *testing.T) {
 		t.Errorf("Expected rule3 to be second, got %s", topRules[1].RuleID)
 	}
 }
+
 // TestGetTopRulesByDuration teste le classement par durée totale
 func TestGetTopRulesByDuration(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -330,6 +343,7 @@ func TestGetTopRulesByDuration(t *testing.T) {
 		t.Errorf("Expected rule1 to be second (1000µs total), got %s", topRules[1].RuleID)
 	}
 }
+
 // TestGetSlowestRules teste le classement par temps moyen
 func TestGetSlowestRules(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -355,6 +369,7 @@ func TestGetSlowestRules(t *testing.T) {
 		t.Errorf("Expected rule2 to be second slowest, got %s", slowestRules[1].RuleID)
 	}
 }
+
 // TestArithmeticMetricsGetSummary teste le résumé des métriques
 func TestArithmeticMetricsGetSummary(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -382,6 +397,7 @@ func TestArithmeticMetricsGetSummary(t *testing.T) {
 		t.Error("Expected 1 validation in summary")
 	}
 }
+
 // TestArithmeticMetricsReset teste la réinitialisation des métriques
 func TestArithmeticMetricsReset(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -415,6 +431,7 @@ func TestArithmeticMetricsReset(t *testing.T) {
 		t.Error("Expected zero cache hits after reset")
 	}
 }
+
 // TestMaxRulesToTrack teste la limite du nombre de règles suivies
 func TestMaxRulesToTrack(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -432,6 +449,7 @@ func TestMaxRulesToTrack(t *testing.T) {
 		t.Errorf("Expected max %d rules, got %d", config.MaxRulesToTrack, len(allMetrics))
 	}
 }
+
 // TestMetricsDisabled teste que les métriques peuvent être désactivées
 func TestMetricsDisabled(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -450,6 +468,7 @@ func TestMetricsDisabled(t *testing.T) {
 		t.Error("Expected zero activations when disabled")
 	}
 }
+
 // TestConcurrentMetrics teste la sécurité concurrentielle
 func TestConcurrentMetrics(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -490,6 +509,7 @@ func TestConcurrentMetrics(t *testing.T) {
 		t.Errorf("Expected %d cache misses, got %d", expectedCacheOps, global.TotalCacheMisses)
 	}
 }
+
 // TestCalculateMaxDepth teste le calcul de profondeur maximale
 func TestCalculateMaxDepth(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -553,6 +573,7 @@ func TestCalculateMaxDepth(t *testing.T) {
 		})
 	}
 }
+
 // TestGlobalAverages teste le calcul des moyennes globales
 func TestGlobalAverages(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -582,6 +603,7 @@ func TestGlobalAverages(t *testing.T) {
 		t.Errorf("Expected avg dependency depth %.2f, got %.2f", expectedAvgDepth, global.AverageDependencyDepth)
 	}
 }
+
 // TestCopyRuleMetrics teste que les copies sont indépendantes
 func TestCopyRuleMetrics(t *testing.T) {
 	config := DefaultMetricsConfig()
@@ -615,6 +637,7 @@ func TestCopyRuleMetrics(t *testing.T) {
 		t.Error("Copy should be independent - dependencies should not be modified")
 	}
 }
+
 // BenchmarkRecordEvaluation benchmark l'enregistrement d'évaluations
 func BenchmarkRecordEvaluation(b *testing.B) {
 	config := DefaultMetricsConfig()
@@ -624,6 +647,7 @@ func BenchmarkRecordEvaluation(b *testing.B) {
 		metrics.RecordEvaluation("rule1", true, 100*time.Microsecond)
 	}
 }
+
 // BenchmarkGetRuleMetrics benchmark la récupération de métriques
 func BenchmarkGetRuleMetrics(b *testing.B) {
 	config := DefaultMetricsConfig()
@@ -638,6 +662,7 @@ func BenchmarkGetRuleMetrics(b *testing.B) {
 		metrics.GetRuleMetrics("rule1")
 	}
 }
+
 // BenchmarkConcurrentRecording benchmark l'enregistrement concurrent
 func BenchmarkConcurrentRecording(b *testing.B) {
 	config := DefaultMetricsConfig()

@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestConditionSplitter_SingleAlphaCondition(t *testing.T) {
 	splitter := NewConditionSplitter()
 	// Alpha condition: c.qte > 5 (only variable "c")
@@ -81,6 +83,7 @@ func TestConditionSplitter_SingleBetaCondition(t *testing.T) {
 	}
 	t.Log("✅ Single beta condition correctly classified")
 }
+
 // TestConditionSplitter_ArithmeticExpressions verifies that arithmetic expressions
 // with single variable are classified as alpha conditions
 func TestConditionSplitter_ArithmeticExpressions(t *testing.T) {
@@ -284,6 +287,7 @@ func TestConditionSplitter_ArithmeticExpressions(t *testing.T) {
 	}
 	t.Log("✅ Arithmetic expressions correctly classified")
 }
+
 // TestConditionSplitter_Division verifies division operations
 func TestConditionSplitter_Division(t *testing.T) {
 	splitter := NewConditionSplitter()
@@ -321,6 +325,7 @@ func TestConditionSplitter_Division(t *testing.T) {
 	}
 	t.Log("✅ Division operations correctly handled")
 }
+
 // TestConditionSplitter_NegativeNumbers verifies negative number operations
 func TestConditionSplitter_NegativeNumbers(t *testing.T) {
 	splitter := NewConditionSplitter()
@@ -659,6 +664,7 @@ func TestConditionSplitter_ReconstructBetaCondition(t *testing.T) {
 	}
 	t.Logf("✅ Beta condition reconstruction works correctly")
 }
+
 // TestConditionSplitter_DebugJoinWithAlpha tests the exact structure from the failing diagnostic test
 func TestConditionSplitter_DebugJoinWithAlpha(t *testing.T) {
 	// This is the exact condition structure from: p.id == o.personId AND o.amount > 100

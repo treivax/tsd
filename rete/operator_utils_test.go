@@ -2,9 +2,11 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"testing"
 )
+
 func TestDecodeOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -454,6 +456,7 @@ func TestExtractOperatorFromMap(t *testing.T) {
 		})
 	}
 }
+
 // Benchmark tests
 func BenchmarkDecodeOperator(b *testing.B) {
 	operators := []string{"Kw==", "+", "Kg==", "*", "PT0=", "=="}

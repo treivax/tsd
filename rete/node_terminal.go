@@ -27,11 +27,21 @@ func NewTerminalNode(nodeID string, action *Action, storage Storage) *TerminalNo
 	}
 }
 
-// ActivateLeft déclenche l'action
+// ActivateLeft déclenche l'action lorsqu'un token arrive.
+//
+// Process :
+//  1. Stocke le token dans la mémoire du nœud
+//  2. Exécute l'action associée avec le contexte du token
+//
+// Le token contient tous les bindings (via BindingChain) nécessaires
+// pour l'évaluation des arguments de l'action.
+//
+// Paramètres :
+//   - token : token contenant les faits et bindings déclencheurs
+//
+// Retourne :
+//   - error : erreur si l'exécution de l'action échoue
 func (tn *TerminalNode) ActivateLeft(token *Token) error {
-	// Log désactivé pour les performances
-	// fmt.Printf("[TERMINAL_%s] Déclenchement action avec token: %s\n", tn.ID, token.ID)
-
 	// Stocker le token
 	tn.mutex.Lock()
 	if tn.Memory.Tokens == nil {
@@ -91,7 +101,21 @@ func (tn *TerminalNode) SetNetwork(network *ReteNetwork) {
 	tn.BaseNode.SetNetwork(network)
 }
 
-// executeAction exécute l'action avec le contexte du token
+// executeAction exécute l'action avec le contexte du token.
+//
+// Process :
+//  1. Vérifie qu'une action est définie
+//  2. Affiche l'action dans le tuple-space (pour compatibilité)
+//  3. Délègue l'exécution au ActionExecutor du réseau
+//
+// Le ActionExecutor crée un ExecutionContext avec token.Bindings,
+// permettant l'accès aux variables via BindingChain.
+//
+// Paramètres :
+//   - token : token contenant les faits et bindings
+//
+// Retourne :
+//   - error : erreur si l'exécution échoue
 func (tn *TerminalNode) executeAction(token *Token) error {
 	// Les actions sont maintenant obligatoires dans la grammaire
 	// Mais nous gardons cette vérification par sécurité

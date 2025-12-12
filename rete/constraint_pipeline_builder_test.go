@@ -2,11 +2,13 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
+
 // TestConstraintPipeline_buildNetwork tests the main network building function
 func TestConstraintPipeline_buildNetwork(t *testing.T) {
 	tests := []struct {
@@ -182,6 +184,7 @@ func TestConstraintPipeline_buildNetwork(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createTypeDefinition tests type definition creation
 func TestConstraintPipeline_createTypeDefinition(t *testing.T) {
 	tests := []struct {
@@ -285,6 +288,7 @@ func TestConstraintPipeline_createTypeDefinition(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createTypeNodes tests type node creation
 func TestConstraintPipeline_createTypeNodes(t *testing.T) {
 	tests := []struct {
@@ -358,6 +362,7 @@ func TestConstraintPipeline_createTypeNodes(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createRuleNodes tests rule node creation
 func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 	tests := []struct {
@@ -435,6 +440,7 @@ func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_createSingleRule tests single rule creation
 func TestConstraintPipeline_createSingleRule(t *testing.T) {
 	tests := []struct {
@@ -504,6 +510,7 @@ func TestConstraintPipeline_createSingleRule(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_isMultiSourceAggregation tests multi-source aggregation detection
 func TestConstraintPipeline_isMultiSourceAggregation(t *testing.T) {
 	tests := []struct {
@@ -574,6 +581,7 @@ func TestConstraintPipeline_isMultiSourceAggregation(t *testing.T) {
 		})
 	}
 }
+
 // TestConstraintPipeline_Integration tests complete pipeline scenarios
 func TestConstraintPipeline_Integration(t *testing.T) {
 	t.Run("complete workflow with types and rules", func(t *testing.T) {

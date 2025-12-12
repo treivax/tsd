@@ -2,12 +2,14 @@
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
 package rete
+
 import (
 	"fmt"
 	"runtime"
 	"testing"
 	"time"
 )
+
 // TestTransaction_MemoryScalability tests that memory overhead remains < 5%
 func TestTransaction_MemoryScalability(t *testing.T) {
 	t.Log("🔍 TEST SCALABILITÉ : Overhead mémoire doit rester < 5%")
@@ -56,6 +58,7 @@ func TestTransaction_MemoryScalability(t *testing.T) {
 		})
 	}
 }
+
 // TestTransaction_TimeScalability tests that BeginTransaction is O(1)
 func TestTransaction_TimeScalability(t *testing.T) {
 	t.Log("🔍 TEST SCALABILITÉ : BeginTransaction doit être O(1)")
@@ -85,6 +88,7 @@ func TestTransaction_TimeScalability(t *testing.T) {
 		t.Logf("✅ BeginTransaction is O(1): ratio=%.2f", ratio)
 	}
 }
+
 // TestTransaction_RollbackScalability tests that rollback time is O(k) where k = number of commands
 func TestTransaction_RollbackScalability(t *testing.T) {
 	t.Log("🔍 TEST SCALABILITÉ : Rollback doit être O(k) avec k = nombre de commandes")
@@ -120,6 +124,7 @@ func TestTransaction_RollbackScalability(t *testing.T) {
 		t.Logf("✅ Rollback is O(k): ratio=%.2f", ratio)
 	}
 }
+
 // TestTransaction_LargeNumberOfOperations tests transaction with many operations
 func TestTransaction_LargeNumberOfOperations(t *testing.T) {
 	t.Log("🔍 TEST SCALABILITÉ : Transaction avec 10000 opérations")
@@ -160,6 +165,7 @@ func TestTransaction_LargeNumberOfOperations(t *testing.T) {
 	}
 	t.Logf("✅ Successfully handled %d operations", numOps)
 }
+
 // TestTransaction_CommitMemoryRelease tests that commit releases command memory
 func TestTransaction_CommitMemoryRelease(t *testing.T) {
 	t.Log("🔍 TEST SCALABILITÉ : Commit doit libérer la mémoire des commandes")
@@ -192,6 +198,7 @@ func TestTransaction_CommitMemoryRelease(t *testing.T) {
 	network.SetTransaction(nil)
 	t.Log("✅ Commit correctly releases command memory")
 }
+
 // BenchmarkTransaction_ScalabilityComparison compares performance at different scales
 func BenchmarkTransaction_ScalabilityComparison(b *testing.B) {
 	sizes := []int{100, 1000, 10000}
@@ -214,6 +221,7 @@ func BenchmarkTransaction_ScalabilityComparison(b *testing.B) {
 		})
 	}
 }
+
 // BenchmarkTransaction_RollbackScaling benchmarks rollback with different operation counts
 func BenchmarkTransaction_RollbackScaling(b *testing.B) {
 	opCounts := []int{1, 10, 100, 1000}

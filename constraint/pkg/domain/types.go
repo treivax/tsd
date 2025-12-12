@@ -23,26 +23,26 @@ type (
 	TypedVariable  = constraint.TypedVariable
 
 	// Constraint types
-	Constraint           = constraint.Constraint
-	LogicalExpression    = constraint.LogicalExpression
-	LogicalOperation     = constraint.LogicalOperation
-	BinaryOperation      = constraint.BinaryOperation
-	NotConstraint        = constraint.NotConstraint
-	ExistsConstraint     = constraint.ExistsConstraint
-	AggregateConstraint  = constraint.AggregateConstraint
-	FunctionCall         = constraint.FunctionCall
-	ArrayLiteral         = constraint.ArrayLiteral
+	Constraint          = constraint.Constraint
+	LogicalExpression   = constraint.LogicalExpression
+	LogicalOperation    = constraint.LogicalOperation
+	BinaryOperation     = constraint.BinaryOperation
+	NotConstraint       = constraint.NotConstraint
+	ExistsConstraint    = constraint.ExistsConstraint
+	AggregateConstraint = constraint.AggregateConstraint
+	FunctionCall        = constraint.FunctionCall
+	ArrayLiteral        = constraint.ArrayLiteral
 
 	// Value types
-	FieldAccess     = constraint.FieldAccess
-	Variable        = constraint.Variable
-	NumberLiteral   = constraint.NumberLiteral
-	StringLiteral   = constraint.StringLiteral
-	BooleanLiteral  = constraint.BooleanLiteral
+	FieldAccess    = constraint.FieldAccess
+	Variable       = constraint.Variable
+	NumberLiteral  = constraint.NumberLiteral
+	StringLiteral  = constraint.StringLiteral
+	BooleanLiteral = constraint.BooleanLiteral
 
 	// Action types
-	Action   = constraint.Action
-	JobCall  = constraint.JobCall
+	Action  = constraint.Action
+	JobCall = constraint.JobCall
 
 	// Fact types
 	Fact      = constraint.Fact
@@ -50,8 +50,8 @@ type (
 	FactValue = constraint.FactValue
 
 	// Command types
-	Reset        = constraint.Reset
-	RuleRemoval  = constraint.RuleRemoval
+	Reset            = constraint.Reset
+	RuleRemoval      = constraint.RuleRemoval
 	ActionDefinition = constraint.ActionDefinition
 	Parameter        = constraint.Parameter
 )
