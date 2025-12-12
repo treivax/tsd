@@ -88,7 +88,7 @@ func main() {
 	token1 := &rete.Token{
 		ID:       "token1",
 		Facts:    []*rete.Fact{facts[0]},
-		Bindings: map[string]*rete.Fact{},
+		Bindings: rete.NewBindingChain(),
 	}
 
 	err := network.ActionExecutor.ExecuteAction(action1, token1)
@@ -119,9 +119,7 @@ func main() {
 	token2 := &rete.Token{
 		ID:    "token2",
 		Facts: []*rete.Fact{facts[0]},
-		Bindings: map[string]*rete.Fact{
-			"p": facts[0],
-		},
+		Bindings: rete.NewBindingChainWith("p", facts[0]),
 	}
 
 	err = network.ActionExecutor.ExecuteAction(action2, token2)
@@ -185,9 +183,7 @@ func main() {
 		token := &rete.Token{
 			ID:    fmt.Sprintf("token_%d", i+3),
 			Facts: []*rete.Fact{fact},
-			Bindings: map[string]*rete.Fact{
-				"p": fact,
-			},
+			Bindings: rete.NewBindingChainWith("p", fact),
 		}
 
 		err = network.ActionExecutor.ExecuteAction(action3, token)
@@ -218,9 +214,7 @@ func main() {
 	token4 := &rete.Token{
 		ID:    "token_complete",
 		Facts: []*rete.Fact{facts[1]},
-		Bindings: map[string]*rete.Fact{
-			"p": facts[1],
-		},
+		Bindings: rete.NewBindingChainWith("p", facts[1]),
 	}
 
 	err = network.ActionExecutor.ExecuteAction(action4, token4)
@@ -251,9 +245,7 @@ func main() {
 	token5 := &rete.Token{
 		ID:    "token5",
 		Facts: []*rete.Fact{facts[2]},
-		Bindings: map[string]*rete.Fact{
-			"p": facts[2],
-		},
+		Bindings: rete.NewBindingChainWith("p", facts[2]),
 	}
 
 	err = network.ActionExecutor.ExecuteAction(action5, token5)

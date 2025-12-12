@@ -63,8 +63,8 @@ func (msn *MultiSourceAccumulatorNode) Activate(fact *Fact, token *Token) error 
 	}
 
 	// Extract main fact from token bindings
-	mainFact, exists := token.Bindings[msn.MainVariable]
-	if !exists {
+	mainFact := token.GetBinding(msn.MainVariable)
+	if mainFact == nil {
 		return fmt.Errorf("main variable %s not found in token bindings", msn.MainVariable)
 	}
 
@@ -179,8 +179,8 @@ func (msn *MultiSourceAccumulatorNode) computeAggregation(
 
 	for _, token := range tokens {
 		// Get the source fact for this aggregation
-		sourceFact, exists := token.Bindings[aggVar.SourceVar]
-		if !exists {
+		sourceFact := token.GetBinding(aggVar.SourceVar)
+		if sourceFact == nil {
 			continue
 		}
 

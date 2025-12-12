@@ -1,15 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"fmt"
 	"strings"
 	"testing"
 )
-
 // TestBugRETE001_ReproduceIssue verifies that the bug where alpha and beta conditions
 // were not separated in the RETE network structure has been FIXED.
 //
@@ -29,33 +26,26 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 	fmt.Println("Bug Fixed: Alpha/Beta Condition Separation")
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println()
-
 	// Arrange - Build network from TSD file with mixed alpha/beta conditions
 	t.Log("📋 Construction du réseau depuis fichier TSD")
-
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
-
 	t.Log("✅ Réseau construit")
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 	t.Logf("   - AlphaNodes: %d", len(network.AlphaNodes))
 	t.Logf("   - BetaNodes: %d", len(network.BetaNodes))
 	fmt.Println()
-
 	// Act - Analyze the network structure
 	t.Log("🔍 Analyse de la structure du réseau RETE...")
 	fmt.Println()
-
 	// Count AlphaNodes with filtering conditions (not passthrough)
 	alphaNodesWithFilters := 0
 	passthroughAlphaNodes := 0
-
 	for alphaID, alphaNode := range network.AlphaNodes {
 		node := alphaNode
 		// Check if this is a passthrough node (no real condition)
@@ -82,11 +72,9 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 			}
 		}
 	}
-
 	// Analyze JoinNodes and their conditions
 	joinNodesCount := 0
 	var joinNodeCondition interface{}
-
 	for betaID, betaNode := range network.BetaNodes {
 		if node, ok := betaNode.(*JoinNode); ok {
 			joinNodesCount++
@@ -95,18 +83,15 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 			t.Logf("      Condition complète: %+v", node.Condition)
 		}
 	}
-
 	fmt.Println()
 	t.Log("📊 Résultat de l'analyse:")
 	t.Logf("   - AlphaNodes passthrough: %d", passthroughAlphaNodes)
 	t.Logf("   - AlphaNodes avec filtres: %d", alphaNodesWithFilters)
 	t.Logf("   - JoinNodes: %d", joinNodesCount)
 	fmt.Println()
-
 	// Assert - Verify the bug is FIXED
 	t.Log("✅ Vérification du fix...")
 	fmt.Println()
-
 	// FIX VERIFICATION:
 	// Expected: At least 1 AlphaNode with the alpha condition (c.qte > 5)
 	// This means the bug has been fixed
@@ -118,24 +103,20 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 		fmt.Println("The bug has NOT been fixed!")
 		return
 	}
-
 	t.Log("✅ FIX CONFIRMED: Filtering AlphaNodes detected")
 	t.Logf("   → %d AlphaNode(s) with filters created", alphaNodesWithFilters)
 	t.Log("   → Alpha conditions are separated from beta conditions")
 	t.Log("   → Early filtering is now active")
 	fmt.Println()
-
 	// The JoinNode should contain ONLY the beta condition, not both
 	if joinNodeCondition == nil {
 		t.Error("❌ JoinNode without condition - unexpected structure")
 		return
 	}
-
 	t.Log("✅ FIX VERIFIED: Alpha/Beta separation is working correctly")
 	t.Logf("   → Alpha conditions: in AlphaNodes (%d nodes)", alphaNodesWithFilters)
 	t.Logf("   → Beta conditions: in JoinNodes (%d nodes)", joinNodesCount)
 	t.Log("   → Facts are filtered BEFORE joining")
-
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println("🐛 RÉSUMÉ DU BUG")
@@ -164,11 +145,9 @@ func TestBugRETE001_ReproduceIssue(t *testing.T) {
 	fmt.Println("  4. Chaîner: TypeNode → AlphaFilter → PassthroughAlpha → JoinNode")
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 80))
-
 	// This test documents the bug - it passes if the bug is present
 	// After the fix, this test should FAIL, indicating the bug is fixed
 }
-
 // TestBugRETE001_VerifyFix verifies that the bug has been fixed
 // This test should PASS after the correction
 func TestBugRETE001_VerifyFix(t *testing.T) {
@@ -177,23 +156,18 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 	fmt.Println("✅ VERIFICATION: Bug RETE-001 Fixed")
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println()
-
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
-
 	t.Log("✅ Réseau construit")
 	fmt.Println()
-
 	// Analyze network structure
 	alphaNodesWithFilters := 0
 	var alphaFilterCondition interface{}
-
 	for alphaID, alphaNode := range network.AlphaNodes {
 		node := alphaNode
 		if node.Condition != nil {
@@ -212,10 +186,8 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 			}
 		}
 	}
-
 	// Analyze JoinNode condition
 	hasAndOperator := false
-
 	for _, betaNode := range network.BetaNodes {
 		if node, ok := betaNode.(*JoinNode); ok {
 			// node.Condition is already a map[string]interface{}
@@ -226,13 +198,11 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 			}
 		}
 	}
-
 	fmt.Println()
 	t.Log("📊 Verification Results:")
 	t.Logf("   - AlphaNodes with filters: %d", alphaNodesWithFilters)
 	t.Logf("   - JoinNode has AND operator: %v", hasAndOperator)
 	fmt.Println()
-
 	// Assert: Bug is fixed
 	if alphaNodesWithFilters == 0 {
 		t.Error("❌ BUG NOT FIXED: No AlphaNode filters found")
@@ -240,41 +210,31 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 		t.Error("   Got: 0 AlphaNodes with filters")
 		return
 	}
-
 	t.Log("✅ VERIFIED: AlphaNode filters exist")
-
 	if hasAndOperator {
 		t.Error("❌ BUG NOT FIXED: JoinNode still contains AND operator")
 		t.Error("   Expected: JoinNode with beta condition only")
 		t.Error("   Got: JoinNode with AND (multiple conditions)")
 		return
 	}
-
 	t.Log("✅ VERIFIED: JoinNode contains beta condition only")
-
 	if alphaFilterCondition == nil {
 		t.Error("❌ Alpha filter condition is nil")
 		return
 	}
-
 	t.Log("✅ VERIFIED: Alpha filter has proper condition")
-
 	// Verify results are correct (same actions triggered)
 	// Count triggered actions by checking terminal node memory
 	actionsTriggered := 0
 	for _, terminal := range network.TerminalNodes {
 		actionsTriggered += len(terminal.Memory.Tokens)
 	}
-
 	t.Logf("   - Actions triggered: %d", actionsTriggered)
-
 	if actionsTriggered != 2 {
 		t.Errorf("❌ Expected 2 actions (C2 and C3), got %d", actionsTriggered)
 		return
 	}
-
 	t.Log("✅ VERIFIED: Correct number of actions triggered")
-
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println("✅ BUG FIX VERIFIED - All Checks Passed")
@@ -300,12 +260,10 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 80))
 }
-
 // TestBugRETE001_VerifyExpectedBehavior documents what the expected behavior should be
 func TestBugRETE001_VerifyExpectedBehavior(t *testing.T) {
 	t.Log("📋 COMPORTEMENT ATTENDU (après correction)")
 	fmt.Println()
-
 	fmt.Println("Pour la condition: c.produit_id == p.id AND c.qte > 5")
 	fmt.Println()
 	fmt.Println("STRUCTURE ATTENDUE:")
@@ -338,29 +296,23 @@ func TestBugRETE001_VerifyExpectedBehavior(t *testing.T) {
 	fmt.Println("       ↑")
 	fmt.Println("  TypeNode(Produit)")
 	fmt.Println()
-
 	// This test is purely documentary
 	t.Skip("Test documentaire - pas d'assertions")
 }
-
 // TestBugRETE001_PerformanceImpact demonstrates the performance impact of the bug
 func TestBugRETE001_PerformanceImpact(t *testing.T) {
 	t.Log("📊 IMPACT PERFORMANCE DU BUG")
 	fmt.Println()
-
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
 	tsdFile := "testdata/bug_rete001_minimal.tsd"
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("Erreur construction: %v", err)
 	}
-
 	// Count facts
 	commandeCount := 0
 	produitCount := 0
-
 	for _, typeNode := range network.TypeNodes {
 		node := typeNode
 		factCount := len(node.Memory.Facts)
@@ -370,23 +322,19 @@ func TestBugRETE001_PerformanceImpact(t *testing.T) {
 			produitCount = factCount
 		}
 	}
-
 	t.Logf("Faits injectés:")
 	t.Logf("  - Commandes: %d", commandeCount)
 	t.Logf("  - Produits: %d", produitCount)
 	fmt.Println()
-
 	// Calculate evaluation counts
 	withoutFilter := commandeCount * produitCount
 	withFilter := 2 * produitCount // Only 2 commandes have qte > 5
 	savings := float64(withoutFilter-withFilter) / float64(withoutFilter) * 100
-
 	t.Logf("Évaluations de la condition de jointure:")
 	t.Logf("  - ACTUEL (sans filtre alpha): %d paires", withoutFilter)
 	t.Logf("  - ATTENDU (avec filtre alpha): %d paires", withFilter)
 	t.Logf("  - ÉCONOMIE: %.0f%%", savings)
 	fmt.Println()
-
 	fmt.Println("AVEC PLUS DE FAITS:")
 	scales := []int{10, 100, 1000}
 	for _, scale := range scales {
@@ -399,6 +347,5 @@ func TestBugRETE001_PerformanceImpact(t *testing.T) {
 		fmt.Printf("    - Économie: %.0f%%\n", saving)
 		fmt.Println()
 	}
-
 	t.Log("💡 Plus il y a de faits, plus l'impact du bug est important!")
 }

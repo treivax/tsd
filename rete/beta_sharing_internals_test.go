@@ -1,11 +1,9 @@
 package rete
-
 import (
 	"strings"
 	"sync"
 	"testing"
 )
-
 // TestComputeHashDirect tests the computeHashDirect function with various scenarios
 func TestComputeHashDirect(t *testing.T) {
 	tests := []struct {
@@ -124,38 +122,30 @@ func TestComputeHashDirect(t *testing.T) {
 			description: "should handle complex nested conditions",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lifecycle := NewLifecycleManager()
 			registry := NewBetaSharingRegistry(tt.config, lifecycle)
-
 			hash, err := registry.computeHashDirect(tt.signature)
-
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("expected error but got none")
 				}
 				return
 			}
-
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-
 			if hash == "" {
 				t.Error("expected non-empty hash")
 			}
-
 			// Hash should start with "join_" prefix
 			if !strings.HasPrefix(hash, "join_") {
 				t.Errorf("expected hash to start with 'join_', got: %s", hash)
 			}
-
 			// Note: metrics are internal to the registry and not directly accessible
 			// They are tested indirectly through GetSharingStats()
-
 			// Computing the same signature again should produce the same hash
 			hash2, err := registry.computeHashDirect(tt.signature)
 			if err != nil {
@@ -167,7 +157,6 @@ func TestComputeHashDirect(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeSignatureFallback tests the normalizeSignatureFallback function
 func TestNormalizeSignatureFallback(t *testing.T) {
 	tests := []struct {
@@ -204,13 +193,11 @@ func TestNormalizeSignatureFallback(t *testing.T) {
 				if !equalStringSlices(canonical.LeftVars, expected) {
 					t.Errorf("expected LeftVars %v, got %v", expected, canonical.LeftVars)
 				}
-
 				// Verify RightVars are sorted
 				expectedRight := []string{"b", "x"}
 				if !equalStringSlices(canonical.RightVars, expectedRight) {
 					t.Errorf("expected RightVars %v, got %v", expectedRight, canonical.RightVars)
 				}
-
 				// Verify AllVars are sorted
 				expectedAll := []string{"a", "b", "m", "x", "z"}
 				if !equalStringSlices(canonical.AllVars, expectedAll) {
@@ -284,27 +271,22 @@ func TestNormalizeSignatureFallback(t *testing.T) {
 			description:  "should handle single variable correctly",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lifecycle := NewLifecycleManager()
 			registry := NewBetaSharingRegistry(tt.config, lifecycle)
-
 			canonical, err := registry.normalizeSignatureFallback(tt.signature)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-
 			// Verify version
 			if canonical.Version != "1.0" {
 				t.Errorf("expected version 1.0, got %s", canonical.Version)
 			}
-
 			// Verify condition is preserved
 			if canonical.Condition == nil {
 				t.Error("expected condition to be preserved")
 			}
-
 			// Verify VarTypes are always sorted
 			if len(canonical.VarTypes) > 1 {
 				for i := 1; i < len(canonical.VarTypes); i++ {
@@ -313,7 +295,6 @@ func TestNormalizeSignatureFallback(t *testing.T) {
 					}
 				}
 			}
-
 			// Run custom verification if provided
 			if tt.verifyVarOrder != nil {
 				tt.verifyVarOrder(t, canonical, tt.signature)
@@ -321,7 +302,6 @@ func TestNormalizeSignatureFallback(t *testing.T) {
 		})
 	}
 }
-
 // TestCanonicalJoinSignatureToJSON tests the ToJSON method
 func TestCanonicalJoinSignatureToJSON(t *testing.T) {
 	tests := []struct {
@@ -403,76 +383,61 @@ func TestCanonicalJoinSignatureToJSON(t *testing.T) {
 			description: "should handle nil condition",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			jsonStr, err := tt.canonical.ToJSON()
-
 			if tt.expectError {
 				if err == nil {
 					t.Error("expected error but got none")
 				}
 				return
 			}
-
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-
 			if jsonStr == "" {
 				t.Error("expected non-empty JSON string")
 			}
-
 			// Verify JSON contains expected substrings
 			for _, substr := range tt.contains {
 				if !strings.Contains(jsonStr, substr) {
 					t.Errorf("expected JSON to contain %q, got: %s", substr, jsonStr)
 				}
 			}
-
 			// Verify it's valid JSON (can be parsed back)
 			// This is implicitly tested by json.Marshal not returning error
 		})
 	}
 }
-
 // TestRecordCacheHitAndMiss tests the RecordCacheHit and RecordCacheMiss functions
 func TestRecordCacheHitAndMiss(t *testing.T) {
 	t.Run("record cache hits", func(t *testing.T) {
 		metrics := &BetaBuildMetrics{}
-
 		// Record multiple hits
 		for i := 0; i < 10; i++ {
 			RecordCacheHit(metrics)
 		}
-
 		if metrics.HashCacheHits != 10 {
 			t.Errorf("expected 10 cache hits, got %d", metrics.HashCacheHits)
 		}
 	})
-
 	t.Run("record cache misses", func(t *testing.T) {
 		metrics := &BetaBuildMetrics{}
-
 		// Record multiple misses
 		for i := 0; i < 5; i++ {
 			RecordCacheMiss(metrics)
 		}
-
 		if metrics.HashCacheMisses != 5 {
 			t.Errorf("expected 5 cache misses, got %d", metrics.HashCacheMisses)
 		}
 	})
-
 	t.Run("concurrent cache hit recording", func(t *testing.T) {
 		metrics := &BetaBuildMetrics{}
 		var wg sync.WaitGroup
-
 		// Concurrently record hits
 		goroutines := 100
 		hitsPerGoroutine := 10
-
 		wg.Add(goroutines)
 		for i := 0; i < goroutines; i++ {
 			go func() {
@@ -482,22 +447,17 @@ func TestRecordCacheHitAndMiss(t *testing.T) {
 				}
 			}()
 		}
-
 		wg.Wait()
-
 		expected := int64(goroutines * hitsPerGoroutine)
 		if metrics.HashCacheHits != expected {
 			t.Errorf("expected %d cache hits, got %d", expected, metrics.HashCacheHits)
 		}
 	})
-
 	t.Run("concurrent cache miss recording", func(t *testing.T) {
 		metrics := &BetaBuildMetrics{}
 		var wg sync.WaitGroup
-
 		goroutines := 50
 		missesPerGoroutine := 20
-
 		wg.Add(goroutines)
 		for i := 0; i < goroutines; i++ {
 			go func() {
@@ -507,24 +467,19 @@ func TestRecordCacheHitAndMiss(t *testing.T) {
 				}
 			}()
 		}
-
 		wg.Wait()
-
 		expected := int64(goroutines * missesPerGoroutine)
 		if metrics.HashCacheMisses != expected {
 			t.Errorf("expected %d cache misses, got %d", expected, metrics.HashCacheMisses)
 		}
 	})
-
 	t.Run("mixed hits and misses", func(t *testing.T) {
 		metrics := &BetaBuildMetrics{}
-
 		RecordCacheHit(metrics)
 		RecordCacheMiss(metrics)
 		RecordCacheHit(metrics)
 		RecordCacheHit(metrics)
 		RecordCacheMiss(metrics)
-
 		if metrics.HashCacheHits != 3 {
 			t.Errorf("expected 3 hits, got %d", metrics.HashCacheHits)
 		}
@@ -533,7 +488,6 @@ func TestRecordCacheHitAndMiss(t *testing.T) {
 		}
 	})
 }
-
 // TestNewNormalizationContext tests the NewNormalizationContext function
 func TestNewNormalizationContext(t *testing.T) {
 	tests := []struct {
@@ -569,15 +523,12 @@ func TestNewNormalizationContext(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := NewNormalizationContext(tt.config)
-
 			if ctx == nil {
 				t.Fatal("expected non-nil context")
 			}
-
 			// Verify config fields are copied correctly
 			if ctx.NormalizeOrder != tt.config.NormalizeOrder {
 				t.Errorf("expected NormalizeOrder %v, got %v", tt.config.NormalizeOrder, ctx.NormalizeOrder)
@@ -585,12 +536,10 @@ func TestNewNormalizationContext(t *testing.T) {
 			if ctx.EnableAdvancedNormalization != tt.config.EnableAdvancedNormalization {
 				t.Errorf("expected EnableAdvancedNormalization %v, got %v", tt.config.EnableAdvancedNormalization, ctx.EnableAdvancedNormalization)
 			}
-
 			// Verify seenNodes map is initialized
 			if ctx.seenNodes == nil {
 				t.Error("expected seenNodes map to be initialized")
 			}
-
 			// Verify seenNodes starts empty
 			if len(ctx.seenNodes) != 0 {
 				t.Errorf("expected empty seenNodes, got %d entries", len(ctx.seenNodes))
@@ -598,29 +547,23 @@ func TestNewNormalizationContext(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizationContextSeenNodes tests the seenNodes tracking in NormalizationContext
 func TestNormalizationContextSeenNodes(t *testing.T) {
 	config := BetaSharingConfig{
 		NormalizeOrder:              true,
 		EnableAdvancedNormalization: true,
 	}
-
 	ctx := NewNormalizationContext(config)
-
 	// Test tracking multiple nodes
 	node1 := "node1"
 	node2 := "node2"
 	node3 := 123
-
 	ctx.seenNodes[node1] = true
 	ctx.seenNodes[node2] = true
 	ctx.seenNodes[node3] = true
-
 	if len(ctx.seenNodes) != 3 {
 		t.Errorf("expected 3 seen nodes, got %d", len(ctx.seenNodes))
 	}
-
 	if !ctx.seenNodes[node1] {
 		t.Error("node1 should be marked as seen")
 	}
@@ -631,7 +574,6 @@ func TestNormalizationContextSeenNodes(t *testing.T) {
 		t.Error("node3 should be marked as seen")
 	}
 }
-
 // TestComputeHashDirectConsistency verifies hash consistency across multiple calls
 func TestComputeHashDirectConsistency(t *testing.T) {
 	config := BetaSharingConfig{
@@ -640,10 +582,8 @@ func TestComputeHashDirectConsistency(t *testing.T) {
 		EnableMetrics:  true,
 		HashCacheSize:  100,
 	}
-
 	lifecycle := NewLifecycleManager()
 	registry := NewBetaSharingRegistry(config, lifecycle)
-
 	signature := &JoinNodeSignature{
 		LeftVars:  []string{"x", "y"},
 		RightVars: []string{"z"},
@@ -658,7 +598,6 @@ func TestComputeHashDirectConsistency(t *testing.T) {
 			"z": "TypeZ",
 		},
 	}
-
 	// Compute hash multiple times
 	hashes := make([]string, 5)
 	for i := 0; i < 5; i++ {
@@ -668,7 +607,6 @@ func TestComputeHashDirectConsistency(t *testing.T) {
 		}
 		hashes[i] = hash
 	}
-
 	// All hashes should be identical
 	firstHash := hashes[0]
 	for i := 1; i < len(hashes); i++ {
@@ -677,17 +615,14 @@ func TestComputeHashDirectConsistency(t *testing.T) {
 		}
 	}
 }
-
 // TestNormalizeSignatureFallbackDifferentOrders verifies that normalization produces
 // the same result for signatures with variables in different orders
 func TestNormalizeSignatureFallbackDifferentOrders(t *testing.T) {
 	config := BetaSharingConfig{
 		NormalizeOrder: true,
 	}
-
 	lifecycle := NewLifecycleManager()
 	registry := NewBetaSharingRegistry(config, lifecycle)
-
 	sig1 := &JoinNodeSignature{
 		LeftVars:  []string{"a", "b", "c"},
 		RightVars: []string{"x", "y"},
@@ -701,7 +636,6 @@ func TestNormalizeSignatureFallbackDifferentOrders(t *testing.T) {
 			"y": "TypeY",
 		},
 	}
-
 	sig2 := &JoinNodeSignature{
 		LeftVars:  []string{"c", "a", "b"},
 		RightVars: []string{"y", "x"},
@@ -715,17 +649,14 @@ func TestNormalizeSignatureFallbackDifferentOrders(t *testing.T) {
 			"y": "TypeY",
 		},
 	}
-
 	canonical1, err := registry.normalizeSignatureFallback(sig1)
 	if err != nil {
 		t.Fatalf("error normalizing sig1: %v", err)
 	}
-
 	canonical2, err := registry.normalizeSignatureFallback(sig2)
 	if err != nil {
 		t.Fatalf("error normalizing sig2: %v", err)
 	}
-
 	// Normalized versions should have identical variable lists
 	if !equalStringSlices(canonical1.LeftVars, canonical2.LeftVars) {
 		t.Errorf("LeftVars should be identical after normalization: %v vs %v", canonical1.LeftVars, canonical2.LeftVars)
@@ -736,7 +667,6 @@ func TestNormalizeSignatureFallbackDifferentOrders(t *testing.T) {
 	if !equalStringSlices(canonical1.AllVars, canonical2.AllVars) {
 		t.Errorf("AllVars should be identical after normalization: %v vs %v", canonical1.AllVars, canonical2.AllVars)
 	}
-
 	// VarTypes should also match
 	if len(canonical1.VarTypes) != len(canonical2.VarTypes) {
 		t.Errorf("VarTypes length mismatch: %d vs %d", len(canonical1.VarTypes), len(canonical2.VarTypes))

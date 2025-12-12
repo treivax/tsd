@@ -1,37 +1,26 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 func TestNewBuilderUtils(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))
 	defer env.Cleanup()
-
 	utils := NewBuilderUtils(env.Storage)
-
 	assert.NotNil(t, utils)
 	assert.NotNil(t, utils.storage)
 	assert.Equal(t, env.Storage, utils.storage)
 }
-
 func TestBuilderUtils_CreatePassthroughAlphaNode(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))
 	defer env.Cleanup()
-
 	utils := NewBuilderUtils(env.Storage)
-
 	tests := []struct {
 		name     string
 		ruleID   string
@@ -61,39 +50,30 @@ func TestBuilderUtils_CreatePassthroughAlphaNode(t *testing.T) {
 			expected: "rule3_pass_d",
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			node := utils.CreatePassthroughAlphaNode(tt.ruleID, tt.varName, tt.side)
-
 			assert.NotNil(t, node)
 			assert.Equal(t, tt.expected, node.ID)
 			assert.Equal(t, tt.varName, node.VariableName)
-
 			// Vérifier la condition
 			assert.NotNil(t, node.Condition)
 			condMap, ok := node.Condition.(map[string]interface{})
 			assert.True(t, ok)
 			assert.Equal(t, ConditionTypePassthrough, condMap["type"])
-
 			if tt.side != "" {
 				assert.Equal(t, tt.side, condMap["side"])
 			}
 		})
 	}
 }
-
 func TestBuilderUtils_ConnectTypeNodeToBetaNode(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))
 	defer env.Cleanup()
-
 	utils := NewBuilderUtils(env.Storage)
-
 	// Créer un TypeNode
 	typeDef := TypeDefinition{
 		Type:   "type",
@@ -103,36 +83,28 @@ func TestBuilderUtils_ConnectTypeNodeToBetaNode(t *testing.T) {
 	typeNode := NewTypeNode("Person", typeDef, env.Storage)
 	env.Network.TypeNodes["Person"] = typeNode
 	env.Network.RootNode.AddChild(typeNode)
-
 	// Créer un BetaNode mock (JoinNode)
 	leftVars := []string{"p"}
 	rightVars := []string{"o"}
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	condition := map[string]interface{}{"type": "comparison"}
 	joinNode := NewJoinNode("test_join", condition, leftVars, rightVars, varTypes, env.Storage)
-
 	// Connecter
 	utils.ConnectTypeNodeToBetaNode(env.Network, "test_rule", "p", "Person", joinNode, "left")
-
 	// Vérifier que le TypeNode a un enfant (AlphaNode passthrough)
 	require.Equal(t, 1, len(typeNode.Children))
-
 	// Vérifier que l'AlphaNode est bien créé
 	alphaNode, ok := typeNode.Children[0].(*AlphaNode)
 	require.True(t, ok)
 	// With per-rule passthroughs, the ID now includes the rule ID and variable name
 	assert.Equal(t, "passthrough_test_rule_p_Person_left", alphaNode.ID)
-
 	// Vérifier que l'AlphaNode a le BetaNode comme enfant
 	require.Equal(t, 1, len(alphaNode.Children))
 	assert.Equal(t, joinNode, alphaNode.Children[0])
-
 	env.AssertNoErrors(t)
 }
-
 func TestBuilderUtils_GetStringField(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name         string
 		input        map[string]interface{}
@@ -169,21 +141,17 @@ func TestBuilderUtils_GetStringField(t *testing.T) {
 			expected:     "",
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result := GetStringField(tt.input, tt.key, tt.defaultValue)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_GetIntField(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name         string
 		input        map[string]interface{}
@@ -220,21 +188,17 @@ func TestBuilderUtils_GetIntField(t *testing.T) {
 			expected:     10,
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result := GetIntField(tt.input, tt.key, tt.defaultValue)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_GetBoolField(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name         string
 		input        map[string]interface{}
@@ -271,21 +235,17 @@ func TestBuilderUtils_GetBoolField(t *testing.T) {
 			expected:     true,
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result := GetBoolField(tt.input, tt.key, tt.defaultValue)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_GetMapField(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name     string
 		input    map[string]interface{}
@@ -315,22 +275,18 @@ func TestBuilderUtils_GetMapField(t *testing.T) {
 			found:    false,
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result, found := GetMapField(tt.input, tt.key)
 			assert.Equal(t, tt.found, found)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_GetListField(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name     string
 		input    map[string]interface{}
@@ -367,27 +323,21 @@ func TestBuilderUtils_GetListField(t *testing.T) {
 			found:    false,
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result, found := GetListField(tt.input, tt.key)
 			assert.Equal(t, tt.found, found)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_CreateTerminalNode(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))
 	defer env.Cleanup()
-
 	utils := NewBuilderUtils(env.Storage)
-
 	action := &Action{
 		Type: "action",
 		Job: &JobCall{
@@ -396,27 +346,20 @@ func TestBuilderUtils_CreateTerminalNode(t *testing.T) {
 			Args: []interface{}{"Test message"},
 		},
 	}
-
 	terminalNode := utils.CreateTerminalNode(env.Network, "test_rule", action)
-
 	require.NotNil(t, terminalNode)
 	assert.Equal(t, "test_rule_terminal", terminalNode.ID)
 	assert.Equal(t, action, terminalNode.Action)
-
 	// Vérifier que le terminal est enregistré dans le réseau
 	assert.Equal(t, terminalNode, env.Network.TerminalNodes[terminalNode.ID])
-
 	// Vérifier l'enregistrement dans le LifecycleManager si disponible
 	if env.Network.LifecycleManager != nil {
 		t.Log("LifecycleManager present")
 	}
-
 	env.AssertNoErrors(t)
 }
-
 func TestBuilderUtils_BuildVarTypesMap(t *testing.T) {
 	t.Parallel()
-
 	tests := []struct {
 		name          string
 		variableNames []string
@@ -457,39 +400,30 @@ func TestBuilderUtils_BuildVarTypesMap(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result := BuildVarTypesMap(tt.variableNames, tt.variableTypes)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-
 func TestBuilderUtils_ConnectTypeNodeToBetaNode_TypeNotFound(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelSilent))
 	defer env.Cleanup()
-
 	utils := NewBuilderUtils(env.Storage)
-
 	// Créer un BetaNode sans créer le TypeNode correspondant
 	leftVars := []string{"p"}
 	rightVars := []string{"o"}
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	condition := map[string]interface{}{"type": "comparison"}
 	joinNode := NewJoinNode("test_join", condition, leftVars, rightVars, varTypes, env.Storage)
-
 	// Essayer de connecter avec un type qui n'existe pas
 	// La fonction ne devrait pas paniquer, elle ne fait simplement rien
 	utils.ConnectTypeNodeToBetaNode(env.Network, "test_rule", "p", "NonExistent", joinNode, "left")
-
 	// Pas d'assertion - on vérifie juste que ça ne panique pas
 	t.Log("No panic when TypeNode not found")
-
 	env.AssertNoErrors(t)
 }

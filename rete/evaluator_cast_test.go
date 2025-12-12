@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 // TestCastToNumber teste la conversion vers number
 func TestCastToNumber(t *testing.T) {
 	tests := []struct {
@@ -25,24 +21,20 @@ func TestCastToNumber(t *testing.T) {
 		{name: "int64 to number", input: int64(100), expected: 100.0, expectError: false},
 		{name: "zero to number", input: 0.0, expected: 0.0, expectError: false},
 		{name: "negative to number", input: -45.5, expected: -45.5, expectError: false},
-
 		// String -> Number
 		{name: "string integer to number", input: "123", expected: 123.0, expectError: false},
 		{name: "string decimal to number", input: "12.5", expected: 12.5, expectError: false},
 		{name: "string negative to number", input: "-45", expected: -45.0, expectError: false},
 		{name: "string with spaces to number", input: "  123  ", expected: 123.0, expectError: false},
 		{name: "string scientific notation", input: "1e3", expected: 1000.0, expectError: false},
-
 		// String -> Number (erreurs)
 		{name: "invalid string to number", input: "abc", expected: 0, expectError: true},
 		{name: "mixed string to number", input: "12abc", expected: 0, expectError: true},
 		{name: "empty string to number", input: "", expected: 0, expectError: true},
-
 		// Bool -> Number
 		{name: "true to number", input: true, expected: 1.0, expectError: false},
 		{name: "false to number", input: false, expected: 0.0, expectError: false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := CastToNumber(tt.input)
@@ -55,7 +47,6 @@ func TestCastToNumber(t *testing.T) {
 		})
 	}
 }
-
 // TestCastToString teste la conversion vers string
 func TestCastToString(t *testing.T) {
 	tests := []struct {
@@ -67,7 +58,6 @@ func TestCastToString(t *testing.T) {
 		// String -> String (déjà une chaîne)
 		{name: "string to string", input: "hello", expected: "hello", expectError: false},
 		{name: "empty string to string", input: "", expected: "", expectError: false},
-
 		// Number -> String
 		{name: "integer to string", input: 123.0, expected: "123", expectError: false},
 		{name: "decimal to string", input: 12.5, expected: "12.5", expectError: false},
@@ -75,12 +65,10 @@ func TestCastToString(t *testing.T) {
 		{name: "zero to string", input: 0.0, expected: "0", expectError: false},
 		{name: "int type to string", input: 42, expected: "42", expectError: false},
 		{name: "int64 type to string", input: int64(100), expected: "100", expectError: false},
-
 		// Bool -> String
 		{name: "true to string", input: true, expected: "true", expectError: false},
 		{name: "false to string", input: false, expected: "false", expectError: false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := CastToString(tt.input)
@@ -93,7 +81,6 @@ func TestCastToString(t *testing.T) {
 		})
 	}
 }
-
 // TestCastToBool teste la conversion vers bool
 func TestCastToBool(t *testing.T) {
 	tests := []struct {
@@ -105,28 +92,23 @@ func TestCastToBool(t *testing.T) {
 		// Bool -> Bool (déjà un booléen)
 		{name: "true to bool", input: true, expected: true, expectError: false},
 		{name: "false to bool", input: false, expected: false, expectError: false},
-
 		// String -> Bool (valeurs vraies)
 		{name: "string 'true' to bool", input: "true", expected: true, expectError: false},
 		{name: "string 'TRUE' to bool", input: "TRUE", expected: true, expectError: false},
 		{name: "string 'True' to bool", input: "True", expected: true, expectError: false},
 		{name: "string '1' to bool", input: "1", expected: true, expectError: false},
-
 		// String -> Bool (valeurs fausses)
 		{name: "string 'false' to bool", input: "false", expected: false, expectError: false},
 		{name: "string 'FALSE' to bool", input: "FALSE", expected: false, expectError: false},
 		{name: "string 'False' to bool", input: "False", expected: false, expectError: false},
 		{name: "string '0' to bool", input: "0", expected: false, expectError: false},
 		{name: "empty string to bool", input: "", expected: false, expectError: false},
-
 		// String -> Bool (avec espaces)
 		{name: "string with spaces to bool", input: "  true  ", expected: true, expectError: false},
 		{name: "string with spaces false", input: "  false  ", expected: false, expectError: false},
-
 		// String -> Bool (comportement permissif)
 		{name: "invalid string to bool (permissive)", input: "maybe", expected: false, expectError: false},
 		{name: "other string to bool", input: "yes", expected: false, expectError: false},
-
 		// Number -> Bool
 		{name: "zero to bool", input: 0.0, expected: false, expectError: false},
 		{name: "non-zero positive to bool", input: 1.0, expected: true, expectError: false},
@@ -137,7 +119,6 @@ func TestCastToBool(t *testing.T) {
 		{name: "int64 zero to bool", input: int64(0), expected: false, expectError: false},
 		{name: "int64 non-zero to bool", input: int64(100), expected: true, expectError: false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := CastToBool(tt.input)
@@ -150,7 +131,6 @@ func TestCastToBool(t *testing.T) {
 		})
 	}
 }
-
 // TestEvaluateCast teste la fonction générique de cast
 func TestEvaluateCast(t *testing.T) {
 	tests := []struct {
@@ -163,19 +143,15 @@ func TestEvaluateCast(t *testing.T) {
 		// Cast vers number
 		{name: "cast to number from string", castType: "number", input: "123", expected: 123.0, expectError: false},
 		{name: "cast to number from bool", castType: "number", input: true, expected: 1.0, expectError: false},
-
 		// Cast vers string
 		{name: "cast to string from number", castType: "string", input: 123.0, expected: "123", expectError: false},
 		{name: "cast to string from bool", castType: "string", input: true, expected: "true", expectError: false},
-
 		// Cast vers bool
 		{name: "cast to bool from string", castType: "bool", input: "true", expected: true, expectError: false},
 		{name: "cast to bool from number", castType: "bool", input: 0.0, expected: false, expectError: false},
-
 		// Type de cast invalide
 		{name: "invalid cast type", castType: "integer", input: "123", expected: nil, expectError: true},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := EvaluateCast(tt.castType, tt.input)
@@ -188,26 +164,15 @@ func TestEvaluateCast(t *testing.T) {
 		})
 	}
 }
-
 // TestCastInExpressions teste le cast dans des expressions plus complexes
 func TestCastInExpressions(t *testing.T) {
 	// Créer un évaluateur avec des données de test
 	eval := &AlphaConditionEvaluator{
-		variableBindings: map[string]*Fact{
-			"p": {
-				ID:   "p1",
-				Type: "Product",
-				Fields: map[string]interface{}{
-					"price":    "99.99",
-					"quantity": "5",
-					"active":   "true",
-					"count":    10.0,
-					"flag":     true,
-				},
+		Bindings: NewBindingChain().Add("p", {
+				ID:   "p1").Add("price", "99.99").Add("quantity", "5").Add("active", "true").Add("count", 10.0).Add("flag", true),
 			},
 		},
 	}
-
 	tests := []struct {
 		name        string
 		castExpr    map[string]interface{}
@@ -297,7 +262,6 @@ func TestCastInExpressions(t *testing.T) {
 			expectError: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := eval.evaluateCastExpression(tt.castExpr)
@@ -310,7 +274,6 @@ func TestCastInExpressions(t *testing.T) {
 		})
 	}
 }
-
 // TestCastEdgeCases teste les cas limites et erreurs
 func TestCastEdgeCases(t *testing.T) {
 	t.Run("cast very large number to string", func(t *testing.T) {
@@ -318,24 +281,20 @@ func TestCastEdgeCases(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "10000000000", result)
 	})
-
 	t.Run("cast very small number to string", func(t *testing.T) {
 		result, err := CastToString(0.0001)
 		require.NoError(t, err)
 		assert.Contains(t, result, "0.0001")
 	})
-
 	t.Run("cast zero to bool", func(t *testing.T) {
 		result, err := CastToBool(0.0)
 		require.NoError(t, err)
 		assert.Equal(t, false, result)
 	})
-
 	t.Run("cast unicode string containing number", func(t *testing.T) {
 		_, err := CastToNumber("１２３") // Full-width digits
 		assert.Error(t, err)          // Should fail - only ASCII digits supported
 	})
-
 	t.Run("cast string with leading zeros", func(t *testing.T) {
 		result, err := CastToNumber("0123")
 		require.NoError(t, err)

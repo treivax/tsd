@@ -1,13 +1,10 @@
 package rete
-
 import (
 	"testing"
 )
-
 // TestDecomposeRecursive tests the decomposeRecursive function coverage
 func TestDecomposeRecursive(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name      string
 		expr      interface{}
@@ -61,7 +58,6 @@ func TestDecomposeRecursive(t *testing.T) {
 			wantErr:   true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := decomposer.DecomposeExpression(tt.expr)
@@ -74,11 +70,9 @@ func TestDecomposeRecursive(t *testing.T) {
 		})
 	}
 }
-
 // TestSimplifySteps tests the SimplifySteps function (currently 0% coverage)
 func TestSimplifySteps(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	// Test with simple expression
 	expr := map[string]interface{}{
 		"type":     "binaryOp",
@@ -91,15 +85,12 @@ func TestSimplifySteps(t *testing.T) {
 		},
 		"right": map[string]interface{}{"type": "number", "value": 4},
 	}
-
 	result, err := decomposer.DecomposeExpression(expr)
 	if err != nil {
 		t.Fatalf("DecomposeExpression failed: %v", err)
 	}
-
 	// Call SimplifySteps
 	simplified := decomposer.SimplifySteps(result.Steps)
-
 	// Verify simplified steps exist
 	if simplified == nil {
 		t.Error("SimplifySteps returned nil")
@@ -108,11 +99,9 @@ func TestSimplifySteps(t *testing.T) {
 		t.Errorf("SimplifySteps changed number of steps: got %d, want %d", len(simplified), len(result.Steps))
 	}
 }
-
 // TestValidateDecomposition tests the ValidateDecomposition function (currently 0% coverage)
 func TestValidateDecomposition(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name    string
 		expr    interface{}
@@ -144,14 +133,12 @@ func TestValidateDecomposition(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := decomposer.DecomposeExpression(tt.expr)
 			if err != nil {
 				t.Fatalf("DecomposeExpression failed: %v", err)
 			}
-
 			err = decomposer.ValidateDecomposition(tt.expr, result)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateDecomposition() error = %v, wantErr %v", err, tt.wantErr)
@@ -159,23 +146,19 @@ func TestValidateDecomposition(t *testing.T) {
 		})
 	}
 }
-
 // TestFormatSteps tests the FormatSteps function (currently 0% coverage)
 func TestFormatSteps(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	expr := map[string]interface{}{
 		"type":     "binaryOp",
 		"operator": "+",
 		"left":     map[string]interface{}{"type": "number", "value": 1},
 		"right":    map[string]interface{}{"type": "number", "value": 2},
 	}
-
 	result, err := decomposer.DecomposeExpression(expr)
 	if err != nil {
 		t.Fatalf("DecomposeExpression failed: %v", err)
 	}
-
 	formatted := decomposer.FormatSteps(result.Steps)
 	if formatted == "" {
 		t.Error("FormatSteps returned empty string")
@@ -184,11 +167,9 @@ func TestFormatSteps(t *testing.T) {
 		t.Error("FormatSteps should return non-empty string for decomposed expression")
 	}
 }
-
 // TestGetDecompositionStats tests the GetDecompositionStats function (currently 0% coverage)
 func TestGetDecompositionStats(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	// Perform some decompositions
 	expressions := []interface{}{
 		map[string]interface{}{
@@ -204,13 +185,11 @@ func TestGetDecompositionStats(t *testing.T) {
 			"right":    map[string]interface{}{"type": "number", "value": 4},
 		},
 	}
-
 	for _, expr := range expressions {
 		result, err := decomposer.DecomposeExpression(expr)
 		if err != nil {
 			t.Fatalf("DecomposeExpression failed: %v", err)
 		}
-
 		stats := decomposer.GetDecompositionStats(result)
 		if stats == nil {
 			t.Error("GetDecompositionStats returned nil")
@@ -221,11 +200,9 @@ func TestGetDecompositionStats(t *testing.T) {
 		}
 	}
 }
-
 // TestDecomposeExpressionEdgeCases tests edge cases for expression decomposition
 func TestDecomposeExpressionEdgeCases(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name    string
 		expr    interface{}
@@ -276,7 +253,6 @@ func TestDecomposeExpressionEdgeCases(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := decomposer.DecomposeExpression(tt.expr)
@@ -286,11 +262,9 @@ func TestDecomposeExpressionEdgeCases(t *testing.T) {
 		})
 	}
 }
-
 // TestShouldDecomposeComplexity tests ShouldDecompose with various complexity levels
 func TestShouldDecomposeComplexity(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name       string
 		expr       interface{}
@@ -335,7 +309,6 @@ func TestShouldDecomposeComplexity(t *testing.T) {
 			wantResult: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := decomposer.ShouldDecompose(tt.expr)
@@ -345,11 +318,9 @@ func TestShouldDecomposeComplexity(t *testing.T) {
 		})
 	}
 }
-
 // TestGetComplexity tests the GetComplexity function
 func TestGetComplexity(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name          string
 		expr          interface{}
@@ -389,7 +360,6 @@ func TestGetComplexity(t *testing.T) {
 			minComplexity: 2,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			complexity := decomposer.GetComplexity(tt.expr)
@@ -399,11 +369,9 @@ func TestGetComplexity(t *testing.T) {
 		})
 	}
 }
-
 // TestValidateDecompositionNilCases tests ValidateDecomposition with nil inputs
 func TestValidateDecompositionNilCases(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	tests := []struct {
 		name       string
 		original   interface{}
@@ -425,7 +393,6 @@ func TestValidateDecompositionNilCases(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := decomposer.ValidateDecomposition(tt.original, tt.decomposed)
@@ -435,16 +402,13 @@ func TestValidateDecompositionNilCases(t *testing.T) {
 		})
 	}
 }
-
 // TestGetDecompositionStatsNil tests GetDecompositionStats with nil input
 func TestGetDecompositionStatsNil(t *testing.T) {
 	decomposer := NewArithmeticExpressionDecomposer()
-
 	stats := decomposer.GetDecompositionStats(nil)
 	if stats == nil {
 		t.Error("GetDecompositionStats should not return nil")
 	}
-
 	valid, ok := stats["valid"].(bool)
 	if !ok {
 		t.Error("GetDecompositionStats should return a 'valid' field")

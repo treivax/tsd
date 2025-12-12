@@ -1,15 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"os"
 	"path/filepath"
 	"testing"
 )
-
 // TestRETENetwork_TypesAndFactsOnly tests that creating a RETE network with only types and facts (no rules) is now allowed
 func TestRETENetwork_TypesAndFactsOnly(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_no_rules_test")
@@ -17,13 +14,11 @@ func TestRETENetwork_TypesAndFactsOnly(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	// Create file with types and facts only (no rules)
 	tsdFile := filepath.Join(tempDir, "data.tsd")
 	content := `
 type Person(id: string, name: string, age:number)
 type Product(id: string, name: string, price:number)
-
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
 Product(id: "PR001", name: "Laptop", price: 999.99)
@@ -33,32 +28,25 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	if err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}
-
 	// Build RETE network
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
-
 	// Should succeed - networks without rules are now allowed
 	if err != nil {
 		t.Fatalf("Expected success when building network without rules, got error: %v", err)
 	}
-
 	if network == nil {
 		t.Fatal("Expected non-nil network")
 	}
-
 	// Verify types were created
 	if len(network.TypeNodes) != 2 {
 		t.Errorf("Expected 2 TypeNodes, got %d", len(network.TypeNodes))
 	}
-
 	// Verify no terminal nodes (since no rules)
 	if len(network.TerminalNodes) != 0 {
 		t.Errorf("Expected 0 TerminalNodes, got %d", len(network.TerminalNodes))
 	}
-
 	// Verify facts were added
 	totalFacts := 0
 	for _, typeNode := range network.TypeNodes {
@@ -67,10 +55,8 @@ Product(id: "PR002", name: "Mouse", price: 29.99)
 	if totalFacts != 4 {
 		t.Errorf("Expected 4 facts in network, got %d", totalFacts)
 	}
-
 	t.Logf("✅ Successfully created network with types and facts but no rules")
 }
-
 // TestRETENetwork_OnlyTypes tests that creating a network with only type definitions is now allowed
 func TestRETENetwork_OnlyTypes(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_types_only_test")
@@ -78,7 +64,6 @@ func TestRETENetwork_OnlyTypes(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	// Create file with types only
 	tsdFile := filepath.Join(tempDir, "types.tsd")
 	content := `
@@ -89,35 +74,27 @@ type Order(id: string, personId: string, total:number)
 	if err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}
-
 	// Build RETE network
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
-
 	// Should succeed - networks without rules are now allowed
 	if err != nil {
 		t.Fatalf("Expected success when building network with only types, got error: %v", err)
 	}
-
 	if network == nil {
 		t.Fatal("Expected non-nil network")
 	}
-
 	// Verify types were created
 	if len(network.TypeNodes) != 2 {
 		t.Errorf("Expected 2 TypeNodes, got %d", len(network.TypeNodes))
 	}
-
 	// Verify no terminal nodes (since no rules)
 	if len(network.TerminalNodes) != 0 {
 		t.Errorf("Expected 0 TerminalNodes, got %d", len(network.TerminalNodes))
 	}
-
 	t.Logf("✅ Successfully created network with only type definitions")
 }
-
 // TestRETENetwork_IncrementalTypesAndFacts tests incremental loading of types and facts without rules
 func TestRETENetwork_IncrementalTypesAndFacts(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_incremental_test")
@@ -125,7 +102,6 @@ func TestRETENetwork_IncrementalTypesAndFacts(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	// File 1: Types
 	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `
@@ -136,7 +112,6 @@ type Company(id: string, name: string, employees:number)
 	if err != nil {
 		t.Fatalf("Failed to write types file: %v", err)
 	}
-
 	// File 2: Facts
 	factsFile := filepath.Join(tempDir, "facts.tsd")
 	factsContent := `
@@ -148,12 +123,10 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 	if err != nil {
 		t.Fatalf("Failed to write facts file: %v", err)
 	}
-
 	// Build network from multiple files using IngestFile
 	// IngestFile creates the network and injects facts even without rules
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	// Ingest files sequentially
 	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
@@ -163,33 +136,27 @@ Company(id: "C001", name: "TechCorp", employees: 250)
 			t.Fatalf("Failed to ingest file %s: %v", file, err)
 		}
 	}
-
 	if network == nil {
 		t.Fatal("Network is nil")
 	}
-
 	// Verify TypeNodes were created
 	if len(network.TypeNodes) != 2 {
 		t.Errorf("Expected 2 TypeNodes, got %d", len(network.TypeNodes))
 	}
-
 	// Verify Person TypeNode
 	_, exists := network.TypeNodes["Person"]
 	if !exists {
 		t.Error("Person TypeNode not found")
 	}
-
 	// Verify Company TypeNode
 	_, exists = network.TypeNodes["Company"]
 	if !exists {
 		t.Error("Company TypeNode not found")
 	}
-
 	t.Logf("✅ IngestFile succeeds with types and facts (injects facts)")
 	t.Logf("   - Files parsed: %d", len(files))
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 }
-
 // TestRETENetwork_EmptyFile tests creating a network from an empty file
 // TestRETENetwork_EmptyFile tests that ingesting an empty file succeeds but creates empty network
 func TestRETENetwork_EmptyFile(t *testing.T) {
@@ -198,39 +165,30 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	// Create empty file
 	tsdFile := filepath.Join(tempDir, "empty.tsd")
 	err = os.WriteFile(tsdFile, []byte(""), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}
-
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
-
 	// Should succeed - empty files create empty networks
 	if err != nil {
 		t.Fatalf("Expected success when ingesting empty file, got error: %v", err)
 	}
-
 	if network == nil {
 		t.Fatal("Expected non-nil network")
 	}
-
 	if len(network.TypeNodes) != 0 {
 		t.Errorf("Expected 0 TypeNodes for empty file, got %d", len(network.TypeNodes))
 	}
-
 	if len(network.TerminalNodes) != 0 {
 		t.Errorf("Expected 0 TerminalNodes for empty file, got %d", len(network.TerminalNodes))
 	}
-
 	t.Logf("✅ Successfully handled empty file")
 }
-
 // TestRETENetwork_TypesAndFactsSeparateFiles tests types and facts in separate files
 func TestRETENetwork_TypesAndFactsSeparateFiles(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "rete_separate_files_test")
@@ -238,7 +196,6 @@ func TestRETENetwork_TypesAndFactsSeparateFiles(t *testing.T) {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
-
 	// File 1: Only types
 	typesFile := filepath.Join(tempDir, "schema.tsd")
 	typesContent := `
@@ -248,7 +205,6 @@ type User(id: string, username: string, email:string)
 	if err != nil {
 		t.Fatalf("Failed to write types file: %v", err)
 	}
-
 	// File 2: Only facts
 	factsFile := filepath.Join(tempDir, "users.tsd")
 	factsContent := `
@@ -260,11 +216,9 @@ User(id: "U003", username: "charlie", email: "charlie@example.com")
 	if err != nil {
 		t.Fatalf("Failed to write facts file: %v", err)
 	}
-
 	// Build network from both files (should fail - no rules)
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	// Ingest files sequentially
 	var network *ReteNetwork
 	files := []string{typesFile, factsFile}
@@ -274,25 +228,20 @@ User(id: "U003", username: "charlie", email: "charlie@example.com")
 			t.Fatalf("Failed to ingest file %s: %v", file, err)
 		}
 	}
-
 	if network == nil {
 		t.Fatal("Network is nil")
 	}
-
 	// Verify network structure
 	if len(network.TypeNodes) != 1 {
 		t.Errorf("Expected 1 TypeNode, got %d", len(network.TypeNodes))
 	}
-
 	userNode, exists := network.TypeNodes["User"]
 	if !exists {
 		t.Fatal("User TypeNode not found")
 	}
-
 	if userNode.TypeName != "User" {
 		t.Errorf("Expected TypeNode name 'User', got '%s'", userNode.TypeName)
 	}
-
 	t.Logf("✅ IngestFile succeeds with separate type and fact files")
 	t.Logf("   - TypeNodes: %d", len(network.TypeNodes))
 }

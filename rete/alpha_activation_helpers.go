@@ -186,7 +186,7 @@ func propagateToNonAlphaChild(an *AlphaNode, child Node, fact *Fact) error {
 			ID:       fmt.Sprintf("token_%s_%s", an.ID, fact.ID),
 			Facts:    []*Fact{fact},
 			NodeID:   an.ID,
-			Bindings: map[string]*Fact{an.VariableName: fact},
+			Bindings: NewBindingChainWith(an.VariableName, fact),
 		}
 		if err := child.ActivateLeft(token); err != nil {
 			return fmt.Errorf("error propagating token to %s: %w", child.GetID(), err)

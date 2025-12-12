@@ -1,36 +1,29 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"fmt"
 	"strings"
 	"testing"
 )
-
 // formatCondition formate une condition de manière lisible
 func formatCondition(cond interface{}) string {
 	condMap, ok := cond.(map[string]interface{})
 	if !ok {
 		return fmt.Sprintf("%v", cond)
 	}
-
 	condType, _ := condMap["type"].(string)
-
 	switch condType {
 	case "comparison":
 		left := formatCondition(condMap["left"])
 		operator, _ := condMap["operator"].(string)
 		right := formatCondition(condMap["right"])
 		return fmt.Sprintf("(%s %s %s)", left, operator, right)
-
 	case "binaryOp":
 		left := formatCondition(condMap["left"])
 		operator, _ := condMap["operator"].(string)
 		right := formatCondition(condMap["right"])
-
 		// Décode les opérateurs encodés
 		switch operator {
 		case "Kg==":
@@ -42,23 +35,18 @@ func formatCondition(cond interface{}) string {
 		case "Lw==":
 			operator = "/"
 		}
-
 		return fmt.Sprintf("(%s %s %s)", left, operator, right)
-
 	case "fieldAccess":
 		object, _ := condMap["object"].(string)
 		field, _ := condMap["field"].(string)
 		return fmt.Sprintf("%s.%s", object, field)
-
 	case "number":
 		value := condMap["value"]
 		return fmt.Sprintf("%v", value)
-
 	default:
 		return fmt.Sprintf("%v", condMap)
 	}
 }
-
 // showExpressionTree affiche récursivement l'arbre AST d'une expression
 func showExpressionTree(expr interface{}, indent string) {
 	exprMap, ok := expr.(map[string]interface{})
@@ -66,7 +54,6 @@ func showExpressionTree(expr interface{}, indent string) {
 		fmt.Printf("%s%v\n", indent, expr)
 		return
 	}
-
 	exprType, _ := exprMap["type"].(string)
 	switch exprType {
 	case "binaryOp":
@@ -87,21 +74,17 @@ func showExpressionTree(expr interface{}, indent string) {
 		showExpressionTree(exprMap["left"], indent+"│  ")
 		fmt.Printf("%s└─ right:\n", indent)
 		showExpressionTree(exprMap["right"], indent+"   ")
-
 	case "fieldAccess":
 		object, _ := exprMap["object"].(string)
 		field, _ := exprMap["field"].(string)
 		fmt.Printf("%sfieldAccess: %s.%s\n", indent, object, field)
-
 	case "number":
 		value := exprMap["value"]
 		fmt.Printf("%snumber: %v\n", indent, value)
-
 	default:
 		fmt.Printf("%s%s: %v\n", indent, exprType, exprMap)
 	}
 }
-
 // TestArithmeticExpressionsE2E teste le pipeline complet avec expressions arithmétiques complexes
 // Ce test vérifie que les expressions arithmétiques dans les actions sont correctement évaluées
 func TestArithmeticExpressionsE2E(t *testing.T) {
@@ -110,35 +93,28 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("🧪 TEST E2E: Expressions Arithmétiques - Analyse Détaillée du Réseau RETE")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	// Créer le pipeline
 	pipeline := NewConstraintPipeline()
 	storage := NewMemoryStorage()
-
 	// Fichier contenant types, règles ET faits
 	tsdFile := "testdata/arithmetic_e2e.tsd"
-
 	fmt.Printf("📁 Fichier TSD: %s\n\n", tsdFile)
-
 	// Construire le réseau depuis le fichier unique
 	network, _, err := pipeline.IngestFile(tsdFile, nil, storage)
 	if err != nil {
 		t.Fatalf("❌ Erreur construction réseau: %v", err)
 	}
-
 	fmt.Printf("✅ Réseau RETE construit avec succès\n")
 	fmt.Printf("   - TypeNodes: %d\n", len(network.TypeNodes))
 	fmt.Printf("   - AlphaNodes: %d\n", len(network.AlphaNodes))
 	fmt.Printf("   - BetaNodes: %d\n", len(network.BetaNodes))
 	fmt.Printf("   - TerminalNodes: %d\n", len(network.TerminalNodes))
 	fmt.Printf("   - PassthroughRegistry: %d\n\n", len(network.PassthroughRegistry))
-
 	// ========================================
 	// DIAGRAMME DÉTAILLÉ DU RÉSEAU
 	// ========================================
 	diagram := NewNetworkDiagram(network)
 	diagram.PrintDetailedDiagram()
-
 	// ========================================
 	// SECTION 1: MAPPING RÈGLES TSD → NŒUDS RETE
 	// ========================================
@@ -146,7 +122,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("📋 SECTION 1: MAPPING DES RÈGLES TSD VERS LES NŒUDS RETE")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	// Règle 1
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ RÈGLE 1: calcul_facture_base                                                                     │")
@@ -209,7 +184,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("           ├─ Rôle: Exécution de l'action facture_calculee")
 	fmt.Println("           └─ Parent: calcul_facture_base_join")
 	fmt.Println()
-
 	// Règle 2
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ RÈGLE 2: calcul_facture_speciale                                                                 │")
@@ -272,7 +246,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("           ├─ Rôle: Exécution de l'action facture_speciale")
 	fmt.Println("           └─ Parent: calcul_facture_speciale_join")
 	fmt.Println()
-
 	// Règle 3
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ RÈGLE 3: calcul_facture_premium                                                                  │")
@@ -335,7 +308,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("           ├─ Rôle: Exécution de l'action facture_speciale")
 	fmt.Println("           └─ Parent: calcul_facture_premium_join")
 	fmt.Println()
-
 	// ========================================
 	// SECTION 2: ANALYSE DU PARTAGE
 	// ========================================
@@ -343,7 +315,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("📊 SECTION 2: ANALYSE DU PARTAGE DES NŒUDS")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ ✅ NŒUDS PARTAGÉS (réutilisés par plusieurs règles)                                              │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
@@ -360,7 +331,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println()
 	fmt.Println("   📈 Total nœuds partagés: 2 TypeNodes")
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ ○ NŒUDS DÉDIÉS (un par règle - per-rule isolation)                                               │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
@@ -395,7 +365,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("      └─ calcul_facture_premium_terminal  → facture_speciale (Règle 3)")
 	fmt.Println("      Raison: Une action par règle (obligatoire)")
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ 💡 OPPORTUNITÉS D'OPTIMISATION                                                                   │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
@@ -412,7 +381,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("      • Coût: Plus de nœuds (overhead mémoire modeste)")
 	fmt.Println("      • Alternative future: Partager les passthroughs si alpha-chains identiques")
 	fmt.Println()
-
 	// ========================================
 	// SECTION 3: VUE GRAPHIQUE ASCII
 	// ========================================
@@ -420,7 +388,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("🎨 SECTION 3: VUE GRAPHIQUE COMPLÈTE DU RÉSEAU")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	fmt.Println("Légende:")
 	fmt.Println("   [T]✅ = TypeNode PARTAGÉ")
 	fmt.Println("   [α]○  = AlphaNode DÉDIÉ à une règle")
@@ -428,7 +395,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("   [⚡]○ = TerminalNode DÉDIÉ à une règle")
 	fmt.Println("   ⚠️   = Nœud potentiellement partageable")
 	fmt.Println()
-
 	fmt.Println("                                    ┌──────────┐")
 	fmt.Println("                                    │   ROOT   │")
 	fmt.Println("                                    └─────┬────┘")
@@ -489,7 +455,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("   R2 Join ──→ [⚡]○ calcul_facture_speciale_terminal ──→ facture_speciale()")
 	fmt.Println("   R3 Join ──→ [⚡]○ calcul_facture_premium_terminal  ──→ facture_speciale()")
 	fmt.Println()
-
 	// ========================================
 	// SECTION 4: STATISTIQUES
 	// ========================================
@@ -497,7 +462,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("📊 SECTION 4: STATISTIQUES DÉTAILLÉES")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	totalNodes := len(network.TypeNodes) + len(network.AlphaNodes) + len(network.BetaNodes) + len(network.TerminalNodes) + len(network.PassthroughRegistry)
 	fmt.Printf("   📦 Total de nœuds dans le réseau: %d\n", totalNodes)
 	fmt.Println()
@@ -515,7 +479,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Printf("      • Nœuds partagés:                %d (%.1f%%)\n", sharedNodes, shareRate)
 	fmt.Printf("      • Nœuds dédiés:                  %d (%.1f%%)\n", dedicatedNodes, 100-shareRate)
 	fmt.Println()
-
 	// ========================================
 	// SECTION 5: EXÉCUTION ET RÉSULTATS
 	// ========================================
@@ -526,18 +489,15 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("🔬 SECTION 5: ANALYSE DÉTAILLÉE DES ALPHANODES (DÉCOMPOSITION)")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ ✅ PARTAGE DES ALPHANODES ACTIVÉ                                                                 │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
 	fmt.Println()
 	fmt.Println("Les règles 1 et 3 ont la MÊME condition alpha:")
 	fmt.Println()
-
 	// Trouver tous les AlphaNodes avec condition > 0 (devrait être partagé entre règles 1 et 3)
 	var sharedAlphaNode *AlphaNode
 	var sharedAlphaNodeID string
-
 	for id, node := range network.AlphaNodes {
 		if node.VariableName == "c" {
 			formatted := formatCondition(node.Condition)
@@ -548,19 +508,16 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 			}
 		}
 	}
-
 	// Afficher la condition alpha
 	if sharedAlphaNode != nil && sharedAlphaNode.Condition != nil {
 		formatted := formatCondition(sharedAlphaNode.Condition)
 		fmt.Printf("   Condition: %s\n", formatted)
 		fmt.Printf("   AlphaNode ID: %s\n", sharedAlphaNodeID)
-
 		// Vérifier si c'est partagé en comptant les enfants
 		children := sharedAlphaNode.GetChildren()
 		fmt.Printf("   Nombre de règles utilisant ce nœud: %d\n", len(children))
 	}
 	fmt.Println()
-
 	if sharedAlphaNode != nil && len(sharedAlphaNode.GetChildren()) >= 2 {
 		fmt.Println("✅ PARTAGE DÉTECTÉ: Plusieurs règles partagent le MÊME AlphaNode!")
 		fmt.Printf("   • ID partagé: %s\n", sharedAlphaNodeID)
@@ -572,7 +529,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 		fmt.Println("❌ PAS DE PARTAGE DÉTECTÉ")
 	}
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ 🔬 ANALYSE: DÉCOMPOSITION DE L'EXPRESSION ALPHA                                                  │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
@@ -582,20 +538,16 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("❌ PAS DE DÉCOMPOSITION EN SOUS-EXPRESSIONS:")
 	fmt.Println("   L'expression est traitée comme UN SEUL AlphaNode monolithique")
 	fmt.Println()
-
 	// Montrer la structure interne d'un AlphaNode (utiliser celui qu'on a trouvé)
 	if sharedAlphaNode != nil && sharedAlphaNode.Condition != nil {
 		fmt.Println("📦 Structure interne de l'AlphaNode:")
 		fmt.Println()
-
 		condMap := sharedAlphaNode.Condition.(map[string]interface{})
-
 		// Afficher la structure récursivement
 		fmt.Println("   Type: comparison")
 		fmt.Println("   ├─ Operator: " + fmt.Sprintf("%v", condMap["operator"]))
 		fmt.Println("   ├─ Right: " + fmt.Sprintf("%v", condMap["right"]))
 		fmt.Println("   └─ Left: (expression arithmétique complexe)")
-
 		if left, ok := condMap["left"].(map[string]interface{}); ok {
 			fmt.Println()
 			fmt.Println("   Expression Left décomposée (AST interne):")
@@ -603,13 +555,11 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 		}
 	}
 	fmt.Println()
-
 	fmt.Println("✅ Ce qu'on OBSERVE:")
 	fmt.Printf("   • 1 AlphaNode par règle\n")
 	fmt.Printf("   • Expression stockée comme un arbre AST unique\n")
 	fmt.Printf("   • Pas de décomposition en nœuds atomiques séparés\n")
 	fmt.Println()
-
 	fmt.Println("Ce qui est IMPLÉMENTÉ:")
 	fmt.Printf("   ✅ Partage des AlphaNodes identiques entre règles (via AlphaSharingRegistry)\n")
 	fmt.Println()
@@ -621,7 +571,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Printf("     - AlphaNode 4: (AlphaNode2 + AlphaNode3)\n")
 	fmt.Printf("     - AlphaNode 5: (AlphaNode4 > 0)\n")
 	fmt.Println()
-
 	fmt.Println("┌" + strings.Repeat("─", 98) + "┐")
 	fmt.Println("│ ✅ SOLUTION IMPLÉMENTÉE: ALPHASHARINGREGISTRY                                                    │")
 	fmt.Println("└" + strings.Repeat("─", 98) + "┘")
@@ -632,7 +581,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("2. AlphaNodes identiques partagés automatiquement")
 	fmt.Println("3. ID basé sur le hash de la condition: alpha_<hash>")
 	fmt.Println()
-
 	// Afficher les statistiques réelles
 	if network.AlphaSharingManager != nil {
 		stats := network.AlphaSharingManager.GetStats()
@@ -642,7 +590,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 		fmt.Printf("   • Ratio de partage moyen: %.2f\n", stats["average_sharing_ratio"])
 		fmt.Println()
 	}
-
 	fmt.Println("Bénéfice pour ce test:")
 	fmt.Printf("   • AlphaNodes créés: %d (au lieu de 3 sans partage)\n", len(network.AlphaNodes))
 	if len(network.AlphaNodes) < 3 {
@@ -650,7 +597,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 		fmt.Printf("   • Économie: %d%% de nœuds en moins\n", saving)
 	}
 	fmt.Println()
-
 	// ========================================
 	// SECTION 6: EXÉCUTION ET RÉSULTATS
 	// ========================================
@@ -658,20 +604,16 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("🚀 SECTION 6: EXÉCUTION ET RÉSULTATS")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	totalTokens := 0
 	tokensPerRule := make(map[string]int)
-
 	for _, terminal := range network.TerminalNodes {
 		tokens := terminal.Memory.GetTokens()
 		tokenCount := len(tokens)
 		totalTokens += tokenCount
 		tokensPerRule[strings.TrimSuffix(terminal.ID, "_terminal")] = tokenCount
 	}
-
 	fmt.Println("📊 Résultats par règle:")
 	fmt.Println()
-
 	// Extraire les vraies conditions alpha depuis le réseau
 	alphaConditions := make(map[string]string)
 	for alphaID, alphaNode := range network.AlphaNodes {
@@ -685,7 +627,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 			}
 		}
 	}
-
 	// Règle 1
 	baseTokens := tokensPerRule["calcul_facture_base"]
 	fmt.Printf("   Règle 1 (calcul_facture_base):\n")
@@ -696,7 +637,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	}
 	fmt.Printf("      • Tokens générés: %d\n", baseTokens)
 	fmt.Println()
-
 	// Règle 2
 	specialTokens := tokensPerRule["calcul_facture_speciale"]
 	fmt.Printf("   Règle 2 (calcul_facture_speciale):\n")
@@ -713,7 +653,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	}
 	fmt.Printf("      • Tokens générés: %d\n", specialTokens)
 	fmt.Println()
-
 	// Règle 3
 	premiumTokens := tokensPerRule["calcul_facture_premium"]
 	fmt.Printf("   Règle 3 (calcul_facture_premium):\n")
@@ -728,16 +667,13 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 		fmt.Printf("      • Note: Même résultat que Règle 1 (conditions identiques)\n")
 	}
 	fmt.Println()
-
 	fmt.Printf("✅ Total: %d tokens générés\n", totalTokens)
 	fmt.Printf("✅ Total: %d actions déclenchées\n", totalTokens)
 	fmt.Println()
-
 	// ========================================
 	// VALIDATIONS
 	// ========================================
 	fmt.Println()
-
 	// ========================================
 	// SECTION 7: VALIDATIONS
 	// ========================================
@@ -745,7 +681,6 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println("✓ SECTION 7: VALIDATIONS")
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
-
 	// Vérifier la structure du réseau
 	// Avec le partage beta obligatoire :
 	// - Règles 1 et 3 ont les mêmes conditions => partagent le même JoinNode
@@ -766,13 +701,11 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	} else {
 		fmt.Printf("   ✅ Structure réseau: %d JoinNodes avec partage (règles 1 et 3 partagent 1 JoinNode)\n", expectedBetaNodes)
 	}
-
 	if len(network.TerminalNodes) != 3 {
 		t.Fatalf("❌ Devrait avoir 3 TerminalNodes, got %d", len(network.TerminalNodes))
 	} else {
 		fmt.Printf("   ✅ Structure réseau: %d TerminalNodes (un par règle)\n", len(network.TerminalNodes))
 	}
-
 	// Vérifier les résultats d'exécution
 	// Note : Le partage de JoinNode fait que chaque règle reçoit TOUS les tokens du JoinNode partagé
 	// Les règles 1 et 3 partagent le même JoinNode, donc reçoivent les mêmes 3 tokens
@@ -783,28 +716,24 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	} else {
 		fmt.Printf("   ✅ Règle 'calcul_facture_base': %d tokens (attendu: %d)\n", baseTokens, expectedBase)
 	}
-
 	expectedSpeciale := 0
 	if specialTokens != expectedSpeciale {
 		t.Errorf("❌ Règle 'calcul_facture_speciale': attendu %d tokens, got %d", expectedSpeciale, specialTokens)
 	} else {
 		fmt.Printf("   ✅ Règle 'calcul_facture_speciale': %d tokens (attendu: %d)\n", specialTokens, expectedSpeciale)
 	}
-
 	expectedPremium := 3
 	if premiumTokens != expectedPremium {
 		t.Errorf("❌ Règle 'calcul_facture_premium': attendu %d tokens, got %d", expectedPremium, premiumTokens)
 	} else {
 		fmt.Printf("   ✅ Règle 'calcul_facture_premium': %d tokens (attendu: %d)\n", premiumTokens, expectedPremium)
 	}
-
 	expectedTotal := expectedBase + expectedSpeciale + expectedPremium
 	if totalTokens != expectedTotal {
 		t.Errorf("❌ Total de tokens incorrect: got %d, want %d", totalTokens, expectedTotal)
 	} else {
 		fmt.Printf("   ✅ Total tokens: %d (attendu: %d)\n", totalTokens, expectedTotal)
 	}
-
 	fmt.Println()
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println("🎉 TEST E2E TERMINÉ AVEC SUCCÈS!")

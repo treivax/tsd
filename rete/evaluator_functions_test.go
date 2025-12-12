@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 func TestEvaluateLength(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -57,7 +53,6 @@ func TestEvaluateLength(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateLength(tt.args)
@@ -71,10 +66,8 @@ func TestEvaluateLength(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateUpper(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -116,7 +109,6 @@ func TestEvaluateUpper(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateUpper(tt.args)
@@ -130,10 +122,8 @@ func TestEvaluateUpper(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateLower(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -175,7 +165,6 @@ func TestEvaluateLower(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateLower(tt.args)
@@ -189,10 +178,8 @@ func TestEvaluateLower(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateAbs(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -234,7 +221,6 @@ func TestEvaluateAbs(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateAbs(tt.args)
@@ -248,10 +234,8 @@ func TestEvaluateAbs(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateRound(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -299,7 +283,6 @@ func TestEvaluateRound(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateRound(tt.args)
@@ -313,10 +296,8 @@ func TestEvaluateRound(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateFloor(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -352,7 +333,6 @@ func TestEvaluateFloor(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateFloor(tt.args)
@@ -366,10 +346,8 @@ func TestEvaluateFloor(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateCeil(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -405,7 +383,6 @@ func TestEvaluateCeil(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateCeil(tt.args)
@@ -419,10 +396,8 @@ func TestEvaluateCeil(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateSubstring(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -497,7 +472,6 @@ func TestEvaluateSubstring(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateSubstring(tt.args)
@@ -511,10 +485,8 @@ func TestEvaluateSubstring(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateTrim(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		args     []interface{}
@@ -574,7 +546,6 @@ func TestEvaluateTrim(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateTrim(tt.args)
@@ -588,7 +559,6 @@ func TestEvaluateTrim(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateFunctionCall(t *testing.T) {
 	fact := &Fact{
 		ID:   "f1",
@@ -599,10 +569,8 @@ func TestEvaluateFunctionCall(t *testing.T) {
 			"salary": 50000.75,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings = map[string]*Fact{"f": fact}
-
 	tests := []struct {
 		name     string
 		input    map[string]interface{}
@@ -714,7 +682,6 @@ func TestEvaluateFunctionCall(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateFunctionCall(tt.input)

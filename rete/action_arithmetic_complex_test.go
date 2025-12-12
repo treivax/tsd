@@ -1,16 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"bytes"
 	"log"
 	"math"
 	"testing"
 )
-
 // TestComplexArithmeticExpressionsWithMultipleLiterals teste les expressions complexes avec plusieurs littéraux
 func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 	tests := []struct {
@@ -33,7 +30,6 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						},
 					},
 				)
-
 				objet := &Fact{
 					ID:   "obj1",
 					Type: "Objet",
@@ -42,17 +38,14 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						"prix": float64(100),
 					},
 				}
-
 				token := &Token{
 					ID:       "token1",
 					Facts:    []*Fact{objet},
-					Bindings: map[string]*Fact{"o": objet},
+					Bindings: NewBindingChainWith("o", objet),
 				}
-
 				expectedValues := map[string]float64{
 					"o.prix": 100,
 				}
-
 				return token, expectedValues
 			},
 			// o.prix * (1 + 2.3 + 3) - 1 = 100 * 6.3 - 1 = 629
@@ -109,7 +102,6 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						},
 					},
 				)
-
 				product := &Fact{
 					ID:   "prod1",
 					Type: "Product",
@@ -118,13 +110,11 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						"cost":  float64(20),
 					},
 				}
-
 				token := &Token{
 					ID:       "token1",
 					Facts:    []*Fact{product},
-					Bindings: map[string]*Fact{"p": product},
+					Bindings: NewBindingChainWith("p", product),
 				}
-
 				return token, map[string]float64{
 					"p.price": 100,
 					"p.cost":  20,
@@ -195,7 +185,6 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						},
 					},
 				)
-
 				data := &Fact{
 					ID:   "data1",
 					Type: "Data",
@@ -203,13 +192,11 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 						"value": float64(50),
 					},
 				}
-
 				token := &Token{
 					ID:       "token1",
 					Facts:    []*Fact{data},
-					Bindings: map[string]*Fact{"d": data},
+					Bindings: NewBindingChainWith("d", data),
 				}
-
 				return token, map[string]float64{"d.value": 50}
 			},
 			// d.value * 2 + 3 - 4 * 5 / 10 + 1.5 - 0.5
@@ -281,32 +268,25 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 			description:    "d.value * 2 + 3 - 4 * 5 / 10 + 1.5 - 0.5",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
 			network := NewReteNetwork(storage)
-
 			token, expectedValues := tt.setup(network)
 			ctx := NewExecutionContext(token, network)
-
 			executor := NewActionExecutor(network, log.Default())
-
 			result, err := executor.evaluateArgument(tt.expression, ctx)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v\nExpression: %s", err, tt.description)
 			}
-
 			resultNum, ok := result.(float64)
 			if !ok {
 				t.Fatalf("Expected float64 result, got %T", result)
 			}
-
 			// Comparer avec une petite tolérance pour les erreurs d'arrondi
 			if math.Abs(resultNum-tt.expectedResult) > 0.0001 {
 				t.Errorf("Expression: %s\nExpected: %v\nGot: %v\nDifference: %v",
 					tt.description, tt.expectedResult, resultNum, resultNum-tt.expectedResult)
-
 				// Afficher les valeurs des variables pour le debug
 				t.Logf("Variable values:")
 				for k, v := range expectedValues {
@@ -318,12 +298,10 @@ func TestComplexArithmeticExpressionsWithMultipleLiterals(t *testing.T) {
 		})
 	}
 }
-
 // TestComplexExpressionInFactCreation teste une expression complexe dans la création de fait
 func TestComplexExpressionInFactCreation(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
 	// Définir les types
 	network.Types = append(network.Types,
 		TypeDefinition{
@@ -353,7 +331,6 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 			},
 		},
 	)
-
 	// Créer les faits
 	objet := &Fact{
 		ID:   "obj1",
@@ -364,7 +341,6 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 			"boite": "B001",
 		},
 	}
-
 	boite := &Fact{
 		ID:   "box1",
 		Type: "Boite",
@@ -374,16 +350,12 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 			"cout": float64(5),
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{objet, boite},
-		Bindings: map[string]*Fact{
-			"o": objet,
-			"b": boite,
+		Bindings: NewBindingChain().Add("o", objet).Add("b", boite),
 		},
 	}
-
 	// Action : créer une vente avec un calcul complexe
 	// prixTotal: o.prix * (1 + 2.3 + 3) + b.prix - 1
 	// = 100 * 6.3 + 15 - 1 = 630 + 15 - 1 = 644
@@ -453,16 +425,13 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 			},
 		},
 	}
-
 	var logBuf bytes.Buffer
 	logger := log.New(&logBuf, "", 0)
 	executor := NewActionExecutor(network, logger)
-
 	err := executor.ExecuteAction(action, token)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v\nLog: %s", err, logBuf.String())
 	}
-
 	// Le calcul attendu : 100 * (1 + 2.3 + 3) + 15 - 1 = 644
 	expectedTotal := 644.0
 	t.Logf("✅ Fact creation with complex expression succeeded")
@@ -470,12 +439,10 @@ func TestComplexExpressionInFactCreation(t *testing.T) {
 	t.Logf("   Formula: o.prix * (1 + 2.3 + 3) + b.prix - 1")
 	t.Logf("   = 100 * 6.3 + 15 - 1 = %.2f", expectedTotal)
 }
-
 // TestComplexExpressionWithModuloAndDecimals teste le modulo avec des décimales
 func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
 	network.Types = append(network.Types,
 		TypeDefinition{
 			Type: "typeDefinition",
@@ -486,7 +453,6 @@ func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 			},
 		},
 	)
-
 	item := &Fact{
 		ID:   "item1",
 		Type: "Item",
@@ -495,13 +461,11 @@ func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 			"result": float64(0),
 		},
 	}
-
 	token := &Token{
 		ID:       "token1",
 		Facts:    []*Fact{item},
-		Bindings: map[string]*Fact{"i": item},
+		Bindings: NewBindingChainWith("i", item),
 	}
-
 	// Expression: 2.3 % 53 = 2 (car int(2.3) % int(53) = 2 % 53 = 2)
 	action := &Action{
 		Jobs: []JobCall{
@@ -530,25 +494,20 @@ func TestComplexExpressionWithModuloAndDecimals(t *testing.T) {
 			},
 		},
 	}
-
 	var logBuf bytes.Buffer
 	logger := log.New(&logBuf, "", 0)
 	executor := NewActionExecutor(network, logger)
-
 	err := executor.ExecuteAction(action, token)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-
 	// 2.3 % 53 = int(2.3) % int(53) = 2 % 53 = 2
 	t.Logf("✅ Modulo with decimals: 2.3 %% 53 = 2")
 }
-
 // TestRealWorldComplexExpression teste l'exemple complet de la règle
 func TestRealWorldComplexExpression(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
 	// Définir les types
 	network.Types = append(network.Types,
 		TypeDefinition{
@@ -578,7 +537,6 @@ func TestRealWorldComplexExpression(t *testing.T) {
 			},
 		},
 	)
-
 	// Créer les faits
 	objet := &Fact{
 		ID:   "obj1",
@@ -589,7 +547,6 @@ func TestRealWorldComplexExpression(t *testing.T) {
 			"boite": "B001",
 		},
 	}
-
 	boite := &Fact{
 		ID:   "box1",
 		Type: "Boite",
@@ -599,22 +556,17 @@ func TestRealWorldComplexExpression(t *testing.T) {
 			"cout": float64(5),
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{objet, boite},
-		Bindings: map[string]*Fact{
-			"o": objet,
-			"b": boite,
+		Bindings: NewBindingChain().Add("o", objet).Add("b", boite),
 		},
 	}
-
 	t.Log("🧮 Test de l'expression complexe du monde réel")
 	t.Log("==============================================")
 	t.Logf("Objet: id=%s, prix=%.2f, boite=%s", objet.Fields["id"], objet.Fields["prix"], objet.Fields["boite"])
 	t.Logf("Boite: id=%s, prix=%.2f, cout=%.2f", boite.Fields["id"], boite.Fields["prix"], boite.Fields["cout"])
 	t.Log("")
-
 	// Expression de l'action : o.prix * (1 + 2.3 % 53 + 3) + b.prix - 1
 	// Calcul : 100 * (1 + 2 + 3) + 15 - 1 = 100 * 6 + 15 - 1 = 614
 	// (2.3 % 53 = 2)
@@ -692,23 +644,19 @@ func TestRealWorldComplexExpression(t *testing.T) {
 			},
 		},
 	}
-
 	var logBuf bytes.Buffer
 	logger := log.New(&logBuf, "", 0)
 	executor := NewActionExecutor(network, logger)
-
 	err := executor.ExecuteAction(action, token)
 	if err != nil {
 		t.Fatalf("❌ Erreur: %v\nLog: %s", err, logBuf.String())
 	}
-
 	// Calculer le résultat attendu
 	// o.prix * (1 + 2.3 % 53 + 3) + b.prix - 1
 	oPrix := objet.Fields["prix"].(float64)
 	bPrix := boite.Fields["prix"].(float64)
 	modResult := float64(int64(2) % int64(53)) // int(2.3) % 53 = 2 % 53 = 2
 	total := oPrix*(1+modResult+3) + bPrix - 1 // 100 * 6 + 15 - 1 = 614
-
 	t.Log("✅ Création de fait avec expression complexe réussie!")
 	t.Log("")
 	t.Log("Calcul détaillé:")

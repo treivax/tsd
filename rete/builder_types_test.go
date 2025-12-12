@@ -1,33 +1,25 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 func TestNewTypeBuilder(t *testing.T) {
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
-
 	tb := NewTypeBuilder(utils)
-
 	if tb == nil {
 		t.Fatal("NewTypeBuilder returned nil")
 	}
-
 	if tb.utils != utils {
 		t.Error("TypeBuilder.utils not set correctly")
 	}
 }
-
 func TestTypeBuilder_CreateTypeDefinition(t *testing.T) {
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
 	tb := NewTypeBuilder(utils)
-
 	tests := []struct {
 		name      string
 		typeName  string
@@ -130,23 +122,18 @@ func TestTypeBuilder_CreateTypeDefinition(t *testing.T) {
 			numFields: 0, // Field without type should be skipped
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			typeDef := tb.CreateTypeDefinition(tt.typeName, tt.typeMap)
-
 			if typeDef.Name != tt.wantName {
 				t.Errorf("Name = %q, want %q", typeDef.Name, tt.wantName)
 			}
-
 			if typeDef.Type != tt.wantType {
 				t.Errorf("Type = %q, want %q", typeDef.Type, tt.wantType)
 			}
-
 			if len(typeDef.Fields) != tt.numFields {
 				t.Errorf("Number of fields = %d, want %d", len(typeDef.Fields), tt.numFields)
 			}
-
 			// Verify field details for multi-field test
 			if tt.numFields == 3 && tt.typeName == "Employee" {
 				expectedFields := []struct {
@@ -157,7 +144,6 @@ func TestTypeBuilder_CreateTypeDefinition(t *testing.T) {
 					{"name", "string"},
 					{"salary", "number"},
 				}
-
 				for i, expected := range expectedFields {
 					if typeDef.Fields[i].Name != expected.name {
 						t.Errorf("Field[%d].Name = %q, want %q", i, typeDef.Fields[i].Name, expected.name)
@@ -170,15 +156,12 @@ func TestTypeBuilder_CreateTypeDefinition(t *testing.T) {
 		})
 	}
 }
-
 func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
 	tb := NewTypeBuilder(utils)
-
 	t.Run("create single type node", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-
 		types := []interface{}{
 			map[string]interface{}{
 				"name": "Person",
@@ -190,22 +173,18 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 				},
 			},
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err != nil {
 			t.Fatalf("CreateTypeNodes failed: %v", err)
 		}
-
 		// Verify TypeNode was created
 		typeNode, exists := network.TypeNodes["Person"]
 		if !exists {
 			t.Fatal("TypeNode 'Person' not created")
 		}
-
 		if typeNode.TypeName != "Person" {
 			t.Errorf("TypeNode.TypeName = %q, want 'Person'", typeNode.TypeName)
 		}
-
 		// Verify TypeNode is connected to RootNode
 		foundChild := false
 		for _, child := range network.RootNode.Children {
@@ -218,10 +197,8 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 			t.Error("TypeNode not connected to RootNode")
 		}
 	})
-
 	t.Run("create multiple type nodes", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-
 		types := []interface{}{
 			map[string]interface{}{
 				"name": "Person",
@@ -245,12 +222,10 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 				"name": "Department",
 			},
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err != nil {
 			t.Fatalf("CreateTypeNodes failed: %v", err)
 		}
-
 		// Verify all TypeNodes were created
 		expectedTypes := []string{"Person", "Employee", "Department"}
 		for _, typeName := range expectedTypes {
@@ -258,76 +233,61 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 				t.Errorf("TypeNode '%s' not created", typeName)
 			}
 		}
-
 		if len(network.TypeNodes) != 3 {
 			t.Errorf("Expected 3 TypeNodes, got %d", len(network.TypeNodes))
 		}
-
 		// Verify all are connected to RootNode
 		if len(network.RootNode.Children) != 3 {
 			t.Errorf("Expected 3 children on RootNode, got %d", len(network.RootNode.Children))
 		}
 	})
-
 	t.Run("error on invalid type format", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-
 		types := []interface{}{
 			"not a map", // Invalid format
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err == nil {
 			t.Error("Expected error for invalid type format, got nil")
 		}
 	})
-
 	t.Run("error on missing type name", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-
 		types := []interface{}{
 			map[string]interface{}{
 				// Missing "name" field
 				"fields": []interface{}{},
 			},
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err == nil {
 			t.Error("Expected error for missing type name, got nil")
 		}
 	})
-
 	t.Run("error on invalid type name format", func(t *testing.T) {
 		network := NewReteNetwork(storage)
-
 		types := []interface{}{
 			map[string]interface{}{
 				"name": 123, // Not a string
 			},
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err == nil {
 			t.Error("Expected error for invalid type name format, got nil")
 		}
 	})
-
 	t.Run("with lifecycle manager", func(t *testing.T) {
 		network := NewReteNetwork(storage)
 		network.LifecycleManager = NewLifecycleManager()
-
 		types := []interface{}{
 			map[string]interface{}{
 				"name": "TestType",
 			},
 		}
-
 		err := tb.CreateTypeNodes(network, types, storage)
 		if err != nil {
 			t.Fatalf("CreateTypeNodes failed: %v", err)
 		}
-
 		// Verify TypeNode was registered
 		typeNode := network.TypeNodes["TestType"]
 		if typeNode == nil {
@@ -335,14 +295,12 @@ func TestTypeBuilder_CreateTypeNodes(t *testing.T) {
 		}
 	})
 }
-
 func TestTypeBuilder_Integration(t *testing.T) {
 	// Integration test: Create types and verify the complete graph structure
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
 	tb := NewTypeBuilder(utils)
 	network := NewReteNetwork(storage)
-
 	types := []interface{}{
 		map[string]interface{}{
 			"name": "Person",
@@ -360,17 +318,14 @@ func TestTypeBuilder_Integration(t *testing.T) {
 			},
 		},
 	}
-
 	err := tb.CreateTypeNodes(network, types, storage)
 	if err != nil {
 		t.Fatalf("CreateTypeNodes failed: %v", err)
 	}
-
 	// Verify network structure
 	if len(network.TypeNodes) != 2 {
 		t.Errorf("Expected 2 type nodes, got %d", len(network.TypeNodes))
 	}
-
 	// Verify Person type
 	personNode := network.TypeNodes["Person"]
 	if personNode == nil {
@@ -379,7 +334,6 @@ func TestTypeBuilder_Integration(t *testing.T) {
 	if len(personNode.TypeDefinition.Fields) != 2 {
 		t.Errorf("Person should have 2 fields, got %d", len(personNode.TypeDefinition.Fields))
 	}
-
 	// Verify Employee type
 	employeeNode := network.TypeNodes["Employee"]
 	if employeeNode == nil {
@@ -388,12 +342,10 @@ func TestTypeBuilder_Integration(t *testing.T) {
 	if len(employeeNode.TypeDefinition.Fields) != 3 {
 		t.Errorf("Employee should have 3 fields, got %d", len(employeeNode.TypeDefinition.Fields))
 	}
-
 	// Verify both are children of RootNode
 	if len(network.RootNode.Children) != 2 {
 		t.Errorf("RootNode should have 2 children, got %d", len(network.RootNode.Children))
 	}
-
 	// Verify propagation path exists
 	for _, child := range network.RootNode.Children {
 		typeNode, ok := child.(*TypeNode)
@@ -401,7 +353,6 @@ func TestTypeBuilder_Integration(t *testing.T) {
 			t.Error("RootNode child is not a TypeNode")
 			continue
 		}
-
 		if typeNode.TypeName != "Person" && typeNode.TypeName != "Employee" {
 			t.Errorf("Unexpected TypeNode: %s", typeNode.TypeName)
 		}

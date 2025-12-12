@@ -1,14 +1,11 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"reflect"
 	"testing"
 )
-
 // TestNormalizeConditionForSharing_Unwrap teste le déballe des wrappers "constraint"
 func TestNormalizeConditionForSharing_Unwrap(t *testing.T) {
 	tests := []struct {
@@ -71,7 +68,6 @@ func TestNormalizeConditionForSharing_Unwrap(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)
@@ -81,7 +77,6 @@ func TestNormalizeConditionForSharing_Unwrap(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeConditionForSharing_TypeNormalization teste la normalisation des types
 func TestNormalizeConditionForSharing_TypeNormalization(t *testing.T) {
 	tests := []struct {
@@ -145,7 +140,6 @@ func TestNormalizeConditionForSharing_TypeNormalization(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)
@@ -155,7 +149,6 @@ func TestNormalizeConditionForSharing_TypeNormalization(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeConditionForSharing_Combined teste les cas combinant unwrap et normalisation
 func TestNormalizeConditionForSharing_Combined(t *testing.T) {
 	tests := []struct {
@@ -203,7 +196,6 @@ func TestNormalizeConditionForSharing_Combined(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)
@@ -213,7 +205,6 @@ func TestNormalizeConditionForSharing_Combined(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeConditionForSharing_Slices teste la normalisation des slices
 func TestNormalizeConditionForSharing_Slices(t *testing.T) {
 	tests := []struct {
@@ -275,7 +266,6 @@ func TestNormalizeConditionForSharing_Slices(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)
@@ -285,7 +275,6 @@ func TestNormalizeConditionForSharing_Slices(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeConditionForSharing_Primitives teste les types primitifs
 func TestNormalizeConditionForSharing_Primitives(t *testing.T) {
 	tests := []struct {
@@ -314,7 +303,6 @@ func TestNormalizeConditionForSharing_Primitives(t *testing.T) {
 			expected: nil,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)
@@ -324,7 +312,6 @@ func TestNormalizeConditionForSharing_Primitives(t *testing.T) {
 		})
 	}
 }
-
 // TestNormalizeConditionForSharing_ComplexNested teste les structures complexes imbriquées
 func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 	input := map[string]interface{}{
@@ -349,7 +336,6 @@ func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 			},
 		},
 	}
-
 	expected := map[string]interface{}{
 		"type":     "binaryOperation",
 		"operator": "AND",
@@ -366,7 +352,6 @@ func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 			"right":    map[string]interface{}{"type": "literal", "value": "VIP"},
 		},
 	}
-
 	result := normalizeConditionForSharing(input)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("normalizeConditionForSharing() with complex nested structure failed")
@@ -374,7 +359,6 @@ func TestNormalizeConditionForSharing_ComplexNested(t *testing.T) {
 		t.Errorf("Want: %+v", expected)
 	}
 }
-
 // TestNormalizeConditionForSharing_RealWorldScenarios teste des scénarios réels
 func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 	t.Run("Simple rule condition (wrapped)", func(t *testing.T) {
@@ -388,20 +372,17 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 				"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 			},
 		}
-
 		expected := map[string]interface{}{
 			"type":     "binaryOperation",
 			"operator": ">",
 			"left":     map[string]interface{}{"type": "field", "name": "age"},
 			"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 		}
-
 		result := normalizeConditionForSharing(input)
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Simple rule normalization failed")
 		}
 	})
-
 	t.Run("Chain condition (unwrapped)", func(t *testing.T) {
 		// Condition d'une chaîne (déjà décomposée, pas de wrapper)
 		input := map[string]interface{}{
@@ -410,20 +391,17 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 			"left":     map[string]interface{}{"type": "field", "name": "age"},
 			"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 		}
-
 		expected := map[string]interface{}{
 			"type":     "binaryOperation",
 			"operator": ">",
 			"left":     map[string]interface{}{"type": "field", "name": "age"},
 			"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 		}
-
 		result := normalizeConditionForSharing(input)
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Chain condition normalization failed")
 		}
 	})
-
 	t.Run("Both should produce same normalized form", func(t *testing.T) {
 		// Une condition de règle simple (wrapped + comparison)
 		simpleRuleCondition := map[string]interface{}{
@@ -435,7 +413,6 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 				"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 			},
 		}
-
 		// La même condition dans une chaîne (unwrapped + binaryOperation)
 		chainCondition := map[string]interface{}{
 			"type":     "binaryOperation",
@@ -443,10 +420,8 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 			"left":     map[string]interface{}{"type": "field", "name": "age"},
 			"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 		}
-
 		result1 := normalizeConditionForSharing(simpleRuleCondition)
 		result2 := normalizeConditionForSharing(chainCondition)
-
 		if !reflect.DeepEqual(result1, result2) {
 			t.Errorf("Simple rule and chain conditions should normalize to same form")
 			t.Errorf("Simple rule result: %+v", result1)
@@ -454,7 +429,6 @@ func TestNormalizeConditionForSharing_RealWorldScenarios(t *testing.T) {
 		}
 	})
 }
-
 // TestNormalizeConditionForSharing_Idempotence teste l'idempotence de la normalisation
 func TestNormalizeConditionForSharing_Idempotence(t *testing.T) {
 	input := map[string]interface{}{
@@ -466,20 +440,16 @@ func TestNormalizeConditionForSharing_Idempotence(t *testing.T) {
 			"right":    map[string]interface{}{"type": "literal", "value": 18.0},
 		},
 	}
-
 	// Normaliser une première fois
 	result1 := normalizeConditionForSharing(input)
-
 	// Normaliser le résultat (devrait être idempotent)
 	result2 := normalizeConditionForSharing(result1)
-
 	if !reflect.DeepEqual(result1, result2) {
 		t.Errorf("normalizeConditionForSharing() should be idempotent")
 		t.Errorf("First pass: %+v", result1)
 		t.Errorf("Second pass: %+v", result2)
 	}
 }
-
 // TestNormalizeConditionForSharing_EdgeCases teste les cas limites
 func TestNormalizeConditionForSharing_EdgeCases(t *testing.T) {
 	tests := []struct {
@@ -524,7 +494,6 @@ func TestNormalizeConditionForSharing_EdgeCases(t *testing.T) {
 			expected: nil,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := normalizeConditionForSharing(tt.input)

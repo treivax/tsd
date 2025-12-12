@@ -1,15 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"bytes"
 	"log"
 	"testing"
 )
-
 // TestArithmeticExpressionsInActions teste l'utilisation d'expressions arithmétiques dans les actions
 func TestArithmeticExpressionsInActions(t *testing.T) {
 	tests := []struct {
@@ -51,7 +48,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				// Créer les faits
 				adulte := &Fact{
 					ID:   "adult1",
@@ -70,14 +66,11 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"age":  float64(18),
 					},
 				}
-
 				// Créer un token avec ces bindings
 				token := &Token{
 					ID:    "token1",
 					Facts: []*Fact{adulte, enfant},
-					Bindings: map[string]*Fact{
-						"a": adulte,
-						"e": enfant,
+		Bindings: NewBindingChain().Add("a", adulte).Add("e", enfant),
 					},
 				}
 				return token
@@ -141,7 +134,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				person := &Fact{
 					ID:   "p1",
 					Type: "Person",
@@ -151,11 +143,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"bonus": float64(5),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{person},
-					Bindings: map[string]*Fact{"p": person},
+					Bindings: NewBindingChainWith("p", person),
 				}
 			},
 			action: &Action{
@@ -205,7 +196,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				product := &Fact{
 					ID:   "prod1",
 					Type: "Product",
@@ -215,11 +205,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"total":    float64(0),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{product},
-					Bindings: map[string]*Fact{"prod": product},
+					Bindings: NewBindingChainWith("prod", product),
 				}
 			},
 			action: &Action{
@@ -267,7 +256,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				calc := &Fact{
 					ID:   "calc1",
 					Type: "Calculation",
@@ -278,11 +266,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"result": float64(0),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{calc},
-					Bindings: map[string]*Fact{"x": calc},
+					Bindings: NewBindingChainWith("x", calc),
 				}
 			},
 			action: &Action{
@@ -341,7 +328,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				nums := &Fact{
 					ID:   "nums1",
 					Type: "Numbers",
@@ -351,11 +337,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"result":  float64(0),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{nums},
-					Bindings: map[string]*Fact{"n": nums},
+					Bindings: NewBindingChainWith("n", nums),
 				}
 			},
 			action: &Action{
@@ -402,7 +387,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				math := &Fact{
 					ID:   "math1",
 					Type: "Math",
@@ -412,11 +396,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"remainder": float64(0),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{math},
-					Bindings: map[string]*Fact{"m": math},
+					Bindings: NewBindingChainWith("m", math),
 				}
 			},
 			action: &Action{
@@ -465,7 +448,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						},
 					},
 				)
-
 				score := &Fact{
 					ID:   "score1",
 					Type: "Score",
@@ -474,11 +456,10 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 						"total": float64(0),
 					},
 				}
-
 				return &Token{
 					ID:       "token1",
 					Facts:    []*Fact{score},
-					Bindings: map[string]*Fact{"s": score},
+					Bindings: NewBindingChainWith("s", score),
 				}
 			},
 			action: &Action{
@@ -514,7 +495,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Créer le réseau et configurer le test
@@ -522,16 +502,12 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 			logger := log.New(&logBuf, "", 0)
 			storage := NewMemoryStorage()
 			network := NewReteNetwork(storage)
-
 			// Setup initial
 			token := tt.setup(network)
-
 			// Créer l'executor
 			executor := NewActionExecutor(network, logger)
-
 			// Exécuter l'action
 			err := executor.ExecuteAction(tt.action, token)
-
 			// Vérifier le résultat
 			if tt.expectError {
 				if err == nil {
@@ -551,7 +527,6 @@ func TestArithmeticExpressionsInActions(t *testing.T) {
 		})
 	}
 }
-
 // TestArithmeticExpressionEvaluation teste l'évaluation directe des expressions arithmétiques
 func TestArithmeticExpressionEvaluation(t *testing.T) {
 	tests := []struct {
@@ -641,7 +616,6 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 			expectError: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
@@ -655,17 +629,13 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 					},
 				},
 			)
-
 			token := &Token{
 				ID:       "token1",
 				Bindings: tt.bindings,
 			}
 			ctx := NewExecutionContext(token, network)
-
 			executor := NewActionExecutor(network, log.Default())
-
 			result, err := executor.evaluateArgument(tt.expr, ctx)
-
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error but got none")
@@ -685,12 +655,10 @@ func TestArithmeticExpressionEvaluation(t *testing.T) {
 		})
 	}
 }
-
 // TestCompleteScenario_ParentChildAge teste le scénario complet de l'exemple fourni
 func TestCompleteScenario_ParentChildAge(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
-
 	// Définir les types
 	network.Types = append(network.Types,
 		TypeDefinition{
@@ -721,7 +689,6 @@ func TestCompleteScenario_ParentChildAge(t *testing.T) {
 			},
 		},
 	)
-
 	// Créer les faits
 	adulte := &Fact{
 		ID:   "adult1",
@@ -741,13 +708,11 @@ func TestCompleteScenario_ParentChildAge(t *testing.T) {
 			"differenceAgeParent": float64(0),
 		},
 	}
-
 	token := &Token{
 		ID:       "token1",
 		Facts:    []*Fact{adulte, enfant},
-		Bindings: map[string]*Fact{"a": adulte, "e": enfant},
+		Bindings: NewBindingChain().Add("a", adulte).Add("e", enfant),
 	}
-
 	// Créer l'action avec deux jobs:
 	// 1. Création d'un fait Naissance avec ageParentALaNaissance calculé
 	// 2. Modification du fait Enfant pour ajouter differenceAgeParent
@@ -814,23 +779,19 @@ func TestCompleteScenario_ParentChildAge(t *testing.T) {
 			},
 		},
 	}
-
 	var logBuf bytes.Buffer
 	logger := log.New(&logBuf, "", 0)
 	executor := NewActionExecutor(network, logger)
-
 	// Exécuter l'action
 	err := executor.ExecuteAction(action, token)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v\nLog: %s", err, logBuf.String())
 	}
-
 	// Vérifier que les logs contiennent les actions exécutées
 	logOutput := logBuf.String()
 	if logOutput == "" {
 		t.Error("Expected log output but got none")
 	}
-
 	t.Logf("✅ Complete scenario executed successfully")
 	t.Logf("Action execution log:\n%s", logOutput)
 }

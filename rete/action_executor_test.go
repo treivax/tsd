@@ -1,20 +1,15 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"strings"
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 func TestActionExecutor_evaluateComparison(t *testing.T) {
 	executor := NewActionExecutor(nil, nil)
-
 	tests := []struct {
 		name      string
 		left      interface{}
@@ -192,11 +187,9 @@ func TestActionExecutor_evaluateComparison(t *testing.T) {
 			wantError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := executor.evaluateComparison(tt.left, tt.operator, tt.right)
-
 			if tt.wantError {
 				assert.Error(t, err)
 			} else {
@@ -206,10 +199,8 @@ func TestActionExecutor_evaluateComparison(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_areEqual(t *testing.T) {
 	executor := NewActionExecutor(nil, nil)
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -330,7 +321,6 @@ func TestActionExecutor_areEqual(t *testing.T) {
 			expected: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := executor.areEqual(tt.left, tt.right)
@@ -338,14 +328,11 @@ func TestActionExecutor_areEqual(t *testing.T) {
 		})
 	}
 }
-
 // TestActionExecutor_BasicExecution teste l'exécution basique d'une action
 func TestActionExecutor_BasicExecution(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	// Définir un type
 	personType := TypeDefinition{
 		Type: "typeDefinition",
@@ -357,7 +344,6 @@ func TestActionExecutor_BasicExecution(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	// Créer un fait
 	fact := &Fact{
 		ID:   "p1",
@@ -368,16 +354,12 @@ func TestActionExecutor_BasicExecution(t *testing.T) {
 			"age":  25.0,
 		},
 	}
-
 	// Créer un token avec bindings
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Créer une action simple avec valeur littérale
 	action := &Action{
 		Type: "action",
@@ -394,22 +376,17 @@ func TestActionExecutor_BasicExecution(t *testing.T) {
 			},
 		},
 	}
-
 	// Exécuter l'action
 	executor := env.Network.ActionExecutor
 	err := executor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Action execution should succeed")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_VariableArgument teste l'utilisation d'une variable comme argument
 func TestActionExecutor_VariableArgument(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -419,7 +396,6 @@ func TestActionExecutor_VariableArgument(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -428,15 +404,11 @@ func TestActionExecutor_VariableArgument(t *testing.T) {
 			"name": "Bob",
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Action avec variable complète
 	action := &Action{
 		Type: "action",
@@ -453,20 +425,15 @@ func TestActionExecutor_VariableArgument(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Action with variable should execute successfully")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_FieldAccessArgument teste l'accès à un attribut
 func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -477,7 +444,6 @@ func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -487,15 +453,11 @@ func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 			"age":  30.0,
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Action avec accès à un champ
 	action := &Action{
 		Type: "action",
@@ -513,20 +475,15 @@ func TestActionExecutor_FieldAccessArgument(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Action with field access should execute successfully")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_MultipleArguments teste plusieurs arguments de types différents
 func TestActionExecutor_MultipleArguments(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -537,7 +494,6 @@ func TestActionExecutor_MultipleArguments(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -547,15 +503,11 @@ func TestActionExecutor_MultipleArguments(t *testing.T) {
 			"age":  28.0,
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Action avec plusieurs types d'arguments
 	action := &Action{
 		Type: "action",
@@ -584,20 +536,15 @@ func TestActionExecutor_MultipleArguments(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Action with multiple arguments should execute successfully")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_ArithmeticExpression teste les expressions arithmétiques
 func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -607,7 +554,6 @@ func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -616,15 +562,11 @@ func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 			"salary": 50000.0,
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Action avec expression arithmétique
 	action := &Action{
 		Type: "action",
@@ -650,20 +592,15 @@ func TestActionExecutor_ArithmeticExpression(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Arithmetic expression should be evaluated successfully")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_MultipleJobs teste l'exécution de plusieurs jobs
 func TestActionExecutor_MultipleJobs(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -673,7 +610,6 @@ func TestActionExecutor_MultipleJobs(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -682,15 +618,11 @@ func TestActionExecutor_MultipleJobs(t *testing.T) {
 			"name": "Eve",
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	// Action avec trois jobs
 	action := &Action{
 		Type: "action",
@@ -722,17 +654,13 @@ func TestActionExecutor_MultipleJobs(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
-
 	require.NoError(t, err, "Multiple jobs should execute in sequence successfully")
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_ValidationErrors teste les erreurs de validation
 func TestActionExecutor_ValidationErrors(t *testing.T) {
 	t.Parallel()
-
 	testCases := []struct {
 		name        string
 		action      *Action
@@ -809,15 +737,12 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 			errorMsg:    "division par zéro",
 		},
 	}
-
 	for _, tc := range testCases {
 		tc := tc // Capture range variable
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
 			env := NewTestEnvironment(t, WithLogLevel(LogLevelWarn))
 			defer env.Cleanup()
-
 			personType := TypeDefinition{
 				Type: "typeDefinition",
 				Name: "Person",
@@ -827,7 +752,6 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 				},
 			}
 			env.Network.Types = append(env.Network.Types, personType)
-
 			fact := &Fact{
 				ID:   "p1",
 				Type: "Person",
@@ -836,17 +760,12 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 					"name": "Frank",
 				},
 			}
-
 			token := &Token{
 				ID:    "token1",
 				Facts: []*Fact{fact},
-				Bindings: map[string]*Fact{
-					"p": fact,
-				},
+				Bindings: NewBindingChainWith("p", fact),
 			}
-
 			err := env.Network.ActionExecutor.ExecuteAction(tc.action, token)
-
 			if tc.shouldError {
 				assert.Error(t, err, "Expected error for %s", tc.name)
 				if err != nil {
@@ -859,14 +778,11 @@ func TestActionExecutor_ValidationErrors(t *testing.T) {
 		})
 	}
 }
-
 // TestActionExecutor_Logging teste le logging des actions
 func TestActionExecutor_Logging(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelDebug))
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -875,7 +791,6 @@ func TestActionExecutor_Logging(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -883,15 +798,11 @@ func TestActionExecutor_Logging(t *testing.T) {
 			"id": "p1",
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	action := &Action{
 		Type: "action",
 		Jobs: []JobCall{
@@ -904,30 +815,23 @@ func TestActionExecutor_Logging(t *testing.T) {
 			},
 		},
 	}
-
 	// Tester avec logging activé
 	env.Network.ActionExecutor.SetLogging(true)
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
 	require.NoError(t, err, "Action with logging enabled should succeed")
-
 	// Tester avec logging désactivé
 	env.Network.ActionExecutor.SetLogging(false)
 	err = env.Network.ActionExecutor.ExecuteAction(action, token)
 	require.NoError(t, err, "Action with logging disabled should succeed")
-
 	env.AssertNoErrors(t)
 }
-
 // TestActionExecutor_CustomLogger teste l'utilisation d'un logger personnalisé
 func TestActionExecutor_CustomLogger(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo))
 	defer env.Cleanup()
-
 	// Le ActionExecutor utilise déjà le logger de l'environment via le Network
 	// Testons simplement que l'exécution fonctionne avec le logger configuré
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -936,7 +840,6 @@ func TestActionExecutor_CustomLogger(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -944,15 +847,11 @@ func TestActionExecutor_CustomLogger(t *testing.T) {
 			"id": "p1",
 		},
 	}
-
 	token := &Token{
 		ID:    "token1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	action := &Action{
 		Type: "action",
 		Jobs: []JobCall{
@@ -963,35 +862,26 @@ func TestActionExecutor_CustomLogger(t *testing.T) {
 			},
 		},
 	}
-
 	// Activer le logging pour capturer l'exécution
 	env.Network.ActionExecutor.SetLogging(true)
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
 	require.NoError(t, err, "Action with custom logger should succeed")
-
 	// Note: ActionExecutor logs to stdout via standard log package,
 	// not to TestEnvironment buffer. The important thing is no errors occurred.
 	env.AssertNoErrors(t)
 }
-
 func TestActionExecutor_RegisterDefaultActions(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	// Get registry before registering defaults
 	registry := env.Network.ActionExecutor.GetRegistry()
 	require.NotNil(t, registry, "Registry should not be nil")
-
 	// Register default actions
 	env.Network.ActionExecutor.RegisterDefaultActions()
-
 	// Verify print action is registered
 	handler := registry.Get("print")
 	require.NotNil(t, handler, "Print action should be registered")
-
 	// Test that we can execute the print action
 	fact := &Fact{
 		ID:   "f1",
@@ -1000,15 +890,11 @@ func TestActionExecutor_RegisterDefaultActions(t *testing.T) {
 			"value": "test",
 		},
 	}
-
 	token := &Token{
 		ID:    "t1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"f": fact,
-		},
+		Bindings: NewBindingChainWith("f", fact),
 	}
-
 	action := &Action{
 		Type: "action",
 		Job: &JobCall{
@@ -1022,17 +908,13 @@ func TestActionExecutor_RegisterDefaultActions(t *testing.T) {
 			},
 		},
 	}
-
 	err := env.Network.ActionExecutor.ExecuteAction(action, token)
 	require.NoError(t, err, "Print action should execute successfully")
 }
-
 func TestActionExecutor_EvaluateBinaryOperation_Coverage(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	tests := []struct {
 		name      string
 		argMap    map[string]interface{}
@@ -1122,12 +1004,10 @@ func TestActionExecutor_EvaluateBinaryOperation_Coverage(t *testing.T) {
 			expectErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := NewExecutionContext(&Token{}, env.Network)
 			result, err := env.Network.ActionExecutor.evaluateBinaryOperation(tt.argMap, ctx)
-
 			if tt.expectErr {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {
@@ -1137,13 +1017,10 @@ func TestActionExecutor_EvaluateBinaryOperation_Coverage(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_ValidateFieldType_Coverage(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -1154,7 +1031,6 @@ func TestActionExecutor_ValidateFieldType_Coverage(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	tests := []struct {
 		name        string
 		value       interface{}
@@ -1222,11 +1098,9 @@ func TestActionExecutor_ValidateFieldType_Coverage(t *testing.T) {
 			expectErr:   true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := env.Network.ActionExecutor.validateFieldType(tt.expectedTyp, tt.value)
-
 			if tt.expectErr {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {
@@ -1235,13 +1109,10 @@ func TestActionExecutor_ValidateFieldType_Coverage(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -1251,7 +1122,6 @@ func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -1260,17 +1130,12 @@ func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 			"age":  float64(30),
 		},
 	}
-
 	token := &Token{
 		ID:    "t1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	ctx := NewExecutionContext(token, env.Network)
-
 	tests := []struct {
 		name      string
 		arg       interface{}
@@ -1363,11 +1228,9 @@ func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 			expectErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := env.Network.ActionExecutor.evaluateArgument(tt.arg, ctx)
-
 			if tt.expectErr {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {
@@ -1377,51 +1240,39 @@ func TestActionExecutor_EvaluateArgument_EdgeCases(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_RegisterAction(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	// Create a custom action handler
 	customHandler := &mockActionHandler{
 		name: "customAction",
 	}
-
 	// Register the custom action
 	err := env.Network.ActionExecutor.RegisterAction(customHandler)
 	require.NoError(t, err, "Should register custom action")
-
 	// Verify it's registered
 	handler := env.Network.ActionExecutor.GetRegistry().Get("customAction")
 	require.NotNil(t, handler, "Custom action should be in registry")
 	require.Equal(t, "customAction", handler.GetName(), "Handler name should match")
 }
-
 // mockActionHandler is a simple mock for testing
 type mockActionHandler struct {
 	name string
 }
-
 func (m *mockActionHandler) GetName() string {
 	return m.name
 }
-
 func (m *mockActionHandler) Execute(args []interface{}, ctx *ExecutionContext) error {
 	return nil
 }
-
 func (m *mockActionHandler) Validate(args []interface{}) error {
 	return nil
 }
-
 func TestActionExecutor_EvaluateFactCreation_Coverage(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -1432,14 +1283,11 @@ func TestActionExecutor_EvaluateFactCreation_Coverage(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	token := &Token{
 		ID:    "t1",
 		Facts: []*Fact{},
 	}
-
 	ctx := NewExecutionContext(token, env.Network)
-
 	tests := []struct {
 		name        string
 		argMap      map[string]interface{}
@@ -1506,11 +1354,9 @@ func TestActionExecutor_EvaluateFactCreation_Coverage(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := env.Network.ActionExecutor.evaluateFactCreation(tt.argMap, ctx)
-
 			if tt.expectError {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {
@@ -1523,13 +1369,10 @@ func TestActionExecutor_EvaluateFactCreation_Coverage(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -1541,7 +1384,6 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 		},
 	}
 	env.Network.Types = append(env.Network.Types, personType)
-
 	fact := &Fact{
 		ID:   "p1",
 		Type: "Person",
@@ -1552,17 +1394,12 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 			"active": true,
 		},
 	}
-
 	token := &Token{
 		ID:    "t1",
 		Facts: []*Fact{fact},
-		Bindings: map[string]*Fact{
-			"p": fact,
-		},
+		Bindings: NewBindingChainWith("p", fact),
 	}
-
 	ctx := NewExecutionContext(token, env.Network)
-
 	tests := []struct {
 		name        string
 		argMap      map[string]interface{}
@@ -1650,11 +1487,9 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := env.Network.ActionExecutor.evaluateFactModification(tt.argMap, ctx)
-
 			if tt.expectError {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {
@@ -1668,18 +1503,14 @@ func TestActionExecutor_EvaluateFactModification_Coverage(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_EvaluateArithmetic_ErrorPaths(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	ctx := &ExecutionContext{
 		network:  env.Network,
 		varCache: map[string]*Fact{},
 	}
-
 	tests := []struct {
 		name          string
 		argMap        map[string]interface{}
@@ -1760,11 +1591,9 @@ func TestActionExecutor_EvaluateArithmetic_ErrorPaths(t *testing.T) {
 			expectError: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := env.Network.ActionExecutor.evaluateArithmetic(tt.argMap, ctx)
-
 			if tt.expectError {
 				require.Error(t, err)
 				if tt.errorContains != "" {
@@ -1777,13 +1606,10 @@ func TestActionExecutor_EvaluateArithmetic_ErrorPaths(t *testing.T) {
 		})
 	}
 }
-
 func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 	t.Parallel()
-
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-
 	personType := TypeDefinition{
 		Type: "typeDefinition",
 		Name: "Person",
@@ -1794,7 +1620,6 @@ func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 			{Name: "active", Type: "bool"},
 		},
 	}
-
 	tests := []struct {
 		name        string
 		fields      map[string]interface{}
@@ -1858,11 +1683,9 @@ func TestActionExecutor_ValidateFactFields_Coverage(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := env.Network.ActionExecutor.validateFactFields(&personType, tt.fields)
-
 			if tt.expectError {
 				require.Error(t, err, "Expected error for %s", tt.name)
 			} else {

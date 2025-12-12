@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 func TestEvaluateArithmeticOperation(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -111,7 +107,6 @@ func TestEvaluateArithmeticOperation(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateArithmeticOperation(tt.left, tt.operator, tt.right)
@@ -125,10 +120,8 @@ func TestEvaluateArithmeticOperation(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateContains(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -198,7 +191,6 @@ func TestEvaluateContains(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateContains(tt.left, tt.right)
@@ -212,10 +204,8 @@ func TestEvaluateContains(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateIn(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -286,7 +276,6 @@ func TestEvaluateIn(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateIn(tt.left, tt.right)
@@ -300,10 +289,8 @@ func TestEvaluateIn(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateLike(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -394,7 +381,6 @@ func TestEvaluateLike(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateLike(tt.left, tt.right)
@@ -408,10 +394,8 @@ func TestEvaluateLike(t *testing.T) {
 		})
 	}
 }
-
 func TestEvaluateMatches(t *testing.T) {
 	evaluator := &AlphaConditionEvaluator{}
-
 	tests := []struct {
 		name     string
 		left     interface{}
@@ -480,7 +464,6 @@ func TestEvaluateMatches(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateMatches(tt.left, tt.right)

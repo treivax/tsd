@@ -108,7 +108,7 @@ func (an *AccumulatorNode) processMainFact(mainFact *Fact) error {
 		newToken := &Token{
 			ID:       fmt.Sprintf("accum_%s", mainFact.ID),
 			Facts:    []*Fact{mainFact},
-			Bindings: map[string]*Fact{an.MainVariable: mainFact},
+			Bindings: NewBindingChainWith(an.MainVariable, mainFact),
 		}
 		an.Memory.AddToken(newToken)
 

@@ -1,17 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 // TestParseAggregationExpression tests the parseAggregationExpression function
 func TestParseAggregationExpression(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name        string
 		exprMap     map[string]interface{}
@@ -62,7 +58,6 @@ func TestParseAggregationExpression(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, varsList, err := cp.parseAggregationExpression(tt.exprMap)
@@ -81,11 +76,9 @@ func TestParseAggregationExpression(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractAggregationFunction tests the extractAggregationFunction function
 func TestExtractAggregationFunction(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name         string
 		varMap       map[string]interface{}
@@ -137,7 +130,6 @@ func TestExtractAggregationFunction(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			function, err := cp.extractAggregationFunction(tt.varMap)
@@ -156,11 +148,9 @@ func TestExtractAggregationFunction(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractAggregationField tests the extractAggregationField function
 func TestExtractAggregationField(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name        string
 		varMap      map[string]interface{}
@@ -225,7 +215,6 @@ func TestExtractAggregationField(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			aggVar, field, err := cp.extractAggregationField(tt.varMap)
@@ -247,11 +236,9 @@ func TestExtractAggregationField(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractSourceType tests the extractSourceType function
 func TestExtractSourceType(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name         string
 		exprMap      map[string]interface{}
@@ -309,7 +296,6 @@ func TestExtractSourceType(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			aggType, err := cp.extractSourceType(tt.exprMap)
@@ -328,11 +314,9 @@ func TestExtractSourceType(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractJoinFields tests the extractJoinFields function
 func TestExtractJoinFields(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name            string
 		joinConditions  map[string]interface{}
@@ -381,7 +365,6 @@ func TestExtractJoinFields(t *testing.T) {
 			expectedMainFld: "",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			joinField, mainField := cp.extractJoinFields(tt.joinConditions)
@@ -394,11 +377,9 @@ func TestExtractJoinFields(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractThresholdConditions tests the extractThresholdConditions function
 func TestExtractThresholdConditions(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name              string
 		thresholdConds    []map[string]interface{}
@@ -466,7 +447,6 @@ func TestExtractThresholdConditions(t *testing.T) {
 			expectedThreshold: DefaultThresholdValue,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			operator, threshold := cp.extractThresholdConditions(tt.thresholdConds)
@@ -479,11 +459,9 @@ func TestExtractThresholdConditions(t *testing.T) {
 		})
 	}
 }
-
 // TestExtractAggregationInfoFromVariables_Integration tests the refactored orchestrator function
 func TestExtractAggregationInfoFromVariables_Integration(t *testing.T) {
 	cp := &ConstraintPipeline{}
-
 	tests := []struct {
 		name        string
 		exprMap     map[string]interface{}
@@ -603,7 +581,6 @@ func TestExtractAggregationInfoFromVariables_Integration(t *testing.T) {
 			expectError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			info, err := cp.extractAggregationInfoFromVariables(tt.exprMap)

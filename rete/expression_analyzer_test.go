@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"strings"
 	"testing"
-
 	"github.com/treivax/tsd/constraint"
 )
-
 // TestAnalyzeExpression_Simple teste l'analyse d'expressions simples
 func TestAnalyzeExpression_Simple(t *testing.T) {
 	tests := []struct {
@@ -51,7 +47,6 @@ func TestAnalyzeExpression_Simple(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -65,7 +60,6 @@ func TestAnalyzeExpression_Simple(t *testing.T) {
 		})
 	}
 }
-
 // TestApplyDeMorganTransformation teste la transformation de De Morgan
 func TestApplyDeMorganTransformation(t *testing.T) {
 	tests := []struct {
@@ -272,7 +266,6 @@ func TestApplyDeMorganTransformation(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, transformed := ApplyDeMorganTransformation(tt.expr)
@@ -285,7 +278,6 @@ func TestApplyDeMorganTransformation(t *testing.T) {
 		})
 	}
 }
-
 // TestShouldApplyDeMorgan teste la logique de décision pour appliquer De Morgan
 func TestShouldApplyDeMorgan(t *testing.T) {
 	tests := []struct {
@@ -360,7 +352,6 @@ func TestShouldApplyDeMorgan(t *testing.T) {
 			expected: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ShouldApplyDeMorgan(tt.expr)
@@ -370,7 +361,6 @@ func TestShouldApplyDeMorgan(t *testing.T) {
 		})
 	}
 }
-
 // TestOptimizationHints teste la génération de hints d'optimisation
 func TestOptimizationHints(t *testing.T) {
 	tests := []struct {
@@ -523,14 +513,12 @@ func TestOptimizationHints(t *testing.T) {
 			expectedHints: []string{},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			info, err := GetExpressionInfo(tt.expr)
 			if err != nil {
 				t.Fatalf("GetExpressionInfo() error = %v", err)
 			}
-
 			// Vérifier que tous les hints attendus sont présents
 			for _, expectedHint := range tt.expectedHints {
 				found := false
@@ -547,7 +535,6 @@ func TestOptimizationHints(t *testing.T) {
 		})
 	}
 }
-
 // TestGetExpressionInfo_WithOptimizationHints teste GetExpressionInfo avec hints
 func TestGetExpressionInfo_WithOptimizationHints(t *testing.T) {
 	tests := []struct {
@@ -640,30 +627,25 @@ func TestGetExpressionInfo_WithOptimizationHints(t *testing.T) {
 			expectedComplexity: 3, // 1 left + 2 operations
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			info, err := GetExpressionInfo(tt.expr)
 			if err != nil {
 				t.Fatalf("GetExpressionInfo() error = %v", err)
 			}
-
 			if info.Complexity != tt.expectedComplexity {
 				t.Errorf("Complexity = %d, want %d", info.Complexity, tt.expectedComplexity)
 			}
-
 			if info.OptimizationHints == nil {
 				t.Error("OptimizationHints should not be nil")
 				return
 			}
-
 			if tt.checkHints != nil {
 				tt.checkHints(t, info.OptimizationHints)
 			}
 		})
 	}
 }
-
 // TestDeMorganTransformationRoundtrip teste que les transformations sont correctes
 func TestDeMorganTransformationRoundtrip(t *testing.T) {
 	tests := []struct {
@@ -693,7 +675,6 @@ func TestDeMorganTransformationRoundtrip(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Appliquer la transformation
@@ -702,14 +683,12 @@ func TestDeMorganTransformationRoundtrip(t *testing.T) {
 				t.Error("Expected transformation to be applied")
 				return
 			}
-
 			// Analyser l'expression transformée
 			resultType, err := AnalyzeExpression(transformed)
 			if err != nil {
 				t.Errorf("Failed to analyze transformed expression: %v", err)
 				return
 			}
-
 			// L'expression transformée devrait être de type AND (pour NOT(OR))
 			if resultType != ExprTypeAND {
 				t.Errorf("Expected transformed expression to be AND, got %v", resultType)
@@ -717,7 +696,6 @@ func TestDeMorganTransformationRoundtrip(t *testing.T) {
 		})
 	}
 }
-
 // TestOptimizationHintsIntegration teste l'intégration complète
 func TestOptimizationHintsIntegration(t *testing.T) {
 	// Expression complexe: NOT((A OR B) AND C)
@@ -752,27 +730,22 @@ func TestOptimizationHintsIntegration(t *testing.T) {
 			},
 		},
 	}
-
 	info, err := GetExpressionInfo(complexExpr)
 	if err != nil {
 		t.Fatalf("GetExpressionInfo() error = %v", err)
 	}
-
 	// Vérifier que des hints sont générés
 	if len(info.OptimizationHints) == 0 {
 		t.Error("Expected optimization hints for complex expression")
 	}
-
 	// Vérifier que InnerInfo existe
 	if info.InnerInfo == nil {
 		t.Error("Expected InnerInfo for NOT expression")
 	}
-
 	// Vérifier la complexité
 	if info.Complexity < 4 {
 		t.Errorf("Expected high complexity for nested expression, got %d", info.Complexity)
 	}
-
 	t.Logf("Generated hints: %v", info.OptimizationHints)
 	t.Logf("Complexity: %d", info.Complexity)
 	if info.InnerInfo != nil {
@@ -780,7 +753,6 @@ func TestOptimizationHintsIntegration(t *testing.T) {
 		t.Logf("Inner complexity: %d", info.InnerInfo.Complexity)
 	}
 }
-
 // TestAnalyzeExpression_AND teste l'analyse d'expressions AND
 func TestAnalyzeExpression_AND(t *testing.T) {
 	tests := []struct {
@@ -899,7 +871,6 @@ func TestAnalyzeExpression_AND(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -913,7 +884,6 @@ func TestAnalyzeExpression_AND(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_OR teste l'analyse d'expressions OR
 func TestAnalyzeExpression_OR(t *testing.T) {
 	tests := []struct {
@@ -1032,7 +1002,6 @@ func TestAnalyzeExpression_OR(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1046,7 +1015,6 @@ func TestAnalyzeExpression_OR(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_Mixed_AND_OR teste l'analyse d'expressions mixtes
 func TestAnalyzeExpression_Mixed_AND_OR(t *testing.T) {
 	tests := []struct {
@@ -1201,7 +1169,6 @@ func TestAnalyzeExpression_Mixed_AND_OR(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1215,7 +1182,6 @@ func TestAnalyzeExpression_Mixed_AND_OR(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_Arithmetic teste l'analyse d'expressions arithmétiques
 func TestAnalyzeExpression_Arithmetic(t *testing.T) {
 	tests := []struct {
@@ -1291,7 +1257,6 @@ func TestAnalyzeExpression_Arithmetic(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1305,7 +1270,6 @@ func TestAnalyzeExpression_Arithmetic(t *testing.T) {
 		})
 	}
 }
-
 // TestCanDecompose_AllTypes teste la décomposabilité de tous les types
 func TestCanDecompose_AllTypes(t *testing.T) {
 	tests := []struct {
@@ -1344,7 +1308,6 @@ func TestCanDecompose_AllTypes(t *testing.T) {
 			expected: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := CanDecompose(tt.exprType)
@@ -1354,7 +1317,6 @@ func TestCanDecompose_AllTypes(t *testing.T) {
 		})
 	}
 }
-
 // TestShouldNormalize_AllTypes teste la nécessité de normalisation pour tous les types
 func TestShouldNormalize_AllTypes(t *testing.T) {
 	tests := []struct {
@@ -1393,7 +1355,6 @@ func TestShouldNormalize_AllTypes(t *testing.T) {
 			expected: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ShouldNormalize(tt.exprType)
@@ -1403,7 +1364,6 @@ func TestShouldNormalize_AllTypes(t *testing.T) {
 		})
 	}
 }
-
 // TestExpressionType_String teste la représentation textuelle des types
 func TestExpressionType_String(t *testing.T) {
 	tests := []struct {
@@ -1418,7 +1378,6 @@ func TestExpressionType_String(t *testing.T) {
 		{ExprTypeNOT, "ExprTypeNOT"},
 		{ExpressionType(999), "Unknown"},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
 			result := tt.exprType.String()
@@ -1428,7 +1387,6 @@ func TestExpressionType_String(t *testing.T) {
 		})
 	}
 }
-
 // TestGetExpressionComplexity teste le calcul de complexité
 func TestGetExpressionComplexity(t *testing.T) {
 	tests := []struct {
@@ -1472,7 +1430,6 @@ func TestGetExpressionComplexity(t *testing.T) {
 			expected: 0,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetExpressionComplexity(tt.exprType)
@@ -1482,7 +1439,6 @@ func TestGetExpressionComplexity(t *testing.T) {
 		})
 	}
 }
-
 // TestRequiresBetaNode teste si un type nécessite des nœuds beta
 func TestRequiresBetaNode(t *testing.T) {
 	tests := []struct {
@@ -1521,7 +1477,6 @@ func TestRequiresBetaNode(t *testing.T) {
 			expected: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := RequiresBetaNode(tt.exprType)
@@ -1531,7 +1486,6 @@ func TestRequiresBetaNode(t *testing.T) {
 		})
 	}
 }
-
 // TestGetExpressionInfo teste la récupération d'informations complètes
 func TestGetExpressionInfo(t *testing.T) {
 	// Test avec une condition simple
@@ -1541,12 +1495,10 @@ func TestGetExpressionInfo(t *testing.T) {
 		Operator: ">",
 		Right:    constraint.NumberLiteral{Type: "numberLiteral", Value: 18},
 	}
-
 	info, err := GetExpressionInfo(expr)
 	if err != nil {
 		t.Fatalf("GetExpressionInfo() error = %v", err)
 	}
-
 	if info.Type != ExprTypeSimple {
 		t.Errorf("info.Type = %v, want %v", info.Type, ExprTypeSimple)
 	}
@@ -1562,7 +1514,6 @@ func TestGetExpressionInfo(t *testing.T) {
 	if info.RequiresBeta {
 		t.Errorf("info.RequiresBeta = true, want false")
 	}
-
 	// Test avec une expression mixte
 	mixedExpr := constraint.LogicalExpression{
 		Type: "logicalExpr",
@@ -1593,12 +1544,10 @@ func TestGetExpressionInfo(t *testing.T) {
 			},
 		},
 	}
-
 	info2, err := GetExpressionInfo(mixedExpr)
 	if err != nil {
 		t.Fatalf("GetExpressionInfo() error = %v", err)
 	}
-
 	if info2.Type != ExprTypeMixed {
 		t.Errorf("info2.Type = %v, want %v", info2.Type, ExprTypeMixed)
 	}
@@ -1614,14 +1563,12 @@ func TestGetExpressionInfo(t *testing.T) {
 	if !info2.RequiresBeta {
 		t.Errorf("info2.RequiresBeta = false, want true")
 	}
-
 	// Test avec nil
 	_, err = GetExpressionInfo(nil)
 	if err == nil {
 		t.Errorf("GetExpressionInfo(nil) should return error")
 	}
 }
-
 // TestAnalyzeExpression_EdgeCases teste les cas limites
 func TestAnalyzeExpression_EdgeCases(t *testing.T) {
 	tests := []struct {
@@ -1723,7 +1670,6 @@ func TestAnalyzeExpression_EdgeCases(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1737,7 +1683,6 @@ func TestAnalyzeExpression_EdgeCases(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_NOT teste l'analyse d'expressions NOT
 func TestAnalyzeExpression_NOT(t *testing.T) {
 	tests := []struct {
@@ -1831,7 +1776,6 @@ func TestAnalyzeExpression_NOT(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1845,7 +1789,6 @@ func TestAnalyzeExpression_NOT(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_NOT_Nested teste les expressions NOT imbriquées
 func TestAnalyzeExpression_NOT_Nested(t *testing.T) {
 	tests := []struct {
@@ -1937,7 +1880,6 @@ func TestAnalyzeExpression_NOT_Nested(t *testing.T) {
 			wantErr:  false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := AnalyzeExpression(tt.expr)
@@ -1951,7 +1893,6 @@ func TestAnalyzeExpression_NOT_Nested(t *testing.T) {
 		})
 	}
 }
-
 // TestGetExpressionInfo_NOT teste GetExpressionInfo avec expressions NOT
 func TestGetExpressionInfo_NOT(t *testing.T) {
 	// Test avec une expression NOT simple
@@ -1964,12 +1905,10 @@ func TestGetExpressionInfo_NOT(t *testing.T) {
 			Right:    constraint.BooleanLiteral{Type: "booleanLiteral", Value: true},
 		},
 	}
-
 	info, err := GetExpressionInfo(notExpr)
 	if err != nil {
 		t.Fatalf("GetExpressionInfo() error = %v", err)
 	}
-
 	if info.Type != ExprTypeNOT {
 		t.Errorf("info.Type = %v, want %v", info.Type, ExprTypeNOT)
 	}
@@ -1993,7 +1932,6 @@ func TestGetExpressionInfo_NOT(t *testing.T) {
 	if info.RequiresBeta {
 		t.Errorf("info.RequiresBeta = true, want false")
 	}
-
 	// Test avec une expression NOT complexe (NOT avec Mixed à l'intérieur)
 	notMixedExpr := constraint.NotConstraint{
 		Type: "notConstraint",
@@ -2027,12 +1965,10 @@ func TestGetExpressionInfo_NOT(t *testing.T) {
 			},
 		},
 	}
-
 	info2, err := GetExpressionInfo(notMixedExpr)
 	if err != nil {
 		t.Fatalf("GetExpressionInfo() error = %v", err)
 	}
-
 	// La négation d'une expression mixte reste une expression NOT
 	if info2.Type != ExprTypeNOT {
 		t.Errorf("info2.Type = %v, want %v", info2.Type, ExprTypeNOT)
@@ -2058,7 +1994,6 @@ func TestGetExpressionInfo_NOT(t *testing.T) {
 		t.Errorf("info2.RequiresBeta = true, want false")
 	}
 }
-
 // TestAnalyzeExpression_Parenthesized teste l'analyse d'expressions parenthésées
 func TestAnalyzeExpression_Parenthesized(t *testing.T) {
 	tests := []struct {
@@ -2200,7 +2135,6 @@ func TestAnalyzeExpression_Parenthesized(t *testing.T) {
 			wantErr:  true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := AnalyzeExpression(tt.expr)
@@ -2214,7 +2148,6 @@ func TestAnalyzeExpression_Parenthesized(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeInnerExpression teste l'analyse des expressions internes
 func TestAnalyzeInnerExpression(t *testing.T) {
 	tests := []struct {
@@ -2351,7 +2284,6 @@ func TestAnalyzeInnerExpression(t *testing.T) {
 			wantErr:  true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := AnalyzeInnerExpression(tt.expr)
@@ -2365,7 +2297,6 @@ func TestAnalyzeInnerExpression(t *testing.T) {
 		})
 	}
 }
-
 // TestGetExpressionInfo_WithInnerInfo teste GetExpressionInfo avec analyse des expressions internes
 func TestGetExpressionInfo_WithInnerInfo(t *testing.T) {
 	tests := []struct {
@@ -2498,18 +2429,15 @@ func TestGetExpressionInfo_WithInnerInfo(t *testing.T) {
 			hasInnerInfo: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			info, err := GetExpressionInfo(tt.expr)
 			if err != nil {
 				t.Fatalf("GetExpressionInfo() error = %v", err)
 			}
-
 			if info.Type != tt.expectedType {
 				t.Errorf("info.Type = %v, want %v", info.Type, tt.expectedType)
 			}
-
 			if tt.hasInnerInfo {
 				if info.InnerInfo == nil {
 					t.Errorf("info.InnerInfo is nil, expected inner info")
@@ -2531,7 +2459,6 @@ func TestGetExpressionInfo_WithInnerInfo(t *testing.T) {
 		})
 	}
 }
-
 // TestNestedParenthesizedAndNOT teste les expressions avec parenthèses et NOT imbriqués
 func TestNestedParenthesizedAndNOT(t *testing.T) {
 	tests := []struct {
@@ -2619,7 +2546,6 @@ func TestNestedParenthesizedAndNOT(t *testing.T) {
 			expected: ExprTypeNOT,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := AnalyzeExpression(tt.expr)

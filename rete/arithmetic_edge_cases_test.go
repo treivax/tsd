@@ -1,14 +1,11 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"math"
 	"testing"
 )
-
 // TestArithmeticEdgeCases tests edge cases in arithmetic expression evaluation
 func TestArithmeticEdgeCases(t *testing.T) {
 	tests := []struct {
@@ -216,12 +213,10 @@ func TestArithmeticEdgeCases(t *testing.T) {
 			shouldErr: false,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			evaluator := NewAlphaConditionEvaluator()
 			result, err := evaluator.evaluateArithmeticOperation(tt.left, tt.operator, tt.right)
-
 			if tt.shouldErr {
 				if err == nil {
 					t.Errorf("Expected error containing '%s', got nil", tt.errMsg)
@@ -231,17 +226,14 @@ func TestArithmeticEdgeCases(t *testing.T) {
 					t.Errorf("Unexpected error: %v", err)
 					return
 				}
-
 				// For floating point comparisons, use approximate equality
 				expectedFloat, okExp := toFloat64(tt.expected)
 				resultFloat, okRes := toFloat64(result)
-
 				if !okExp || !okRes {
 					t.Errorf("Could not convert to float64: expected=%v (%T), result=%v (%T)",
 						tt.expected, tt.expected, result, result)
 					return
 				}
-
 				if !floatEquals(expectedFloat, resultFloat, 1e-9) {
 					t.Errorf("Expected %v, got %v (diff: %e)",
 						expectedFloat, resultFloat, math.Abs(expectedFloat-resultFloat))
@@ -250,7 +242,6 @@ func TestArithmeticEdgeCases(t *testing.T) {
 		})
 	}
 }
-
 // TestArithmeticWithInvalidTypes tests arithmetic operations with invalid types
 func TestArithmeticWithInvalidTypes(t *testing.T) {
 	tests := []struct {
@@ -302,24 +293,20 @@ func TestArithmeticWithInvalidTypes(t *testing.T) {
 			right:    5,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			evaluator := NewAlphaConditionEvaluator()
 			_, err := evaluator.evaluateArithmeticOperation(tt.left, tt.operator, tt.right)
-
 			if err == nil {
 				t.Errorf("Expected error for invalid type combination, got nil")
 			}
 		})
 	}
 }
-
 // TestComplexNestedArithmetic tests nested arithmetic expressions
 func TestComplexNestedArithmetic(t *testing.T) {
 	// Create a simple evaluator with bindings
 	evaluator := NewAlphaConditionEvaluator()
-
 	// Create a fact with numeric fields
 	fact := &Fact{
 		ID:   "f1",
@@ -330,12 +317,10 @@ func TestComplexNestedArithmetic(t *testing.T) {
 			"c": 2.0,
 		},
 	}
-
 	// Bind the fact by setting variableBindings directly
 	evaluator.variableBindings = map[string]*Fact{
 		"x": fact,
 	}
-
 	tests := []struct {
 		name     string
 		expr     map[string]interface{}
@@ -431,34 +416,28 @@ func TestComplexNestedArithmetic(t *testing.T) {
 			expected: 45.0, // (10 + 5) * (2 + 1) = 45
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateValue(tt.expr)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)
 			}
-
 			resultFloat, ok := toFloat64(result)
 			if !ok {
 				t.Fatalf("Could not convert result to float64: %v (%T)", result, result)
 			}
-
 			if !floatEquals(resultFloat, tt.expected, 1e-9) {
 				t.Errorf("Expected %v, got %v", tt.expected, resultFloat)
 			}
 		})
 	}
 }
-
 // TestArithmeticOperatorPrecedence tests that operator precedence is respected
 func TestArithmeticOperatorPrecedence(t *testing.T) {
 	// Note: Precedence should be handled by the parser, not the evaluator
 	// The evaluator evaluates the parsed tree structure
 	// This test verifies that properly structured trees evaluate correctly
-
 	evaluator := NewAlphaConditionEvaluator()
-
 	// Test: 2 + 3 * 4 should be 2 + (3 * 4) = 14, not (2 + 3) * 4 = 20
 	// The tree structure should reflect this precedence
 	expr := map[string]interface{}{
@@ -481,25 +460,20 @@ func TestArithmeticOperatorPrecedence(t *testing.T) {
 			},
 		},
 	}
-
 	result, err := evaluator.evaluateValue(expr)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-
 	expected := 14.0
 	resultFloat, ok := toFloat64(result)
 	if !ok {
 		t.Fatalf("Could not convert result to float64: %v (%T)", result, result)
 	}
-
 	if !floatEquals(resultFloat, expected, 1e-9) {
 		t.Errorf("Expected %v, got %v", expected, resultFloat)
 	}
 }
-
 // Helper functions
-
 func toFloat64(v interface{}) (float64, bool) {
 	switch val := v.(type) {
 	case float64:
@@ -522,7 +496,6 @@ func toFloat64(v interface{}) (float64, bool) {
 		return 0, false
 	}
 }
-
 func floatEquals(a, b, epsilon float64) bool {
 	return math.Abs(a-b) < epsilon
 }

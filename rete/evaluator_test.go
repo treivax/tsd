@@ -1,17 +1,13 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
 )
-
 func TestAlphaConditionEvaluator_evaluateConstraint(t *testing.T) {
 	fact := &Fact{
 		Type: "Person",
@@ -20,10 +16,8 @@ func TestAlphaConditionEvaluator_evaluateConstraint(t *testing.T) {
 			"age":  30,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		constraint  constraint.Constraint
@@ -99,11 +93,9 @@ func TestAlphaConditionEvaluator_evaluateConstraint(t *testing.T) {
 			expected: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateConstraint(tt.constraint)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
@@ -113,7 +105,6 @@ func TestAlphaConditionEvaluator_evaluateConstraint(t *testing.T) {
 		})
 	}
 }
-
 func TestAlphaConditionEvaluator_evaluateExpression(t *testing.T) {
 	fact := &Fact{
 		Type: "Person",
@@ -123,10 +114,8 @@ func TestAlphaConditionEvaluator_evaluateExpression(t *testing.T) {
 			"active": true,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		expr        interface{}
@@ -281,11 +270,9 @@ func TestAlphaConditionEvaluator_evaluateExpression(t *testing.T) {
 			shouldError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateExpression(tt.expr)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
@@ -295,7 +282,6 @@ func TestAlphaConditionEvaluator_evaluateExpression(t *testing.T) {
 		})
 	}
 }
-
 func TestAlphaConditionEvaluator_evaluateValue(t *testing.T) {
 	fact := &Fact{
 		Type: "Person",
@@ -307,10 +293,8 @@ func TestAlphaConditionEvaluator_evaluateValue(t *testing.T) {
 			"nickname": nil,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		value       interface{}
@@ -485,11 +469,9 @@ func TestAlphaConditionEvaluator_evaluateValue(t *testing.T) {
 			shouldError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateValue(tt.value)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
@@ -499,7 +481,6 @@ func TestAlphaConditionEvaluator_evaluateValue(t *testing.T) {
 		})
 	}
 }
-
 func TestAlphaConditionEvaluator_evaluateLogicalExpression(t *testing.T) {
 	fact := &Fact{
 		Type: "Test",
@@ -507,10 +488,8 @@ func TestAlphaConditionEvaluator_evaluateLogicalExpression(t *testing.T) {
 			"value": 10,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		expr        constraint.LogicalExpression
@@ -596,11 +575,9 @@ func TestAlphaConditionEvaluator_evaluateLogicalExpression(t *testing.T) {
 			expected: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateLogicalExpression(tt.expr)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
@@ -610,7 +587,6 @@ func TestAlphaConditionEvaluator_evaluateLogicalExpression(t *testing.T) {
 		})
 	}
 }
-
 func TestAlphaConditionEvaluator_evaluateConstraintMap(t *testing.T) {
 	fact := &Fact{
 		Type: "Person",
@@ -619,10 +595,8 @@ func TestAlphaConditionEvaluator_evaluateConstraintMap(t *testing.T) {
 			"age":  30,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		expr        map[string]interface{}
@@ -700,11 +674,9 @@ func TestAlphaConditionEvaluator_evaluateConstraintMap(t *testing.T) {
 			shouldError: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateConstraintMap(tt.expr)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
@@ -714,7 +686,6 @@ func TestAlphaConditionEvaluator_evaluateConstraintMap(t *testing.T) {
 		})
 	}
 }
-
 func TestAlphaConditionEvaluator_evaluateBinaryOperation(t *testing.T) {
 	fact := &Fact{
 		Type: "Test",
@@ -722,10 +693,8 @@ func TestAlphaConditionEvaluator_evaluateBinaryOperation(t *testing.T) {
 			"value": 42,
 		},
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings["p"] = fact
-
 	tests := []struct {
 		name        string
 		op          constraint.BinaryOperation
@@ -773,11 +742,9 @@ func TestAlphaConditionEvaluator_evaluateBinaryOperation(t *testing.T) {
 			expected: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := evaluator.evaluateBinaryOperation(tt.op)
-
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {

@@ -67,14 +67,17 @@ func ParseInternalID(internalID string) (string, string, bool) {
 	return "", "", false
 }
 
-// Token représente un token dans le réseau RETE
+// Token représente un token dans le réseau RETE avec bindings immuables.
+//
+// Changement majeur: Bindings utilise maintenant BindingChain au lieu de map[string]*Fact
+// pour garantir l'immutabilité et éviter la perte de bindings lors des jointures en cascade.
 type Token struct {
-	ID           string           `json:"id"`
-	Facts        []*Fact          `json:"facts"`
-	NodeID       string           `json:"node_id"`
-	Parent       *Token           `json:"parent,omitempty"`
-	Bindings     map[string]*Fact `json:"bindings,omitempty"`       // Nouveau: bindings pour jointures
-	IsJoinResult bool             `json:"is_join_result,omitempty"` // Indique si c'est un token de jointure réussie
+	ID           string         `json:"id"`
+	Facts        []*Fact        `json:"facts"`
+	NodeID       string         `json:"node_id"`
+	Parent       *Token         `json:"parent,omitempty"`
+	Bindings     *BindingChain  `json:"-"`                        // Chaîne immuable de bindings (non sérialisable)
+	IsJoinResult bool           `json:"is_join_result,omitempty"` // Indique si c'est un token de jointure réussie
 }
 
 // WorkingMemory représente la mémoire de travail d'un nœud
@@ -191,13 +194,16 @@ func (wm *WorkingMemory) Clone() *WorkingMemory {
 	return clone
 }
 
-// Clone crée une copie profonde d'un token
+// Clone crée une copie profonde d'un token.
+//
+// Note: BindingChain est immuable donc pas besoin de cloner la chaîne elle-même.
+// On réutilise la même référence (partage structurel).
 func (t *Token) Clone() *Token {
 	clone := &Token{
 		ID:           t.ID,
 		Facts:        make([]*Fact, len(t.Facts)),
 		NodeID:       t.NodeID,
-		Bindings:     make(map[string]*Fact),
+		Bindings:     t.Bindings, // Immuable, pas besoin de cloner
 		IsJoinResult: t.IsJoinResult,
 	}
 
@@ -206,12 +212,53 @@ func (t *Token) Clone() *Token {
 		clone.Facts[i] = fact.Clone()
 	}
 
-	// Copier les bindings
-	for k, v := range t.Bindings {
-		clone.Bindings[k] = v.Clone()
-	}
-
 	// Note: Parent n'est pas cloné pour éviter récursion infinie
+	// Note: Bindings n'est pas cloné car BindingChain est immuable
 
 	return clone
+}
+
+// GetBinding retourne le fait lié à une variable.
+//
+// Wrapper autour de Bindings.Get() pour compatibilité.
+//
+// Paramètres:
+//   - variable: nom de la variable
+//
+// Retourne:
+//   - *Fact: pointeur vers le fait si trouvé, nil sinon
+func (t *Token) GetBinding(variable string) *Fact {
+	if t.Bindings == nil {
+		return nil
+	}
+	return t.Bindings.Get(variable)
+}
+
+// HasBinding vérifie si une variable est liée dans ce token.
+//
+// Wrapper autour de Bindings.Has() pour compatibilité.
+//
+// Paramètres:
+//   - variable: nom de la variable
+//
+// Retourne:
+//   - bool: true si la variable existe, false sinon
+func (t *Token) HasBinding(variable string) bool {
+	if t.Bindings == nil {
+		return false
+	}
+	return t.Bindings.Has(variable)
+}
+
+// GetVariables retourne toutes les variables liées dans ce token.
+//
+// Wrapper autour de Bindings.Variables() pour compatibilité.
+//
+// Retourne:
+//   - []string: liste des noms de variables
+func (t *Token) GetVariables() []string {
+	if t.Bindings == nil {
+		return []string{}
+	}
+	return t.Bindings.Variables()
 }

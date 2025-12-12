@@ -1,13 +1,10 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 func TestDecodeOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -155,7 +152,6 @@ func TestDecodeOperator(t *testing.T) {
 			expected: "abc123",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := DecodeOperator(tt.input)
@@ -165,7 +161,6 @@ func TestDecodeOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestIsValidOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -200,7 +195,6 @@ func TestIsValidOperator(t *testing.T) {
 		{"Empty string", "", false},
 		{"Random text", "xyz", false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsValidOperator(tt.operator)
@@ -210,7 +204,6 @@ func TestIsValidOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestIsArithmeticOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -227,7 +220,6 @@ func TestIsArithmeticOperator(t *testing.T) {
 		{"AND (not arithmetic)", "AND", false},
 		{"Invalid", "xyz", false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsArithmeticOperator(tt.operator)
@@ -237,7 +229,6 @@ func TestIsArithmeticOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestIsComparisonOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -255,7 +246,6 @@ func TestIsComparisonOperator(t *testing.T) {
 		{"AND (not comparison)", "AND", false},
 		{"Invalid", "xyz", false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsComparisonOperator(tt.operator)
@@ -265,7 +255,6 @@ func TestIsComparisonOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestIsStringOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -281,7 +270,6 @@ func TestIsStringOperator(t *testing.T) {
 		{"AND (not string)", "AND", false},
 		{"Invalid", "xyz", false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsStringOperator(tt.operator)
@@ -291,7 +279,6 @@ func TestIsStringOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestIsLogicalOperator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -306,7 +293,6 @@ func TestIsLogicalOperator(t *testing.T) {
 		{"CONTAINS (not logical)", "CONTAINS", false},
 		{"Invalid", "xyz", false},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsLogicalOperator(tt.operator)
@@ -316,7 +302,6 @@ func TestIsLogicalOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestNormalizeOperator(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -363,7 +348,6 @@ func TestNormalizeOperator(t *testing.T) {
 			shouldErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := NormalizeOperator(tt.input)
@@ -382,7 +366,6 @@ func TestNormalizeOperator(t *testing.T) {
 		})
 	}
 }
-
 func TestExtractOperatorFromMap(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -453,7 +436,6 @@ func TestExtractOperatorFromMap(t *testing.T) {
 			shouldErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ExtractOperatorFromMap(tt.input)
@@ -472,7 +454,6 @@ func TestExtractOperatorFromMap(t *testing.T) {
 		})
 	}
 }
-
 // Benchmark tests
 func BenchmarkDecodeOperator(b *testing.B) {
 	operators := []string{"Kw==", "+", "Kg==", "*", "PT0=", "=="}
@@ -482,7 +463,6 @@ func BenchmarkDecodeOperator(b *testing.B) {
 		DecodeOperator(op)
 	}
 }
-
 func BenchmarkIsValidOperator(b *testing.B) {
 	operators := []string{"+", "-", "*", "/", "%", "==", "!=", "<", ">", "CONTAINS"}
 	b.ResetTimer()
@@ -491,7 +471,6 @@ func BenchmarkIsValidOperator(b *testing.B) {
 		IsValidOperator(op)
 	}
 }
-
 func BenchmarkNormalizeOperator(b *testing.B) {
 	operators := []string{"Kw==", "+", "Kg==", "*", "PT0=", "=="}
 	b.ResetTimer()

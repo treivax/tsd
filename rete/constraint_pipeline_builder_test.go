@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 // TestConstraintPipeline_buildNetwork tests the main network building function
 func TestConstraintPipeline_buildNetwork(t *testing.T) {
 	tests := []struct {
@@ -170,14 +166,11 @@ func TestConstraintPipeline_buildNetwork(t *testing.T) {
 			description: "Complete network with types and expressions should succeed",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
-
 			network, err := cp.buildNetwork(storage, tt.types, tt.expressions)
-
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
 				assert.Nil(t, network)
@@ -189,7 +182,6 @@ func TestConstraintPipeline_buildNetwork(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createTypeDefinition tests type definition creation
 func TestConstraintPipeline_createTypeDefinition(t *testing.T) {
 	tests := []struct {
@@ -284,19 +276,15 @@ func TestConstraintPipeline_createTypeDefinition(t *testing.T) {
 			description:  "Type with different field types should be created",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cp := NewConstraintPipeline()
-
 			typeDef := cp.createTypeDefinition(tt.typeName, tt.typeMap)
-
 			assert.Equal(t, tt.expectedName, typeDef.Name, tt.description)
 			assert.Len(t, typeDef.Fields, tt.numFields, "Number of fields should match")
 		})
 	}
 }
-
 // TestConstraintPipeline_createTypeNodes tests type node creation
 func TestConstraintPipeline_createTypeNodes(t *testing.T) {
 	tests := []struct {
@@ -356,15 +344,12 @@ func TestConstraintPipeline_createTypeNodes(t *testing.T) {
 			description: "Multiple types should be created successfully",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			err := cp.createTypeNodes(network, tt.types, storage)
-
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
 			} else {
@@ -373,7 +358,6 @@ func TestConstraintPipeline_createTypeNodes(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createRuleNodes tests rule node creation
 func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 	tests := []struct {
@@ -421,13 +405,11 @@ func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 			description: "Single expression without type should fail",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create Person type if test expects no error
 			if !tt.expectError {
 				types := []interface{}{
@@ -444,9 +426,7 @@ func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 				}
 				_ = cp.createTypeNodes(network, types, storage)
 			}
-
 			err := cp.createRuleNodes(network, tt.expressions, storage)
-
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
 			} else {
@@ -455,7 +435,6 @@ func TestConstraintPipeline_createRuleNodes(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createSingleRule tests single rule creation
 func TestConstraintPipeline_createSingleRule(t *testing.T) {
 	tests := []struct {
@@ -497,13 +476,11 @@ func TestConstraintPipeline_createSingleRule(t *testing.T) {
 			description: "Simple rule should be created successfully",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create Person type first
 			types := []interface{}{
 				map[string]interface{}{
@@ -518,9 +495,7 @@ func TestConstraintPipeline_createSingleRule(t *testing.T) {
 				},
 			}
 			_ = cp.createTypeNodes(network, types, storage)
-
 			err := cp.createSingleRule(network, tt.ruleID, tt.exprMap, storage)
-
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
 			} else {
@@ -529,7 +504,6 @@ func TestConstraintPipeline_createSingleRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_isMultiSourceAggregation tests multi-source aggregation detection
 func TestConstraintPipeline_isMultiSourceAggregation(t *testing.T) {
 	tests := []struct {
@@ -592,24 +566,19 @@ func TestConstraintPipeline_isMultiSourceAggregation(t *testing.T) {
 			description: "No patterns should not be multi-source",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cp := NewConstraintPipeline()
-
 			result := cp.isMultiSourceAggregation(tt.exprMap)
-
 			assert.Equal(t, tt.expected, result, tt.description)
 		})
 	}
 }
-
 // TestConstraintPipeline_Integration tests complete pipeline scenarios
 func TestConstraintPipeline_Integration(t *testing.T) {
 	t.Run("complete workflow with types and rules", func(t *testing.T) {
 		storage := NewMemoryStorage()
 		cp := NewConstraintPipeline()
-
 		// Define types
 		types := []interface{}{
 			map[string]interface{}{
@@ -649,7 +618,6 @@ func TestConstraintPipeline_Integration(t *testing.T) {
 				},
 			},
 		}
-
 		// Define expressions/rules
 		expressions := []interface{}{
 			map[string]interface{}{
@@ -678,28 +646,23 @@ func TestConstraintPipeline_Integration(t *testing.T) {
 				},
 			},
 		}
-
 		// Build network
 		network, err := cp.buildNetwork(storage, types, expressions)
 		require.NoError(t, err, "Building network should succeed")
 		require.NotNil(t, network, "Network should not be nil")
 		assert.NotNil(t, network.RootNode, "RootNode should exist")
 	})
-
 	t.Run("network with empty inputs", func(t *testing.T) {
 		storage := NewMemoryStorage()
 		cp := NewConstraintPipeline()
-
 		network, err := cp.buildNetwork(storage, []interface{}{}, []interface{}{})
 		require.NoError(t, err, "Building empty network should succeed")
 		require.NotNil(t, network, "Network should not be nil")
 		assert.NotNil(t, network.RootNode, "RootNode should exist even in empty network")
 	})
-
 	t.Run("network with only types, no rules", func(t *testing.T) {
 		storage := NewMemoryStorage()
 		cp := NewConstraintPipeline()
-
 		types := []interface{}{
 			map[string]interface{}{
 				"type": "typeDefinition",
@@ -712,7 +675,6 @@ func TestConstraintPipeline_Integration(t *testing.T) {
 				},
 			},
 		}
-
 		network, err := cp.buildNetwork(storage, types, []interface{}{})
 		require.NoError(t, err, "Building network with only types should succeed")
 		require.NotNil(t, network, "Network should not be nil")

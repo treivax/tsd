@@ -94,7 +94,7 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 					ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
 					Facts:    []*Fact{fact},
 					NodeID:   an.ID,
-					Bindings: map[string]*Fact{an.VariableName: fact},
+					Bindings: NewBindingChainWith(an.VariableName, fact),
 				}
 
 				// Déterminer le côté et propager selon l'architecture RETE
@@ -163,7 +163,7 @@ func (an *AlphaNode) ActivateRight(fact *Fact) error {
 				ID:       fmt.Sprintf("token_%s_%s", an.ID, fact.ID),
 				Facts:    []*Fact{fact},
 				NodeID:   an.ID,
-				Bindings: map[string]*Fact{an.VariableName: fact},
+				Bindings: NewBindingChainWith(an.VariableName, fact),
 			}
 			if err := child.ActivateLeft(token); err != nil {
 				return fmt.Errorf("erreur propagation token vers %s: %w", child.GetID(), err)

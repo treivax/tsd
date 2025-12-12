@@ -1,22 +1,17 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 	"time"
 )
-
 // TestDefaultChainPerformanceConfig teste la configuration par défaut
 func TestDefaultChainPerformanceConfig(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
-
 	if config == nil {
 		t.Fatal("DefaultChainPerformanceConfig retourne nil")
 	}
-
 	// Vérifier les valeurs par défaut
 	if !config.HashCacheEnabled {
 		t.Error("HashCacheEnabled devrait être true par défaut")
@@ -27,14 +22,12 @@ func TestDefaultChainPerformanceConfig(t *testing.T) {
 	if config.HashCacheEviction != EvictionPolicyLRU {
 		t.Errorf("HashCacheEviction devrait être LRU, obtenu %s", config.HashCacheEviction)
 	}
-
 	if !config.ConnectionCacheEnabled {
 		t.Error("ConnectionCacheEnabled devrait être true par défaut")
 	}
 	if config.ConnectionCacheMaxSize != 50000 {
 		t.Errorf("ConnectionCacheMaxSize devrait être 50000, obtenu %d", config.ConnectionCacheMaxSize)
 	}
-
 	if !config.MetricsEnabled {
 		t.Error("MetricsEnabled devrait être true par défaut")
 	}
@@ -44,7 +37,6 @@ func TestDefaultChainPerformanceConfig(t *testing.T) {
 	if config.MetricsMaxChainDetails != 1000 {
 		t.Errorf("MetricsMaxChainDetails devrait être 1000, obtenu %d", config.MetricsMaxChainDetails)
 	}
-
 	if config.PrometheusEnabled {
 		t.Error("PrometheusEnabled devrait être false par défaut")
 	}
@@ -52,11 +44,9 @@ func TestDefaultChainPerformanceConfig(t *testing.T) {
 		t.Errorf("PrometheusPrefix devrait être 'tsd_rete', obtenu %s", config.PrometheusPrefix)
 	}
 }
-
 // TestHighPerformanceConfig teste la configuration haute performance
 func TestHighPerformanceConfig(t *testing.T) {
 	config := HighPerformanceConfig()
-
 	if config.HashCacheMaxSize != 100000 {
 		t.Errorf("HashCacheMaxSize devrait être 100000, obtenu %d", config.HashCacheMaxSize)
 	}
@@ -73,11 +63,9 @@ func TestHighPerformanceConfig(t *testing.T) {
 		t.Error("PrometheusEnabled devrait être true en haute performance")
 	}
 }
-
 // TestLowMemoryConfig teste la configuration mémoire réduite
 func TestLowMemoryConfig(t *testing.T) {
 	config := LowMemoryConfig()
-
 	if config.HashCacheMaxSize != 1000 {
 		t.Errorf("HashCacheMaxSize devrait être 1000, obtenu %d", config.HashCacheMaxSize)
 	}
@@ -91,11 +79,9 @@ func TestLowMemoryConfig(t *testing.T) {
 		t.Error("MetricsDetailedChains devrait être false en mémoire réduite")
 	}
 }
-
 // TestDisabledCachesConfig teste la configuration sans caches
 func TestDisabledCachesConfig(t *testing.T) {
 	config := DisabledCachesConfig()
-
 	if config.HashCacheEnabled {
 		t.Error("HashCacheEnabled devrait être false")
 	}
@@ -106,7 +92,6 @@ func TestDisabledCachesConfig(t *testing.T) {
 		t.Errorf("HashCacheMaxSize devrait être 0, obtenu %d", config.HashCacheMaxSize)
 	}
 }
-
 // TestChainPerformanceConfig_Validate teste la validation
 func TestChainPerformanceConfig_Validate(t *testing.T) {
 	tests := []struct {
@@ -183,7 +168,6 @@ func TestChainPerformanceConfig_Validate(t *testing.T) {
 			shouldErr: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -196,44 +180,35 @@ func TestChainPerformanceConfig_Validate(t *testing.T) {
 		})
 	}
 }
-
 // TestChainPerformanceConfig_Clone teste le clonage
 func TestChainPerformanceConfig_Clone(t *testing.T) {
 	original := DefaultChainPerformanceConfig()
 	original.HashCacheMaxSize = 12345
-
 	clone := original.Clone()
-
 	if clone == nil {
 		t.Fatal("Clone retourne nil")
 	}
-
 	// Vérifier que c'est une copie
 	if clone == original {
 		t.Error("Clone retourne le même pointeur")
 	}
-
 	// Vérifier que les valeurs sont identiques
 	if clone.HashCacheMaxSize != original.HashCacheMaxSize {
 		t.Error("Les valeurs du clone ne correspondent pas")
 	}
-
 	// Modifier le clone ne doit pas affecter l'original
 	clone.HashCacheMaxSize = 99999
 	if original.HashCacheMaxSize == 99999 {
 		t.Error("La modification du clone affecte l'original")
 	}
 }
-
 // TestChainPerformanceConfig_GetCacheInfo teste GetCacheInfo
 func TestChainPerformanceConfig_GetCacheInfo(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
 	info := config.GetCacheInfo()
-
 	if info == nil {
 		t.Fatal("GetCacheInfo retourne nil")
 	}
-
 	// Vérifier la structure
 	if _, ok := info["hash_cache"]; !ok {
 		t.Error("hash_cache manquant dans l'info")
@@ -251,7 +226,6 @@ func TestChainPerformanceConfig_GetCacheInfo(t *testing.T) {
 		t.Error("prometheus manquant dans l'info")
 	}
 }
-
 // TestChainPerformanceConfig_EstimateMemoryUsage teste l'estimation mémoire
 func TestChainPerformanceConfig_EstimateMemoryUsage(t *testing.T) {
 	tests := []struct {
@@ -285,7 +259,6 @@ func TestChainPerformanceConfig_EstimateMemoryUsage(t *testing.T) {
 			maxBytes: 300000, // ~300KB pour les métriques
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			usage := tt.config.EstimateMemoryUsage()
@@ -299,24 +272,19 @@ func TestChainPerformanceConfig_EstimateMemoryUsage(t *testing.T) {
 		})
 	}
 }
-
 // TestChainPerformanceConfig_String teste la représentation textuelle
 func TestChainPerformanceConfig_String(t *testing.T) {
 	config := DefaultChainPerformanceConfig()
 	str := config.String()
-
 	if str == "" {
 		t.Error("String() retourne une chaîne vide")
 	}
-
 	// Vérifier que certains éléments clés sont présents
 	if len(str) < 50 {
 		t.Errorf("String() trop court: %s", str)
 	}
-
 	t.Logf("String representation: %s", str)
 }
-
 // TestCacheEvictionPolicy teste les constantes de politique d'éviction
 func TestCacheEvictionPolicy(t *testing.T) {
 	policies := []CacheEvictionPolicy{
@@ -324,13 +292,11 @@ func TestCacheEvictionPolicy(t *testing.T) {
 		EvictionPolicyLRU,
 		EvictionPolicyLFU,
 	}
-
 	for _, policy := range policies {
 		if string(policy) == "" {
 			t.Errorf("Politique d'éviction vide: %v", policy)
 		}
 	}
-
 	// Vérifier que les valeurs sont différentes
 	if EvictionPolicyNone == EvictionPolicyLRU {
 		t.Error("None et LRU ont la même valeur")
@@ -339,12 +305,10 @@ func TestCacheEvictionPolicy(t *testing.T) {
 		t.Error("LRU et LFU ont la même valeur")
 	}
 }
-
 // TestChainPerformanceConfig_NilClone teste le clonage d'une config nil
 func TestChainPerformanceConfig_NilClone(t *testing.T) {
 	var config *ChainPerformanceConfig
 	clone := config.Clone()
-
 	if clone != nil {
 		t.Error("Clone d'un pointeur nil devrait retourner nil")
 	}

@@ -1,12 +1,9 @@
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
 )
-
 // TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation tests the []constraint.LogicalOperation path
 func TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation(t *testing.T) {
 	tests := []struct {
@@ -143,11 +140,9 @@ func TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation(t *testing.T
 			errorContains: "operation doit être une map",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			conditions, opType, err := extractFromLogicalExpressionMap(tt.expr)
-
 			if tt.expectError {
 				require.Error(t, err)
 				if tt.errorContains != "" {
@@ -161,7 +156,6 @@ func TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation(t *testing.T
 		})
 	}
 }
-
 // TestNormalizeORExpression_Coverage tests OR expression normalization
 func TestNormalizeORExpression_Coverage(t *testing.T) {
 	tests := []struct {
@@ -256,11 +250,9 @@ func TestNormalizeORExpression_Coverage(t *testing.T) {
 			errorContains: "type d'expression non supporté",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := NormalizeORExpression(tt.input)
-
 			if tt.expectError {
 				require.Error(t, err)
 				if tt.errorContains != "" {
@@ -273,7 +265,6 @@ func TestNormalizeORExpression_Coverage(t *testing.T) {
 		})
 	}
 }
-
 // TestCanonicalMap_SpecialTypes tests additional special type handling in canonicalMap
 func TestCanonicalMap_SpecialTypes(t *testing.T) {
 	tests := []struct {
@@ -350,7 +341,6 @@ func TestCanonicalMap_SpecialTypes(t *testing.T) {
 			contains: "literal",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := canonicalMap(tt.input)
@@ -358,7 +348,6 @@ func TestCanonicalMap_SpecialTypes(t *testing.T) {
 		})
 	}
 }
-
 // TestCanonicalValue_AdditionalTypes tests additional type handling in canonicalValue
 func TestCanonicalValue_AdditionalTypes(t *testing.T) {
 	tests := []struct {
@@ -439,7 +428,6 @@ func TestCanonicalValue_AdditionalTypes(t *testing.T) {
 			contains: "float(3.14)",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := canonicalValue(tt.input)
@@ -447,7 +435,6 @@ func TestCanonicalValue_AdditionalTypes(t *testing.T) {
 		})
 	}
 }
-
 // TestAnalyzeExpression_Coverage tests expression type analysis
 func TestAnalyzeExpression_Coverage(t *testing.T) {
 	tests := []struct {
@@ -609,11 +596,9 @@ func TestAnalyzeExpression_Coverage(t *testing.T) {
 			errorContains: "type d'expression non supporté",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			exprType, err := AnalyzeExpression(tt.input)
-
 			if tt.expectError {
 				require.Error(t, err)
 				if tt.errorContains != "" {

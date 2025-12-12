@@ -1,13 +1,10 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
 )
-
 // TestComplexArithmeticInConstraints teste les expressions arithmétiques complexes dans les contraintes (prémisses)
 func TestComplexArithmeticInConstraints(t *testing.T) {
 	tests := []struct {
@@ -328,26 +325,21 @@ func TestComplexArithmeticInConstraints(t *testing.T) {
 			description:    "o.prix > 10 * (2 + 3) - 5 => 100 > 45 => true",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			facts := tt.setupFacts()
-
 			// Créer l'évaluateur et définir les bindings
 			evaluator := NewAlphaConditionEvaluator()
 			evaluator.variableBindings = facts
-
 			// Évaluer l'expression
 			result, err := evaluator.evaluateExpression(tt.constraint)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v\nConstraint: %s", err, tt.description)
 			}
-
 			// Vérifier le résultat
 			if result != tt.expectedResult {
 				t.Errorf("Constraint: %s\nExpected: %v\nGot: %v",
 					tt.description, tt.expectedResult, result)
-
 				// Debug: afficher les valeurs des faits
 				t.Log("Fact values:")
 				for varName, fact := range facts {
@@ -359,7 +351,6 @@ func TestComplexArithmeticInConstraints(t *testing.T) {
 		})
 	}
 }
-
 // TestComplexExpressionConstraintTypes teste différents types d'opérations dans les contraintes
 func TestComplexExpressionConstraintTypes(t *testing.T) {
 	tests := []struct {
@@ -480,18 +471,15 @@ func TestComplexExpressionConstraintTypes(t *testing.T) {
 			shouldMatch: true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			facts := map[string]*Fact{tt.varName: tt.fact}
 			evaluator := NewAlphaConditionEvaluator()
 			evaluator.variableBindings = facts
-
 			result, err := evaluator.evaluateExpression(tt.constraint)
 			if err != nil {
 				t.Fatalf("Error evaluating constraint: %v", err)
 			}
-
 			if result != tt.shouldMatch {
 				t.Errorf("Expected %v, got %v", tt.shouldMatch, result)
 			} else {
@@ -500,12 +488,10 @@ func TestComplexExpressionConstraintTypes(t *testing.T) {
 		})
 	}
 }
-
 // TestRealWorldConstraintExpression teste l'exemple complet de contrainte
 func TestRealWorldConstraintExpression(t *testing.T) {
 	t.Log("🧮 Test de contrainte complexe du monde réel")
 	t.Log("=============================================")
-
 	// Créer les faits
 	objet := &Fact{
 		ID:   "obj1",
@@ -516,7 +502,6 @@ func TestRealWorldConstraintExpression(t *testing.T) {
 			"boite": "B001",
 		},
 	}
-
 	boite := &Fact{
 		ID:   "box1",
 		Type: "Boite",
@@ -526,19 +511,15 @@ func TestRealWorldConstraintExpression(t *testing.T) {
 			"cout": float64(5),
 		},
 	}
-
 	t.Logf("Objet: id=%s, prix=%.2f, boite=%s", objet.Fields["id"], objet.Fields["prix"], objet.Fields["boite"])
 	t.Logf("Boite: id=%s, prix=%.2f, cout=%.2f", boite.Fields["id"], boite.Fields["prix"], boite.Fields["cout"])
 	t.Log("")
-
 	facts := map[string]*Fact{
 		"o": objet,
 		"b": boite,
 	}
-
 	evaluator := NewAlphaConditionEvaluator()
 	evaluator.variableBindings = facts
-
 	// Contrainte : b.prix < o.prix % 10 * 1.345 - b.cout + 1 - 3
 	// Calcul : 15 < (100 % 10) * 1.345 - 5 + 1 - 3
 	//         15 < 0 * 1.345 - 5 + 1 - 3
@@ -598,21 +579,17 @@ func TestRealWorldConstraintExpression(t *testing.T) {
 			},
 		},
 	}
-
 	result, err := evaluator.evaluateExpression(constraint)
 	if err != nil {
 		t.Fatalf("❌ Erreur: %v", err)
 	}
-
 	// Calcul manuel du résultat attendu
 	oPrix := objet.Fields["prix"].(float64)
 	bPrix := boite.Fields["prix"].(float64)
 	bCout := boite.Fields["cout"].(float64)
-
 	modResult := float64(int64(oPrix) % int64(10)) // 100 % 10 = 0
 	rightSide := modResult*1.345 - bCout + 1 - 3   // 0 - 5 + 1 - 3 = -7
 	expected := bPrix < rightSide                  // 15 < -7 = false
-
 	t.Log("Calcul détaillé de la contrainte:")
 	t.Logf("  o.prix %% 10 = %.0f", modResult)
 	t.Logf("  %.0f * 1.345 = %.3f", modResult, modResult*1.345)
@@ -623,7 +600,6 @@ func TestRealWorldConstraintExpression(t *testing.T) {
 	t.Logf("  b.prix < %.3f", rightSide)
 	t.Logf("  %.0f < %.3f = %v", bPrix, rightSide, expected)
 	t.Log("")
-
 	if result != expected {
 		t.Errorf("Expected %v, got %v", expected, result)
 	} else {

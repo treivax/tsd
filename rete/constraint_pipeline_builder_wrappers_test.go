@@ -1,16 +1,12 @@
 // Copyright (c) 2025 TSD Contributors
 // Licensed under the MIT License
 // See LICENSE file in the project root for full license text
-
 package rete
-
 import (
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
 // TestConstraintPipeline_createAlphaRule tests the createAlphaRule wrapper
 func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 	tests := []struct {
@@ -165,14 +161,12 @@ func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 			description: "Alpha rule with nil action should succeed (action is optional)",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create type nodes for the test
 			for _, varType := range tt.variableTypes {
 				if varType != "" {
@@ -185,7 +179,6 @@ func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 					network.TypeNodes[varType] = typeNode
 				}
 			}
-
 			// Execute
 			err := cp.createAlphaRule(
 				network,
@@ -197,7 +190,6 @@ func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 				tt.action,
 				storage,
 			)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -207,7 +199,6 @@ func TestConstraintPipeline_createAlphaRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createJoinRule tests the createJoinRule wrapper
 func TestConstraintPipeline_createJoinRule(t *testing.T) {
 	tests := []struct {
@@ -384,14 +375,12 @@ func TestConstraintPipeline_createJoinRule(t *testing.T) {
 			description: "Join rule with nil condition should succeed (cartesian product)",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create type nodes for the test
 			for _, varType := range tt.variableTypes {
 				if varType != "" {
@@ -404,7 +393,6 @@ func TestConstraintPipeline_createJoinRule(t *testing.T) {
 					network.TypeNodes[varType] = typeNode
 				}
 			}
-
 			// Execute
 			err := cp.createJoinRule(
 				network,
@@ -416,7 +404,6 @@ func TestConstraintPipeline_createJoinRule(t *testing.T) {
 				tt.action,
 				storage,
 			)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -426,7 +413,6 @@ func TestConstraintPipeline_createJoinRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createExistsRule tests the createExistsRule wrapper
 func TestConstraintPipeline_createExistsRule(t *testing.T) {
 	tests := []struct {
@@ -599,14 +585,12 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 			description: "Exists rule with minimal conditions should succeed",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Extract types from exprMap and create type nodes
 			if set, ok := tt.exprMap["set"].(map[string]interface{}); ok {
 				if variables, ok := set["variables"].([]interface{}); ok {
@@ -625,7 +609,6 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 					}
 				}
 			}
-
 			// Also create type node for the exists variable
 			if constraints, ok := tt.exprMap["constraints"].(map[string]interface{}); ok {
 				if variable, ok := constraints["variable"].(map[string]interface{}); ok {
@@ -640,7 +623,6 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 					}
 				}
 			}
-
 			// Execute
 			err := cp.createExistsRule(
 				network,
@@ -650,7 +632,6 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 				tt.action,
 				storage,
 			)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -660,7 +641,6 @@ func TestConstraintPipeline_createExistsRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_extractExistsVariables tests the extractExistsVariables wrapper
 func TestConstraintPipeline_extractExistsVariables(t *testing.T) {
 	tests := []struct {
@@ -755,15 +735,12 @@ func TestConstraintPipeline_extractExistsVariables(t *testing.T) {
 			description:        "Missing main type should still succeed",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			cp := NewConstraintPipeline()
-
 			// Execute
 			mainVar, existsVar, mainType, existsType, err := cp.extractExistsVariables(tt.exprMap)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -777,7 +754,6 @@ func TestConstraintPipeline_extractExistsVariables(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_extractExistsConditions tests the extractExistsConditions wrapper
 func TestConstraintPipeline_extractExistsConditions(t *testing.T) {
 	tests := []struct {
@@ -863,15 +839,12 @@ func TestConstraintPipeline_extractExistsConditions(t *testing.T) {
 			description:   "Empty conditions array should return empty result",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			cp := NewConstraintPipeline()
-
 			// Execute
 			conditions, err := cp.extractExistsConditions(tt.exprMap)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -882,7 +855,6 @@ func TestConstraintPipeline_extractExistsConditions(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_connectExistsNodeToTypeNodes tests the connectExistsNodeToTypeNodes wrapper
 func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 	tests := []struct {
@@ -914,14 +886,12 @@ func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 			description:     "Should handle same type for both variables",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			if tt.createTypeNodes {
 				mainTypeDef := TypeDefinition{
 					Type:   "typeDefinition",
@@ -929,7 +899,6 @@ func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 					Fields: []Field{},
 				}
 				network.TypeNodes[tt.mainVarType] = NewTypeNode(tt.mainVarType, mainTypeDef, storage)
-
 				existsTypeDef := TypeDefinition{
 					Type:   "typeDefinition",
 					Name:   tt.existsVarType,
@@ -937,9 +906,7 @@ func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 				}
 				network.TypeNodes[tt.existsVarType] = NewTypeNode(tt.existsVarType, existsTypeDef, storage)
 			}
-
 			existsNode := NewExistsNode("test_exists", nil, "mainVar", "existsVar", map[string]string{}, storage)
-
 			// Execute - should not panic
 			require.NotPanics(t, func() {
 				cp.connectExistsNodeToTypeNodes(
@@ -952,13 +919,11 @@ func TestConstraintPipeline_connectExistsNodeToTypeNodes(t *testing.T) {
 					tt.existsVarType,
 				)
 			}, tt.description)
-
 			// Verify exists node was created
 			assert.NotNil(t, existsNode)
 		})
 	}
 }
-
 // TestConstraintPipeline_createAccumulatorRule tests the createAccumulatorRule wrapper
 func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 	tests := []struct {
@@ -1067,14 +1032,12 @@ func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 			description: "Accumulator with nil action should succeed",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create type nodes
 			for _, varType := range tt.variableTypes {
 				if varType != "" {
@@ -1087,7 +1050,6 @@ func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 					network.TypeNodes[varType] = typeNode
 				}
 			}
-
 			// Execute
 			err := cp.createAccumulatorRule(
 				network,
@@ -1099,7 +1061,6 @@ func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 				tt.action,
 				storage,
 			)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -1109,7 +1070,6 @@ func TestConstraintPipeline_createAccumulatorRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createMultiSourceAccumulatorRule tests the createMultiSourceAccumulatorRule wrapper
 func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 	tests := []struct {
@@ -1326,14 +1286,12 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 			description: "Multi-source with nil action should succeed",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			// Create type nodes for all sources
 			if tt.aggInfo != nil {
 				// Create main type node
@@ -1346,7 +1304,6 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 					mainTypeNode := NewTypeNode(tt.aggInfo.MainType, mainTypeDef, storage)
 					network.TypeNodes[tt.aggInfo.MainType] = mainTypeNode
 				}
-
 				// Create source type nodes
 				if tt.aggInfo.SourcePatterns != nil {
 					for _, source := range tt.aggInfo.SourcePatterns {
@@ -1362,7 +1319,6 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 					}
 				}
 			}
-
 			// Execute
 			err := cp.createMultiSourceAccumulatorRule(
 				network,
@@ -1371,7 +1327,6 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 				tt.action,
 				storage,
 			)
-
 			// Assert
 			if tt.expectError {
 				assert.Error(t, err, tt.description)
@@ -1381,7 +1336,6 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 		})
 	}
 }
-
 // TestConstraintPipeline_createPassthroughAlphaNode tests the createPassthroughAlphaNode wrapper
 func TestConstraintPipeline_createPassthroughAlphaNode(t *testing.T) {
 	tests := []struct {
@@ -1427,23 +1381,19 @@ func TestConstraintPipeline_createPassthroughAlphaNode(t *testing.T) {
 			description: "Should handle empty rule ID",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
-
 			// Execute
 			alphaNode := cp.createPassthroughAlphaNode(tt.ruleID, tt.varName, tt.side, storage)
-
 			// Assert
 			assert.NotNil(t, alphaNode, tt.description)
 			assert.NotEmpty(t, alphaNode.ID, "Alpha node should have an ID")
 		})
 	}
 }
-
 // TestConstraintPipeline_connectTypeNodeToBetaNode tests the connectTypeNodeToBetaNode wrapper
 func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 	tests := []struct {
@@ -1489,14 +1439,12 @@ func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 			description:    "Should handle multiple connections to same type",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			storage := NewMemoryStorage()
 			cp := NewConstraintPipeline()
 			network := NewReteNetwork(storage)
-
 			if tt.createTypeNode {
 				typeDef := TypeDefinition{
 					Type:   "typeDefinition",
@@ -1505,10 +1453,8 @@ func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 				}
 				network.TypeNodes[tt.varType] = NewTypeNode(tt.varType, typeDef, storage)
 			}
-
 			// Create a beta node
 			joinNode := NewJoinNode("test_join", nil, []string{}, []string{}, map[string]string{}, storage)
-
 			// Execute - should not panic
 			require.NotPanics(t, func() {
 				cp.connectTypeNodeToBetaNode(
@@ -1520,13 +1466,11 @@ func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 					tt.side,
 				)
 			}, tt.description)
-
 			// Verify join node was created
 			assert.NotNil(t, joinNode)
 		})
 	}
 }
-
 // TestConstraintPipeline_getVariableInfo tests the getVariableInfo helper
 func TestConstraintPipeline_getVariableInfo(t *testing.T) {
 	tests := []struct {
@@ -1621,15 +1565,12 @@ func TestConstraintPipeline_getVariableInfo(t *testing.T) {
 			description:     "Should use default 'p' when name is not a string",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			cp := NewConstraintPipeline()
-
 			// Execute
 			varName, varType := cp.getVariableInfo(tt.variables, tt.variableTypes)
-
 			// Assert
 			assert.Equal(t, tt.expectedVarName, varName, "Variable name should match - "+tt.description)
 			assert.Equal(t, tt.expectedVarType, varType, "Variable type should match - "+tt.description)

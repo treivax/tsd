@@ -157,7 +157,7 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 		ID:       fmt.Sprintf("right_token_%s_%s", jn.ID, fact.ID),
 		Facts:    []*Fact{fact},
 		NodeID:   jn.ID,
-		Bindings: map[string]*Fact{factVar: fact},
+		Bindings: NewBindingChainWith(factVar, fact),
 	}
 
 	// Stocker le token dans la mémoire droite
@@ -186,32 +186,26 @@ func (jn *JoinNode) ActivateRight(fact *Fact) error {
 	return nil
 }
 
-// performJoinWithTokens effectue la jointure entre deux tokens
+// performJoinWithTokens effectue la jointure entre deux tokens avec BindingChain immuable.
+//
+// IMPORTANT: Cette fonction utilise maintenant BindingChain.Merge() pour combiner
+// les bindings de manière immuable, garantissant qu'aucun binding n'est perdu.
 func (jn *JoinNode) performJoinWithTokens(token1 *Token, token2 *Token) *Token {
 	// Vérifier que les tokens ont des variables différentes
 	if !jn.tokensHaveDifferentVariables(token1, token2) {
 		return nil
 	}
 
-	// Combiner les bindings des deux tokens
-	combinedBindings := make(map[string]*Fact)
-
-	// Copier les bindings du premier token
-	for varName, varFact := range token1.Bindings {
-		combinedBindings[varName] = varFact
-	}
-
-	// Copier les bindings du second token
-	for varName, varFact := range token2.Bindings {
-		combinedBindings[varName] = varFact
-	}
+	// Combiner les bindings de manière immuable
+	// Merge garantit que tous les bindings des deux tokens sont préservés
+	combinedBindings := token1.Bindings.Merge(token2.Bindings)
 
 	// Valider les conditions de jointure
 	if !jn.evaluateJoinConditions(combinedBindings) {
 		return nil // Jointure échoue
 	}
 
-	// Créer et retourner le token joint
+	// Créer et retourner le token joint avec la chaîne combinée
 	return &Token{
 		ID:       fmt.Sprintf("%s_JOIN_%s", token1.ID, token2.ID),
 		Bindings: combinedBindings,
@@ -222,8 +216,11 @@ func (jn *JoinNode) performJoinWithTokens(token1 *Token, token2 *Token) *Token {
 
 // tokensHaveDifferentVariables vérifie que les tokens représentent des variables différentes
 func (jn *JoinNode) tokensHaveDifferentVariables(token1 *Token, token2 *Token) bool {
-	for var1 := range token1.Bindings {
-		for var2 := range token2.Bindings {
+	vars1 := token1.GetVariables()
+	vars2 := token2.GetVariables()
+
+	for _, var1 := range vars1 {
+		for _, var2 := range vars2 {
 			if var1 == var2 {
 				return false // Même variable = pas de jointure possible
 			}
@@ -266,10 +263,12 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 	return ""
 }
 
-// evaluateJoinConditions vérifie si toutes les conditions de jointure sont respectées
-func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
+// evaluateJoinConditions vérifie si toutes les conditions de jointure sont respectées.
+//
+// Accepte maintenant BindingChain au lieu de map[string]*Fact.
+func (jn *JoinNode) evaluateJoinConditions(bindings *BindingChain) bool {
 	// Vérifier qu'on a au moins 2 variables différentes
-	if len(bindings) < 2 {
+	if bindings == nil || bindings.Len() < 2 {
 		return false
 	}
 
@@ -321,9 +320,13 @@ func (jn *JoinNode) evaluateJoinConditions(bindings map[string]*Fact) bool {
 			evaluator := NewAlphaConditionEvaluator()
 			evaluator.SetPartialEvalMode(true)
 
-			// Lier toutes les variables aux faits
-			for varName, fact := range bindings {
-				evaluator.variableBindings[varName] = fact
+			// Lier toutes les variables aux faits (convertir en map temporaire)
+			vars := bindings.Variables()
+			for _, varName := range vars {
+				fact := bindings.Get(varName)
+				if fact != nil {
+					evaluator.variableBindings[varName] = fact
+				}
 			}
 
 			for _, alphaCond := range alphaConditions {
@@ -408,11 +411,13 @@ func isAlphaCondition(condition map[string]interface{}) bool {
 	return false
 }
 
-// evaluateSimpleJoinConditions évalue les conditions de jointure simples (champ à champ)
-func (jn *JoinNode) evaluateSimpleJoinConditions(bindings map[string]*Fact) bool {
+// evaluateSimpleJoinConditions évalue les conditions de jointure simples (champ à champ).
+//
+// Accepte maintenant BindingChain au lieu de map[string]*Fact.
+func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
 	for _, joinCondition := range jn.JoinConditions {
-		leftFact := bindings[joinCondition.LeftVar]
-		rightFact := bindings[joinCondition.RightVar]
+		leftFact := bindings.Get(joinCondition.LeftVar)
+		rightFact := bindings.Get(joinCondition.RightVar)
 
 		// Skip conditions that reference variables not available at this join level
 		// (This happens in cascade joins where later variables aren't joined yet)
