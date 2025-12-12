@@ -21,7 +21,7 @@ func TestRun(t *testing.T) {
 		{
 			name:           "no arguments",
 			args:           []string{},
-			expectExitCode: 1,
+			expectExitCode: 1, // ExitUsageError
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stderr, "Usage") {
 					t.Error("Should print usage when no arguments")
@@ -31,7 +31,7 @@ func TestRun(t *testing.T) {
 		{
 			name:           "nonexistent file",
 			args:           []string{"nonexistent.tsd"},
-			expectExitCode: 1,
+			expectExitCode: 2, // ExitRuntimeError
 			checkOutput: func(t *testing.T, stdout, stderr string) {
 				if !strings.Contains(stderr, "Erreur") {
 					t.Error("Should print error for nonexistent file")
@@ -109,8 +109,8 @@ func TestRunWithInvalidSyntax(t *testing.T) {
 
 	exitCode := Run([]string{tmpfile.Name()}, &stdout, &stderr)
 
-	if exitCode != 1 {
-		t.Errorf("exitCode = %d, want 1", exitCode)
+	if exitCode != 2 { // ExitRuntimeError
+		t.Errorf("exitCode = %d, want 2", exitCode)
 	}
 
 	output := stderr.String()
