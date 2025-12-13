@@ -1346,65 +1346,6 @@ func TestConstraintPipeline_createMultiSourceAccumulatorRule(t *testing.T) {
 	}
 }
 
-// TestConstraintPipeline_createPassthroughAlphaNode tests the createPassthroughAlphaNode wrapper
-func TestConstraintPipeline_createPassthroughAlphaNode(t *testing.T) {
-	tests := []struct {
-		name        string
-		ruleID      string
-		varName     string
-		side        string
-		description string
-	}{
-		{
-			name:        "create passthrough for left side",
-			ruleID:      "rule_123",
-			varName:     "person",
-			side:        "left",
-			description: "Should create passthrough alpha node for left side",
-		},
-		{
-			name:        "create passthrough for right side",
-			ruleID:      "rule_456",
-			varName:     "order",
-			side:        "right",
-			description: "Should create passthrough alpha node for right side",
-		},
-		{
-			name:        "create passthrough with no side specified",
-			ruleID:      "rule_789",
-			varName:     "item",
-			side:        "",
-			description: "Should create passthrough alpha node with no side",
-		},
-		{
-			name:        "create passthrough with complex variable name",
-			ruleID:      "rule_complex",
-			varName:     "customer_account",
-			side:        "left",
-			description: "Should handle complex variable names",
-		},
-		{
-			name:        "create passthrough with empty rule ID",
-			ruleID:      "",
-			varName:     "entity",
-			side:        "left",
-			description: "Should handle empty rule ID",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			storage := NewMemoryStorage()
-			cp := NewConstraintPipeline()
-			// Execute
-			alphaNode := cp.createPassthroughAlphaNode(tt.ruleID, tt.varName, tt.side, storage)
-			// Assert
-			assert.NotNil(t, alphaNode, tt.description)
-			assert.NotEmpty(t, alphaNode.ID, "Alpha node should have an ID")
-		})
-	}
-}
-
 // TestConstraintPipeline_connectTypeNodeToBetaNode tests the connectTypeNodeToBetaNode wrapper
 func TestConstraintPipeline_connectTypeNodeToBetaNode(t *testing.T) {
 	tests := []struct {

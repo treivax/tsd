@@ -16,13 +16,12 @@ type RuleBuilder struct {
 	accumulatorBuilder *AccumulatorRuleBuilder
 	utils              *BuilderUtils
 
-	// Reference to constraint pipeline for helper functions
-	// Using interface{} to avoid complex type constraints during refactoring
-	pipeline interface{}
+	// Pipeline helper for accessing constraint pipeline functionality
+	pipeline PipelineHelper
 }
 
 // NewRuleBuilder creates a new RuleBuilder instance
-func NewRuleBuilder(utils *BuilderUtils, pipeline interface{}) *RuleBuilder {
+func NewRuleBuilder(utils *BuilderUtils, pipeline PipelineHelper) *RuleBuilder {
 	return &RuleBuilder{
 		alphaBuilder:       NewAlphaRuleBuilder(utils),
 		joinBuilder:        NewJoinRuleBuilder(utils),
@@ -63,27 +62,13 @@ func (rb *RuleBuilder) CreateRuleNodes(network *ReteNetwork, expressions []inter
 
 // CreateSingleRule creates a single rule (refactored into small functions)
 func (rb *RuleBuilder) CreateSingleRule(network *ReteNetwork, ruleID string, exprMap map[string]interface{}) error {
+	// Validate pipeline is not nil
+	if rb.pipeline == nil {
+		return fmt.Errorf("pipeline is nil - cannot create rule")
+	}
+
 	// Step 1: Extract the action
-	// Type assertion to access pipeline methods
-	type pipelineHelper interface {
-		extractActionFromExpression(map[string]interface{}, string) (*Action, error)
-		detectAggregation(interface{}) bool
-		buildConditionFromConstraints(interface{}) (map[string]interface{}, error)
-		extractVariablesFromExpression(map[string]interface{}) ([]map[string]interface{}, []string, []string)
-		hasAggregationVariables(map[string]interface{}) bool
-		determineRuleType(map[string]interface{}, int, bool) string
-		logRuleCreation(string, string, []string)
-		extractAggregationInfo(interface{}) (*AggregationInfo, error)
-		extractAggregationInfoFromVariables(map[string]interface{}) (*AggregationInfo, error)
-		extractMultiSourceAggregationInfo(map[string]interface{}) (*AggregationInfo, error)
-	}
-
-	pipeline, ok := rb.pipeline.(pipelineHelper)
-	if !ok {
-		return fmt.Errorf("pipeline does not implement required methods")
-	}
-
-	action, err := pipeline.extractActionFromExpression(exprMap, ruleID)
+	action, err := rb.pipeline.extractActionFromExpression(exprMap, ruleID)
 	if err != nil {
 		return err
 	}
@@ -95,10 +80,10 @@ func (rb *RuleBuilder) CreateSingleRule(network *ReteNetwork, ruleID string, exp
 
 	if hasConstraints {
 		// Detect if this is an aggregation (from constraints)
-		hasAggregation = pipeline.detectAggregation(constraintsData)
+		hasAggregation = rb.pipeline.detectAggregation(constraintsData)
 
 		// Build the appropriate condition
-		condition, err = pipeline.buildConditionFromConstraints(constraintsData)
+		condition, err = rb.pipeline.buildConditionFromConstraints(constraintsData)
 		if err != nil {
 			return fmt.Errorf("erreur construction condition pour règle %s: %w", ruleID, err)
 		}
@@ -109,16 +94,16 @@ func (rb *RuleBuilder) CreateSingleRule(network *ReteNetwork, ruleID string, exp
 	}
 
 	// Step 3: Extract variables
-	variables, variableNames, variableTypes := pipeline.extractVariablesFromExpression(exprMap)
+	variables, variableNames, variableTypes := rb.pipeline.extractVariablesFromExpression(exprMap)
 
 	// Also check if any variables are aggregation variables (new syntax)
 	if !hasAggregation {
-		hasAggregation = pipeline.hasAggregationVariables(exprMap)
+		hasAggregation = rb.pipeline.hasAggregationVariables(exprMap)
 	}
 
 	// Step 4: Determine the rule type and create it
-	ruleType := pipeline.determineRuleType(exprMap, len(variables), hasAggregation)
-	pipeline.logRuleCreation(ruleType, ruleID, variableNames)
+	ruleType := rb.pipeline.determineRuleType(exprMap, len(variables), hasAggregation)
+	rb.pipeline.logRuleCreation(ruleType, ruleID, variableNames)
 
 	// Delegate to the appropriate specialized builder
 	return rb.createRuleByType(network, ruleID, ruleType, exprMap, condition, action,
@@ -171,18 +156,6 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 	constraintsData interface{},
 	hasConstraints bool,
 ) error {
-	// Type assertion for pipeline methods
-	type pipelineHelper interface {
-		extractAggregationInfo(interface{}) (*AggregationInfo, error)
-		extractAggregationInfoFromVariables(map[string]interface{}) (*AggregationInfo, error)
-		extractMultiSourceAggregationInfo(map[string]interface{}) (*AggregationInfo, error)
-	}
-
-	pipeline, ok := rb.pipeline.(pipelineHelper)
-	if !ok {
-		return fmt.Errorf("pipeline does not implement required methods")
-	}
-
 	var aggInfo *AggregationInfo
 	var err error
 
@@ -191,13 +164,13 @@ func (rb *RuleBuilder) createAccumulatorRuleWithInfo(
 		// Check if this is multi-source aggregation
 		if rb.accumulatorBuilder.IsMultiSourceAggregation(exprMap) {
 			fmt.Printf("   📊 Multi-source aggregation détectée pour: %s\n", ruleID)
-			aggInfo, err = pipeline.extractMultiSourceAggregationInfo(exprMap)
+			aggInfo, err = rb.pipeline.extractMultiSourceAggregationInfo(exprMap)
 		} else {
-			aggInfo, err = pipeline.extractAggregationInfoFromVariables(exprMap)
+			aggInfo, err = rb.pipeline.extractAggregationInfoFromVariables(exprMap)
 		}
 	} else {
 		// Old AccumulateConstraint syntax
-		aggInfo, err = pipeline.extractAggregationInfo(constraintsData)
+		aggInfo, err = rb.pipeline.extractAggregationInfo(constraintsData)
 	}
 
 	if err != nil {

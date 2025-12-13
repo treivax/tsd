@@ -72,8 +72,8 @@ func TestRuleBuilder_CreateSingleRule_NoPipeline(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error when pipeline is nil, got nil")
 		}
-		if err != nil && err.Error() != "pipeline does not implement required methods" {
-			t.Errorf("Expected specific error message, got: %v", err)
+		if err != nil && err.Error() != "pipeline is nil - cannot create rule" {
+			t.Errorf("Expected 'pipeline is nil' error message, got: %v", err)
 		}
 	})
 }
@@ -150,13 +150,17 @@ func TestRuleBuilder_Delegation(t *testing.T) {
 func TestRuleBuilder_PipelineReference(t *testing.T) {
 	storage := NewMemoryStorage()
 	utils := NewBuilderUtils(storage)
+
+	// Create a mock pipeline that implements PipelineHelper interface
+	mockPipeline := &mockPipelineHelper{}
+
 	t.Run("pipeline reference is stored", func(t *testing.T) {
-		mockPipeline := "mock_pipeline"
 		rb := NewRuleBuilder(utils, mockPipeline)
 		if rb.pipeline == nil {
 			t.Error("pipeline should be stored")
 		}
-		if rb.pipeline.(string) != mockPipeline {
+		// The pipeline is now typed as PipelineHelper, no need for type assertion
+		if rb.pipeline != mockPipeline {
 			t.Error("pipeline reference not stored correctly")
 		}
 	})
@@ -166,4 +170,46 @@ func TestRuleBuilder_PipelineReference(t *testing.T) {
 			t.Error("RuleBuilder should be created even with nil pipeline")
 		}
 	})
+}
+
+// mockPipelineHelper is a minimal mock implementation of PipelineHelper for testing
+type mockPipelineHelper struct{}
+
+func (m *mockPipelineHelper) extractActionFromExpression(exprMap map[string]interface{}, ruleID string) (*Action, error) {
+	return nil, nil
+}
+
+func (m *mockPipelineHelper) detectAggregation(constraintsData interface{}) bool {
+	return false
+}
+
+func (m *mockPipelineHelper) extractAggregationInfo(constraintsData interface{}) (*AggregationInfo, error) {
+	return nil, nil
+}
+
+func (m *mockPipelineHelper) extractAggregationInfoFromVariables(exprMap map[string]interface{}) (*AggregationInfo, error) {
+	return nil, nil
+}
+
+func (m *mockPipelineHelper) extractMultiSourceAggregationInfo(exprMap map[string]interface{}) (*AggregationInfo, error) {
+	return nil, nil
+}
+
+func (m *mockPipelineHelper) hasAggregationVariables(exprMap map[string]interface{}) bool {
+	return false
+}
+
+func (m *mockPipelineHelper) buildConditionFromConstraints(constraintsData interface{}) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+func (m *mockPipelineHelper) extractVariablesFromExpression(exprMap map[string]interface{}) ([]map[string]interface{}, []string, []string) {
+	return nil, nil, nil
+}
+
+func (m *mockPipelineHelper) determineRuleType(exprMap map[string]interface{}, varCount int, hasAggregation bool) string {
+	return "alpha"
+}
+
+func (m *mockPipelineHelper) logRuleCreation(ruleType string, ruleID string, variableNames []string) {
 }

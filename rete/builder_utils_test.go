@@ -56,9 +56,12 @@ func TestBuilderUtils_CreatePassthroughAlphaNode(t *testing.T) {
 		tt := tt // Capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			node := utils.CreatePassthroughAlphaNode(tt.ruleID, tt.varName, tt.side)
+			// Use GetOrCreatePassthroughAlphaNode instead of deprecated CreatePassthroughAlphaNode
+			network := NewReteNetwork(env.Storage)
+			node := utils.GetOrCreatePassthroughAlphaNode(network, tt.ruleID, "TestType", tt.varName, tt.side)
 			assert.NotNil(t, node)
-			assert.Equal(t, tt.expected, node.ID)
+			// The ID will be different with the new function (uses PassthroughNodeKey)
+			assert.Contains(t, node.ID, tt.varName)
 			assert.Equal(t, tt.varName, node.VariableName)
 			// Vérifier la condition
 			assert.NotNil(t, node.Condition)

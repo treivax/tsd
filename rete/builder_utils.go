@@ -44,18 +44,6 @@ func PassthroughNodeKey(ruleName, typeName, varName, side string) string {
 	return fmt.Sprintf("passthrough_%s_%s_%s", ruleName, varName, typeName)
 }
 
-// CreatePassthroughAlphaNode creates a passthrough AlphaNode with optional side specification
-// DEPRECATED: Use GetOrCreatePassthroughAlphaNode instead for proper sharing
-func (bu *BuilderUtils) CreatePassthroughAlphaNode(ruleID, varName, side string) *AlphaNode {
-	passCondition := map[string]interface{}{
-		"type": ConditionTypePassthrough,
-	}
-	if side != "" {
-		passCondition["side"] = side
-	}
-	return NewAlphaNode(ruleID+"_pass_"+varName, passCondition, varName, bu.storage)
-}
-
 // GetOrCreatePassthroughAlphaNode gets or creates a passthrough AlphaNode per rule
 // Each rule gets its own passthrough to prevent incorrect sharing when alpha filters differ
 func (bu *BuilderUtils) GetOrCreatePassthroughAlphaNode(

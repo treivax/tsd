@@ -182,13 +182,6 @@ func (cp *ConstraintPipeline) createAccumulatorRule(
 	return accumulatorBuilder.CreateAccumulatorRule(network, ruleID, variables, variableNames, variableTypes, aggInfo, action)
 }
 
-// createPassthroughAlphaNode creates a passthrough AlphaNode with optional side specification
-// Délègue au BuilderUtils
-func (cp *ConstraintPipeline) createPassthroughAlphaNode(ruleID, varName, side string, storage Storage) *AlphaNode {
-	utils := NewBuilderUtils(storage)
-	return utils.CreatePassthroughAlphaNode(ruleID, varName, side)
-}
-
 // connectTypeNodeToBetaNode connects a TypeNode to a BetaNode via a passthrough AlphaNode
 // Délègue au BuilderUtils
 func (cp *ConstraintPipeline) connectTypeNodeToBetaNode(
