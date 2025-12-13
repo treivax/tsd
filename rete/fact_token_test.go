@@ -53,21 +53,135 @@ func TestWorkingMemory_GetFactsByVariable(t *testing.T) {
 
 // TestWorkingMemory_GetTokensByVariable tests getting tokens by variable
 func TestWorkingMemory_GetTokensByVariable(t *testing.T) {
+	t.Log("🧪 TEST: GetTokensByVariable - Filtrage par variable")
+	t.Log("=======================================================")
+
 	wm := &WorkingMemory{
 		NodeID: "test_node",
 		Facts:  make(map[string]*Fact),
 		Tokens: make(map[string]*Token),
 	}
-	// Add some tokens
-	token1 := &Token{ID: "token1", NodeID: "test_node"}
-	token2 := &Token{ID: "token2", NodeID: "test_node"}
-	wm.Tokens["token1"] = token1
-	wm.Tokens["token2"] = token2
-	// Get tokens by variable (current implementation returns all tokens)
-	tokens := wm.GetTokensByVariable([]string{"p", "o"})
-	assert.Len(t, tokens, 2, "Should return all tokens")
-	assert.Contains(t, tokens, token1, "Should contain token1")
-	assert.Contains(t, tokens, token2, "Should contain token2")
+
+	// Créer des faits
+	userFact := &Fact{ID: "u1", Type: "User", Fields: map[string]interface{}{"name": "Alice"}}
+	orderFact := &Fact{ID: "o1", Type: "Order", Fields: map[string]interface{}{"id": 100}}
+	productFact := &Fact{ID: "p1", Type: "Product", Fields: map[string]interface{}{"name": "Book"}}
+
+	// Créer tokens avec différents bindings
+	token1 := &Token{
+		ID:       "token1",
+		NodeID:   "test_node",
+		Facts:    []*Fact{userFact},
+		Bindings: NewBindingChainWith("user", userFact),
+	}
+	token2 := &Token{
+		ID:       "token2",
+		NodeID:   "test_node",
+		Facts:    []*Fact{orderFact},
+		Bindings: NewBindingChainWith("order", orderFact),
+	}
+	token3 := &Token{
+		ID:     "token3",
+		NodeID: "test_node",
+		Facts:  []*Fact{userFact, orderFact},
+		Bindings: NewBindingChainWith("user", userFact).
+			Add("order", orderFact),
+	}
+	token4 := &Token{
+		ID:       "token4",
+		NodeID:   "test_node",
+		Facts:    []*Fact{productFact},
+		Bindings: NewBindingChainWith("product", productFact),
+	}
+
+	// Ajouter tokens à la mémoire
+	wm.AddToken(token1)
+	wm.AddToken(token2)
+	wm.AddToken(token3)
+	wm.AddToken(token4)
+
+	// Test 1: Filtrer par une seule variable "user"
+	t.Run("Filter by single variable 'user'", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable([]string{"user"})
+		require.Len(t, tokens, 2, "Should return 2 tokens with 'user' binding")
+		// Vérifier que les bons tokens sont retournés
+		tokenIDs := make(map[string]bool)
+		for _, token := range tokens {
+			tokenIDs[token.ID] = true
+		}
+		assert.True(t, tokenIDs["token1"], "token1 should be included")
+		assert.True(t, tokenIDs["token3"], "token3 should be included")
+		t.Log("✅ Filtrage par 'user' correct")
+	})
+
+	// Test 2: Filtrer par une seule variable "order"
+	t.Run("Filter by single variable 'order'", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable([]string{"order"})
+		require.Len(t, tokens, 2, "Should return 2 tokens with 'order' binding")
+		tokenIDs := make(map[string]bool)
+		for _, token := range tokens {
+			tokenIDs[token.ID] = true
+		}
+		assert.True(t, tokenIDs["token2"], "token2 should be included")
+		assert.True(t, tokenIDs["token3"], "token3 should be included")
+		t.Log("✅ Filtrage par 'order' correct")
+	})
+
+	// Test 3: Filtrer par multiples variables
+	t.Run("Filter by multiple variables", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable([]string{"user", "product"})
+		require.Len(t, tokens, 3, "Should return 3 tokens with 'user' OR 'product'")
+		tokenIDs := make(map[string]bool)
+		for _, token := range tokens {
+			tokenIDs[token.ID] = true
+		}
+		assert.True(t, tokenIDs["token1"], "token1 should be included (has user)")
+		assert.True(t, tokenIDs["token3"], "token3 should be included (has user)")
+		assert.True(t, tokenIDs["token4"], "token4 should be included (has product)")
+		assert.False(t, tokenIDs["token2"], "token2 should NOT be included (has only order)")
+		t.Log("✅ Filtrage par multiples variables correct")
+	})
+
+	// Test 4: Variable inexistante
+	t.Run("Filter by non-existent variable", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable([]string{"nonexistent"})
+		assert.Empty(t, tokens, "Should return empty slice for non-existent variable")
+		t.Log("✅ Filtrage par variable inexistante retourne vide")
+	})
+
+	// Test 5: Slice vide retourne tous les tokens
+	t.Run("Empty variables slice returns all tokens", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable([]string{})
+		assert.Len(t, tokens, 4, "Should return all 4 tokens")
+		t.Log("✅ Slice vide retourne tous les tokens")
+	})
+
+	// Test 6: Nil slice retourne tous les tokens
+	t.Run("Nil variables slice returns all tokens", func(t *testing.T) {
+		tokens := wm.GetTokensByVariable(nil)
+		assert.Len(t, tokens, 4, "Should return all 4 tokens")
+		t.Log("✅ Slice nil retourne tous les tokens")
+	})
+
+	// Test 7: Token sans bindings
+	t.Run("Token without bindings", func(t *testing.T) {
+		tokenNoBindings := &Token{
+			ID:       "token_no_bindings",
+			NodeID:   "test_node",
+			Facts:    []*Fact{userFact},
+			Bindings: nil, // Pas de bindings
+		}
+		wm.AddToken(tokenNoBindings)
+
+		tokens := wm.GetTokensByVariable([]string{"user"})
+		// Ne devrait pas inclure le token sans bindings
+		for _, token := range tokens {
+			assert.NotEqual(t, "token_no_bindings", token.ID, "Token without bindings should not be included")
+		}
+		t.Log("✅ Token sans bindings correctement exclu")
+	})
+
+	t.Log("✅ Test réussi: GetTokensByVariable fonctionne correctement")
 }
 
 // TestFact_Clone tests cloning a fact

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type JoinNode struct {
@@ -49,11 +50,12 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 
 	return &JoinNode{
 		BaseNode: BaseNode{
-			ID:       nodeID,
-			Type:     "join",
-			Memory:   &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
-			Children: make([]Node, 0),
-			Storage:  storage,
+			ID:          nodeID,
+			Type:        "join",
+			Memory:      &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			Children:    make([]Node, 0),
+			Storage:     storage,
+			createdAt:   time.Now(),
 		},
 		Condition:      condition,
 		LeftVariables:  leftVars,
@@ -70,6 +72,9 @@ func NewJoinNode(nodeID string, condition map[string]interface{}, leftVars []str
 
 // ActivateLeft traite les tokens de la gauche (généralement des AlphaNodes)
 func (jn *JoinNode) ActivateLeft(token *Token) error {
+	// Enregistrer l'activation
+	jn.recordActivation()
+	
 	logger := GetDebugLogger()
 
 	logger.Log("[JOIN_%s] ActivateLeft: token vars=%v", jn.ID, token.GetVariables())
@@ -183,6 +188,9 @@ func (jn *JoinNode) tokenContainsFact(token *Token, factID string) bool {
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
 func (jn *JoinNode) ActivateRight(fact *Fact) error {
+	// Enregistrer l'activation
+	jn.recordActivation()
+	
 	logger := GetDebugLogger()
 
 	logger.Log("[JOIN_%s] ActivateRight: fact type=%s, id=%s", jn.ID, fact.Type, fact.ID)

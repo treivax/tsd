@@ -131,9 +131,9 @@ func (bsr *BetaSharingRegistryImpl) GetSharedJoinNodeDetails(hash string) (*Join
 		LeftMemorySize:   len(node.LeftMemory.Tokens),
 		RightMemorySize:  len(node.RightMemory.Tokens),
 		ResultMemorySize: len(node.ResultMemory.Tokens),
-		CreatedAt:        time.Time{}, // TODO: Track creation time
-		LastAccessedAt:   time.Now(),
-		ActivationCount:  0, // TODO: Track activation count
+		CreatedAt:        node.CreatedAt(),
+		LastAccessedAt:   node.GetLastActivatedAt(),
+		ActivationCount:  node.GetActivationCount(),
 	}
 
 	return details, nil

@@ -7,6 +7,8 @@ package rete
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 type BaseNode struct {
@@ -17,6 +19,11 @@ type BaseNode struct {
 	Storage  Storage        `json:"-"`
 	network  *ReteNetwork   `json:"-"` // Référence au réseau RETE parent
 	mutex    sync.RWMutex   `json:"-"`
+	
+	// Métriques de nœud
+	createdAt       time.Time `json:"-"` // Horodatage de création
+	activationCount int64     `json:"-"` // Compteur activations (atomic)
+	lastActivatedAt int64     `json:"-"` // Unix nano timestamp dernière activation (atomic)
 }
 
 // GetID retourne l'ID du nœud
@@ -104,4 +111,30 @@ func (bn *BaseNode) SaveMemory() error {
 		return bn.Storage.SaveMemory(bn.ID, bn.Memory)
 	}
 	return nil
+}
+
+// CreatedAt retourne l'horodatage de création du nœud
+func (bn *BaseNode) CreatedAt() time.Time {
+	return bn.createdAt
+}
+
+// GetActivationCount retourne le nombre d'activations du nœud (thread-safe)
+func (bn *BaseNode) GetActivationCount() int64 {
+	return atomic.LoadInt64(&bn.activationCount)
+}
+
+// GetLastActivatedAt retourne l'horodatage de la dernière activation (thread-safe)
+func (bn *BaseNode) GetLastActivatedAt() time.Time {
+	nanos := atomic.LoadInt64(&bn.lastActivatedAt)
+	if nanos == 0 {
+		return time.Time{} // Jamais activé
+	}
+	return time.Unix(0, nanos)
+}
+
+// recordActivation enregistre une activation (incrémente compteur et MAJ timestamp)
+// Thread-safe via atomic operations
+func (bn *BaseNode) recordActivation() {
+	atomic.AddInt64(&bn.activationCount, 1)
+	atomic.StoreInt64(&bn.lastActivatedAt, time.Now().UnixNano())
 }

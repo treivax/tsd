@@ -134,80 +134,122 @@ func (cp *ConstraintPipeline) extractAggregationInfo(constraintsData interface{}
 
 	aggInfo := &AggregationInfo{}
 
-	// Extraire la fonction d'agrégation (AVG, SUM, COUNT, etc.)
+	// Extraire les composants de base
+	if err := cp.extractBasicAggregationFields(constraintMap, aggInfo); err != nil {
+		return nil, err
+	}
+
+	// Extraire les champs de jointure
+	cp.extractAggregationJoinFields(constraintMap, aggInfo)
+
+	return aggInfo, nil
+}
+
+// extractBasicAggregationFields extrait les champs de base d'une agrégation
+func (cp *ConstraintPipeline) extractBasicAggregationFields(constraintMap map[string]interface{}, aggInfo *AggregationInfo) error {
+	// Fonction d'agrégation
 	if function, ok := constraintMap["function"].(string); ok {
 		aggInfo.Function = function
 	} else {
-		return nil, fmt.Errorf("fonction d'agrégation non trouvée")
+		return fmt.Errorf("fonction d'agrégation non trouvée")
 	}
 
-	// Extraire l'opérateur de comparaison
+	// Opérateur de comparaison
 	if operator, ok := constraintMap["operator"].(string); ok {
 		aggInfo.Operator = operator
 	} else {
-		return nil, fmt.Errorf("opérateur de comparaison non trouvé")
+		return fmt.Errorf("opérateur de comparaison non trouvé")
 	}
 
-	// Extraire le seuil (threshold) depuis constraintMap["threshold"]["value"]
-	if thresholdData, ok := constraintMap["threshold"].(map[string]interface{}); ok {
-		if threshold, ok := thresholdData["value"].(float64); ok {
-			aggInfo.Threshold = threshold
-		} else if thresholdInt, ok := thresholdData["value"].(int); ok {
-			aggInfo.Threshold = float64(thresholdInt)
-		} else {
-			return nil, fmt.Errorf("valeur de seuil non trouvée ou invalide")
-		}
-	} else {
-		return nil, fmt.Errorf("seuil manquant")
+	// Seuil
+	if err := cp.extractAggregationThreshold(constraintMap, aggInfo); err != nil {
+		return err
 	}
 
-	// Extraire la condition de jointure complète
-	if joinCond, ok := constraintMap["join"]; ok {
-		aggInfo.JoinCondition = joinCond
-	}
+	// Variable à agréger
+	cp.extractAggregationVariable(constraintMap, aggInfo)
 
-	// Extraire la variable à agréger depuis constraintMap["variable"]
-	if variableData, ok := constraintMap["variable"].(map[string]interface{}); ok {
-		if aggVar, ok := variableData["name"].(string); ok {
-			aggInfo.AggVariable = aggVar
-		}
-		if aggType, ok := variableData["dataType"].(string); ok {
-			aggInfo.AggType = aggType
-		}
-	}
-
-	// Extraire le champ à agréger
+	// Champ à agréger
 	if field, ok := constraintMap["field"].(string); ok {
 		aggInfo.Field = field
 	}
 
-	// Extraire les informations de jointure depuis la condition
-	if conditionData, ok := constraintMap["condition"].(map[string]interface{}); ok {
-		aggInfo.JoinCondition = conditionData
+	return nil
+}
 
-		// Extraire les champs de jointure depuis la condition de type comparison
-		if condType, ok := conditionData["type"].(string); ok && condType == "comparison" {
-			// Left side: p.employee_id
-			if leftData, ok := conditionData["left"].(map[string]interface{}); ok {
-				if leftType, ok := leftData["type"].(string); ok && leftType == "fieldAccess" {
-					if joinField, ok := leftData["field"].(string); ok {
-						aggInfo.JoinField = joinField
-					}
-				}
-			}
+// extractAggregationThreshold extrait le seuil d'agrégation
+func (cp *ConstraintPipeline) extractAggregationThreshold(constraintMap map[string]interface{}, aggInfo *AggregationInfo) error {
+	thresholdData, ok := constraintMap["threshold"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("seuil manquant")
+	}
 
-			// Right side: e.id
-			if rightData, ok := conditionData["right"].(map[string]interface{}); ok {
-				if rightType, ok := rightData["type"].(string); ok && rightType == "fieldAccess" {
-					if mainField, ok := rightData["field"].(string); ok {
-						aggInfo.MainField = mainField
-					}
-				}
+	if threshold, ok := thresholdData["value"].(float64); ok {
+		aggInfo.Threshold = threshold
+		return nil
+	}
+
+	if thresholdInt, ok := thresholdData["value"].(int); ok {
+		aggInfo.Threshold = float64(thresholdInt)
+		return nil
+	}
+
+	return fmt.Errorf("valeur de seuil non trouvée ou invalide")
+}
+
+// extractAggregationVariable extrait la variable à agréger
+func (cp *ConstraintPipeline) extractAggregationVariable(constraintMap map[string]interface{}, aggInfo *AggregationInfo) {
+	variableData, ok := constraintMap["variable"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	if aggVar, ok := variableData["name"].(string); ok {
+		aggInfo.AggVariable = aggVar
+	}
+
+	if aggType, ok := variableData["dataType"].(string); ok {
+		aggInfo.AggType = aggType
+	}
+}
+
+// extractAggregationJoinFields extrait les champs de jointure
+func (cp *ConstraintPipeline) extractAggregationJoinFields(constraintMap map[string]interface{}, aggInfo *AggregationInfo) {
+	// Condition de jointure complète
+	if joinCond, ok := constraintMap["join"]; ok {
+		aggInfo.JoinCondition = joinCond
+	}
+
+	// Extraire depuis la condition de comparaison
+	conditionData, ok := constraintMap["condition"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	aggInfo.JoinCondition = conditionData
+
+	condType, ok := conditionData["type"].(string)
+	if !ok || condType != "comparison" {
+		return
+	}
+
+	// Left side: p.employee_id
+	if leftData, ok := conditionData["left"].(map[string]interface{}); ok {
+		if leftType, ok := leftData["type"].(string); ok && leftType == "fieldAccess" {
+			if joinField, ok := leftData["field"].(string); ok {
+				aggInfo.JoinField = joinField
 			}
 		}
 	}
 
-	return aggInfo, nil
+	// Right side: e.id
+	if rightData, ok := conditionData["right"].(map[string]interface{}); ok {
+		if rightType, ok := rightData["type"].(string); ok && rightType == "fieldAccess" {
+			if mainField, ok := rightData["field"].(string); ok {
+				aggInfo.MainField = mainField
+			}
+		}
+	}
 }
 
 // detectAggregation détecte si une contrainte contient une agrégation
@@ -228,39 +270,70 @@ func (cp *ConstraintPipeline) detectAggregation(constraintsData interface{}) boo
 func (cp *ConstraintPipeline) hasAggregationVariables(exprMap map[string]interface{}) bool {
 	// Check new multi-pattern syntax
 	if patternsData, hasPatterns := exprMap["patterns"]; hasPatterns {
-		if patternsList, ok := patternsData.([]interface{}); ok {
-			for _, patternInterface := range patternsList {
-				if patternMap, ok := patternInterface.(map[string]interface{}); ok {
-					if varsData, hasVars := patternMap["variables"]; hasVars {
-						if varsList, ok := varsData.([]interface{}); ok {
-							for _, varInterface := range varsList {
-								if varMap, ok := varInterface.(map[string]interface{}); ok {
-									if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
-										return true
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+		if cp.checkPatternsForAggregation(patternsData) {
+			return true
 		}
 	}
 
 	// Check old single-pattern syntax for backward compatibility
 	if setData, hasSet := exprMap["set"]; hasSet {
-		if setMap, ok := setData.(map[string]interface{}); ok {
-			if varsData, hasVars := setMap["variables"]; hasVars {
-				if varsList, ok := varsData.([]interface{}); ok {
-					for _, varInterface := range varsList {
-						if varMap, ok := varInterface.(map[string]interface{}); ok {
-							if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
-								return true
-							}
-						}
-					}
-				}
-			}
+		return cp.checkSetForAggregation(setData)
+	}
+
+	return false
+}
+
+// checkPatternsForAggregation vérifie si des patterns contiennent des variables d'agrégation
+func (cp *ConstraintPipeline) checkPatternsForAggregation(patternsData interface{}) bool {
+	patternsList, ok := patternsData.([]interface{})
+	if !ok {
+		return false
+	}
+
+	for _, patternInterface := range patternsList {
+		patternMap, ok := patternInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if cp.checkVariablesForAggregation(patternMap) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checkSetForAggregation vérifie si un set contient des variables d'agrégation
+func (cp *ConstraintPipeline) checkSetForAggregation(setData interface{}) bool {
+	setMap, ok := setData.(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	return cp.checkVariablesForAggregation(setMap)
+}
+
+// checkVariablesForAggregation vérifie si une liste de variables contient des agrégations
+func (cp *ConstraintPipeline) checkVariablesForAggregation(container map[string]interface{}) bool {
+	varsData, hasVars := container["variables"]
+	if !hasVars {
+		return false
+	}
+
+	varsList, ok := varsData.([]interface{})
+	if !ok {
+		return false
+	}
+
+	for _, varInterface := range varsList {
+		varMap, ok := varInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if varType, ok := varMap["type"].(string); ok && varType == "aggregationVariable" {
+			return true
 		}
 	}
 

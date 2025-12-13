@@ -221,96 +221,156 @@ func analyzeLogicalExpression(expr constraint.LogicalExpression) (ExpressionType
 func analyzeLogicalExpressionMap(expr map[string]interface{}) (ExpressionType, error) {
 	operations, ok := expr["operations"]
 	if !ok {
-		// Pas d'opérations - analyser le côté gauche uniquement
-		if left, ok := expr["left"]; ok {
-			return AnalyzeExpression(left)
-		}
-		return ExprTypeSimple, nil
+		return analyzeLeftSideExpression(expr)
 	}
 
-	// Vérifier tous les opérateurs - supporter []interface{}, []map[string]interface{} et []constraint.LogicalOperation
-	hasAND := false
-	hasOR := false
+	hasAND, hasOR, err := scanOperationsForLogicalOperators(operations, expr)
+	if err != nil {
+		return ExprTypeSimple, err
+	}
 
+	return determineExpressionType(hasAND, hasOR), nil
+}
+
+// analyzeLeftSideExpression analyse le côté gauche d'une expression sans opérations
+func analyzeLeftSideExpression(expr map[string]interface{}) (ExpressionType, error) {
+	if left, ok := expr["left"]; ok {
+		return AnalyzeExpression(left)
+	}
+	return ExprTypeSimple, nil
+}
+
+// scanOperationsForLogicalOperators parcourt les opérations et détecte les opérateurs AND/OR
+func scanOperationsForLogicalOperators(operations interface{}, expr map[string]interface{}) (hasAND bool, hasOR bool, err error) {
 	// Essayer []map[string]interface{} en premier (type le plus courant du parser)
 	if opsMapList, ok := operations.([]map[string]interface{}); ok {
-		if len(opsMapList) == 0 {
-			if left, ok := expr["left"]; ok {
-				return AnalyzeExpression(left)
-			}
-			return ExprTypeSimple, nil
-		}
-
-		for _, opMap := range opsMapList {
-			operator, ok := opMap["op"].(string)
-			if !ok {
-				continue
-			}
-
-			switch operator {
-			case "AND", "and", "&&":
-				hasAND = true
-			case "OR", "or", "||":
-				hasOR = true
-			}
-		}
-	} else if opsList, ok := operations.([]interface{}); ok {
-		if len(opsList) == 0 {
-			if left, ok := expr["left"]; ok {
-				return AnalyzeExpression(left)
-			}
-			return ExprTypeSimple, nil
-		}
-
-		for _, opInterface := range opsList {
-			opMap, ok := opInterface.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			operator, ok := opMap["op"].(string)
-			if !ok {
-				continue
-			}
-
-			switch operator {
-			case "AND", "and", "&&":
-				hasAND = true
-			case "OR", "or", "||":
-				hasOR = true
-			}
-		}
-	} else if logicalOps, ok := operations.([]constraint.LogicalOperation); ok {
-		if len(logicalOps) == 0 {
-			if left, ok := expr["left"]; ok {
-				return AnalyzeExpression(left)
-			}
-			return ExprTypeSimple, nil
-		}
-
-		for _, op := range logicalOps {
-			switch op.Op {
-			case "AND", "and", "&&":
-				hasAND = true
-			case "OR", "or", "||":
-				hasOR = true
-			}
-		}
-	} else {
-		return ExprTypeSimple, fmt.Errorf("operations doit être un tableau ([]interface{}, []map[string]interface{} ou []LogicalOperation)")
+		return scanMapOperationsList(opsMapList, expr)
 	}
 
-	// Déterminer le type en fonction des opérateurs trouvés
+	// Essayer []interface{}
+	if opsList, ok := operations.([]interface{}); ok {
+		return scanInterfaceOperationsList(opsList, expr)
+	}
+
+	// Essayer []constraint.LogicalOperation
+	if logicalOps, ok := operations.([]constraint.LogicalOperation); ok {
+		return scanLogicalOperationsList(logicalOps, expr)
+	}
+
+	return false, false, fmt.Errorf("operations doit être un tableau ([]interface{}, []map[string]interface{} ou []LogicalOperation)")
+}
+
+// scanMapOperationsList parcourt une liste []map[string]interface{} pour détecter AND/OR
+func scanMapOperationsList(opsMapList []map[string]interface{}, expr map[string]interface{}) (hasAND bool, hasOR bool, err error) {
+	if len(opsMapList) == 0 {
+		exprType, analyzeErr := analyzeLeftSideExpression(expr)
+		if analyzeErr != nil {
+			return false, false, analyzeErr
+		}
+		// Return values that will produce the same result as the original
+		return exprType == ExprTypeAND, exprType == ExprTypeOR, nil
+	}
+
+	for _, opMap := range opsMapList {
+		operator, ok := opMap["op"].(string)
+		if !ok {
+			continue
+		}
+
+		if isANDOperator(operator) {
+			hasAND = true
+		} else if isOROperator(operator) {
+			hasOR = true
+		}
+	}
+
+	return hasAND, hasOR, nil
+}
+
+// scanInterfaceOperationsList parcourt une liste []interface{} pour détecter AND/OR
+func scanInterfaceOperationsList(opsList []interface{}, expr map[string]interface{}) (hasAND bool, hasOR bool, err error) {
+	if len(opsList) == 0 {
+		exprType, analyzeErr := analyzeLeftSideExpression(expr)
+		if analyzeErr != nil {
+			return false, false, analyzeErr
+		}
+		return exprType == ExprTypeAND, exprType == ExprTypeOR, nil
+	}
+
+	for _, opInterface := range opsList {
+		opMap, ok := opInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		operator, ok := opMap["op"].(string)
+		if !ok {
+			continue
+		}
+
+		if isANDOperator(operator) {
+			hasAND = true
+		} else if isOROperator(operator) {
+			hasOR = true
+		}
+	}
+
+	return hasAND, hasOR, nil
+}
+
+// scanLogicalOperationsList parcourt une liste []constraint.LogicalOperation pour détecter AND/OR
+func scanLogicalOperationsList(logicalOps []constraint.LogicalOperation, expr map[string]interface{}) (hasAND bool, hasOR bool, err error) {
+	if len(logicalOps) == 0 {
+		exprType, analyzeErr := analyzeLeftSideExpression(expr)
+		if analyzeErr != nil {
+			return false, false, analyzeErr
+		}
+		return exprType == ExprTypeAND, exprType == ExprTypeOR, nil
+	}
+
+	for _, op := range logicalOps {
+		if isANDOperator(op.Op) {
+			hasAND = true
+		} else if isOROperator(op.Op) {
+			hasOR = true
+		}
+	}
+
+	return hasAND, hasOR, nil
+}
+
+// isANDOperator détermine si un opérateur est un AND
+func isANDOperator(operator string) bool {
+	switch operator {
+	case "AND", "and", "&&":
+		return true
+	default:
+		return false
+	}
+}
+
+// isOROperator détermine si un opérateur est un OR
+func isOROperator(operator string) bool {
+	switch operator {
+	case "OR", "or", "||":
+		return true
+	default:
+		return false
+	}
+}
+
+// determineExpressionType détermine le type d'expression en fonction des opérateurs trouvés
+func determineExpressionType(hasAND bool, hasOR bool) ExpressionType {
 	if hasAND && hasOR {
-		return ExprTypeMixed, nil
-	} else if hasOR {
-		return ExprTypeOR, nil
-	} else if hasAND {
-		return ExprTypeAND, nil
+		return ExprTypeMixed
 	}
-
-	// Par défaut, considérer comme simple
-	return ExprTypeSimple, nil
+	if hasOR {
+		return ExprTypeOR
+	}
+	if hasAND {
+		return ExprTypeAND
+	}
+	return ExprTypeSimple
 }
 
 // isArithmeticOperator détermine si un opérateur est arithmétique

@@ -15,52 +15,79 @@ import (
 func generateOptimizationHints(expr interface{}, info *ExpressionInfo) []string {
 	hints := make([]string, 0)
 
-	// Hint pour De Morgan transformation
-	if info.Type == ExprTypeNOT && info.InnerInfo != nil {
-		if info.InnerInfo.Type == ExprTypeOR {
-			hints = append(hints, "apply_demorgan_not_or")
-		} else if info.InnerInfo.Type == ExprTypeAND {
-			hints = append(hints, "apply_demorgan_not_and")
-		} else if info.InnerInfo.Type == ExprTypeMixed {
-			hints = append(hints, "push_negation_down")
-		}
-	}
-
-	// Hint pour normalisation
-	if info.ShouldNormalize {
-		if info.Type == ExprTypeMixed {
-			hints = append(hints, "normalize_to_dnf")
-		} else if info.Type == ExprTypeOR {
-			hints = append(hints, "consider_dnf_expansion")
-		}
-	}
-
-	// Hint pour partage d'alpha nodes
-	if info.Type == ExprTypeAND && info.Complexity >= 3 {
-		hints = append(hints, "alpha_sharing_opportunity")
-	}
-
-	// Hint pour réordonnancement
-	if info.Type == ExprTypeAND && canBenefitFromReordering(expr) {
-		hints = append(hints, "consider_reordering")
-	}
-
-	// Hint pour expressions complexes
-	if info.Complexity >= 4 {
-		hints = append(hints, "high_complexity_review")
-	}
-
-	// Hint pour expressions nécessitant beta nodes
-	if info.RequiresBeta {
-		hints = append(hints, "requires_beta_node")
-	}
-
-	// Hint pour simplification arithmétique
-	if info.Type == ExprTypeArithmetic {
-		hints = append(hints, "consider_arithmetic_simplification")
-	}
+	addDeMorganHints(info, &hints)
+	addNormalizationHints(info, &hints)
+	addSharingHints(info, &hints)
+	addReorderingHints(info, expr, &hints)
+	addComplexityHints(info, &hints)
+	addBetaHints(info, &hints)
+	addArithmeticHints(info, &hints)
 
 	return hints
+}
+
+// addDeMorganHints ajoute les hints pour De Morgan transformation
+func addDeMorganHints(info *ExpressionInfo, hints *[]string) {
+	if info.Type != ExprTypeNOT || info.InnerInfo == nil {
+		return
+	}
+
+	switch info.InnerInfo.Type {
+	case ExprTypeOR:
+		*hints = append(*hints, "apply_demorgan_not_or")
+	case ExprTypeAND:
+		*hints = append(*hints, "apply_demorgan_not_and")
+	case ExprTypeMixed:
+		*hints = append(*hints, "push_negation_down")
+	}
+}
+
+// addNormalizationHints ajoute les hints pour normalisation
+func addNormalizationHints(info *ExpressionInfo, hints *[]string) {
+	if !info.ShouldNormalize {
+		return
+	}
+
+	if info.Type == ExprTypeMixed {
+		*hints = append(*hints, "normalize_to_dnf")
+	} else if info.Type == ExprTypeOR {
+		*hints = append(*hints, "consider_dnf_expansion")
+	}
+}
+
+// addSharingHints ajoute les hints pour partage d'alpha nodes
+func addSharingHints(info *ExpressionInfo, hints *[]string) {
+	if info.Type == ExprTypeAND && info.Complexity >= 3 {
+		*hints = append(*hints, "alpha_sharing_opportunity")
+	}
+}
+
+// addReorderingHints ajoute les hints pour réordonnancement
+func addReorderingHints(info *ExpressionInfo, expr interface{}, hints *[]string) {
+	if info.Type == ExprTypeAND && canBenefitFromReordering(expr) {
+		*hints = append(*hints, "consider_reordering")
+	}
+}
+
+// addComplexityHints ajoute les hints pour complexité élevée
+func addComplexityHints(info *ExpressionInfo, hints *[]string) {
+	if info.Complexity >= 4 {
+		*hints = append(*hints, "high_complexity_review")
+	}
+}
+
+// addBetaHints ajoute les hints pour beta nodes
+func addBetaHints(info *ExpressionInfo, hints *[]string) {
+	if info.RequiresBeta {
+		*hints = append(*hints, "requires_beta_node")
+	}
+}
+
+// addArithmeticHints ajoute les hints pour simplification arithmétique
+func addArithmeticHints(info *ExpressionInfo, hints *[]string) {
+	if info.Type == ExprTypeArithmetic {
+		*hints = append(*hints, "consider_arithmetic_simplification")
+	}
 }
 
 // canBenefitFromReordering détermine si une expression AND peut bénéficier d'un réordonnancement

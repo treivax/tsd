@@ -11,6 +11,26 @@ import (
 	"sync"
 )
 
+// Constantes pour le debug logger
+const (
+	// DebugEnvVar est la variable d'environnement pour activer le debug
+	DebugEnvVar = "TSD_DEBUG_BINDINGS"
+	
+	// DebugEnvValueEnabled est la valeur pour activer le debug
+	DebugEnvValueEnabled = "1"
+	
+	// Préfixes de log
+	LogPrefixDebug = "[DEBUG]"
+	
+	// Emojis pour logging (optionnel, peut être désactivé)
+	EmojiJoinNode    = "🔗"
+	EmojiStats       = "📊"
+	EmojiInspect     = "🔍"
+	EmojiMemory      = "📊"
+	EmojiFactSubmit  = "📥"
+	EmojiToken       = "🎫"
+)
+
 // DebugLogger provides thread-safe debug logging to stderr for E2E debugging
 type DebugLogger struct {
 	enabled bool
@@ -26,7 +46,7 @@ var (
 func GetDebugLogger() *DebugLogger {
 	once.Do(func() {
 		// Check environment variable to enable debug logging
-		enabled := os.Getenv("TSD_DEBUG_BINDINGS") == "1"
+		enabled := os.Getenv(DebugEnvVar) == DebugEnvValueEnabled
 		globalDebugLogger = &DebugLogger{
 			enabled: enabled,
 		}
@@ -62,7 +82,7 @@ func (dl *DebugLogger) Log(format string, args ...interface{}) {
 	}
 	dl.mu.Lock()
 	defer dl.mu.Unlock()
-	fmt.Fprintf(os.Stderr, "[DEBUG] "+format+"\n", args...)
+	fmt.Fprintf(os.Stderr, LogPrefixDebug+" "+format+"\n", args...)
 }
 
 // LogJoinNode logs detailed information about a join node
@@ -74,7 +94,7 @@ func (dl *DebugLogger) LogJoinNode(nodeID string, operation string, details map[
 	defer dl.mu.Unlock()
 
 	var parts []string
-	parts = append(parts, fmt.Sprintf("🔗 [JOIN_%s] %s", nodeID, operation))
+	parts = append(parts, fmt.Sprintf("%s [JOIN_%s] %s", EmojiJoinNode, nodeID, operation))
 
 	for k, v := range details {
 		parts = append(parts, fmt.Sprintf("  %s: %v", k, v))
@@ -92,11 +112,11 @@ func (dl *DebugLogger) LogBindings(prefix string, bindings *BindingChain) {
 	defer dl.mu.Unlock()
 
 	vars := bindings.Variables()
-	fmt.Fprintf(os.Stderr, "[DEBUG] %s - Bindings: [%s]\n", prefix, strings.Join(vars, ", "))
+	fmt.Fprintf(os.Stderr, "%s %s - Bindings: [%s]\n", LogPrefixDebug, prefix, strings.Join(vars, ", "))
 
 	for _, varName := range vars {
 		fact := bindings.Get(varName)
-		fmt.Fprintf(os.Stderr, "[DEBUG]   %s -> %v\n", varName, fact)
+		fmt.Fprintf(os.Stderr, "%s   %s -> %v\n", LogPrefixDebug, varName, fact)
 	}
 }
 
@@ -113,10 +133,10 @@ func (dl *DebugLogger) LogJoinConditionEvaluation(nodeID string, condIndex int, 
 		status = "✗ FAIL"
 	}
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] 🔍 [JOIN_%s] Condition[%d] %s\n", nodeID, condIndex, status)
-	fmt.Fprintf(os.Stderr, "[DEBUG]   LeftVar=%s (found=%v, val=%v)\n", leftVar, leftFound, leftVal)
-	fmt.Fprintf(os.Stderr, "[DEBUG]   RightVar=%s (found=%v, val=%v)\n", rightVar, rightFound, rightVal)
-	fmt.Fprintf(os.Stderr, "[DEBUG]   Result: %v\n", result)
+	fmt.Fprintf(os.Stderr, "%s %s [JOIN_%s] Condition[%d] %s\n", LogPrefixDebug, EmojiInspect, nodeID, condIndex, status)
+	fmt.Fprintf(os.Stderr, "%s   LeftVar=%s (found=%v, val=%v)\n", LogPrefixDebug, leftVar, leftFound, leftVal)
+	fmt.Fprintf(os.Stderr, "%s   RightVar=%s (found=%v, val=%v)\n", LogPrefixDebug, rightVar, rightFound, rightVal)
+	fmt.Fprintf(os.Stderr, "%s   Result: %v\n", LogPrefixDebug, result)
 }
 
 // LogMemorySizes logs the sizes of join node memories
@@ -127,8 +147,8 @@ func (dl *DebugLogger) LogMemorySizes(nodeID string, leftSize, rightSize, result
 	dl.mu.Lock()
 	defer dl.mu.Unlock()
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] 📊 [JOIN_%s] Memory sizes: Left=%d, Right=%d, Result=%d\n",
-		nodeID, leftSize, rightSize, resultSize)
+	fmt.Fprintf(os.Stderr, "%s %s [JOIN_%s] Memory sizes: Left=%d, Right=%d, Result=%d\n",
+		LogPrefixDebug, EmojiMemory, nodeID, leftSize, rightSize, resultSize)
 }
 
 // LogFactSubmission logs when a fact is submitted to the network
@@ -139,8 +159,8 @@ func (dl *DebugLogger) LogFactSubmission(factType string, factID string, factDat
 	dl.mu.Lock()
 	defer dl.mu.Unlock()
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] 📥 FACT SUBMITTED: Type=%s, ID=%s, Data=%v\n",
-		factType, factID, factData)
+	fmt.Fprintf(os.Stderr, "%s %s FACT SUBMITTED: Type=%s, ID=%s, Data=%v\n",
+		LogPrefixDebug, EmojiFactSubmit, factType, factID, factData)
 }
 
 // LogTokenCreation logs when a new token is created
@@ -152,7 +172,7 @@ func (dl *DebugLogger) LogTokenCreation(nodeID string, tokenType string, binding
 	defer dl.mu.Unlock()
 
 	vars := bindings.Variables()
-	fmt.Fprintf(os.Stderr, "[DEBUG] 🎫 [%s] Token created (%s): vars=[%s]\n",
+	fmt.Fprintf(os.Stderr, "LogPrefixDebug, EmojiToken [%s] Token created (%s): vars=[%s]\n",
 		nodeID, tokenType, strings.Join(vars, ", "))
 }
 
@@ -223,5 +243,5 @@ func (dl *DebugLogger) LogNetworkStructure(network *ReteNetwork) {
 		fmt.Fprintf(os.Stderr, "[DEBUG]   - %s (action: %s)\n", nodeID, actionName)
 	}
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] =======================================\n\n")
+	fmt.Fprintf(os.Stderr, LogPrefixDebug+" =\n\n")
 }

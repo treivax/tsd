@@ -76,14 +76,15 @@ func AnalyzeNestedOR(expr interface{}) (*NestedORAnalysis, error) {
 
 // analyzeLogicalExpressionNesting analyse l'imbrication d'une LogicalExpression
 func analyzeLogicalExpressionNesting(expr constraint.LogicalExpression, analysis *NestedORAnalysis, depth int) {
-	if depth > analysis.NestingDepth {
-		analysis.NestingDepth = depth
-	}
+	updateNestingDepth(analysis, depth)
 
-	hasOR := false
-	hasAND := false
+	hasOR, hasAND := scanLogicalOperations(expr, analysis, depth)
+	analyzeLogicalLeftSide(expr, analysis, depth)
+	updateComplexityBasedOnOperators(analysis, hasOR, hasAND, depth)
+}
 
-	// Analyser les opérations
+// scanLogicalOperations parcourt les opérations logiques et met à jour les compteurs
+func scanLogicalOperations(expr constraint.LogicalExpression, analysis *NestedORAnalysis, depth int) (hasOR bool, hasAND bool) {
 	for _, op := range expr.Operations {
 		opStr := strings.ToUpper(op.Op)
 
@@ -95,101 +96,133 @@ func analyzeLogicalExpressionNesting(expr constraint.LogicalExpression, analysis
 			analysis.ANDTermCount++
 		}
 
-		// Récursion pour analyser les sous-expressions
-		if rightLogical, ok := op.Right.(constraint.LogicalExpression); ok {
-			analyzeLogicalExpressionNesting(rightLogical, analysis, depth+1)
-		}
+		analyzeLogicalRightSide(op, analysis, depth)
 	}
 
-	// Analyser le left également
+	return hasOR, hasAND
+}
+
+// analyzeLogicalRightSide analyse récursivement le côté droit d'une opération logique
+func analyzeLogicalRightSide(op constraint.LogicalOperation, analysis *NestedORAnalysis, depth int) {
+	if rightLogical, ok := op.Right.(constraint.LogicalExpression); ok {
+		analyzeLogicalExpressionNesting(rightLogical, analysis, depth+1)
+	}
+}
+
+// analyzeLogicalLeftSide analyse le côté gauche de l'expression logique
+func analyzeLogicalLeftSide(expr constraint.LogicalExpression, analysis *NestedORAnalysis, depth int) {
 	if leftLogical, ok := expr.Left.(constraint.LogicalExpression); ok {
 		analyzeLogicalExpressionNesting(leftLogical, analysis, depth+1)
-	}
-
-	// Déterminer la complexité
-	if hasOR && hasAND {
-		// Vérifier si c'est un candidat DNF (plusieurs groupes OR liés par AND)
-		if analysis.ORTermCount >= 2 && analysis.ANDTermCount >= 1 {
-			if analysis.Complexity < ComplexityDNFCandidate {
-				analysis.Complexity = ComplexityDNFCandidate
-			}
-		} else if analysis.Complexity < ComplexityMixedANDOR {
-			analysis.Complexity = ComplexityMixedANDOR
-		}
-	} else if hasOR {
-		// Vérifier si c'est un OR imbriqué (profondeur > 0 signifie imbrication)
-		if depth > 0 {
-			if analysis.Complexity < ComplexityNestedOR {
-				analysis.Complexity = ComplexityNestedOR
-			}
-		} else if analysis.Complexity < ComplexityFlat {
-			analysis.Complexity = ComplexityFlat
-		}
 	}
 }
 
 // analyzeMapExpressionNesting analyse l'imbrication d'une expression map
 func analyzeMapExpressionNesting(expr map[string]interface{}, analysis *NestedORAnalysis, depth int) {
+	updateNestingDepth(analysis, depth)
+
+	hasOR, hasAND := scanMapOperationsForNesting(expr, analysis, depth)
+	analyzeMapLeftSide(expr, analysis, depth)
+	updateComplexityBasedOnOperators(analysis, hasOR, hasAND, depth)
+}
+
+// updateNestingDepth met à jour la profondeur d'imbrication maximale
+func updateNestingDepth(analysis *NestedORAnalysis, depth int) {
 	if depth > analysis.NestingDepth {
 		analysis.NestingDepth = depth
 	}
+}
 
-	hasOR := false
-	hasAND := false
-
-	// Analyser les opérations
-	if operations, ok := expr["operations"]; ok {
-		if opsList, ok := operations.([]interface{}); ok {
-			for _, opInterface := range opsList {
-				if opMap, ok := opInterface.(map[string]interface{}); ok {
-					if op, ok := opMap["op"].(string); ok {
-						opStr := strings.ToUpper(op)
-
-						if opStr == "OR" || opStr == "||" {
-							hasOR = true
-							analysis.ORTermCount++
-						} else if opStr == "AND" || opStr == "&&" {
-							hasAND = true
-							analysis.ANDTermCount++
-						}
-
-						// Récursion sur right
-						if right, ok := opMap["right"].(map[string]interface{}); ok {
-							if rightType, ok := right["type"].(string); ok && rightType == "logicalExpr" {
-								analyzeMapExpressionNesting(right, analysis, depth+1)
-							}
-						}
-					}
-				}
-			}
-		}
+// scanMapOperationsForNesting parcourt les opérations et met à jour les compteurs
+func scanMapOperationsForNesting(expr map[string]interface{}, analysis *NestedORAnalysis, depth int) (hasOR bool, hasAND bool) {
+	operations, ok := expr["operations"]
+	if !ok {
+		return false, false
 	}
 
-	// Analyser left
-	if left, ok := expr["left"].(map[string]interface{}); ok {
-		if leftType, ok := left["type"].(string); ok && leftType == "logicalExpr" {
-			analyzeMapExpressionNesting(left, analysis, depth+1)
-		}
+	opsList, ok := operations.([]interface{})
+	if !ok {
+		return false, false
 	}
 
-	// Déterminer la complexité
+	for _, opInterface := range opsList {
+		opMap, ok := opInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		op, ok := opMap["op"].(string)
+		if !ok {
+			continue
+		}
+
+		opStr := strings.ToUpper(op)
+		if opStr == "OR" || opStr == "||" {
+			hasOR = true
+			analysis.ORTermCount++
+		} else if opStr == "AND" || opStr == "&&" {
+			hasAND = true
+			analysis.ANDTermCount++
+		}
+
+		analyzeRightSideRecursively(opMap, analysis, depth)
+	}
+
+	return hasOR, hasAND
+}
+
+// analyzeRightSideRecursively analyse récursivement le côté droit d'une opération
+func analyzeRightSideRecursively(opMap map[string]interface{}, analysis *NestedORAnalysis, depth int) {
+	right, ok := opMap["right"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	rightType, ok := right["type"].(string)
+	if ok && rightType == "logicalExpr" {
+		analyzeMapExpressionNesting(right, analysis, depth+1)
+	}
+}
+
+// analyzeMapLeftSide analyse le côté gauche de l'expression
+func analyzeMapLeftSide(expr map[string]interface{}, analysis *NestedORAnalysis, depth int) {
+	left, ok := expr["left"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	leftType, ok := left["type"].(string)
+	if ok && leftType == "logicalExpr" {
+		analyzeMapExpressionNesting(left, analysis, depth+1)
+	}
+}
+
+// updateComplexityBasedOnOperators détermine et met à jour la complexité
+func updateComplexityBasedOnOperators(analysis *NestedORAnalysis, hasOR bool, hasAND bool, depth int) {
 	if hasOR && hasAND {
-		// Vérifier si c'est un candidat DNF (plusieurs groupes OR liés par AND)
-		if analysis.ORTermCount >= 2 && analysis.ANDTermCount >= 1 {
-			if analysis.Complexity < ComplexityDNFCandidate {
-				analysis.Complexity = ComplexityDNFCandidate
-			}
-		} else if analysis.Complexity < ComplexityMixedANDOR {
-			analysis.Complexity = ComplexityMixedANDOR
-		}
+		updateMixedComplexity(analysis)
 	} else if hasOR {
-		// Vérifier si c'est un OR imbriqué (profondeur > 0 signifie imbrication)
-		if depth > 0 {
-			if analysis.Complexity < ComplexityNestedOR {
-				analysis.Complexity = ComplexityNestedOR
-			}
-		} else if analysis.Complexity < ComplexityFlat {
-			analysis.Complexity = ComplexityFlat
+		updateORComplexity(analysis, depth)
+	}
+}
+
+// updateMixedComplexity met à jour la complexité pour les expressions mixtes AND/OR
+func updateMixedComplexity(analysis *NestedORAnalysis) {
+	if analysis.ORTermCount >= 2 && analysis.ANDTermCount >= 1 {
+		if analysis.Complexity < ComplexityDNFCandidate {
+			analysis.Complexity = ComplexityDNFCandidate
 		}
+	} else if analysis.Complexity < ComplexityMixedANDOR {
+		analysis.Complexity = ComplexityMixedANDOR
+	}
+}
+
+// updateORComplexity met à jour la complexité pour les expressions avec OR
+func updateORComplexity(analysis *NestedORAnalysis, depth int) {
+	if depth > 0 {
+		if analysis.Complexity < ComplexityNestedOR {
+			analysis.Complexity = ComplexityNestedOR
+		}
+	} else if analysis.Complexity < ComplexityFlat {
+		analysis.Complexity = ComplexityFlat
 	}
 }

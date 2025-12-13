@@ -106,8 +106,9 @@ func (wm *WorkingMemory) AddFact(fact *Fact) error {
 	// Utiliser l'identifiant interne (Type_ID) pour garantir l'unicité par type
 	internalID := fact.GetInternalID()
 
-	if _, exists := wm.Facts[internalID]; exists {
-		return fmt.Errorf("fait avec ID '%s' et type '%s' existe déjà dans la mémoire", fact.ID, fact.Type)
+	if existingFact, exists := wm.Facts[internalID]; exists {
+		return fmt.Errorf("fait avec ID '%s' et type '%s' existe déjà dans la mémoire du nœud %s (champs existants: %v)",
+			fact.ID, fact.Type, wm.NodeID, existingFact.Fields)
 	}
 
 	wm.Facts[internalID] = fact
@@ -170,16 +171,52 @@ func (wm *WorkingMemory) GetTokens() []*Token {
 	return tokens
 }
 
-// GetFactsByVariable retourne les faits associés aux variables spécifiées
+// GetFactsByVariable retourne les faits associés aux variables spécifiées.
+// Si variables est vide ou nil, retourne tous les faits.
+//
+// Note: Cette implémentation retourne tous les faits car WorkingMemory ne maintient
+// pas d'index par variable. L'appelant doit filtrer lui-même si nécessaire en utilisant
+// les bindings des tokens.
 func (wm *WorkingMemory) GetFactsByVariable(variables []string) []*Fact {
-	// Pour l'instant, retourne tous les faits (implémentation simplifiée)
+	// Si pas de filtre, retourner tous les faits
+	if len(variables) == 0 {
+		return wm.GetFacts()
+	}
+
+	// TODO: Implémentation complète nécessiterait:
+	// 1. Soit maintenir un index variable->fait dans WorkingMemory
+	// 2. Soit parcourir les tokens et extraire les faits liés aux variables
+	//
+	// Pour l'instant, retourne tous les faits car WorkingMemory ne contient
+	// pas suffisamment d'information pour filtrer par variable.
+	// L'appelant devra filtrer lui-même si nécessaire.
 	return wm.GetFacts()
 }
 
-// GetTokensByVariable retourne les tokens associés aux variables spécifiées
+// GetTokensByVariable retourne les tokens contenant au moins une des variables spécifiées.
+// Si variables est vide ou nil, retourne tous les tokens.
+//
+// Le filtrage est basé sur Token.Bindings.Has() pour vérifier la présence de chaque variable.
 func (wm *WorkingMemory) GetTokensByVariable(variables []string) []*Token {
-	// Pour l'instant, retourne tous les tokens (implémentation simplifiée)
-	return wm.GetTokens()
+	// Si pas de filtre, retourner tous les tokens
+	if len(variables) == 0 {
+		return wm.GetTokens()
+	}
+
+	// Filtrer les tokens qui contiennent au moins une des variables
+	result := make([]*Token, 0)
+	for _, token := range wm.Tokens {
+		if token.Bindings != nil {
+			for _, varName := range variables {
+				if token.Bindings.Has(varName) {
+					result = append(result, token)
+					break // Token déjà ajouté, passer au suivant
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 // Clone crée une copie profonde de WorkingMemory

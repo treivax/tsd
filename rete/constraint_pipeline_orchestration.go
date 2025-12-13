@@ -314,8 +314,8 @@ func (cp *ConstraintPipeline) propagateFactsToNewRules(ctx *ingestionContext) {
 	cp.GetLogger().Info("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))", propagatedCount)
 }
 
-// submitNewFacts soumet les nouveaux faits du fichier au réseau
-func (cp *ConstraintPipeline) submitNewFacts(ctx *ingestionContext) error {
+// submitFactsInternal soumet les nouveaux faits du fichier au réseau (legacy - utiliser submitNewFacts)
+func (cp *ConstraintPipeline) submitFactsInternal(ctx *ingestionContext) error {
 	if len(ctx.program.Facts) == 0 {
 		return nil
 	}

@@ -6,6 +6,7 @@ package rete
 
 import (
 	"fmt"
+	"time"
 )
 
 type RootNode struct {
@@ -16,11 +17,12 @@ type RootNode struct {
 func NewRootNode(storage Storage) *RootNode {
 	return &RootNode{
 		BaseNode: BaseNode{
-			ID:       "root",
-			Type:     "root",
-			Memory:   &WorkingMemory{NodeID: "root", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
-			Children: make([]Node, 0),
-			Storage:  storage,
+			ID:        "root",
+			Type:      "root",
+			Memory:    &WorkingMemory{NodeID: "root", Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			Children:  make([]Node, 0),
+			Storage:   storage,
+			createdAt: time.Now(),
 		},
 	}
 }
@@ -41,6 +43,9 @@ func (rn *RootNode) ActivateRetract(factID string) error {
 
 // ActivateRight distribue les faits aux nœuds de type
 func (rn *RootNode) ActivateRight(fact *Fact) error {
+	// Enregistrer l'activation
+	rn.recordActivation()
+	
 	rn.mutex.Lock()
 	if err := rn.Memory.AddFact(fact); err != nil {
 		rn.mutex.Unlock()

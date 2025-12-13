@@ -6,6 +6,7 @@ package rete
 
 import (
 	"fmt"
+	"time"
 )
 
 type TerminalNode struct {
@@ -17,11 +18,12 @@ type TerminalNode struct {
 func NewTerminalNode(nodeID string, action *Action, storage Storage) *TerminalNode {
 	return &TerminalNode{
 		BaseNode: BaseNode{
-			ID:       nodeID,
-			Type:     "terminal",
-			Memory:   &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
-			Children: make([]Node, 0), // Les nœuds terminaux n'ont pas d'enfants
-			Storage:  storage,
+			ID:        nodeID,
+			Type:      "terminal",
+			Memory:    &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			Children:  make([]Node, 0), // Les nœuds terminaux n'ont pas d'enfants
+			Storage:   storage,
+			createdAt: time.Now(),
 		},
 		Action: action,
 	}
@@ -42,6 +44,9 @@ func NewTerminalNode(nodeID string, action *Action, storage Storage) *TerminalNo
 // Retourne :
 //   - error : erreur si l'exécution de l'action échoue
 func (tn *TerminalNode) ActivateLeft(token *Token) error {
+	// Enregistrer l'activation
+	tn.recordActivation()
+	
 	// Stocker le token
 	tn.mutex.Lock()
 	if tn.Memory.Tokens == nil {

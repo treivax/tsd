@@ -59,32 +59,130 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 	cp.logger.Info("========================================")
 	cp.logger.Info("📁 Ingestion incrémentale: %s", filename)
 
-	// Initialiser la collecte de métriques
-	metrics := NewMetricsCollector()
-
 	// Initialiser le contexte d'ingestion
 	ctx := &ingestionContext{
 		filename: filename,
 		network:  network,
 		storage:  storage,
-		metrics:  metrics,
+		metrics:  NewMetricsCollector(),
 	}
 
-	// ÉTAPE 1: Parsing et détection reset
+	// Exécuter le pipeline complet
+	if err := cp.executePipeline(ctx); err != nil {
+		return cp.handlePipelineError(ctx, err)
+	}
+
+	cp.logger.Info("🎯 INGESTION TERMINÉE")
+	cp.logger.Info("========================================")
+
+	return ctx.network, ctx.metrics.Finalize(), nil
+}
+
+// executePipeline exécute toutes les étapes du pipeline d'ingestion
+func (cp *ConstraintPipeline) executePipeline(ctx *ingestionContext) error {
+	// Phase 1: Préparation
+	if err := cp.prepareIngestion(ctx); err != nil {
+		return err
+	}
+
+	// Phase 2: Construction réseau
+	if err := cp.buildNetworkFromContext(ctx); err != nil {
+		return err
+	}
+
+	// Phase 3: Gestion faits
+	if err := cp.manageFacts(ctx); err != nil {
+		return err
+	}
+
+	// Phase 4: Finalisation
+	return cp.finalizeIngestion(ctx)
+}
+
+// prepareIngestion prépare le contexte d'ingestion (parsing, reset, transaction, validation)
+func (cp *ConstraintPipeline) prepareIngestion(ctx *ingestionContext) error {
+	if err := cp.readAndParseFile(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.detectReset(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.initializeOrResetNetwork(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.beginTransactionIfNeeded(ctx); err != nil {
+		return err
+	}
+
+	return cp.validateConstraints(ctx)
+}
+
+// buildNetworkFromContext construit ou étend le réseau RETE à partir du contexte
+func (cp *ConstraintPipeline) buildNetworkFromContext(ctx *ingestionContext) error {
+	if err := cp.convertAndExtractComponents(ctx); err != nil {
+		return err
+	}
+
+	return cp.addTypesAndRules(ctx)
+}
+
+// manageFacts gère la collection et la propagation des faits
+func (cp *ConstraintPipeline) manageFacts(ctx *ingestionContext) error {
+	if err := cp.collectExistingFactsIfNeeded(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.propagateToNewRules(ctx); err != nil {
+		return err
+	}
+
+	return cp.submitNewFacts(ctx)
+}
+
+// finalizeIngestion finalise l'ingestion avec validation et commit
+func (cp *ConstraintPipeline) finalizeIngestion(ctx *ingestionContext) error {
+	if err := cp.validateNetworkAndState(ctx); err != nil {
+		return err
+	}
+
+	return cp.verifyAndCommit(ctx)
+}
+
+// handlePipelineError gère les erreurs du pipeline avec rollback automatique
+func (cp *ConstraintPipeline) handlePipelineError(ctx *ingestionContext, err error) (*ReteNetwork, *IngestionMetrics, error) {
+	if ctx.tx != nil && ctx.tx.IsActive {
+		rollbackErr := ctx.tx.Rollback()
+		if rollbackErr != nil {
+			cp.logger.Error("❌ Erreur rollback: %v", rollbackErr)
+			return ctx.network, ctx.metrics.Finalize(), fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
+		}
+		cp.logger.Warn("🔙 Rollback automatique effectué")
+	}
+	return ctx.network, ctx.metrics.Finalize(), err
+}
+
+// readAndParseFile lit et parse le fichier de contraintes
+func (cp *ConstraintPipeline) readAndParseFile(ctx *ingestionContext) error {
 	parsingStart := time.Now()
 	parsedAST, err := constraint.ParseConstraintFile(ctx.filename)
 	if err != nil {
-		metrics.RecordParsingDuration(time.Since(parsingStart))
-		return nil, metrics.Finalize(), fmt.Errorf("❌ Erreur parsing fichier %s: %w", ctx.filename, err)
+		ctx.metrics.RecordParsingDuration(time.Since(parsingStart))
+		return fmt.Errorf("❌ Erreur parsing fichier %s: %w", ctx.filename, err)
 	}
 	ctx.parsedAST = parsedAST
-	metrics.RecordParsingDuration(time.Since(parsingStart))
+	ctx.metrics.RecordParsingDuration(time.Since(parsingStart))
 	cp.logger.Info("✅ Parsing réussi")
+	return nil
+}
 
-	// Détecter reset
-	resultMap, ok := parsedAST.(map[string]interface{})
+// detectReset détecte la présence d'une commande reset dans l'AST
+func (cp *ConstraintPipeline) detectReset(ctx *ingestionContext) error {
+	resultMap, ok := ctx.parsedAST.(map[string]interface{})
 	if !ok {
-		return nil, metrics.Finalize(), fmt.Errorf("❌ Format AST non reconnu: %T", parsedAST)
+		return fmt.Errorf("❌ Format AST non reconnu: %T", ctx.parsedAST)
 	}
 
 	if resetsData, exists := resultMap["resets"]; exists {
@@ -93,8 +191,11 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 			cp.logger.Info("🔄 Commande reset détectée - Réinitialisation complète du réseau")
 		}
 	}
+	return nil
+}
 
-	// ÉTAPE 2: Initialisation réseau (GC si reset)
+// initializeOrResetNetwork initialise ou réinitialise le réseau selon le contexte
+func (cp *ConstraintPipeline) initializeOrResetNetwork(ctx *ingestionContext) error {
 	if ctx.hasResets {
 		cp.logger.Info("🔄 Commande reset détectée - Garbage Collection de l'ancien réseau")
 
@@ -106,55 +207,52 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 
 		cp.logger.Info("🆕 Création d'un nouveau réseau RETE")
 		ctx.network = NewReteNetwork(ctx.storage)
-		metrics.SetWasReset(true)
+		ctx.metrics.SetWasReset(true)
 	}
+	return nil
+}
 
-	// ÉTAPE 3: Démarrer transaction
+// beginTransactionIfNeeded démarre une transaction si le réseau existe
+func (cp *ConstraintPipeline) beginTransactionIfNeeded(ctx *ingestionContext) error {
 	if ctx.network != nil {
 		ctx.tx = ctx.network.BeginTransaction()
 		ctx.network.SetTransaction(ctx.tx)
 		cp.logger.Info("🔒 Transaction démarrée automatiquement: %s", ctx.tx.ID)
 	}
+	return nil
+}
 
-	// Wrapper pour rollback automatique en cas d'erreur
-	handleError := func(err error) (*ReteNetwork, *IngestionMetrics, error) {
-		if ctx.tx != nil && ctx.tx.IsActive {
-			rollbackErr := ctx.tx.Rollback()
-			if rollbackErr != nil {
-				cp.logger.Error("❌ Erreur rollback: %v", rollbackErr)
-				return ctx.network, metrics.Finalize(), fmt.Errorf("erreur ingestion: %w; erreur rollback: %v", err, rollbackErr)
-			}
-			cp.logger.Warn("🔙 Rollback automatique effectué")
-		}
-		return ctx.network, metrics.Finalize(), err
-	}
-
-	// ÉTAPE 4: Validation sémantique
+// validateConstraints effectue la validation sémantique
+func (cp *ConstraintPipeline) validateConstraints(ctx *ingestionContext) error {
 	validationStart := time.Now()
 	if ctx.network == nil || ctx.hasResets {
 		// Validation standard
 		if err := constraint.ValidateConstraintProgram(ctx.parsedAST); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur validation sémantique: %w", err))
+			return fmt.Errorf("❌ Erreur validation sémantique: %w", err)
 		}
 		cp.logger.Info("✅ Validation sémantique réussie")
-		metrics.SetValidationSkipped(false)
+		ctx.metrics.SetValidationSkipped(false)
 	} else {
 		// Validation incrémentale
 		cp.logger.Info("🔍 Validation sémantique incrémentale avec contexte...")
 		validator := NewIncrementalValidator(ctx.network)
 		if err := validator.ValidateWithContext(ctx.parsedAST); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur validation incrémentale: %w", err))
+			return fmt.Errorf("❌ Erreur validation incrémentale: %w", err)
 		}
 		cp.logger.Info("✅ Validation incrémentale réussie (%d types en contexte)", len(ctx.network.Types))
-		metrics.SetValidationSkipped(false)
-		metrics.SetWasIncremental(true)
+		ctx.metrics.SetValidationSkipped(false)
+		ctx.metrics.SetWasIncremental(true)
 	}
-	metrics.RecordValidationDuration(time.Since(validationStart))
+	ctx.metrics.RecordValidationDuration(time.Since(validationStart))
+	return nil
+}
 
-	// ÉTAPE 5: Conversion en programme RETE
+// convertAndExtractComponents convertit l'AST en programme RETE et extrait les composants
+func (cp *ConstraintPipeline) convertAndExtractComponents(ctx *ingestionContext) error {
+	// Conversion en programme
 	program, err := constraint.ConvertResultToProgram(ctx.parsedAST)
 	if err != nil {
-		return handleError(fmt.Errorf("❌ Erreur conversion programme: %w", err))
+		return fmt.Errorf("❌ Erreur conversion programme: %w", err)
 	}
 	ctx.program = program
 
@@ -169,52 +267,47 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 	// Convertir au format RETE
 	reteProgram, err := constraint.ConvertToReteProgram(program)
 	if err != nil {
-		return handleError(fmt.Errorf("❌ Erreur conversion programme RETE: %w", err))
+		return fmt.Errorf("❌ Erreur conversion programme RETE: %w", err)
 	}
 	ctx.reteProgram = reteProgram
+
 	reteResultMap, ok := ctx.reteProgram.(map[string]interface{})
 	if !ok {
-		return handleError(fmt.Errorf("❌ Format programme RETE invalide: %T", ctx.reteProgram))
+		return fmt.Errorf("❌ Format programme RETE invalide: %T", ctx.reteProgram)
 	}
 
 	// Extraire les composants
 	types, expressions, err := cp.extractComponents(reteResultMap)
 	if err != nil {
-		return handleError(fmt.Errorf("❌ Erreur extraction composants: %w", err))
+		return fmt.Errorf("❌ Erreur extraction composants: %w", err)
 	}
 	ctx.types = types
 	ctx.expressions = expressions
 	cp.logger.Info("✅ Trouvé %d types et %d expressions dans le fichier", len(types), len(expressions))
 
-	// ÉTAPE 6: Ajout types et actions
+	return nil
+}
+
+// addTypesAndRules ajoute les types et les règles au réseau
+func (cp *ConstraintPipeline) addTypesAndRules(ctx *ingestionContext) error {
+	// Ajout types
 	if len(ctx.types) > 0 {
 		typeCreationStart := time.Now()
 		if err := cp.createTypeNodes(ctx.network, ctx.types, ctx.storage); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur ajout types: %w", err))
+			return fmt.Errorf("❌ Erreur ajout types: %w", err)
 		}
 		cp.logger.Info("✅ Types ajoutés/mis à jour dans le réseau")
-		metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
-		metrics.SetTypesAdded(len(ctx.types))
+		ctx.metrics.RecordTypeCreationDuration(time.Since(typeCreationStart))
+		ctx.metrics.SetTypesAdded(len(ctx.types))
 	}
 
 	// Extraire et stocker les actions
+	reteResultMap, _ := ctx.reteProgram.(map[string]interface{})
 	if err := cp.extractAndStoreActions(ctx.network, reteResultMap); err != nil {
-		return handleError(fmt.Errorf("❌ Erreur extraction actions: %w", err))
+		return fmt.Errorf("❌ Erreur extraction actions: %w", err)
 	}
 
-	// ÉTAPE 7: Collection faits existants
-	if ctx.hasResets {
-		cp.logger.Debug("📊 Réseau réinitialisé - pas de faits préexistants")
-	} else {
-		collectionStart := time.Now()
-		ctx.existingFacts = cp.collectExistingFacts(ctx.network)
-		ctx.factsByType = cp.organizeFactsByType(ctx.existingFacts)
-		cp.logger.Debug("📊 Faits préexistants dans le réseau: %d", len(ctx.existingFacts))
-		metrics.RecordFactCollectionDuration(time.Since(collectionStart))
-		metrics.SetExistingFactsCollected(len(ctx.existingFacts))
-	}
-
-	// ÉTAPE 8: Gestion des règles (ajout + suppression)
+	// Identifier terminaux existants
 	ctx.existingTerminals = make(map[string]bool)
 	for terminalID := range ctx.network.TerminalNodes {
 		ctx.existingTerminals[terminalID] = true
@@ -224,56 +317,86 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 	if len(ctx.expressions) > 0 {
 		ruleCreationStart := time.Now()
 		if err := cp.createRuleNodes(ctx.network, ctx.expressions, ctx.storage); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur ajout règles: %w", err))
+			return fmt.Errorf("❌ Erreur ajout règles: %w", err)
 		}
 		cp.logger.Info("✅ Règles ajoutées au réseau")
-		metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
-		metrics.SetRulesAdded(len(ctx.expressions))
+		ctx.metrics.RecordRuleCreationDuration(time.Since(ruleCreationStart))
+		ctx.metrics.SetRulesAdded(len(ctx.expressions))
 	}
 
 	// Traiter les suppressions de règles
 	if err := cp.processRuleRemovals(ctx.network, reteResultMap); err != nil {
-		return handleError(fmt.Errorf("❌ Erreur traitement suppressions de règles: %w", err))
+		return fmt.Errorf("❌ Erreur traitement suppressions de règles: %w", err)
 	}
 
-	// ÉTAPE 9: Propagation rétroactive vers nouvelles règles
+	return nil
+}
+
+// collectExistingFactsIfNeeded collecte les faits existants si nécessaire
+func (cp *ConstraintPipeline) collectExistingFactsIfNeeded(ctx *ingestionContext) error {
+	if ctx.hasResets {
+		cp.logger.Debug("📊 Réseau réinitialisé - pas de faits préexistants")
+	} else {
+		collectionStart := time.Now()
+		ctx.existingFacts = cp.collectExistingFacts(ctx.network)
+		ctx.factsByType = cp.organizeFactsByType(ctx.existingFacts)
+		cp.logger.Debug("📊 Faits préexistants dans le réseau: %d", len(ctx.existingFacts))
+		ctx.metrics.RecordFactCollectionDuration(time.Since(collectionStart))
+		ctx.metrics.SetExistingFactsCollected(len(ctx.existingFacts))
+	}
+	return nil
+}
+
+// propagateToNewRules propage les faits existants vers les nouvelles règles
+func (cp *ConstraintPipeline) propagateToNewRules(ctx *ingestionContext) error {
 	ctx.newTerminals = cp.identifyNewTerminals(ctx.network, ctx.existingTerminals)
 	if len(ctx.newTerminals) > 0 && len(ctx.existingFacts) > 0 {
 		cp.logger.Info("🔄 Propagation ciblée de faits vers %d nouvelle(s) règle(s)", len(ctx.newTerminals))
 		propagationStart := time.Now()
 		propagatedCount := cp.propagateToNewTerminals(ctx.network, ctx.newTerminals, ctx.factsByType)
-		metrics.RecordPropagationDuration(time.Since(propagationStart))
-		metrics.SetFactsPropagated(propagatedCount)
-		metrics.SetNewTerminalsAdded(len(ctx.newTerminals))
-		metrics.SetPropagationTargets(len(ctx.newTerminals))
+		ctx.metrics.RecordPropagationDuration(time.Since(propagationStart))
+		ctx.metrics.SetFactsPropagated(propagatedCount)
+		ctx.metrics.SetNewTerminalsAdded(len(ctx.newTerminals))
+		ctx.metrics.SetPropagationTargets(len(ctx.newTerminals))
 		cp.logger.Info("✅ Propagation rétroactive terminée (%d fait(s) propagé(s))", propagatedCount)
 	}
+	return nil
+}
 
-	// ÉTAPE 10: Soumission nouveaux faits
+// submitNewFacts soumet les nouveaux faits au réseau
+func (cp *ConstraintPipeline) submitNewFacts(ctx *ingestionContext) error {
 	if len(ctx.program.Facts) > 0 {
 		ctx.factsForRete = constraint.ConvertFactsToReteFormat(*ctx.program)
 		cp.logger.Info("📥 Soumission de %d nouveaux faits", len(ctx.factsForRete))
 		submissionStart := time.Now()
 		if err := ctx.network.SubmitFactsFromGrammar(ctx.factsForRete); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur soumission faits: %w", err))
+			return fmt.Errorf("❌ Erreur soumission faits: %w", err)
 		}
 		cp.logger.Info("✅ Nouveaux faits soumis")
-		metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
-		metrics.SetFactsSubmitted(len(ctx.factsForRete))
+		ctx.metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
+		ctx.metrics.SetFactsSubmitted(len(ctx.factsForRete))
 	}
+	return nil
+}
 
-	// ÉTAPE 11: Validation finale et cohérence
+// validateNetworkAndState valide le réseau et enregistre son état
+func (cp *ConstraintPipeline) validateNetworkAndState(ctx *ingestionContext) error {
 	if err := cp.validateNetwork(ctx.network); err != nil {
-		return handleError(fmt.Errorf("❌ Erreur validation réseau: %w", err))
+		return fmt.Errorf("❌ Erreur validation réseau: %w", err)
 	}
 	cp.logger.Info("✅ Validation réussie")
 
 	// Enregistrer l'état du réseau
-	metrics.RecordNetworkState(ctx.network)
+	ctx.metrics.RecordNetworkState(ctx.network)
 	cp.logger.Info("🎯 INGESTION INCRÉMENTALE TERMINÉE")
 	cp.logger.Info("   - Total TypeNodes: %d", len(ctx.network.TypeNodes))
 	cp.logger.Info("   - Total TerminalNodes: %d", len(ctx.network.TerminalNodes))
 
+	return nil
+}
+
+// verifyAndCommit vérifie la cohérence et commit la transaction
+func (cp *ConstraintPipeline) verifyAndCommit(ctx *ingestionContext) error {
 	// Vérification de cohérence pré-commit
 	if ctx.tx != nil && ctx.tx.IsActive && len(ctx.factsForRete) > 0 {
 		cp.logger.Info("🔍 Vérification de cohérence pré-commit...")
@@ -309,9 +432,9 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 		if expectedFactCount != actualFactCount {
 			cp.logger.Error("❌ Incohérence détectée: %d faits attendus, %d trouvés", expectedFactCount, actualFactCount)
 			cp.logger.Error("   Faits manquants: %v", missingFacts)
-			return handleError(fmt.Errorf(
+			return fmt.Errorf(
 				"incohérence pré-commit: %d faits attendus mais %d trouvés dans le storage",
-				expectedFactCount, actualFactCount))
+				expectedFactCount, actualFactCount)
 		}
 
 		cp.logger.Info("✅ Cohérence vérifiée: %d/%d faits présents", actualFactCount, expectedFactCount)
@@ -319,21 +442,18 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 		// Synchroniser le storage
 		cp.logger.Info("💾 Synchronisation du storage...")
 		if err := ctx.storage.Sync(); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur sync storage: %w", err))
+			return fmt.Errorf("❌ Erreur sync storage: %w", err)
 		}
 		cp.logger.Info("✅ Storage synchronisé")
 	}
 
-	// ÉTAPE 12: Commit transaction
+	// Commit transaction
 	if ctx.tx != nil && ctx.tx.IsActive {
 		if err := ctx.tx.Commit(); err != nil {
-			return handleError(fmt.Errorf("❌ Erreur commit transaction: %w", err))
+			return fmt.Errorf("❌ Erreur commit transaction: %w", err)
 		}
 		cp.logger.Info("✅ Transaction committée: %d changements", ctx.tx.GetCommandCount())
 	}
 
-	cp.logger.Info("🎯 INGESTION TERMINÉE")
-	cp.logger.Info("========================================")
-
-	return ctx.network, metrics.Finalize(), nil
+	return nil
 }

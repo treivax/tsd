@@ -107,7 +107,12 @@ func (bu *BuilderUtils) ConnectTypeNodeToBetaNode(
 	}
 }
 
-// hasChild checks if a node already has a specific child
+// hasChild checks if a node already has a specific child.
+// Performs O(n) linear search through all children.
+// Returns true if a child with matching ID exists, false otherwise.
+//
+// Note: Complexity is O(n) where n is the number of children.
+// For most RETE nodes, n is small (<10), so this is acceptable.
 func (bu *BuilderUtils) hasChild(parent Node, child Node) bool {
 	for _, c := range parent.GetChildren() {
 		if c.GetID() == child.GetID() {

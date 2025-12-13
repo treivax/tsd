@@ -11,52 +11,66 @@ func (cp *ConstraintPipeline) extractJoinConditionsRecursive(constraints map[str
 	constraintType, _ := constraints["type"].(string)
 
 	if constraintType == "comparison" {
-		// Check if this is a join condition (not a threshold)
-		if !cp.isThresholdCondition(constraints, aggVarNames) {
-			// Extract join condition details
-			joinCond := JoinCondition{}
-
-			if operator, ok := constraints["operator"].(string); ok {
-				joinCond.Operator = operator
-			}
-
-			if leftData, ok := constraints["left"].(map[string]interface{}); ok {
-				if leftData["type"] == "fieldAccess" {
-					if obj, ok := leftData["object"].(string); ok {
-						joinCond.LeftVar = obj
-					}
-					if field, ok := leftData["field"].(string); ok {
-						joinCond.LeftField = field
-					}
-				}
-			}
-
-			if rightData, ok := constraints["right"].(map[string]interface{}); ok {
-				if rightData["type"] == "fieldAccess" {
-					if obj, ok := rightData["object"].(string); ok {
-						joinCond.RightVar = obj
-					}
-					if field, ok := rightData["field"].(string); ok {
-						joinCond.RightField = field
-					}
-				}
-			}
-
-			*joinConditions = append(*joinConditions, joinCond)
-		}
+		cp.processComparisonForJoin(constraints, aggVarNames, joinConditions)
 	} else if constraintType == "logicalExpr" {
-		// Recursively process left side
-		if leftData, ok := constraints["left"].(map[string]interface{}); ok {
-			cp.extractJoinConditionsRecursive(leftData, aggVarNames, joinConditions)
-		}
+		cp.processLogicalExprForJoin(constraints, aggVarNames, joinConditions)
+	}
+}
 
-		// Recursively process operations
-		if ops, ok := constraints["operations"].([]interface{}); ok {
-			for _, opInterface := range ops {
-				if opMap, ok := opInterface.(map[string]interface{}); ok {
-					if rightData, ok := opMap["right"].(map[string]interface{}); ok {
-						cp.extractJoinConditionsRecursive(rightData, aggVarNames, joinConditions)
-					}
+// processComparisonForJoin traite une comparaison pour extraire une condition de jointure
+func (cp *ConstraintPipeline) processComparisonForJoin(constraints map[string]interface{}, aggVarNames map[string]bool, joinConditions *[]JoinCondition) {
+	// Check if this is a join condition (not a threshold)
+	if cp.isThresholdCondition(constraints, aggVarNames) {
+		return
+	}
+
+	// Extract join condition details
+	joinCond := JoinCondition{}
+
+	if operator, ok := constraints["operator"].(string); ok {
+		joinCond.Operator = operator
+	}
+
+	// Extract left side
+	if leftData, ok := constraints["left"].(map[string]interface{}); ok {
+		if leftData["type"] == "fieldAccess" {
+			cp.extractFieldAccess(leftData, &joinCond.LeftVar, &joinCond.LeftField)
+		}
+	}
+
+	// Extract right side
+	if rightData, ok := constraints["right"].(map[string]interface{}); ok {
+		if rightData["type"] == "fieldAccess" {
+			cp.extractFieldAccess(rightData, &joinCond.RightVar, &joinCond.RightField)
+		}
+	}
+
+	*joinConditions = append(*joinConditions, joinCond)
+}
+
+// extractFieldAccess extrait l'objet et le champ d'un accès de champ
+func (cp *ConstraintPipeline) extractFieldAccess(data map[string]interface{}, varDest *string, fieldDest *string) {
+	if obj, ok := data["object"].(string); ok {
+		*varDest = obj
+	}
+	if field, ok := data["field"].(string); ok {
+		*fieldDest = field
+	}
+}
+
+// processLogicalExprForJoin traite une expression logique pour extraire les conditions de jointure
+func (cp *ConstraintPipeline) processLogicalExprForJoin(constraints map[string]interface{}, aggVarNames map[string]bool, joinConditions *[]JoinCondition) {
+	// Recursively process left side
+	if leftData, ok := constraints["left"].(map[string]interface{}); ok {
+		cp.extractJoinConditionsRecursive(leftData, aggVarNames, joinConditions)
+	}
+
+	// Recursively process operations
+	if ops, ok := constraints["operations"].([]interface{}); ok {
+		for _, opInterface := range ops {
+			if opMap, ok := opInterface.(map[string]interface{}); ok {
+				if rightData, ok := opMap["right"].(map[string]interface{}); ok {
+					cp.extractJoinConditionsRecursive(rightData, aggVarNames, joinConditions)
 				}
 			}
 		}
