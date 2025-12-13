@@ -16,6 +16,13 @@ import (
 //   - Validation des arguments selon le type attendu
 //   - Exécution via le registry d'actions (handlers personnalisés)
 //   - Logging des actions exécutées
+//   - Récupération sur panic dans les handlers utilisateur
+//
+// Thread-Safety :
+//   - L'ActionExecutor est thread-safe grâce au RWMutex du registry
+//   - Plusieurs goroutines peuvent exécuter des actions concurremment
+//   - Les panics dans les handlers sont récupérés et convertis en erreurs
+//   - La génération d'IDs de faits est thread-safe (délégué au network)
 //
 // Architecture :
 //   - registry : enregistre les handlers d'actions disponibles
@@ -93,19 +100,28 @@ func (ae *ActionExecutor) SetLogging(enabled bool) {
 // ExecuteAction exécute une action avec les faits fournis par le token.
 //
 // Process :
-//  1. Récupère tous les jobs de l'action
-//  2. Crée un contexte d'exécution avec les bindings du token
-//  3. Exécute chaque job en séquence
+//  1. Valide les paramètres (action et token non nil)
+//  2. Récupère tous les jobs de l'action
+//  3. Crée un contexte d'exécution avec les bindings du token
+//  4. Exécute chaque job en séquence avec récupération sur panic
+//
+// Thread-Safety :
+//   - Cette méthode est thread-safe
+//   - Le contexte d'exécution est isolé par appel
+//   - Les panics sont récupérés et convertis en erreurs
 //
 // Paramètres :
 //   - action : action à exécuter (peut contenir plusieurs jobs)
 //   - token : token contenant les faits et bindings disponibles
 //
 // Retourne :
-//   - error : erreur si l'exécution échoue
+//   - error : erreur si l'exécution échoue ou si paramètres invalides
 func (ae *ActionExecutor) ExecuteAction(action *Action, token *Token) error {
 	if action == nil {
 		return fmt.Errorf("action is nil")
+	}
+	if token == nil {
+		return fmt.Errorf("token is nil")
 	}
 
 	// Obtenir tous les jobs à exécuter
@@ -113,25 +129,32 @@ func (ae *ActionExecutor) ExecuteAction(action *Action, token *Token) error {
 
 	// Créer un contexte d'exécution avec les faits disponibles
 	ctx := NewExecutionContext(token, ae.network)
+	if ctx == nil {
+		return fmt.Errorf("échec création contexte d'exécution")
+	}
 
 	// Exécuter chaque job en séquence
 	for i, job := range jobs {
 		if err := ae.executeJob(job, ctx, i); err != nil {
-			return fmt.Errorf("erreur exécution job %s: %w", job.Name, err)
+			return fmt.Errorf("erreur exécution job %s (index %d): %w", job.Name, i, err)
 		}
 	}
 
 	return nil
 }
 
-// executeJob exécute un job individuel.
+// executeJob exécute un job individuel avec récupération sur panic.
 //
 // Process :
 //  1. Log l'action (si activé)
 //  2. Évalue tous les arguments
 //  3. Recherche le handler dans le registry
 //  4. Valide les arguments (si handler définit une validation)
-//  5. Exécute le handler
+//  5. Exécute le handler avec récupération sur panic
+//
+// Thread-safety :
+//   - La méthode est thread-safe grâce au RWMutex du registry
+//   - Le panic dans un handler est converti en erreur
 //
 // Paramètres :
 //   - job : job à exécuter
@@ -139,8 +162,16 @@ func (ae *ActionExecutor) ExecuteAction(action *Action, token *Token) error {
 //   - jobIndex : index du job dans la séquence (pour debug)
 //
 // Retourne :
-//   - error : erreur si l'exécution échoue
-func (ae *ActionExecutor) executeJob(job JobCall, ctx *ExecutionContext, jobIndex int) error {
+//   - error : erreur si l'exécution échoue ou si panic
+func (ae *ActionExecutor) executeJob(job JobCall, ctx *ExecutionContext, jobIndex int) (err error) {
+	// Récupération sur panic
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic dans exécution action '%s': %v", job.Name, r)
+			ae.logger.Printf("❌ PANIC RÉCUPÉRÉ dans action '%s': %v", job.Name, r)
+		}
+	}()
+
 	// Logger l'action
 	if ae.enableLogging {
 		ae.logAction(job, ctx)
@@ -151,7 +182,7 @@ func (ae *ActionExecutor) executeJob(job JobCall, ctx *ExecutionContext, jobInde
 	for i, arg := range job.Args {
 		evaluated, err := ae.evaluateArgument(arg, ctx)
 		if err != nil {
-			return fmt.Errorf("erreur évaluation argument %d: %w", i, err)
+			return fmt.Errorf("erreur évaluation argument %d de l'action '%s': %w", i, job.Name, err)
 		}
 		evaluatedArgs = append(evaluatedArgs, evaluated)
 	}

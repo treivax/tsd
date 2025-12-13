@@ -5,6 +5,7 @@
 package rete
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -33,6 +34,8 @@ type ReteNetwork struct {
 	currentTx             *Transaction             `json:"-"`       // Transaction courante (si en cours)
 	txMutex               sync.RWMutex             `json:"-"`       // Mutex pour accès concurrent à la transaction
 	logger                *Logger                  `json:"-"`       // Logger structuré pour instrumentation
+	factIDCounter         int64                    `json:"-"`       // Compteur thread-safe pour génération d'IDs de faits
+	factIDMutex           sync.Mutex               `json:"-"`       // Mutex pour génération d'IDs de faits
 
 	// Phase 2: Configuration de synchronisation pour garanties de cohérence
 	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
@@ -164,4 +167,22 @@ func (rn *ReteNetwork) GetNetworkStats() map[string]interface{} {
 	}
 
 	return stats
+}
+
+// GenerateFactID génère un ID unique thread-safe pour un nouveau fait.
+//
+// Cette méthode utilise un compteur atomique pour garantir l'unicité
+// même en cas d'exécution concurrente.
+//
+// Paramètres :
+//   - typeName : nom du type de fait
+//
+// Retourne :
+//   - string : ID unique au format "typeName_N"
+func (rn *ReteNetwork) GenerateFactID(typeName string) string {
+	rn.factIDMutex.Lock()
+	defer rn.factIDMutex.Unlock()
+	
+	rn.factIDCounter++
+	return fmt.Sprintf("%s_%d", typeName, rn.factIDCounter)
 }

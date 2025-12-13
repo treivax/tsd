@@ -34,9 +34,16 @@ type ExecutionContext struct {
 // Le contexte référence directement la chaîne de bindings du token,
 // sans copie, garantissant l'immutabilité et la performance.
 //
+// Validation :
+//   - Si token est nil, crée un contexte avec bindings vides
+//   - Si network est nil, les fonctionnalités dépendant du network (type validation, etc.) ne seront pas disponibles
+//
+// Note : Un network nil est acceptable pour les tests unitaires simples,
+// mais dans un contexte de production, le network devrait toujours être fourni.
+//
 // Paramètres :
-//   - token : token contenant les faits et bindings
-//   - network : réseau RETE pour accès aux types
+//   - token : token contenant les faits et bindings (peut être nil)
+//   - network : réseau RETE pour accès aux types (peut être nil pour tests simples)
 //
 // Retourne :
 //   - *ExecutionContext : contexte d'exécution initialisé
@@ -47,7 +54,7 @@ func NewExecutionContext(token *Token, network *ReteNetwork) *ExecutionContext {
 		bindings: nil,
 	}
 
-	// Référencer directement la chaîne de bindings du token
+	// Référencer directement la chaîne de bindings du token si disponible
 	if token != nil {
 		ctx.bindings = token.Bindings
 	}

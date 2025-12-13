@@ -8,17 +8,43 @@ import (
 	"fmt"
 )
 
-// factCounter is used to generate unique IDs for new facts
-var factCounter = 0
-
-// generateFactID génère un ID unique pour un nouveau fait
-func generateFactID(typeName string) string {
-	factCounter++
-	return fmt.Sprintf("%s_%d", typeName, factCounter)
+// generateFactID génère un ID unique pour un nouveau fait.
+//
+// Cette fonction est appelée par evaluateFactCreation pour créer des IDs uniques.
+// L'implémentation actuelle utilise un compteur global thread-safe géré par le network.
+//
+// Paramètres :
+//   - typeName : nom du type de fait
+//   - network : réseau RETE contenant le générateur d'IDs
+//
+// Retourne :
+//   - string : ID unique au format "typeName_N"
+func (ae *ActionExecutor) generateFactID(typeName string) string {
+	return ae.network.GenerateFactID(typeName)
 }
 
-// evaluateFactCreation évalue une création de fait
+// evaluateFactCreation évalue une création de fait.
+//
+// Validation :
+//   - Vérifie que le contexte contient un network valide
+//   - Vérifie que le type existe dans le network
+//   - Valide tous les champs selon la définition de type
+//
+// Paramètres :
+//   - argMap : map contenant "typeName" et "fields"
+//   - ctx : contexte d'exécution
+//
+// Retourne :
+//   - interface{} : nouveau fait créé
+//   - error : erreur si validation échoue
 func (ae *ActionExecutor) evaluateFactCreation(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("contexte d'exécution nil")
+	}
+	if ctx.network == nil {
+		return nil, fmt.Errorf("network non disponible dans le contexte")
+	}
+
 	typeName, ok := argMap["typeName"].(string)
 	if !ok {
 		return nil, fmt.Errorf("typeName manquant dans factCreation")
@@ -51,9 +77,9 @@ func (ae *ActionExecutor) evaluateFactCreation(argMap map[string]interface{}, ct
 		return nil, fmt.Errorf("validation fact creation: %w", err)
 	}
 
-	// Créer le nouveau fait
+	// Créer le nouveau fait avec un ID unique
 	newFact := &Fact{
-		ID:     generateFactID(typeName),
+		ID:     ae.generateFactID(typeName),
 		Type:   typeName,
 		Fields: evaluatedFields,
 	}
@@ -61,8 +87,25 @@ func (ae *ActionExecutor) evaluateFactCreation(argMap map[string]interface{}, ct
 	return newFact, nil
 }
 
-// evaluateFactModification évalue une modification de fait
+// evaluateFactModification évalue une modification de fait.
+//
+// Validation :
+//   - Vérifie que le contexte contient un network valide
+//   - Vérifie que la variable existe dans le contexte
+//   - Valide le fait modifié selon sa définition de type
+//
+// Paramètres :
+//   - argMap : map contenant "variable", "field", "value"
+//   - ctx : contexte d'exécution
+//
+// Retourne :
+//   - interface{} : fait modifié (copie du fait original avec nouvelle valeur)
+//   - error : erreur si validation échoue
 func (ae *ActionExecutor) evaluateFactModification(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("contexte d'exécution nil")
+	}
+
 	// Récupérer le fait cible
 	varName, ok := argMap["variable"].(string)
 	if !ok {
@@ -106,11 +149,13 @@ func (ae *ActionExecutor) evaluateFactModification(argMap map[string]interface{}
 	// Appliquer la modification
 	modifiedFact.Fields[fieldName] = evaluated
 
-	// Valider le fait modifié
-	typeDef := ctx.network.GetTypeDefinition(fact.Type)
-	if typeDef != nil {
-		if err := ae.validateFactFields(typeDef, modifiedFact.Fields); err != nil {
-			return nil, fmt.Errorf("validation fact modification: %w", err)
+	// Valider le fait modifié si le network est disponible
+	if ctx.network != nil {
+		typeDef := ctx.network.GetTypeDefinition(fact.Type)
+		if typeDef != nil {
+			if err := ae.validateFactFields(typeDef, modifiedFact.Fields); err != nil {
+				return nil, fmt.Errorf("validation fact modification: %w", err)
+			}
 		}
 	}
 
