@@ -95,57 +95,78 @@ func canonicalMap(m map[string]interface{}) string {
 
 	switch mapType {
 	case "fieldAccess":
-		obj, _ := m["object"].(string)
-		field, _ := m["field"].(string)
-		return fmt.Sprintf("fieldAccess(%s,%s)", obj, field)
-
+		return canonicalFieldAccess(m)
 	case "literal", "numberLiteral", "stringLiteral", "booleanLiteral":
-		value := m["value"]
-		return fmt.Sprintf("literal(%v)", value)
-
+		return canonicalLiteral(m)
 	case "binaryOperation", "binary_op", "comparison":
-		leftStr := canonicalValue(m["left"])
-		operator, _ := m["operator"].(string)
-		if operator == "" {
-			operator, _ = m["op"].(string)
-		}
-		rightStr := canonicalValue(m["right"])
-		return fmt.Sprintf("binaryOp(%s,%s,%s)", leftStr, operator, rightStr)
-
+		return canonicalBinaryOperation(m)
 	case "logicalExpression", "logical_op", "logicalExpr":
-		leftStr := canonicalValue(m["left"])
-		operations, ok := m["operations"].([]interface{})
-		if !ok {
-			return fmt.Sprintf("logical(%s)", leftStr)
-		}
-
-		parts := []string{leftStr}
-		for _, opInterface := range operations {
-			opMap, ok := opInterface.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			op, _ := opMap["op"].(string)
-			right := opMap["right"]
-			parts = append(parts, fmt.Sprintf("%s:%s", op, canonicalValue(right)))
-		}
-		return fmt.Sprintf("logical(%s)", strings.Join(parts, ","))
-
+		return canonicalLogicalExpression(m)
 	default:
-		// Pour les maps génériques, trier les clés pour un ordre déterministe
-		keys := make([]string, 0, len(m))
-		for k := range m {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		pairs := make([]string, 0, len(keys))
-		for _, k := range keys {
-			pairs = append(pairs, fmt.Sprintf("%s:%s", k, canonicalValue(m[k])))
-		}
-
-		return fmt.Sprintf("%s{%s}", mapType, strings.Join(pairs, ","))
+		return canonicalGenericMap(m, mapType)
 	}
+}
+
+// canonicalFieldAccess génère la forme canonique pour un accès de champ
+func canonicalFieldAccess(m map[string]interface{}) string {
+	obj, _ := m["object"].(string)
+	field, _ := m["field"].(string)
+	return fmt.Sprintf("fieldAccess(%s,%s)", obj, field)
+}
+
+// canonicalLiteral génère la forme canonique pour une valeur littérale
+func canonicalLiteral(m map[string]interface{}) string {
+	value := m["value"]
+	return fmt.Sprintf("literal(%v)", value)
+}
+
+// canonicalBinaryOperation génère la forme canonique pour une opération binaire
+func canonicalBinaryOperation(m map[string]interface{}) string {
+	leftStr := canonicalValue(m["left"])
+	operator, _ := m["operator"].(string)
+	if operator == "" {
+		operator, _ = m["op"].(string)
+	}
+	rightStr := canonicalValue(m["right"])
+	return fmt.Sprintf("binaryOp(%s,%s,%s)", leftStr, operator, rightStr)
+}
+
+// canonicalLogicalExpression génère la forme canonique pour une expression logique
+func canonicalLogicalExpression(m map[string]interface{}) string {
+	leftStr := canonicalValue(m["left"])
+	operations, ok := m["operations"].([]interface{})
+	if !ok {
+		return fmt.Sprintf("logical(%s)", leftStr)
+	}
+
+	parts := []string{leftStr}
+	for _, opInterface := range operations {
+		opMap, ok := opInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		op, _ := opMap["op"].(string)
+		right := opMap["right"]
+		parts = append(parts, fmt.Sprintf("%s:%s", op, canonicalValue(right)))
+	}
+	return fmt.Sprintf("logical(%s)", strings.Join(parts, ","))
+}
+
+// canonicalGenericMap génère la forme canonique pour une map générique
+func canonicalGenericMap(m map[string]interface{}, mapType string) string {
+	// Pour les maps génériques, trier les clés pour un ordre déterministe
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	pairs := make([]string, 0, len(keys))
+	for _, k := range keys {
+		pairs = append(pairs, fmt.Sprintf("%s:%s", k, canonicalValue(m[k])))
+	}
+
+	return fmt.Sprintf("%s{%s}", mapType, strings.Join(pairs, ","))
 }
 
 // computeHash calcule le hash SHA-256 d'une condition

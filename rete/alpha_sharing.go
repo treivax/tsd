@@ -12,6 +12,18 @@ import (
 	"sync"
 )
 
+const (
+	// AlphaHashPrefixLength définit le nombre d'octets du hash SHA-256
+	// utilisés pour générer l'ID unique d'un AlphaNode.
+	// 8 octets (64 bits) offrent 2^64 combinaisons possibles,
+	// largement suffisant pour éviter les collisions dans un réseau RETE.
+	AlphaHashPrefixLength = 8
+
+	// MaxNormalizationDepth limite la profondeur de récursion pour la normalisation
+	// afin de prévenir les stack overflows avec des structures malformées.
+	MaxNormalizationDepth = 100
+)
+
 // AlphaSharingRegistry gère le partage des AlphaNodes entre plusieurs règles
 // qui ont des conditions alpha identiques
 type AlphaSharingRegistry struct {
@@ -98,7 +110,7 @@ func ConditionHash(condition interface{}, variableName string) (string, error) {
 
 	// Calculer le hash SHA-256
 	hash := sha256.Sum256(jsonBytes)
-	return fmt.Sprintf("alpha_%x", hash[:8]), nil // Utiliser les 8 premiers octets pour l'ID
+	return fmt.Sprintf("alpha_%x", hash[:AlphaHashPrefixLength]), nil
 }
 
 // ConditionHashCached calcule un hash avec cache pour améliorer les performances
@@ -143,7 +155,7 @@ func (asr *AlphaSharingRegistry) ConditionHashCached(condition interface{}, vari
 
 		// Calculer le hash
 		hash := sha256.Sum256(jsonBytes)
-		hashStr := fmt.Sprintf("alpha_%x", hash[:8])
+		hashStr := fmt.Sprintf("alpha_%x", hash[:AlphaHashPrefixLength])
 
 		// Stocker dans le cache LRU
 		asr.lruHashCache.Set(cacheKey, hashStr)
@@ -171,7 +183,7 @@ func (asr *AlphaSharingRegistry) ConditionHashCached(condition interface{}, vari
 	}
 
 	hash := sha256.Sum256(jsonBytes)
-	hashStr := fmt.Sprintf("alpha_%x", hash[:8])
+	hashStr := fmt.Sprintf("alpha_%x", hash[:AlphaHashPrefixLength])
 
 	// Stocker dans le cache
 	asr.mutex.Lock()
@@ -193,6 +205,17 @@ func (asr *AlphaSharingRegistry) isCacheEnabled() bool {
 // entre règles simples (qui wrappent dans {"type": "constraint", "constraint": X})
 // et chaînes (qui utilisent directement la condition décomposée)
 func normalizeConditionForSharing(condition interface{}) interface{} {
+	return normalizeConditionForSharingDepth(condition, 0)
+}
+
+// normalizeConditionForSharingDepth implémente la normalisation avec limite de profondeur
+func normalizeConditionForSharingDepth(condition interface{}, depth int) interface{} {
+	// Limiter la profondeur de récursion pour éviter stack overflow
+	if depth > MaxNormalizationDepth {
+		// Retourner la condition telle quelle sans normaliser davantage
+		return condition
+	}
+
 	// Si la condition est une map
 	if condMap, ok := condition.(map[string]interface{}); ok {
 		// Vérifier si c'est une condition wrappée dans un type "constraint"
@@ -201,7 +224,7 @@ func normalizeConditionForSharing(condition interface{}) interface{} {
 				// Déballer la condition interne
 				if innerCond, hasConstraint := condMap["constraint"]; hasConstraint {
 					// Récursion pour déballer plusieurs niveaux si nécessaire
-					return normalizeConditionForSharing(innerCond)
+					return normalizeConditionForSharingDepth(innerCond, depth+1)
 				}
 			}
 		}
@@ -223,7 +246,7 @@ func normalizeConditionForSharing(condition interface{}) interface{} {
 				}
 			} else {
 				// Normaliser récursivement les valeurs imbriquées
-				normalized[key] = normalizeConditionForSharing(value)
+				normalized[key] = normalizeConditionForSharingDepth(value, depth+1)
 			}
 		}
 		return normalized
@@ -233,7 +256,7 @@ func normalizeConditionForSharing(condition interface{}) interface{} {
 	if slice, ok := condition.([]interface{}); ok {
 		normalized := make([]interface{}, len(slice))
 		for i, item := range slice {
-			normalized[i] = normalizeConditionForSharing(item)
+			normalized[i] = normalizeConditionForSharingDepth(item, depth+1)
 		}
 		return normalized
 	}
@@ -244,6 +267,16 @@ func normalizeConditionForSharing(condition interface{}) interface{} {
 
 // normalizeCondition normalise une condition pour assurer un hash cohérent
 func normalizeCondition(condition interface{}) (interface{}, error) {
+	return normalizeConditionDepth(condition, 0)
+}
+
+// normalizeConditionDepth implémente la normalisation avec limite de profondeur
+func normalizeConditionDepth(condition interface{}, depth int) (interface{}, error) {
+	// Limiter la profondeur de récursion pour éviter stack overflow
+	if depth > MaxNormalizationDepth {
+		return condition, nil
+	}
+
 	if condition == nil {
 		return map[string]interface{}{"type": "simple"}, nil
 	}
@@ -253,7 +286,7 @@ func normalizeCondition(condition interface{}) (interface{}, error) {
 		// Copier la map et normaliser récursivement
 		normalized := make(map[string]interface{})
 		for key, value := range cond {
-			normalizedValue, err := normalizeCondition(value)
+			normalizedValue, err := normalizeConditionDepth(value, depth+1)
 			if err != nil {
 				return nil, err
 			}
@@ -265,7 +298,7 @@ func normalizeCondition(condition interface{}) (interface{}, error) {
 		// Normaliser chaque élément du slice
 		normalized := make([]interface{}, len(cond))
 		for i, item := range cond {
-			normalizedItem, err := normalizeCondition(item)
+			normalizedItem, err := normalizeConditionDepth(item, depth+1)
 			if err != nil {
 				return nil, err
 			}

@@ -122,11 +122,20 @@ func ExtractConditions(expr interface{}) ([]SimpleCondition, string, error) {
 	}
 }
 
+// getMapType extrait le type d'une expression sous forme de map
+func getMapType(m map[string]interface{}) (string, error) {
+	exprType, ok := m["type"].(string)
+	if !ok {
+		return "", fmt.Errorf("type d'expression manquant")
+	}
+	return exprType, nil
+}
+
 // extractFromMap extrait les conditions d'une expression sous forme de map
 func extractFromMap(expr map[string]interface{}) ([]SimpleCondition, string, error) {
-	exprType, ok := expr["type"].(string)
-	if !ok {
-		return nil, "", fmt.Errorf("type d'expression manquant")
+	exprType, err := getMapType(expr)
+	if err != nil {
+		return nil, "", err
 	}
 
 	switch exprType {
