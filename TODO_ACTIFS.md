@@ -278,3 +278,32 @@ Effort Total Estimé:   ~35h
 
 *Dernière révision: 2024-12-15*  
 *Status: ✅ Tous les TODOs critiques résolus - Production Ready*
+## Review Alpha Network - P2 Items (Souhaitable)
+
+Date ajout: 2024-12-13
+Source: scripts/review-rete/03_alpha_network.md
+
+### Documentation
+- [ ] [Alpha] Améliorer documentation du champ Hash dans SimpleCondition (alpha_chain_extractor.go:71)
+- [ ] [Alpha] Ajouter exemples d'utilisation pour AlphaChainBuilder
+- [ ] [Alpha] Documenter algorithmes de normalisation en détail
+
+### Nommage  
+- [ ] [Alpha] Considérer renommer receveur `acb` → `b` dans AlphaConditionBuilder (alpha_builder.go)
+- [ ] [Alpha] Standardiser noms de variables dans tests (constantes nommées)
+
+### Tests
+- [ ] [Alpha] Augmenter couverture spécifique fichiers alpha (cible >85%)
+- [ ] [Alpha] Ajouter tests cas limites récursion (profondeur max=100)
+- [ ] [Alpha] Tests stabilité forme canonique (1000+ itérations)
+
+### Performance
+- [ ] [Alpha] Benchmarks avant/après normalisation
+- [ ] [Alpha] Profiling mémoire du cache LRU
+- [ ] [Alpha] Analyse hit rate du cache en production
+
+### Architecture
+- [ ] [Alpha] Évaluer si AlphaConditionBuilder devrait être dans package séparé
+- [ ] [Alpha] Considérer extraction package canonical pour réutilisation
+
+Référence: REPORTS/review-rete/03_alpha_network_report.md
