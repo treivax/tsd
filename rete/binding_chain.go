@@ -22,6 +22,11 @@ import (
 //   - Pas de cycles : Parent pointe toujours vers une chaîne plus courte
 //   - Thread-safe grâce à l'immutabilité
 //
+// Encapsulation:
+//   - Tous les champs sont non exportés pour garantir l'encapsulation
+//     et l'immutabilité. Aucune modification externe n'est possible.
+//   - Seules les méthodes publiques permettent l'accès contrôlé
+//
 // Structure:
 //   - Variable: nom de la variable (ex: "u", "order", "task")
 //   - Fact: pointeur vers le fait lié à cette variable
@@ -270,12 +275,16 @@ func (bc *BindingChain) Variables() []string {
 
 // ToMap convertit la chaîne en map pour compatibilité et debug.
 //
+// ⚠️ USAGE: Cette méthode est destinée au DEBUG et aux TESTS uniquement.
+// Pour un usage production, utiliser Get() directement qui est plus performant.
+//
 // ⚠️ ATTENTION: Cette méthode crée une copie mutable.
-// Ne pas l'utiliser pour modifier les bindings, uniquement pour lecture/debug.
+// Ne pas l'utiliser pour modifier les bindings.
 //
 // En cas de shadowing, seule la valeur la plus récente est conservée.
 //
-// Complexité: O(n) temps, O(n) espace
+// Complexité: O(2n) temps (double parcours), O(n) espace
+// Note: Variables() + Get() = 2 parcours de la chaîne
 //
 // Retourne:
 //   - map[string]*Fact: map des bindings (copie)

@@ -22,6 +22,21 @@ func NormalizeJoinCondition(condition map[string]interface{}) (map[string]interf
 	normalized := make(map[string]interface{})
 
 	// Normalize type field
+	normalizeTypeField(condition, normalized)
+
+	// Handle operator and operands
+	if operator, hasOp := condition["operator"].(string); hasOp {
+		normalizeOperatorAndOperands(condition, normalized, operator)
+	}
+
+	// Copy remaining fields
+	copyRemainingFields(condition, normalized)
+
+	return normalized, nil
+}
+
+// normalizeTypeField normalizes the type field of a condition.
+func normalizeTypeField(condition, normalized map[string]interface{}) {
 	if condType, hasType := condition["type"]; hasType {
 		if typeStr, ok := condType.(string); ok {
 			switch typeStr {
@@ -34,47 +49,69 @@ func NormalizeJoinCondition(condition map[string]interface{}) (map[string]interf
 			normalized["type"] = condType
 		}
 	}
+}
 
-	// Handle commutative operators
-	if operator, hasOp := condition["operator"].(string); hasOp {
-		normalized["operator"] = operator
+// normalizeOperatorAndOperands handles operator normalization and operand ordering.
+func normalizeOperatorAndOperands(condition, normalized map[string]interface{}, operator string) {
+	normalized["operator"] = operator
 
-		if operator == "==" || operator == "!=" {
-			// For commutative operators, sort left/right by lexicographic order
-			left, hasLeft := condition["left"]
-			right, hasRight := condition["right"]
+	if isCommutativeOperator(operator) {
+		normalizeCommutativeOperands(condition, normalized)
+	} else {
+		normalizeNonCommutativeOperands(condition, normalized)
+	}
+}
 
-			if hasLeft && hasRight {
-				leftJSON, _ := json.Marshal(left)
-				rightJSON, _ := json.Marshal(right)
+// isCommutativeOperator checks if an operator is commutative.
+func isCommutativeOperator(operator string) bool {
+	return operator == "==" || operator == "!="
+}
 
-				if string(leftJSON) > string(rightJSON) {
-					normalized["left"] = right
-					normalized["right"] = left
-				} else {
-					normalized["left"] = left
-					normalized["right"] = right
-				}
-			}
-		} else {
-			// Non-commutative operators: preserve order
-			if left, hasLeft := condition["left"]; hasLeft {
-				normalized["left"] = left
-			}
-			if right, hasRight := condition["right"]; hasRight {
-				normalized["right"] = right
-			}
-		}
+// normalizeCommutativeOperands sorts operands for commutative operators.
+func normalizeCommutativeOperands(condition, normalized map[string]interface{}) {
+	left, hasLeft := condition["left"]
+	right, hasRight := condition["right"]
+
+	if !hasLeft || !hasRight {
+		return
 	}
 
-	// Copy remaining fields
+	leftJSON, _ := json.Marshal(left)
+	rightJSON, _ := json.Marshal(right)
+
+	if string(leftJSON) > string(rightJSON) {
+		normalized["left"] = right
+		normalized["right"] = left
+	} else {
+		normalized["left"] = left
+		normalized["right"] = right
+	}
+}
+
+// normalizeNonCommutativeOperands preserves operand order for non-commutative operators.
+func normalizeNonCommutativeOperands(condition, normalized map[string]interface{}) {
+	if left, hasLeft := condition["left"]; hasLeft {
+		normalized["left"] = left
+	}
+	if right, hasRight := condition["right"]; hasRight {
+		normalized["right"] = right
+	}
+}
+
+// copyRemainingFields copies all fields except already processed ones.
+func copyRemainingFields(condition, normalized map[string]interface{}) {
+	const (
+		typeField     = "type"
+		operatorField = "operator"
+		leftField     = "left"
+		rightField    = "right"
+	)
+
 	for key, value := range condition {
-		if key != "type" && key != "operator" && key != "left" && key != "right" {
+		if key != typeField && key != operatorField && key != leftField && key != rightField {
 			normalized[key] = value
 		}
 	}
-
-	return normalized, nil
 }
 
 // ComputeJoinHash computes a hash for a join specification.

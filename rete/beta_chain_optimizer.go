@@ -9,6 +9,33 @@ import (
 	"sort"
 )
 
+// Constantes pour l'estimation de sélectivité des jointures
+const (
+	// DefaultSelectivity est la sélectivité par défaut si aucune information disponible
+	DefaultSelectivity = 0.5
+
+	// BinaryJoinSelectivity est la sélectivité estimée pour une jointure binaire simple (2 variables)
+	BinaryJoinSelectivity = 0.3
+
+	// BaseMultiVarSelectivity est la sélectivité de base pour les jointures multi-variables (3+)
+	BaseMultiVarSelectivity = 0.4
+
+	// SelectivityIncrementPerVar est l'incrément de sélectivité par variable supplémentaire
+	SelectivityIncrementPerVar = 0.1
+
+	// ConditionSelectivityFactor est le facteur de réduction par condition de jointure
+	ConditionSelectivityFactor = 0.1
+
+	// MinSelectivity est la sélectivité minimale autorisée
+	MinSelectivity = 0.1
+
+	// MinVariablesForBinaryJoin est le nombre de variables pour une jointure binaire
+	MinVariablesForBinaryJoin = 2
+
+	// MinReferencesForSharing est le nombre minimum de références pour considérer un nœud comme partagé
+	MinReferencesForSharing = 1
+)
+
 // estimateSelectivity estime la sélectivité de chaque pattern de jointure.
 //
 // La sélectivité est une heuristique (0-1) qui indique combien de tuples
@@ -49,23 +76,23 @@ func (bcb *BetaChainBuilder) estimateSelectivity(patterns []JoinPattern) {
 		}
 
 		// Estimation par défaut
-		selectivity := 0.5
+		selectivity := DefaultSelectivity
 
 		// Ajuster selon le nombre de variables
 		numVars := len(pattern.LeftVars) + len(pattern.RightVars)
-		if numVars == 2 {
-			selectivity = 0.3 // Jointure binaire simple (plus sélective)
-		} else if numVars > 2 {
+		if numVars == MinVariablesForBinaryJoin {
+			selectivity = BinaryJoinSelectivity // Jointure binaire simple (plus sélective)
+		} else if numVars > MinVariablesForBinaryJoin {
 			// Plus de variables = moins sélectif (plus de données passent)
-			selectivity = 0.4 + (float64(numVars-2) * 0.1)
+			selectivity = BaseMultiVarSelectivity + (float64(numVars-MinVariablesForBinaryJoin) * SelectivityIncrementPerVar)
 		}
 
 		// Ajuster selon les conditions de jointure
 		if len(pattern.JoinConditions) > 0 {
 			// Plus de conditions = plus sélectif
-			selectivity *= (1.0 - float64(len(pattern.JoinConditions))*0.1)
-			if selectivity < 0.1 {
-				selectivity = 0.1 // Minimum de sélectivité
+			selectivity *= (1.0 - float64(len(pattern.JoinConditions))*ConditionSelectivityFactor)
+			if selectivity < MinSelectivity {
+				selectivity = MinSelectivity // Minimum de sélectivité
 			}
 		}
 
@@ -314,7 +341,7 @@ func (bcb *BetaChainBuilder) CountSharedNodes(chain *BetaChain) int {
 	sharedCount := 0
 	for _, node := range chain.Nodes {
 		lifecycle, _ := bcb.network.LifecycleManager.GetNodeLifecycle(node.ID)
-		if lifecycle != nil && lifecycle.GetRefCount() > 1 {
+		if lifecycle != nil && lifecycle.GetRefCount() > MinReferencesForSharing {
 			sharedCount++
 		}
 	}
@@ -411,9 +438,9 @@ func (bcb *BetaChainBuilder) GetChainStats(chain *BetaChain) map[string]interfac
 //	// Retourne: "cascade"
 func (bcb *BetaChainBuilder) determineJoinType(pattern JoinPattern) string {
 	numVars := len(pattern.LeftVars) + len(pattern.RightVars)
-	if numVars == 2 {
+	if numVars == MinVariablesForBinaryJoin {
 		return "binary"
-	} else if len(pattern.LeftVars) > 1 {
+	} else if len(pattern.LeftVars) > MinReferencesForSharing {
 		return "cascade"
 	} else {
 		return "multi"

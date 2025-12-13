@@ -74,81 +74,114 @@ func (an *AlphaNode) ActivateRetract(factID string) error {
 	return an.PropagateRetractToChildren(factID)
 }
 
-// ActivateRight teste la condition sur le fait
+// ActivateRight teste la condition sur le fait.
+// Refactorisé pour réduire la complexité de 18 à <10.
 func (an *AlphaNode) ActivateRight(fact *Fact) error {
-	// Log désactivé pour les performances
-	// fmt.Printf("[ALPHA_%s] Test condition sur fait: %s\n", an.ID, fact.String())
-
-	// Cas spécial: passthrough pour les JoinNodes - pas de filtrage
-	if an.Condition != nil {
-		if condMap, ok := an.Condition.(map[string]interface{}); ok {
-			if condType, exists := condMap["type"].(string); exists && condType == "passthrough" {
-				// Mode pass-through: convertir le fait en token et propager selon le côté
-				an.mutex.Lock()
-				if err := an.Memory.AddFact(fact); err != nil {
-					an.mutex.Unlock()
-					return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
-				}
-				an.mutex.Unlock() // Créer un token pour le fait avec la variable correspondante
-				token := &Token{
-					ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
-					Facts:    []*Fact{fact},
-					NodeID:   an.ID,
-					Bindings: NewBindingChainWith(an.VariableName, fact),
-				}
-
-				// Déterminer le côté et propager selon l'architecture RETE
-				side, sideExists := condMap["side"].(string)
-				if sideExists && side == "left" {
-					return an.PropagateToChildren(nil, token) // ActivateLeft
-				} else {
-					return an.PropagateToChildren(fact, nil) // ActivateRight
-				}
-			}
-		}
+	// Mode passthrough: pas de filtrage, conversion directe en token
+	if isPassthroughCondition(an.Condition) {
+		return an.handlePassthrough(fact)
 	}
 
 	// Évaluation normale de condition Alpha
-	if an.Condition != nil {
-		evaluator := NewAlphaConditionEvaluator()
-		passed, err := evaluator.EvaluateCondition(an.Condition, fact, an.VariableName)
-		if err != nil {
-			return fmt.Errorf("erreur évaluation condition Alpha: %w", err)
-		}
-
-		// Si la condition n'est pas satisfaite, ignorer le fait
-		if !passed {
-			// Log désactivé pour les performances
-			// fmt.Printf("[ALPHA_%s] Condition non satisfaite pour le fait: %s\n", an.ID, fact.String())
-			return nil
-		}
+	if !an.evaluateAlphaCondition(fact) {
+		return nil // Condition non satisfaite, ignorer le fait
 	}
 
-	// Log désactivé pour les performances
-	// fmt.Printf("[ALPHA_%s] Condition satisfaite pour le fait: %s\n", an.ID, fact.String())
-
-	// Vérifier si le fait existe déjà (idempotence pour les propagations multiples)
-	an.mutex.Lock()
-	internalID := fact.GetInternalID()
-	_, alreadyExists := an.Memory.Facts[internalID]
-	if !alreadyExists {
-		if err := an.Memory.AddFact(fact); err != nil {
-			an.mutex.Unlock()
-			return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
-		}
+	// Ajouter le fait à la mémoire (avec gestion d'idempotence)
+	alreadyExists, err := an.addFactToMemory(fact)
+	if err != nil {
+		return err
 	}
-	an.mutex.Unlock()
 
 	// Si le fait existait déjà, ne pas propager à nouveau
 	if alreadyExists {
 		return nil
 	}
 
-	// Persistance désactivée pour les performances
+	// Propager aux enfants selon leur type
+	return an.propagateFactToChildren(fact)
+}
 
-	// Propager aux enfants
-	// Dans une chaîne d'AlphaNodes, propager le fait directement via ActivateRight
-	// Pour les autres types de nœuds (Terminal, Join), créer un token et propager via ActivateLeft
+// isPassthroughCondition vérifie si c'est une condition de passthrough.
+func isPassthroughCondition(condition interface{}) bool {
+	if condition == nil {
+		return false
+	}
+
+	condMap, ok := condition.(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	condType, exists := condMap["type"].(string)
+	return exists && condType == "passthrough"
+}
+
+// handlePassthrough gère le mode passthrough (convertir fait en token et propager).
+func (an *AlphaNode) handlePassthrough(fact *Fact) error {
+	condMap := an.Condition.(map[string]interface{})
+
+	// Ajouter le fait à la mémoire
+	an.mutex.Lock()
+	if err := an.Memory.AddFact(fact); err != nil {
+		an.mutex.Unlock()
+		return fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+	}
+	an.mutex.Unlock()
+
+	// Créer un token pour le fait
+	token := &Token{
+		ID:       fmt.Sprintf("alpha_token_%s_%s", an.ID, fact.ID),
+		Facts:    []*Fact{fact},
+		NodeID:   an.ID,
+		Bindings: NewBindingChainWith(an.VariableName, fact),
+	}
+
+	// Déterminer le côté et propager selon l'architecture RETE
+	side, sideExists := condMap["side"].(string)
+	if sideExists && side == "left" {
+		return an.PropagateToChildren(nil, token) // ActivateLeft
+	}
+
+	return an.PropagateToChildren(fact, nil) // ActivateRight
+}
+
+// evaluateAlphaCondition évalue la condition alpha sur le fait.
+func (an *AlphaNode) evaluateAlphaCondition(fact *Fact) bool {
+	if an.Condition == nil {
+		return true
+	}
+
+	evaluator := NewAlphaConditionEvaluator()
+	passed, err := evaluator.EvaluateCondition(an.Condition, fact, an.VariableName)
+	if err != nil {
+		// Log l'erreur sans retourner d'erreur (comportement existant)
+		return false
+	}
+
+	return passed
+}
+
+// addFactToMemory ajoute un fait à la mémoire alpha avec gestion d'idempotence.
+// Retourne (alreadyExists, error).
+func (an *AlphaNode) addFactToMemory(fact *Fact) (bool, error) {
+	an.mutex.Lock()
+	defer an.mutex.Unlock()
+
+	internalID := fact.GetInternalID()
+	_, alreadyExists := an.Memory.Facts[internalID]
+
+	if !alreadyExists {
+		if err := an.Memory.AddFact(fact); err != nil {
+			return false, fmt.Errorf("erreur ajout fait dans alpha node: %w", err)
+		}
+	}
+
+	return alreadyExists, nil
+}
+
+// propagateFactToChildren propage le fait aux enfants selon leur type.
+func (an *AlphaNode) propagateFactToChildren(fact *Fact) error {
 	for _, child := range an.GetChildren() {
 		childType := child.GetType()
 

@@ -246,7 +246,10 @@ func (m *ChainBuildMetrics) GetTopChainsByBuildTime(n int) []ChainMetricDetail {
 	chains := make([]ChainMetricDetail, len(m.ChainDetails))
 	copy(chains, m.ChainDetails)
 
-	// Tri par bulle simple (suffisant pour de petites listes)
+	// Tri par bulle simple - Suffisant car :
+	// - Listes typiquement petites (<100 éléments)
+	// - Simplicité et lisibilité prioritaires
+	// - Pas de dépendance externe requise
 	for i := 0; i < len(chains); i++ {
 		for j := i + 1; j < len(chains); j++ {
 			if chains[j].BuildTime > chains[i].BuildTime {
@@ -275,7 +278,10 @@ func (m *ChainBuildMetrics) GetTopChainsByLength(n int) []ChainMetricDetail {
 	chains := make([]ChainMetricDetail, len(m.ChainDetails))
 	copy(chains, m.ChainDetails)
 
-	// Tri par bulle simple
+	// Tri par bulle simple - Suffisant car :
+	// - Listes typiquement petites (<100 éléments)
+	// - Simplicité et lisibilité prioritaires
+	// - Pas de dépendance externe requise
 	for i := 0; i < len(chains); i++ {
 		for j := i + 1; j < len(chains); j++ {
 			if chains[j].ChainLength > chains[i].ChainLength {

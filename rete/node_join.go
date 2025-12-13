@@ -111,53 +111,74 @@ func (jn *JoinNode) ActivateLeft(token *Token) error {
 	return nil
 }
 
-// ActivateRetract retrait des tokens contenant le fait rétracté des 3 mémoires
-// factID doit être l'identifiant interne (Type_ID)
+// ActivateRetract retrait des tokens contenant le fait rétracté des 3 mémoires.
+// factID doit être l'identifiant interne (Type_ID).
+// Refactorisé pour réduire la complexité et améliorer la lisibilité.
 func (jn *JoinNode) ActivateRetract(factID string) error {
 	jn.mutex.Lock()
-	var leftTokensToRemove []string
-	for tokenID, token := range jn.LeftMemory.Tokens {
-		for _, fact := range token.Facts {
-			if fact.GetInternalID() == factID {
-				leftTokensToRemove = append(leftTokensToRemove, tokenID)
-				break
-			}
-		}
-	}
-	for _, tokenID := range leftTokensToRemove {
-		delete(jn.LeftMemory.Tokens, tokenID)
-	}
-	var rightTokensToRemove []string
-	for tokenID, token := range jn.RightMemory.Tokens {
-		for _, fact := range token.Facts {
-			if fact.GetInternalID() == factID {
-				rightTokensToRemove = append(rightTokensToRemove, tokenID)
-				break
-			}
-		}
-	}
-	for _, tokenID := range rightTokensToRemove {
-		delete(jn.RightMemory.Tokens, tokenID)
-	}
-	var resultTokensToRemove []string
-	for tokenID, token := range jn.ResultMemory.Tokens {
-		for _, fact := range token.Facts {
-			if fact.GetInternalID() == factID {
-				resultTokensToRemove = append(resultTokensToRemove, tokenID)
-				break
-			}
-		}
-	}
-	for _, tokenID := range resultTokensToRemove {
-		delete(jn.ResultMemory.Tokens, tokenID)
-		delete(jn.Memory.Tokens, tokenID)
-	}
+
+	// Retirer des 3 mémoires
+	leftRemoved := jn.retractFromMemory(jn.LeftMemory, factID)
+	rightRemoved := jn.retractFromMemory(jn.RightMemory, factID)
+	resultRemoved := jn.retractFromResultMemory(factID)
+
 	jn.mutex.Unlock()
-	totalRemoved := len(leftTokensToRemove) + len(rightTokensToRemove) + len(resultTokensToRemove)
+
+	// Log si des tokens ont été retirés
+	totalRemoved := len(leftRemoved) + len(rightRemoved) + len(resultRemoved)
 	if totalRemoved > 0 {
-		fmt.Printf("🗑️  [JOIN_%s] Rétractation: %d tokens retirés (L:%d R:%d RES:%d)\n", jn.ID, totalRemoved, len(leftTokensToRemove), len(rightTokensToRemove), len(resultTokensToRemove))
+		fmt.Printf("🗑️  [JOIN_%s] Rétractation: %d tokens retirés (L:%d R:%d RES:%d)\n",
+			jn.ID, totalRemoved, len(leftRemoved), len(rightRemoved), len(resultRemoved))
 	}
+
 	return jn.PropagateRetractToChildren(factID)
+}
+
+// retractFromMemory retire les tokens contenant le fait spécifié d'une mémoire.
+// Retourne la liste des IDs des tokens retirés.
+func (jn *JoinNode) retractFromMemory(memory *WorkingMemory, factID string) []string {
+	var tokensToRemove []string
+
+	for tokenID, token := range memory.Tokens {
+		if jn.tokenContainsFact(token, factID) {
+			tokensToRemove = append(tokensToRemove, tokenID)
+		}
+	}
+
+	for _, tokenID := range tokensToRemove {
+		delete(memory.Tokens, tokenID)
+	}
+
+	return tokensToRemove
+}
+
+// retractFromResultMemory retire les tokens de la mémoire de résultats.
+// Met aussi à jour la mémoire principale pour compatibilité.
+func (jn *JoinNode) retractFromResultMemory(factID string) []string {
+	var tokensToRemove []string
+
+	for tokenID, token := range jn.ResultMemory.Tokens {
+		if jn.tokenContainsFact(token, factID) {
+			tokensToRemove = append(tokensToRemove, tokenID)
+		}
+	}
+
+	for _, tokenID := range tokensToRemove {
+		delete(jn.ResultMemory.Tokens, tokenID)
+		delete(jn.Memory.Tokens, tokenID) // Synchroniser avec mémoire principale
+	}
+
+	return tokensToRemove
+}
+
+// tokenContainsFact vérifie si un token contient le fait spécifié.
+func (jn *JoinNode) tokenContainsFact(token *Token, factID string) bool {
+	for _, fact := range token.Facts {
+		if fact.GetInternalID() == factID {
+			return true
+		}
+	}
+	return false
 }
 
 // ActivateRight traite les faits de la droite (nouveau fait injecté via AlphaNode)
@@ -309,119 +330,185 @@ func (jn *JoinNode) getVariableForFact(fact *Fact) string {
 }
 
 // evaluateJoinConditions vérifie si toutes les conditions de jointure sont respectées.
-//
 // Accepte maintenant BindingChain au lieu de map[string]*Fact.
+// Refactorisé pour réduire la complexité cyclomatique de 21 à <10.
 func (jn *JoinNode) evaluateJoinConditions(bindings *BindingChain) bool {
-	// Vérifier qu'on a au moins 2 variables différentes
-	if bindings == nil || bindings.Len() < 2 {
+	// Validation initiale
+	if !jn.validateBindingsForJoin(bindings) {
 		return false
 	}
 
 	// Étape 1: Évaluer les conditions de jointure simples (field-to-field)
-	// Ces conditions sont extraites et toujours présentes pour les joins
-	if len(jn.JoinConditions) > 0 {
-		if !jn.evaluateSimpleJoinConditions(bindings) {
-			return false
+	if !jn.evaluateSimpleConditions(bindings) {
+		return false
+	}
+
+	// Étape 2: Évaluer les conditions complètes si présentes
+	return jn.evaluateComplexConditions(bindings)
+}
+
+// validateBindingsForJoin vérifie que les bindings sont suffisants pour une jointure.
+func (jn *JoinNode) validateBindingsForJoin(bindings *BindingChain) bool {
+	return bindings != nil && bindings.Len() >= 2
+}
+
+// evaluateSimpleConditions évalue les conditions de jointure simples.
+func (jn *JoinNode) evaluateSimpleConditions(bindings *BindingChain) bool {
+	if len(jn.JoinConditions) == 0 {
+		return true
+	}
+	return jn.evaluateSimpleJoinConditions(bindings)
+}
+
+// evaluateComplexConditions évalue les conditions complètes avec contraintes additionnelles.
+func (jn *JoinNode) evaluateComplexConditions(bindings *BindingChain) bool {
+	if jn.Condition == nil {
+		return true
+	}
+
+	// Unwrap composite condition si présent
+	actualCondition := jn.unwrapCompositeCondition()
+
+	condType, exists := actualCondition["type"].(string)
+	if !exists {
+		return true
+	}
+
+	// Déléguer selon le type de condition
+	switch condType {
+	case "constraint":
+		return jn.evaluateConstraintCondition(actualCondition)
+	case "comparison":
+		// Déjà validé par evaluateSimpleJoinConditions
+		return true
+	case "logicalExpr":
+		return jn.evaluateLogicalExprCondition(actualCondition, bindings)
+	default:
+		return true
+	}
+}
+
+// unwrapCompositeCondition décompose une condition composite (beta + alpha).
+func (jn *JoinNode) unwrapCompositeCondition() map[string]interface{} {
+	actualCondition := jn.Condition
+
+	// Extract beta condition if composite
+	if betaCond, isBeta := jn.Condition["beta"]; isBeta {
+		if betaMap, ok := betaCond.(map[string]interface{}); ok {
+			actualCondition = betaMap
 		}
 	}
 
-	// Étape 2: Si on a une condition complète avec des contraintes alpha additionnelles,
-	// l'évaluer pour vérifier les conditions non-join (ex: o.amount > 100)
-	if jn.Condition != nil {
-		// Unwrap composite condition (beta + alpha) if present
-		actualCondition := jn.Condition
-		if betaCond, isBeta := jn.Condition["beta"]; isBeta {
-			// This is a composite condition from beta sharing with alpha conditions
-			// Extract only the beta part for join evaluation
-			if betaMap, ok := betaCond.(map[string]interface{}); ok {
-				actualCondition = betaMap
-			}
+	// Unwrap constraint wrapper if present
+	if condType, exists := actualCondition["type"].(string); exists && condType == "constraint" {
+		if constraint, ok := actualCondition["constraint"].(map[string]interface{}); ok {
+			actualCondition = constraint
 		}
+	}
 
-		// Unwrap the constraint wrapper if present
-		if condType, exists := actualCondition["type"].(string); exists && condType == "constraint" {
-			if constraint, ok := actualCondition["constraint"].(map[string]interface{}); ok {
-				actualCondition = constraint
-			}
+	return actualCondition
+}
+
+// evaluateConstraintCondition évalue une condition de type "constraint".
+func (jn *JoinNode) evaluateConstraintCondition(condition map[string]interface{}) bool {
+	// Les contraintes sont unwrappées dans unwrapCompositeCondition
+	return true
+}
+
+// evaluateLogicalExprCondition évalue une condition de type "logicalExpr".
+func (jn *JoinNode) evaluateLogicalExprCondition(condition map[string]interface{}, bindings *BindingChain) bool {
+	alphaConditions := jn.extractAlphaConditions(condition)
+	if len(alphaConditions) == 0 {
+		// Pas de contraintes alpha, seulement des joins déjà validés
+		return true
+	}
+
+	// Évaluer chaque contrainte alpha
+	return jn.evaluateAlphaConditions(alphaConditions, bindings)
+}
+
+// evaluateAlphaConditions évalue toutes les contraintes alpha.
+func (jn *JoinNode) evaluateAlphaConditions(alphaConditions []map[string]interface{}, bindings *BindingChain) bool {
+	evaluator := NewAlphaConditionEvaluator()
+	evaluator.SetPartialEvalMode(true)
+
+	// Lier toutes les variables aux faits
+	jn.bindVariablesToEvaluator(evaluator, bindings)
+
+	// Évaluer chaque contrainte
+	for _, alphaCond := range alphaConditions {
+		result, err := evaluator.evaluateExpression(alphaCond)
+		if err != nil {
+			// Erreur d'évaluation - accepter par défaut
+			continue
 		}
-
-		condType, exists := actualCondition["type"].(string)
-
-		// Si c'est une simple comparison (join pur), on a déjà validé avec JoinConditions
-		if exists && condType == "comparison" {
-			// Déjà validé par evaluateSimpleJoinConditions
-			return true
-		}
-
-		// Si c'est un logicalExpr, extraire et évaluer seulement les contraintes alpha (non-join)
-		if exists && condType == "logicalExpr" {
-			alphaConditions := jn.extractAlphaConditions(actualCondition)
-			if len(alphaConditions) == 0 {
-				// Pas de contraintes alpha, seulement des joins déjà validés
-				return true
-			}
-
-			// Évaluer chaque contrainte alpha
-			evaluator := NewAlphaConditionEvaluator()
-			evaluator.SetPartialEvalMode(true)
-
-			// Lier toutes les variables aux faits (convertir en map temporaire)
-			vars := bindings.Variables()
-			for _, varName := range vars {
-				fact := bindings.Get(varName)
-				if fact != nil {
-					evaluator.variableBindings[varName] = fact
-				}
-			}
-
-			for _, alphaCond := range alphaConditions {
-				result, err := evaluator.evaluateExpression(alphaCond)
-				if err != nil {
-					// Erreur d'évaluation - accepter par défaut
-					continue
-				}
-				if !result {
-					return false
-				}
-			}
-			return true
+		if !result {
+			return false
 		}
 	}
 
 	return true
 }
 
-// extractAlphaConditions extrait les conditions alpha (non-join) d'une logicalExpr
+// bindVariablesToEvaluator lie toutes les variables de bindings à l'évaluateur.
+func (jn *JoinNode) bindVariablesToEvaluator(evaluator *AlphaConditionEvaluator, bindings *BindingChain) {
+	vars := bindings.Variables()
+	for _, varName := range vars {
+		fact := bindings.Get(varName)
+		if fact != nil {
+			evaluator.variableBindings[varName] = fact
+		}
+	}
+}
+
+// extractAlphaConditions extrait les conditions alpha (non-join) d'une logicalExpr.
+// Refactorisé pour améliorer la lisibilité et réduire la complexité.
 func (jn *JoinNode) extractAlphaConditions(condition map[string]interface{}) []map[string]interface{} {
 	var alphaConditions []map[string]interface{}
 
-	// Vérifier la partie gauche
+	// Extraire de la partie gauche
 	if left, ok := condition["left"].(map[string]interface{}); ok {
 		if isAlphaCondition(left) {
 			alphaConditions = append(alphaConditions, left)
 		}
 	}
 
-	// Vérifier les opérations
-	if operationsRaw, exists := condition["operations"]; exists {
-		// Try to convert to []interface{}
-		if operations, ok := operationsRaw.([]interface{}); ok {
-			for _, op := range operations {
-				if opMap, ok := op.(map[string]interface{}); ok {
-					if right, ok := opMap["right"].(map[string]interface{}); ok {
-						if isAlphaCondition(right) {
-							alphaConditions = append(alphaConditions, right)
-						}
-					}
-				}
-			}
-		} else if operations, ok := operationsRaw.([]map[string]interface{}); ok {
-			// Try []map[string]interface{} type
-			for _, opMap := range operations {
+	// Extraire des opérations
+	alphaFromOps := jn.extractAlphaFromOperations(condition)
+	alphaConditions = append(alphaConditions, alphaFromOps...)
+
+	return alphaConditions
+}
+
+// extractAlphaFromOperations extrait les conditions alpha depuis la liste d'opérations.
+func (jn *JoinNode) extractAlphaFromOperations(condition map[string]interface{}) []map[string]interface{} {
+	var alphaConditions []map[string]interface{}
+
+	operationsRaw, exists := condition["operations"]
+	if !exists {
+		return alphaConditions
+	}
+
+	// Essayer []interface{} en premier
+	if operations, ok := operationsRaw.([]interface{}); ok {
+		for _, op := range operations {
+			if opMap, ok := op.(map[string]interface{}); ok {
 				if right, ok := opMap["right"].(map[string]interface{}); ok {
 					if isAlphaCondition(right) {
 						alphaConditions = append(alphaConditions, right)
 					}
+				}
+			}
+		}
+		return alphaConditions
+	}
+
+	// Essayer []map[string]interface{} en fallback
+	if operations, ok := operationsRaw.([]map[string]interface{}); ok {
+		for _, opMap := range operations {
+			if right, ok := opMap["right"].(map[string]interface{}); ok {
+				if isAlphaCondition(right) {
+					alphaConditions = append(alphaConditions, right)
 				}
 			}
 		}
@@ -459,6 +546,7 @@ func isAlphaCondition(condition map[string]interface{}) bool {
 // evaluateSimpleJoinConditions évalue les conditions de jointure simples (champ à champ).
 //
 // Accepte maintenant BindingChain au lieu de map[string]*Fact.
+// Refactorisé pour réduire la complexité cyclomatique de 26 à <10.
 func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
 	logger := GetDebugLogger()
 
@@ -466,109 +554,137 @@ func (jn *JoinNode) evaluateSimpleJoinConditions(bindings *BindingChain) bool {
 	logger.LogBindings(fmt.Sprintf("JOIN_%s", jn.ID), bindings)
 
 	for i, joinCondition := range jn.JoinConditions {
-		leftFact := bindings.Get(joinCondition.LeftVar)
-		rightFact := bindings.Get(joinCondition.RightVar)
-
-		// Skip conditions that reference variables not available at this join level
-		// (This happens in cascade joins where later variables aren't joined yet)
-		if leftFact == nil || rightFact == nil {
-			logger.Log("[JOIN_%s] Condition[%d] SKIP: leftVar=%s (found=%v), rightVar=%s (found=%v)",
-				jn.ID, i, joinCondition.LeftVar, leftFact != nil, joinCondition.RightVar, rightFact != nil)
-			continue // Skip this condition - variables not available at this level
-		}
-
-		// Get field values
-		leftValue, leftExists := leftFact.Fields[joinCondition.LeftField]
-		rightValue, rightExists := rightFact.Fields[joinCondition.RightField]
-
-		// Vérifier que les champs existent
-		if !leftExists || !rightExists {
-			logger.Log("[JOIN_%s] Condition[%d] FAIL: field not found - %s.%s (exists=%v), %s.%s (exists=%v)",
-				jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftExists,
-				joinCondition.RightVar, joinCondition.RightField, rightExists)
+		if !jn.evaluateSingleJoinCondition(bindings, joinCondition, i, logger) {
 			return false
 		}
-
-		// Évaluer l'opérateur
-		result := false
-		switch joinCondition.Operator {
-		case "==":
-			result = (leftValue == rightValue)
-			if !result {
-				logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) == %s.%s (%v)",
-					jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftValue,
-					joinCondition.RightVar, joinCondition.RightField, rightValue)
-				return false
-			}
-		case "!=":
-			result = (leftValue != rightValue)
-			if !result {
-				logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) != %s.%s (%v)",
-					jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField, leftValue,
-					joinCondition.RightVar, joinCondition.RightField, rightValue)
-				return false
-			}
-		case "<":
-			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
-				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
-					if leftFloat >= rightFloat {
-						return false
-					}
-				} else {
-					return false // Comparaison numérique impossible
-				}
-			} else {
-				return false
-			}
-		case ">":
-			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
-				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
-					if leftFloat <= rightFloat {
-						return false
-					}
-				} else {
-					return false
-				}
-			} else {
-				return false
-			}
-		case "<=":
-			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
-				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
-					if leftFloat > rightFloat {
-						return false
-					}
-				} else {
-					return false
-				}
-			} else {
-				return false
-			}
-		case ">=":
-			if leftFloat, leftOk := convertToFloat64(leftValue); leftOk {
-				if rightFloat, rightOk := convertToFloat64(rightValue); rightOk {
-					if leftFloat < rightFloat {
-						return false
-					}
-				} else {
-					return false
-				}
-			} else {
-				return false
-			}
-		default:
-			logger.Log("[JOIN_%s] Condition[%d] FAIL: unknown operator %s", jn.ID, i, joinCondition.Operator)
-			return false
-		}
-
-		logger.Log("[JOIN_%s] Condition[%d] PASS: %s.%s %s %s.%s",
-			jn.ID, i, joinCondition.LeftVar, joinCondition.LeftField,
-			joinCondition.Operator,
-			joinCondition.RightVar, joinCondition.RightField)
 	}
 
 	logger.Log("[JOIN_%s] ✓ All join conditions passed", jn.ID)
 	return true
+}
+
+// evaluateSingleJoinCondition évalue une seule condition de jointure.
+// Complexité réduite en extrayant la logique de chaque condition.
+func (jn *JoinNode) evaluateSingleJoinCondition(bindings *BindingChain, cond JoinCondition, index int, logger *DebugLogger) bool {
+	// Étape 1: Récupérer les faits
+	leftFact, rightFact := jn.getJoinFacts(bindings, cond, index, logger)
+	if leftFact == nil || rightFact == nil {
+		// Skip si variables non disponibles (cascade joins)
+		return true
+	}
+
+	// Étape 2: Récupérer les valeurs des champs
+	leftValue, rightValue, ok := jn.getFieldValues(leftFact, rightFact, cond, index, logger)
+	if !ok {
+		return false
+	}
+
+	// Étape 3: Évaluer l'opérateur
+	if !jn.evaluateOperator(cond.Operator, leftValue, rightValue, cond, index, logger) {
+		return false
+	}
+
+	logger.Log("[JOIN_%s] Condition[%d] PASS: %s.%s %s %s.%s",
+		jn.ID, index, cond.LeftVar, cond.LeftField,
+		cond.Operator,
+		cond.RightVar, cond.RightField)
+	return true
+}
+
+// getJoinFacts récupère les faits gauche et droit pour une condition de jointure.
+// Retourne (leftFact, rightFact) ou (nil, nil) si skip nécessaire.
+func (jn *JoinNode) getJoinFacts(bindings *BindingChain, cond JoinCondition, index int, logger *DebugLogger) (*Fact, *Fact) {
+	leftFact := bindings.Get(cond.LeftVar)
+	rightFact := bindings.Get(cond.RightVar)
+
+	// Skip conditions that reference variables not available at this join level
+	if leftFact == nil || rightFact == nil {
+		logger.Log("[JOIN_%s] Condition[%d] SKIP: leftVar=%s (found=%v), rightVar=%s (found=%v)",
+			jn.ID, index, cond.LeftVar, leftFact != nil, cond.RightVar, rightFact != nil)
+		return nil, nil
+	}
+
+	return leftFact, rightFact
+}
+
+// getFieldValues extrait les valeurs des champs depuis les faits.
+// Retourne (leftValue, rightValue, true) si succès, (nil, nil, false) si échec.
+func (jn *JoinNode) getFieldValues(leftFact, rightFact *Fact, cond JoinCondition, index int, logger *DebugLogger) (interface{}, interface{}, bool) {
+	leftValue, leftExists := leftFact.Fields[cond.LeftField]
+	rightValue, rightExists := rightFact.Fields[cond.RightField]
+
+	if !leftExists || !rightExists {
+		logger.Log("[JOIN_%s] Condition[%d] FAIL: field not found - %s.%s (exists=%v), %s.%s (exists=%v)",
+			jn.ID, index, cond.LeftVar, cond.LeftField, leftExists,
+			cond.RightVar, cond.RightField, rightExists)
+		return nil, nil, false
+	}
+
+	return leftValue, rightValue, true
+}
+
+// evaluateOperator évalue un opérateur de comparaison.
+// Complexité réduite en déléguant les comparaisons numériques.
+func (jn *JoinNode) evaluateOperator(operator string, leftValue, rightValue interface{}, cond JoinCondition, index int, logger *DebugLogger) bool {
+	switch operator {
+	case "==":
+		return jn.evaluateEquality(leftValue, rightValue, cond, index, logger)
+	case "!=":
+		return jn.evaluateInequality(leftValue, rightValue, cond, index, logger)
+	case "<", ">", "<=", ">=":
+		return jn.evaluateNumericComparison(operator, leftValue, rightValue)
+	default:
+		logger.Log("[JOIN_%s] Condition[%d] FAIL: unknown operator %s", jn.ID, index, operator)
+		return false
+	}
+}
+
+// evaluateEquality évalue l'opérateur ==
+func (jn *JoinNode) evaluateEquality(leftValue, rightValue interface{}, cond JoinCondition, index int, logger *DebugLogger) bool {
+	if leftValue != rightValue {
+		logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) == %s.%s (%v)",
+			jn.ID, index, cond.LeftVar, cond.LeftField, leftValue,
+			cond.RightVar, cond.RightField, rightValue)
+		return false
+	}
+	return true
+}
+
+// evaluateInequality évalue l'opérateur !=
+func (jn *JoinNode) evaluateInequality(leftValue, rightValue interface{}, cond JoinCondition, index int, logger *DebugLogger) bool {
+	if leftValue == rightValue {
+		logger.Log("[JOIN_%s] Condition[%d] FAIL: %s.%s (%v) != %s.%s (%v)",
+			jn.ID, index, cond.LeftVar, cond.LeftField, leftValue,
+			cond.RightVar, cond.RightField, rightValue)
+		return false
+	}
+	return true
+}
+
+// evaluateNumericComparison évalue les opérateurs de comparaison numérique (<, >, <=, >=).
+func (jn *JoinNode) evaluateNumericComparison(operator string, leftValue, rightValue interface{}) bool {
+	leftFloat, leftOk := convertToFloat64(leftValue)
+	if !leftOk {
+		return false
+	}
+
+	rightFloat, rightOk := convertToFloat64(rightValue)
+	if !rightOk {
+		return false
+	}
+
+	switch operator {
+	case "<":
+		return leftFloat < rightFloat
+	case ">":
+		return leftFloat > rightFloat
+	case "<=":
+		return leftFloat <= rightFloat
+	case ">=":
+		return leftFloat >= rightFloat
+	default:
+		return false
+	}
 }
 
 // convertToFloat64 tente de convertir une valeur en float64
@@ -594,88 +710,121 @@ func convertToFloat64(value interface{}) (float64, bool) {
 	}
 }
 
-// extractJoinConditions extrait les conditions de jointure d'une condition complexe
+// extractJoinConditions extrait les conditions de jointure d'une condition complexe.
+// Refactorisé pour réduire la complexité cyclomatique de 22 à <10.
 func extractJoinConditions(condition map[string]interface{}) []JoinCondition {
 	for key, value := range condition {
 		fmt.Printf("    %s: %v (type: %T)\n", key, value, value)
 	}
 
+	conditionType, _ := condition["type"].(string)
+
+	switch conditionType {
+	case "constraint":
+		return extractConstraintJoinConditions(condition)
+	case "exists":
+		return extractExistsJoinConditions(condition)
+	case "comparison":
+		return extractComparisonJoinConditions(condition)
+	case "logicalExpr":
+		return extractLogicalExprJoinConditions(condition)
+	default:
+		return []JoinCondition{}
+	}
+}
+
+// extractConstraintJoinConditions extrait les conditions depuis un type "constraint".
+func extractConstraintJoinConditions(condition map[string]interface{}) []JoinCondition {
+	if innerCondition, ok := condition["constraint"].(map[string]interface{}); ok {
+		fmt.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
+		return extractJoinConditions(innerCondition)
+	}
+	return []JoinCondition{}
+}
+
+// extractExistsJoinConditions extrait les conditions depuis un type "exists".
+func extractExistsJoinConditions(condition map[string]interface{}) []JoinCondition {
 	var joinConditions []JoinCondition
 
-	// Cas 1: condition wrappée dans un type "constraint"
-	if conditionType, exists := condition["type"].(string); exists && conditionType == "constraint" {
-		if innerCondition, ok := condition["constraint"].(map[string]interface{}); ok {
-			fmt.Printf("  ✅ Sous-condition extraite, analyse récursive\n")
-			return extractJoinConditions(innerCondition)
+	if conditionsData, ok := condition["conditions"].([]map[string]interface{}); ok {
+		fmt.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
+		for _, subCondition := range conditionsData {
+			subJoinConditions := extractJoinConditions(subCondition)
+			joinConditions = append(joinConditions, subJoinConditions...)
 		}
 	}
 
-	// Cas 2: condition EXISTS avec array de conditions
-	if conditionType, exists := condition["type"].(string); exists && conditionType == "exists" {
-		if conditionsData, ok := condition["conditions"].([]map[string]interface{}); ok {
-			fmt.Printf("  ✅ Array de conditions EXISTS trouvé: %d conditions\n", len(conditionsData))
-			for _, subCondition := range conditionsData {
-				subJoinConditions := extractJoinConditions(subCondition)
-				joinConditions = append(joinConditions, subJoinConditions...)
-			}
-			return joinConditions
-		}
+	return joinConditions
+}
+
+// extractComparisonJoinConditions extrait une condition de jointure depuis un type "comparison".
+func extractComparisonJoinConditions(condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("  ✅ Condition de comparaison détectée\n")
+
+	left, leftOk := condition["left"].(map[string]interface{})
+	right, rightOk := condition["right"].(map[string]interface{})
+
+	if !leftOk || !rightOk {
+		return []JoinCondition{}
 	}
 
-	// Cas 3: condition directe de comparaison
-	if conditionType, exists := condition["type"].(string); exists && conditionType == "comparison" {
-		fmt.Printf("  ✅ Condition de comparaison détectée\n")
-		if left, leftOk := condition["left"].(map[string]interface{}); leftOk {
-			if right, rightOk := condition["right"].(map[string]interface{}); rightOk {
-				fmt.Printf("  ✅ Left et Right extraits\n")
-				if leftType, _ := left["type"].(string); leftType == "fieldAccess" {
-					if rightType, _ := right["type"].(string); rightType == "fieldAccess" {
-						// Condition de jointure détectée
-						fmt.Printf("  ✅ Condition de jointure fieldAccess détectée\n")
-						leftObj, _ := left["object"].(string)
-						leftField, _ := left["field"].(string)
-						rightObj, _ := right["object"].(string)
-						rightField, _ := right["field"].(string)
-						operator, _ := condition["operator"].(string)
+	fmt.Printf("  ✅ Left et Right extraits\n")
 
-						fmt.Printf("    📌 %s.%s %s %s.%s\n", leftObj, leftField, operator, rightObj, rightField)
+	// Vérifier si c'est une jointure field-to-field
+	leftType, _ := left["type"].(string)
+	rightType, _ := right["type"].(string)
 
-						joinConditions = append(joinConditions, JoinCondition{
-							LeftField:  leftField,
-							RightField: rightField,
-							LeftVar:    leftObj,
-							RightVar:   rightObj,
-							Operator:   operator,
-						})
-					}
+	if leftType != "fieldAccess" || rightType != "fieldAccess" {
+		return []JoinCondition{}
+	}
+
+	// Extraire les détails de la condition de jointure
+	return extractFieldAccessJoinCondition(left, right, condition)
+}
+
+// extractFieldAccessJoinCondition crée une JoinCondition depuis des fieldAccess.
+func extractFieldAccessJoinCondition(left, right, condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("  ✅ Condition de jointure fieldAccess détectée\n")
+
+	leftObj, _ := left["object"].(string)
+	leftField, _ := left["field"].(string)
+	rightObj, _ := right["object"].(string)
+	rightField, _ := right["field"].(string)
+	operator, _ := condition["operator"].(string)
+
+	fmt.Printf("    📌 %s.%s %s %s.%s\n", leftObj, leftField, operator, rightObj, rightField)
+
+	return []JoinCondition{{
+		LeftField:  leftField,
+		RightField: rightField,
+		LeftVar:    leftObj,
+		RightVar:   rightObj,
+		Operator:   operator,
+	}}
+}
+
+// extractLogicalExprJoinConditions extrait les conditions depuis un type "logicalExpr".
+func extractLogicalExprJoinConditions(condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("  ✅ LogicalExpr détectée, extraction des conditions\n")
+
+	var joinConditions []JoinCondition
+
+	// Extraire la partie gauche
+	if left, ok := condition["left"].(map[string]interface{}); ok {
+		leftJoinConditions := extractJoinConditions(left)
+		joinConditions = append(joinConditions, leftJoinConditions...)
+	}
+
+	// Extraire les opérations
+	if operations, ok := condition["operations"].([]interface{}); ok {
+		for _, op := range operations {
+			if opMap, ok := op.(map[string]interface{}); ok {
+				if right, ok := opMap["right"].(map[string]interface{}); ok {
+					rightJoinConditions := extractJoinConditions(right)
+					joinConditions = append(joinConditions, rightJoinConditions...)
 				}
 			}
 		}
-	}
-
-	// Cas 4: logicalExpr avec opérations AND/OR
-	if conditionType, exists := condition["type"].(string); exists && conditionType == "logicalExpr" {
-		fmt.Printf("  ✅ LogicalExpr détectée, extraction des conditions\n")
-
-		// Extraire les conditions de la partie gauche
-		if left, ok := condition["left"].(map[string]interface{}); ok {
-			leftJoinConditions := extractJoinConditions(left)
-			joinConditions = append(joinConditions, leftJoinConditions...)
-		}
-
-		// Extraire les conditions des opérations
-		if operations, ok := condition["operations"].([]interface{}); ok {
-			for _, op := range operations {
-				if opMap, ok := op.(map[string]interface{}); ok {
-					if right, ok := opMap["right"].(map[string]interface{}); ok {
-						rightJoinConditions := extractJoinConditions(right)
-						joinConditions = append(joinConditions, rightJoinConditions...)
-					}
-				}
-			}
-		}
-
-		return joinConditions
 	}
 
 	return joinConditions

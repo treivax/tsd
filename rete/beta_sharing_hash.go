@@ -196,7 +196,7 @@ func (h *defaultJoinNodeHasher) ComputeHash(canonical *CanonicalJoinSignature) (
 
 	// Compute SHA-256 hash
 	hashBytes := sha256.Sum256(jsonBytes)
-	hashHex := hex.EncodeToString(hashBytes[:8])
+	hashHex := hex.EncodeToString(hashBytes[:HashPrefixLength])
 
 	return "join_" + hashHex, nil
 }

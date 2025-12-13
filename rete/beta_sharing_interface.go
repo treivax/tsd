@@ -23,6 +23,21 @@ import (
 )
 
 // ============================================================================
+// Configuration Constants
+// ============================================================================
+
+const (
+	// DefaultHashCacheSize est la taille par défaut du cache LRU pour les hash
+	DefaultHashCacheSize = 1000
+
+	// DefaultMaxSharedNodes est le nombre maximum de nœuds partagés (0 = illimité)
+	DefaultMaxSharedNodes = 10000
+
+	// HashPrefixLength est la longueur du préfixe de hash utilisé (en bytes)
+	HashPrefixLength = 8
+)
+
+// ============================================================================
 // Core Interfaces
 // ============================================================================
 
@@ -197,8 +212,8 @@ type BetaSharingConfig struct {
 func DefaultBetaSharingConfig() BetaSharingConfig {
 	return BetaSharingConfig{
 		Enabled:                     false, // Disabled by default for safe rollout
-		HashCacheSize:               1000,
-		MaxSharedNodes:              10000,
+		HashCacheSize:               DefaultHashCacheSize,
+		MaxSharedNodes:              DefaultMaxSharedNodes,
 		EnableMetrics:               true,
 		NormalizeOrder:              true,
 		EnableAdvancedNormalization: false,
@@ -381,10 +396,10 @@ func NewNormalizationContext(config BetaSharingConfig) *NormalizationContext {
 // ============================================================================
 
 // ComputeSHA256Hash computes a SHA-256 hash of the input bytes.
-// Returns a hex-encoded string of the first 8 bytes.
+// Returns a hex-encoded string of the first HashPrefixLength bytes.
 func ComputeSHA256Hash(data []byte) string {
 	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:8]) // Use first 8 bytes (64 bits)
+	return hex.EncodeToString(hash[:HashPrefixLength])
 }
 
 // ComputeJoinNodeHash computes a hash for a canonical join signature.
