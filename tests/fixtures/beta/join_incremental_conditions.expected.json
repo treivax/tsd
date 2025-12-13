@@ -1,0 +1,27 @@
+{
+  "description": "Test JoinNode sharing with incremental conditions - validates that rules with additional conditions share common JoinNodes",
+  "expected_actions": 7,
+  "expected_action_details": [
+    {
+      "action": "basic_order",
+      "count": 4,
+      "description": "All User-Order pairs matching u.id == o.user_id"
+    },
+    {
+      "action": "high_value_order",
+      "count": 2,
+      "description": "User-Order pairs with o.amount > 100"
+    },
+    {
+      "action": "vip_high_value_order",
+      "count": 1,
+      "description": "VIP user orders with amount > 100"
+    }
+  ],
+  "expected_network_structure": {
+    "description": "Should have 1 shared JoinNode for the common join condition u.id == o.user_id",
+    "shared_join_nodes": 1,
+    "total_rules": 3,
+    "note": "Alpha conditions (o.amount > 100, u.status == 'vip') are handled by separate AlphaNodes"
+  }
+}

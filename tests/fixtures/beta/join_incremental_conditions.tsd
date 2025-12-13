@@ -1,0 +1,55 @@
+// Test JoinNode sharing with incremental conditions
+// Vérifie que les règles avec des conditions supplémentaires partagent bien les JoinNodes communs
+
+type User(id: string, name: string, age: number, status: string)
+type Order(id: string, user_id: string, amount: number, product: string)
+
+// Action definitions
+action basic_order(user_id: string, order_id: string)
+action high_value_order(user_id: string, order_id: string, amount: number)
+action vip_high_value_order(user_id: string, order_id: string)
+
+// Règle 1 (base): Jointure simple u.id == o.user_id
+// Cette règle établit la jointure de base
+rule r1 : {u: User, o: Order} / u.id == o.user_id ==> basic_order(u.id, o.id)
+
+// Règle 2 (incrémentale): Même jointure + condition alpha sur o.amount
+// DOIT partager le JoinNode avec r1 pour la jointure u.id == o.user_id
+// La condition o.amount > 100 sera gérée par un AlphaNode
+rule r2 : {u: User, o: Order} / u.id == o.user_id AND o.amount > 100 ==> high_value_order(u.id, o.id, o.amount)
+
+// Règle 3 (incrémentale): Même jointure + condition alpha sur u.status
+// DOIT aussi partager le JoinNode avec r1 et r2 pour la jointure u.id == o.user_id
+// La condition u.status == "vip" sera gérée par un AlphaNode
+rule r3 : {u: User, o: Order} / u.id == o.user_id AND u.status == "vip" AND o.amount > 100 ==> vip_high_value_order(u.id, o.id)
+
+// Données de test
+User(id:"USER001", name:"Alice", age:30, status:"vip")
+User(id:"USER002", name:"Bob", age:25, status:"regular")
+User(id:"USER003", name:"Charlie", age:35, status:"premium")
+
+Order(id:"ORD001", user_id:"USER001", amount:150, product:"laptop")
+Order(id:"ORD002", user_id:"USER001", amount:50, product:"mouse")
+Order(id:"ORD003", user_id:"USER002", amount:200, product:"monitor")
+Order(id:"ORD004", user_id:"USER003", amount:75, product:"keyboard")
+
+// Résultats attendus:
+// r1 (basic_order): 4 activations
+//   - USER001 + ORD001 ✓
+//   - USER001 + ORD002 ✓
+//   - USER002 + ORD003 ✓
+//   - USER003 + ORD004 ✓
+//
+// r2 (high_value_order): 2 activations (o.amount > 100)
+//   - USER001 + ORD001 (amount:150) ✓
+//   - USER002 + ORD003 (amount:200) ✓
+//
+// r3 (vip_high_value_order): 1 activation (status:"vip" AND amount > 100)
+//   - USER001 + ORD001 (vip + amount:150) ✓
+//
+// Total actions: 7
+//
+// Structure réseau attendue:
+// - 1 JoinNode partagé entre r1, r2 et r3 (pour u.id == o.user_id)
+// - AlphaNodes séparés pour les conditions supplémentaires
+// - Efficacité: 1 JoinNode au lieu de 3
