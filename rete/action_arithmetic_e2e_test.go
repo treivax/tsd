@@ -686,9 +686,9 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	fmt.Println(strings.Repeat("=", 100))
 	fmt.Println()
 	// Vérifier la structure du réseau
-	// Avec le partage beta obligatoire :
-	// - Règles 1 et 3 ont les mêmes conditions => partagent le même JoinNode
-	// - Règle 2 a une condition différente => son propre JoinNode
+	// Avec le partage beta amélioré (incluant cascadeLevel) :
+	// - Les règles 1 et 3 ont les mêmes conditions => partagent le même JoinNode
+	// - La règle 2 a une condition différente => son propre JoinNode
 	// Total : 2 JoinNodes (au lieu de 3 sans partage)
 	// Note: network.BetaNodes peut contenir des entrées dupliquées (hash + legacy key)
 	// On compte les JoinNodes uniques par ID

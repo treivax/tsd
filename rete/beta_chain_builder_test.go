@@ -399,7 +399,7 @@ func TestPrefixCache(t *testing.T) {
 		},
 	}
 	// Compute prefix key
-	prefixKey := builder.computePrefixKey(patterns[0:1])
+	prefixKey := builder.computePrefixKey(patterns[0:1], "test_rule")
 	if prefixKey == "" {
 		t.Error("Expected non-empty prefix key")
 	}

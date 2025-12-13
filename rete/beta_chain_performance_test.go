@@ -416,7 +416,7 @@ func BenchmarkHashCompute_Simple(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 		if err != nil {
 			b.Fatalf("GetOrCreateJoinNode failed: %v", err)
 		}
@@ -454,7 +454,7 @@ func BenchmarkHashCompute_Complex(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 		if err != nil {
 			b.Fatalf("GetOrCreateJoinNode failed: %v", err)
 		}
@@ -482,7 +482,7 @@ func BenchmarkHashCompute_WithCache(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+		_, _, _, err := registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 		if err != nil {
 			b.Fatalf("GetOrCreateJoinNode failed: %v", err)
 		}

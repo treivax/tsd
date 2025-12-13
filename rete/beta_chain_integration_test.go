@@ -121,6 +121,8 @@ func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 		[]string{"p", "o"},
 		varTypes,
 		storage,
+		0, // cascadeLevel
+		// ruleID
 	)
 	if err != nil {
 		t.Fatalf("Failed to create first join node: %v", err)
@@ -131,7 +133,7 @@ func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 	if shared1 {
 		t.Error("First join node should not be shared (it's the first one)")
 	}
-	// Create second join node with identical pattern
+	// Create second join node with identical pattern (same ruleID = should share)
 	node2, hash2, shared2, err := network.BetaSharingRegistry.GetOrCreateJoinNode(
 		condition,
 		[]string{"p"},
@@ -139,6 +141,8 @@ func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 		[]string{"p", "o"},
 		varTypes,
 		storage,
+		0, // cascadeLevel
+		// ruleID - same as first, so should share
 	)
 	if err != nil {
 		t.Fatalf("Failed to create second join node: %v", err)
@@ -382,6 +386,7 @@ func TestBetaChain_Lifecycle_ReferenceCount(t *testing.T) {
 			[]string{"p", "o"},
 			varTypes,
 			storage,
+			0, // cascadeLevel
 		)
 		if err != nil {
 			t.Fatalf("Failed to create join node %d: %v", i, err)
@@ -734,6 +739,7 @@ func TestBetaChain_HashConsistency(t *testing.T) {
 			[]string{"a", "b"},
 			varTypes,
 			storage,
+			0, // cascadeLevel
 		)
 		if err != nil {
 			t.Fatalf("Failed to create node %d: %v", i, err)

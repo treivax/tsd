@@ -311,6 +311,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 		config.Enabled = true
 		registry := NewBetaSharingRegistry(config, nil)
 		storage := NewMemoryStorage()
+		varTypes := map[string]string{"p": "Person", "o": "Order"}
 		condition := map[string]interface{}{
 			"type":     "comparison",
 			"operator": "==",
@@ -322,8 +323,9 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 			[]string{"p"},
 			[]string{"o"},
 			[]string{"p", "o"},
-			map[string]string{"p": "Person", "o": "Order"},
+			varTypes,
 			storage,
+			0,
 		)
 		if err != nil {
 			t.Fatalf("GetOrCreateJoinNode() error: %v", err)
@@ -356,6 +358,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 			[]string{"p", "o"},
 			map[string]string{"p": "Person", "o": "Order"},
 			storage,
+			0,
 		)
 		if err != nil {
 			t.Fatalf("GetOrCreateJoinNode() error: %v", err)

@@ -48,7 +48,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_Disabled(t *testing.T) {
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	// First call
 	node1, hash1, reused1, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node1: %v", err)
@@ -58,7 +58,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_Disabled(t *testing.T) {
 	}
 	// Second call - should create a new node (not shared)
 	node2, hash2, reused2, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node2: %v", err)
@@ -100,7 +100,7 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_SameCondition(t *testing.T) {
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	// First call
 	node1, hash1, reused1, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node1: %v", err)
@@ -108,9 +108,9 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_SameCondition(t *testing.T) {
 	if reused1 {
 		t.Error("First node should not be marked as reused")
 	}
-	// Second call - should reuse the same node
+	// Second call - should reuse the same node (same ruleID and cascadeLevel)
 	node2, hash2, reused2, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node2: %v", err)
@@ -166,13 +166,13 @@ func TestBetaSharingRegistry_GetOrCreateJoinNode_DifferentConditions(t *testing.
 	allVars := []string{"p", "o"}
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	node1, hash1, _, err := registry.GetOrCreateJoinNode(
-		condition1, leftVars, rightVars, allVars, varTypes, storage,
+		condition1, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node1: %v", err)
 	}
 	node2, hash2, _, err := registry.GetOrCreateJoinNode(
-		condition2, leftVars, rightVars, allVars, varTypes, storage,
+		condition2, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node2: %v", err)
@@ -228,7 +228,7 @@ func TestBetaSharingRegistry_ReleaseJoinNode(t *testing.T) {
 	varTypes := map[string]string{"p": "Person"}
 	// Create node
 	_, hash, _, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node: %v", err)
@@ -267,9 +267,9 @@ func TestBetaSharingRegistry_GetSharingStats(t *testing.T) {
 	allVars := []string{"p", "o"}
 	varTypes := map[string]string{"p": "Person"}
 	// Create first node
-	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 	// Reuse same node
-	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 	// Get stats
 	stats := registry.GetSharingStats()
 	if stats.TotalRequests != 2 {
@@ -300,8 +300,8 @@ func TestBetaSharingRegistry_ListSharedJoinNodes(t *testing.T) {
 	rightVars := []string{"o"}
 	allVars := []string{"p", "o"}
 	varTypes := map[string]string{"p": "Person"}
-	registry.GetOrCreateJoinNode(condition1, leftVars, rightVars, allVars, varTypes, storage)
-	registry.GetOrCreateJoinNode(condition2, leftVars, rightVars, allVars, varTypes, storage)
+	registry.GetOrCreateJoinNode(condition1, leftVars, rightVars, allVars, varTypes, storage, 0)
+	registry.GetOrCreateJoinNode(condition2, leftVars, rightVars, allVars, varTypes, storage, 0)
 	nodes := registry.ListSharedJoinNodes()
 	if len(nodes) != 2 {
 		t.Errorf("Expected 2 shared nodes, got %d", len(nodes))
@@ -325,7 +325,7 @@ func TestBetaSharingRegistry_GetSharedJoinNodeDetails(t *testing.T) {
 	allVars := []string{"p", "o"}
 	varTypes := map[string]string{"p": "Person", "o": "Order"}
 	_, hash, _, err := registry.GetOrCreateJoinNode(
-		condition, leftVars, rightVars, allVars, varTypes, storage,
+		condition, leftVars, rightVars, allVars, varTypes, storage, 0,
 	)
 	if err != nil {
 		t.Fatalf("Error creating node: %v", err)
@@ -370,7 +370,7 @@ func TestBetaSharingRegistry_Shutdown(t *testing.T) {
 	rightVars := []string{"o"}
 	allVars := []string{"p", "o"}
 	varTypes := map[string]string{"p": "Person"}
-	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+	registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 	err := registry.Shutdown()
 	if err != nil {
 		t.Fatalf("Error during shutdown: %v", err)
@@ -576,7 +576,7 @@ func BenchmarkBetaSharingRegistry_GetOrCreateJoinNode(b *testing.B) {
 	varTypes := map[string]string{"p": "Person"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage)
+		registry.GetOrCreateJoinNode(condition, leftVars, rightVars, allVars, varTypes, storage, 0)
 	}
 }
 

@@ -78,6 +78,8 @@ func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 		[]string{"p", "o"},
 		varTypes,
 		storage,
+		0, // cascadeLevel
+		// ruleID
 	)
 	if err != nil {
 		t.Fatalf("Failed to create first join node: %v", err)
@@ -85,7 +87,7 @@ func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 	if shared1 {
 		t.Error("First node should not be shared (it's new)")
 	}
-	// Create second join node with identical signature
+	// Create second join node with identical signature (same ruleID = should share)
 	node2, hash2, shared2, err := network.BetaSharingRegistry.GetOrCreateJoinNode(
 		condition,
 		[]string{"p"},
@@ -93,6 +95,8 @@ func TestBetaSharingIntegration_BinaryJoinSharing(t *testing.T) {
 		[]string{"p", "o"},
 		varTypes,
 		storage,
+		0, // cascadeLevel
+		// ruleID - same as first, so should share
 	)
 	if err != nil {
 		t.Fatalf("Failed to create second join node: %v", err)
