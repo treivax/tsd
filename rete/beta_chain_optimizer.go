@@ -214,7 +214,7 @@ func (bcb *BetaChainBuilder) findReusablePrefix(patterns []JoinPattern, ruleID s
 
 	// Chercher le plus long préfixe disponible (de len-1 à 1)
 	for prefixLen := len(patterns) - 1; prefixLen >= 1; prefixLen-- {
-		prefixKey := bcb.computePrefixKey(patterns[0:prefixLen])
+		prefixKey := bcb.computePrefixKey(patterns[0:prefixLen], ruleID)
 		if node, exists := bcb.prefixCache[prefixKey]; exists {
 			return node, prefixLen
 		}
@@ -225,20 +225,22 @@ func (bcb *BetaChainBuilder) findReusablePrefix(patterns []JoinPattern, ruleID s
 
 // computePrefixKey calcule une clé pour un préfixe de patterns.
 //
-// La clé est construite en concaténant les signatures des patterns.
+// La clé est construite en concaténant le ruleID et les signatures des patterns.
 // Chaque pattern contribue ses LeftVars et RightVars séparés par '|'.
 //
 // Format de clé:
 //
-//	[left1,left2]|[right1,right2]|[left3]|[right3]|...
+//	ruleID::[left1,left2]|[right1,right2]|[left3]|[right3]|...
 //
 // Propriétés:
 //   - Déterministe: même préfixe → même clé
 //   - Unique: préfixes différents → clés différentes
 //   - Ordre-dépendant: [p,o] ≠ [o,p]
+//   - Règle-spécifique: préfixes de règles différentes ne sont pas partagés
 //
 // Paramètres:
 //   - patterns: Sous-séquence de patterns (préfixe)
+//   - ruleID: Identifiant de la règle pour éviter le partage entre règles
 //
 // Retourne:
 //   - Clé de cache sous forme de string
@@ -249,10 +251,11 @@ func (bcb *BetaChainBuilder) findReusablePrefix(patterns []JoinPattern, ruleID s
 //	    {LeftVars: []string{"p"}, RightVars: []string{"o"}},
 //	    {LeftVars: []string{"p","o"}, RightVars: []string{"pay"}},
 //	}
-//	key := builder.computePrefixKey(patterns)
-//	// key = "[p]|[o]|[p o]|[pay]|"
-func (bcb *BetaChainBuilder) computePrefixKey(patterns []JoinPattern) string {
-	key := ""
+//	key := builder.computePrefixKey(patterns, "rule1")
+//	// key = "rule1::[p]|[o]|[p o]|[pay]|"
+func (bcb *BetaChainBuilder) computePrefixKey(patterns []JoinPattern, ruleID string) string {
+	// Inclure ruleID pour éviter le partage de préfixes entre règles différentes
+	key := ruleID + "::"
 	for _, pattern := range patterns {
 		// Utiliser les variables comme base de la clé
 		key += fmt.Sprintf("%v|%v|", pattern.LeftVars, pattern.RightVars)

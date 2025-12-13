@@ -79,15 +79,19 @@ func NormalizeJoinCondition(condition map[string]interface{}) (map[string]interf
 
 // ComputeJoinHash computes a hash for a join specification.
 // This is a standalone helper function for backward compatibility.
+//
+// Deprecated: Use BetaSharingRegistry.GetOrCreateJoinNode instead which includes
+// cascadeLevel for proper sharing semantics.
 func ComputeJoinHash(condition map[string]interface{}, leftVars, rightVars []string, varTypes map[string]string) (string, error) {
-	// Create canonical signature
+	// Create canonical signature with default values for backward compatibility
 	canonical := &CanonicalJoinSignature{
-		Version:   "1.0",
-		LeftVars:  sortStrings(leftVars),
-		RightVars: sortStrings(rightVars),
-		AllVars:   sortStrings(append(leftVars, rightVars...)),
-		VarTypes:  sortVarTypes(varTypes),
-		Condition: condition,
+		Version:      "1.0",
+		LeftVars:     sortStrings(leftVars),
+		RightVars:    sortStrings(rightVars),
+		AllVars:      sortStrings(append(leftVars, rightVars...)),
+		VarTypes:     sortVarTypes(varTypes),
+		Condition:    condition,
+		CascadeLevel: 0, // Default cascade level for backward compatibility
 	}
 
 	// Normalize condition

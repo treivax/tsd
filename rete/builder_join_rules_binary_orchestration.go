@@ -181,6 +181,7 @@ func (ctx *binaryJoinRuleContext) createOrReuseJoinNode() error {
 		allVars,
 		ctx.varTypes,
 		ctx.builder.utils.storage,
+		0, // cascadeLevel: binary joins are always level 0 (first join)
 	)
 	if createErr != nil {
 		return fmt.Errorf("failed to create JoinNode: %w", createErr)

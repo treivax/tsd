@@ -44,8 +44,9 @@ func (bsr *BetaSharingRegistryImpl) computeHashDirect(sig *JoinNodeSignature) (s
 // normalizeSignatureFallback provides basic normalization when no normalizer is configured.
 func (bsr *BetaSharingRegistryImpl) normalizeSignatureFallback(sig *JoinNodeSignature) (*CanonicalJoinSignature, error) {
 	canonical := &CanonicalJoinSignature{
-		Version:   "1.0",
-		Condition: sig.Condition,
+		Version:      "1.0",
+		Condition:    sig.Condition,
+		CascadeLevel: sig.CascadeLevel,
 	}
 
 	// Sort variables if normalization is enabled
@@ -82,7 +83,8 @@ func NewDefaultJoinNodeNormalizer(config BetaSharingConfig) JoinNodeNormalizer {
 // NormalizeSignature converts a join signature to canonical form.
 func (n *defaultJoinNodeNormalizer) NormalizeSignature(sig *JoinNodeSignature) (*CanonicalJoinSignature, error) {
 	canonical := &CanonicalJoinSignature{
-		Version: "1.0",
+		Version:      "1.0",
+		CascadeLevel: sig.CascadeLevel,
 	}
 
 	// Sort variables if normalization is enabled

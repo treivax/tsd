@@ -1,3 +1,7 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
 // Package rete implements the RETE algorithm for the TSD rule engine.
 // This file contains the interface definitions and type declarations for
 // Beta node (JoinNode) sharing functionality.
@@ -43,6 +47,7 @@ type BetaSharingRegistry interface {
 		allVars []string,
 		varTypes map[string]string,
 		storage Storage,
+		cascadeLevel int,
 	) (*JoinNode, string, bool, error)
 
 	// RegisterJoinNode explicitly registers an existing JoinNode.
@@ -221,6 +226,13 @@ type JoinNodeSignature struct {
 
 	// VarTypes maps variable names to their types
 	VarTypes map[string]string
+
+	// CascadeLevel represents the depth in the join cascade (0-based)
+	// Level 0: first join (v0 ⋈ v1)
+	// Level 1: second join ((v0,v1) ⋈ v2)
+	// Level N: (N+1)th join
+	// This ensures joins at different cascade levels are not incorrectly shared
+	CascadeLevel int
 }
 
 // CanonicalJoinSignature is the normalized form of a JoinNodeSignature.
@@ -240,6 +252,9 @@ type CanonicalJoinSignature struct {
 
 	// Normalized condition AST
 	Condition interface{}
+
+	// CascadeLevel for distinguishing joins at different cascade depths
+	CascadeLevel int
 }
 
 // VariableTypeMapping represents a variable name and its type.

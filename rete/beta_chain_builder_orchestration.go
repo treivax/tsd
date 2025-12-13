@@ -128,6 +128,7 @@ func (ctx *betaChainBuildContext) createOrReuseJoinNode(
 			pattern.AllVars,
 			pattern.VarTypes,
 			ctx.builder.storage,
+			patternIndex, // cascadeLevel: distinguishes joins at different cascade depths
 		)
 		if err != nil {
 			return nil, "", false, fmt.Errorf("erreur lors de la création/récupération du JoinNode %d: %w", patternIndex, err)
@@ -216,7 +217,7 @@ func (ctx *betaChainBuildContext) registerNodeLifecycle(joinNode *JoinNode, reus
 // updatePrefixCacheIfNeeded updates the prefix cache for future reuse
 func (ctx *betaChainBuildContext) updatePrefixCacheIfNeeded(joinNode *JoinNode, patternIndex int) {
 	if ctx.builder.enablePrefixSharing && patternIndex < len(ctx.optimizedPatterns)-1 {
-		prefixKey := ctx.builder.computePrefixKey(ctx.optimizedPatterns[0 : patternIndex+1])
+		prefixKey := ctx.builder.computePrefixKey(ctx.optimizedPatterns[0:patternIndex+1], ctx.ruleID)
 		ctx.builder.updatePrefixCache(prefixKey, joinNode)
 	}
 }

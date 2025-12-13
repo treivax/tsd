@@ -21,6 +21,7 @@ func (bsr *BetaSharingRegistryImpl) GetOrCreateJoinNode(
 	allVars []string,
 	varTypes map[string]string,
 	storage Storage,
+	cascadeLevel int,
 ) (*JoinNode, string, bool, error) {
 	if !bsr.config.Enabled {
 		// Beta sharing disabled - create unique node
@@ -35,13 +36,14 @@ func (bsr *BetaSharingRegistryImpl) GetOrCreateJoinNode(
 		return node, nodeID, false, nil
 	}
 
-	// Create signature
+	// Create signature with cascade level to prevent incorrect sharing between cascade levels
 	sig := &JoinNodeSignature{
-		Condition: condition,
-		LeftVars:  leftVars,
-		RightVars: rightVars,
-		AllVars:   allVars,
-		VarTypes:  varTypes,
+		Condition:    condition,
+		LeftVars:     leftVars,
+		RightVars:    rightVars,
+		AllVars:      allVars,
+		VarTypes:     varTypes,
+		CascadeLevel: cascadeLevel,
 	}
 
 	// Compute hash (with caching if hasher supports it)
