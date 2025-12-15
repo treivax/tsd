@@ -7,10 +7,23 @@ Guide complet de configuration du système TSD (Type System Development).
 - [Vue d'Ensemble](#vue-densemble)
 - [Architecture de Configuration](#architecture-de-configuration)
 - [Configurations par Composant](#configurations-par-composant)
+  - [Réseau RETE (Complet)](#1-réseau-rete)
+  - [Transactions](#2-transactions)
+  - [Beta Sharing](#3-beta-sharing)
+  - [Storage](#4-storage)
+  - [Constraint Parser](#5-constraint-parser)
+  - [Server HTTP/HTTPS](#6-server-httphttps)
+  - [Client](#7-client)
+  - [Authentication](#8-authentication)
+  - [Logger](#9-logger)
 - [Profils de Déploiement](#profils-de-déploiement)
 - [Variables d'Environnement](#variables-denvironnement)
 - [Fichiers de Configuration](#fichiers-de-configuration)
 - [Exemples Pratiques](#exemples-pratiques)
+
+---
+
+**Note** : Ce document consolide toute la configuration TSD, incluant la configuration détaillée du réseau RETE (anciennement dans `RETE_CONFIGURATION.md`). Toutes les options de configuration sont documentées ci-dessous.
 
 ---
 
@@ -66,9 +79,9 @@ TSD System
 
 ### 1. Réseau RETE
 
-> **Documentation détaillée** : [RETE_CONFIGURATION.md](RETE_CONFIGURATION.md)
+#### ChainPerformanceConfig (Configuration Complète)
 
-#### ChainPerformanceConfig
+**Description** : Configure les caches, optimisations et métriques du réseau RETE pour obtenir les meilleures performances selon votre cas d'usage.
 
 Configure les caches et optimisations du réseau RETE.
 

@@ -1,291 +1,259 @@
 # Documentation TSD
 
-Bienvenue dans la documentation du projet **TSD** (Type System Development) - Un moteur de règles basé sur l'algorithme RETE.
+**Guide complet du moteur de règles TSD**
+
+---
+
+## 📚 Documentation Principale
+
+| Document | Description |
+|----------|-------------|
+| **[Installation](installation.md)** | Installation et démarrage rapide (5 min) |
+| **[Guides](guides.md)** | Tutoriels et guides utilisateur complets |
+| **[Architecture](architecture.md)** | Architecture interne et algorithme RETE |
+| **[Configuration](configuration.md)** | Configuration système complète |
+| **[API](api.md)** | API publique Go |
+| **[Référence](reference.md)** | API HTTP, grammaire, auth, logging, contribution |
+
+---
 
 ## 🚀 Démarrage Rapide
 
-- **Nouveau ?** Commencez par le [Guide de Démarrage Rapide](QUICK_START.md)
-- **Installation** : Consultez le [Guide d'Installation](INSTALLATION.md)
-- **Premier exemple** : Suivez le [Tutorial](TUTORIAL.md)
+### 1. Installation
 
-## 📚 Documentation par Catégorie
+```bash
+git clone https://github.com/treivax/tsd.git
+cd tsd
+make build
+./bin/tsd --version
+```
 
-### 🎓 Guides Utilisateur
+### 2. Premier Programme
 
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [Quick Start](QUICK_START.md) | Démarrage rapide en 5 minutes | Débutant |
-| [Tutorial](TUTORIAL.md) | Tutorial complet avec exemples | Débutant |
-| [User Guide](USER_GUIDE.md) | Guide utilisateur complet | Intermédiaire |
-| [Grammar Guide](GRAMMAR_GUIDE.md) | Grammaire du langage TSD | Intermédiaire |
+Créez `hello.tsd` :
 
-### ⚙️ Configuration
+```tsd
+type Person(name: string, age: number)
+action greet(name: string)
 
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [Configuration Globale](configuration/README.md) | **Guide complet de configuration** | Tous |
-| [RETE Configuration](RETE_CONFIGURATION.md) | Configuration réseau RETE | Avancé |
-| [Logging Guide](LOGGING_GUIDE.md) | Configuration du logging | Tous |
-| [Authentication](AUTHENTICATION.md) | Configuration authentification | Admin |
+rule welcome : {p: Person} / p.age >= 18 ==> greet(p.name)
 
-### 🏗️ Architecture
+Person(name: "Alice", age: 25)
+Person(name: "Bob", age: 16)
+```
 
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [Architecture](ARCHITECTURE.md) | Vue d'ensemble architecture | Développeur |
-| [Working Memory](WORKING_MEMORY.md) | Gestion de la mémoire de travail | Développeur |
-| [Bindings Design](architecture/BINDINGS_DESIGN.md) | Design des bindings | Avancé |
-| [Bindings Performance](architecture/BINDINGS_PERFORMANCE.md) | Analyse performance | Avancé |
+Exécutez :
 
-### 🔌 API & Intégration
+```bash
+tsd hello.tsd
+```
 
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [API Reference](API_REFERENCE.md) | Référence API complète | Développeur |
-| [Public API](api/PUBLIC_API.md) | API publique | Développeur |
+### 3. Suite
 
-### 🤝 Contribution
-
-| Document | Description | Audience |
-|----------|-------------|----------|
-| [Contributing](CONTRIBUTING.md) | Guide de contribution | Contributeur |
-| [../CHANGELOG.md](../CHANGELOG.md) | Historique des changements | Tous |
+→ [Installation complète](installation.md)  
+→ [Tutoriel détaillé](guides.md#guide-débutant)
 
 ---
 
-## 📖 Structure de la Documentation
+## 🎯 Parcours d'Apprentissage
 
-```
-docs/
-├── README.md                          # Ce fichier - Index global
-│
-├── guides/                            # Guides utilisateur
-│   ├── (en construction)
-│
-├── configuration/                     # Configuration système
-│   └── README.md                      # ★ Guide configuration complet
-│
-├── api/                               # Documentation API
-│   └── PUBLIC_API.md                  # API publique
-│
-├── architecture/                      # Architecture & Design
-│   ├── BINDINGS_DESIGN.md
-│   ├── BINDINGS_PERFORMANCE.md
-│   ├── BINDINGS_ANALYSIS.md
-│   ├── BINDINGS_STATUS_REPORT.md
-│   └── CODE_REVIEW_BINDINGS.md
-│
-├── QUICK_START.md                     # Démarrage rapide
-├── INSTALLATION.md                    # Installation
-├── TUTORIAL.md                        # Tutorial complet
-├── USER_GUIDE.md                      # Guide utilisateur
-├── GRAMMAR_GUIDE.md                   # Grammaire TSD
-├── ARCHITECTURE.md                    # Architecture système
-├── API_REFERENCE.md                   # Référence API
-├── RETE_CONFIGURATION.md              # Configuration RETE
-├── LOGGING_GUIDE.md                   # Configuration logging
-├── AUTHENTICATION.md                  # Authentification
-├── WORKING_MEMORY.md                  # Working Memory
-├── CONTRIBUTING.md                    # Guide contribution
-└── INMEMORY_ONLY_MIGRATION.md         # Migration stockage
-```
+### Débutant (2-4 heures)
+
+1. [Installation](installation.md) - Installer TSD
+2. [Démarrage rapide](installation.md#démarrage-rapide-5-minutes) - Premier programme
+3. [Guide débutant](guides.md#guide-débutant) - Apprendre les bases
+
+**Vous saurez :** Créer types, règles, actions et exécuter des programmes simples.
+
+### Développeur (1-2 jours)
+
+1. [Guide développeur](guides.md#guide-développeur) - Syntaxe avancée
+2. [API Go](api.md) - Intégration programmatique
+3. [Configuration](configuration.md) - Optimiser les performances
+4. [API HTTP](reference.md#api-httprest) - Mode serveur
+
+**Vous saurez :** Intégrer TSD dans vos applications Go, configurer pour production, utiliser l'API REST.
+
+### Avancé (1 semaine)
+
+1. [Architecture](architecture.md) - Comprendre l'algorithme RETE
+2. [Guide avancé](guides.md#guide-avancé) - Patterns complexes
+3. [Optimisations](architecture.md#optimisations) - Performance maximale
+4. [Contribution](reference.md#contribution) - Contribuer au projet
+
+**Vous saurez :** Optimiser les règles, comprendre les performances, contribuer au code.
 
 ---
 
-## 🎯 Documentation par Cas d'Usage
+## 🔍 Navigation Rapide
 
 ### Je veux...
 
-#### ...démarrer rapidement
-1. [Quick Start](QUICK_START.md) - 5 minutes
-2. [Installation](INSTALLATION.md) - Installer TSD
-3. [Tutorial](TUTORIAL.md) - Premier exemple
-
-#### ...comprendre le langage TSD
-1. [Grammar Guide](GRAMMAR_GUIDE.md) - Syntaxe complète
-2. [User Guide](USER_GUIDE.md) - Utilisation avancée
-3. [API Reference](API_REFERENCE.md) - API programmatique
-
-#### ...configurer TSD pour mon cas d'usage
-1. ⭐ [Configuration Globale](configuration/README.md) - **Démarrer ici**
-2. [RETE Configuration](RETE_CONFIGURATION.md) - Configuration moteur
-3. [Logging Guide](LOGGING_GUIDE.md) - Logs et debugging
-
-#### ...déployer en production
-1. [Configuration Globale](configuration/README.md) - Profil Production
-2. [Authentication](AUTHENTICATION.md) - Sécuriser l'API
-3. [RETE Configuration](RETE_CONFIGURATION.md) - Optimiser performance
-
-#### ...comprendre l'architecture
-1. [Architecture](ARCHITECTURE.md) - Vue d'ensemble
-2. [Working Memory](WORKING_MEMORY.md) - Gestion mémoire
-3. [Bindings Design](architecture/BINDINGS_DESIGN.md) - Design interne
-
-#### ...contribuer au projet
-1. [Contributing](CONTRIBUTING.md) - Guide contribution
-2. [Architecture](ARCHITECTURE.md) - Comprendre le système
-3. [Code Review](architecture/CODE_REVIEW_BINDINGS.md) - Standards
+- **Installer TSD** → [Installation](installation.md)
+- **Apprendre la syntaxe** → [Guides](guides.md)
+- **Configurer le système** → [Configuration](configuration.md)
+- **Intégrer dans mon app Go** → [API](api.md)
+- **Utiliser le serveur HTTP** → [Référence API HTTP](reference.md#api-httprest)
+- **Comprendre la grammaire** → [Référence Grammaire](reference.md#grammaire-tsd)
+- **Sécuriser avec auth** → [Référence Auth](reference.md#authentification)
+- **Débugger** → [Référence Logging](reference.md#logging)
+- **Contribuer** → [Référence Contribution](reference.md#contribution)
+- **Comprendre l'architecture** → [Architecture](architecture.md)
 
 ---
 
-## 🔧 Configuration Rapide
+## 📖 Ressources Additionnelles
 
-### Profils Prédéfinis
+### Fichiers du Projet
 
-```go
-// Développement - Logs détaillés, pas de cache
-config := rete.DefaultChainPerformanceConfig()
-logger := rete.NewLogger(rete.LogLevelDebug, os.Stdout)
+- [README Principal](../README.md) - Vue d'ensemble du projet
+- [CHANGELOG](../CHANGELOG.md) - Historique des versions
+- [TODO Actifs](../TODO_ACTIFS.md) - Améliorations futures
+- [Archives](../ARCHIVES/README.md) - Documentation archivée
+- [Reports](../REPORTS/README.md) - Rapports techniques
 
-// Production - Performance maximale
-config := rete.HighPerformanceConfig()
-config.PrometheusEnabled = true
+### Exemples
 
-// Embarqué - Mémoire minimale
-config := rete.LowMemoryConfig()
-
-// Tests - Déterministe
-config := rete.DisabledCachesConfig()
+```bash
+ls examples/          # Explorer les exemples
+tsd examples/*.tsd    # Exécuter les exemples
 ```
 
-📖 **Détails** : [Configuration Globale](configuration/README.md)
+### Aide
+
+- **GitHub Issues** : [https://github.com/treivax/tsd/issues](https://github.com/treivax/tsd/issues)
+- **Debug** : `TSD_LOG_LEVEL=debug tsd program.tsd`
+- **Help** : `tsd --help`
 
 ---
 
-## 📊 Composants Configurables
+## 🎓 Concepts Clés
 
-| Composant | Configuration | Documentation |
-|-----------|---------------|---------------|
-| **Réseau RETE** | `ChainPerformanceConfig` | [RETE Config](RETE_CONFIGURATION.md) |
-| **Transactions** | `TransactionOptions` | [Config Globale](configuration/README.md#transactionoptions) |
-| **Beta Sharing** | `BetaSharingConfig` | [RETE Config](RETE_CONFIGURATION.md#betasharingconfig) |
-| **Logger** | `Logger`, `LogLevel` | [Logging Guide](LOGGING_GUIDE.md) |
-| **Serveur** | `ServerConfig` | [Config Globale](configuration/README.md#server) |
-| **Client** | `ClientConfig` | [Config Globale](configuration/README.md#client) |
-| **Auth** | `AuthConfig` | [Authentication](AUTHENTICATION.md) |
-| **Storage** | `StorageConfig` | [Config Globale](configuration/README.md#storage) |
+### Types
 
----
+Définissent la structure des données :
 
-## 🎓 Parcours d'Apprentissage
+```tsd
+type Product(name: string, price: number, inStock: bool)
+```
 
-### Parcours Débutant (2-4 heures)
+### Faits
 
-1. ✅ [Quick Start](QUICK_START.md) - 15 min
-2. ✅ [Installation](INSTALLATION.md) - 15 min
-3. ✅ [Tutorial](TUTORIAL.md) - 1h
-4. ✅ [Grammar Guide](GRAMMAR_GUIDE.md) - 1h
-5. ✅ [Configuration Globale](configuration/README.md) - 1h
+Instances de types :
 
-### Parcours Développeur (1-2 jours)
+```tsd
+Product(name: "Laptop", price: 999.99, inStock: true)
+```
 
-1. ✅ Parcours Débutant
-2. ✅ [User Guide](USER_GUIDE.md) - 2h
-3. ✅ [API Reference](API_REFERENCE.md) - 2h
-4. ✅ [Architecture](ARCHITECTURE.md) - 2h
-5. ✅ [RETE Configuration](RETE_CONFIGURATION.md) - 2h
-6. ✅ [Working Memory](WORKING_MEMORY.md) - 1h
+### Règles
 
-### Parcours Avancé (1 semaine)
+Logique métier avec pattern matching :
 
-1. ✅ Parcours Développeur
-2. ✅ [Bindings Design](architecture/BINDINGS_DESIGN.md)
-3. ✅ [Bindings Performance](architecture/BINDINGS_PERFORMANCE.md)
-4. ✅ [Code Review](architecture/CODE_REVIEW_BINDINGS.md)
-5. ✅ Code source : `/rete`, `/constraint`
+```tsd
+rule expensive : {p: Product} / p.price > 500 ==> markAsPremium(p.name)
+```
+
+### Actions
+
+Déclenchées par les règles :
+
+```tsd
+action markAsPremium(name: string)
+```
 
 ---
 
-## 🔍 Recherche Rapide
+## 🏗️ Architecture
 
-### Par Sujet
+TSD utilise l'**algorithme RETE** pour une évaluation efficace des règles :
 
-- **Authentification** : [AUTHENTICATION.md](AUTHENTICATION.md)
-- **API** : [API_REFERENCE.md](API_REFERENCE.md)
-- **Caches** : [RETE_CONFIGURATION.md](RETE_CONFIGURATION.md#cache-de-hash)
-- **Configuration** : [configuration/README.md](configuration/README.md) ⭐
-- **Déploiement** : [configuration/README.md#production](configuration/README.md#production)
-- **Grammaire** : [GRAMMAR_GUIDE.md](GRAMMAR_GUIDE.md)
-- **Installation** : [INSTALLATION.md](INSTALLATION.md)
-- **Logging** : [LOGGING_GUIDE.md](LOGGING_GUIDE.md)
-- **Performance** : [RETE_CONFIGURATION.md](RETE_CONFIGURATION.md#profils-prédéfinis)
-- **RETE** : [RETE_CONFIGURATION.md](RETE_CONFIGURATION.md)
-- **Transactions** : [configuration/README.md#transactionoptions](configuration/README.md#transactionoptions)
+- **Alpha Network** : Filtrage des faits par conditions simples
+- **Beta Network** : Jointures entre faits multiples  
+- **Optimisations** : Partage de nœuds (alpha/beta sharing)
+- **Performance** : Cache LRU, normalisation, passthrough
 
-### Par Type d'Utilisation
-
-- **CLI** : [USER_GUIDE.md](USER_GUIDE.md)
-- **API Programmatique** : [API_REFERENCE.md](API_REFERENCE.md)
-- **Serveur HTTP/HTTPS** : [configuration/README.md#server](configuration/README.md#server)
-- **Docker** : [configuration/README.md#exemple-2--production-avec-docker](configuration/README.md#exemple-2--production-avec-docker)
+→ [Architecture complète](architecture.md)
 
 ---
 
-## 📝 Conventions de Documentation
+## ⚙️ Configuration
 
-### Langue
+Profils prédéfinis pour différents usages :
 
-- **GoDoc** : Anglais (convention Go)
-- **Documentation utilisateur** : Français
-- **Commentaires code** : Français
-- **README modules** : Français
+| Profil | Usage | Performance | Mémoire |
+|--------|-------|-------------|---------|
+| **Développement** | Debug, tests | Normale | Normale |
+| **Production** | Déploiement | Maximale | Optimisée |
+| **Test** | CI/CD | Déterministe | Contrôlée |
+| **Embarqué** | IoT, edge | Réduite | Minimale |
 
-### Format
-
-- **Markdown** : GitHub Flavored Markdown
-- **Code** : Blocs avec syntaxe highlighting
-- **Exemples** : Testables et fonctionnels
-
-### Standards
-
-Voir [.github/prompts/document.md](../.github/prompts/document.md) pour les standards complets.
+→ [Configuration complète](configuration.md)
 
 ---
 
-## 🆘 Besoin d'Aide ?
+## 🔐 Sécurité
 
-### Questions Fréquentes
+- **API Keys** : Authentification simple pour scripts/CI
+- **JWT** : Authentification avancée pour applications
+- **TLS/HTTPS** : Transport chiffré obligatoire en production
+- **Validation** : Entrées validées strictement
 
-**Q: Comment configurer TSD pour la production ?**  
-A: Consultez [Configuration Globale - Profil Production](configuration/README.md#production)
-
-**Q: Comment activer HTTPS ?**  
-A: Consultez [Configuration Serveur HTTPS](configuration/README.md#exemple-https)
-
-**Q: Comment optimiser les performances ?**  
-A: Consultez [RETE Configuration - High Performance](RETE_CONFIGURATION.md#configuration-haute-performance)
-
-**Q: Quelle est la différence entre les profils de config ?**  
-A: Consultez [Profils de Déploiement](configuration/README.md#profils-de-déploiement)
-
-### Support
-
-1. **Documentation** : Cherchez dans cet index
-2. **Issues** : [GitHub Issues](https://github.com/yourusername/tsd/issues)
-3. **Contribution** : [CONTRIBUTING.md](CONTRIBUTING.md)
+→ [Authentification](reference.md#authentification)
 
 ---
 
-## 🚀 Prochaines Étapes
+## 📊 Monitoring
 
-Après avoir lu la documentation :
+- **Métriques Prometheus** : Exposition sur `/metrics`
+- **Logging Structuré** : Niveaux ERROR/WARN/INFO/DEBUG/TRACE
+- **Health Check** : Endpoint `/health`
 
-1. ✅ Installer TSD : [INSTALLATION.md](INSTALLATION.md)
-2. ✅ Faire le tutorial : [TUTORIAL.md](TUTORIAL.md)
-3. ✅ Configurer pour votre cas : [configuration/README.md](configuration/README.md)
-4. ✅ Lire le guide utilisateur : [USER_GUIDE.md](USER_GUIDE.md)
-5. ✅ Contribuer : [CONTRIBUTING.md](CONTRIBUTING.md)
+→ [Logging](reference.md#logging)
 
 ---
 
-## 📄 License
+## 🤝 Contribution
 
-TSD est distribué sous licence MIT. Voir [LICENSE](../LICENSE) pour plus de détails.
+Contributions bienvenues ! 
+
+1. Fork le projet
+2. Créer une branche feature
+3. Committer vos changements
+4. Pousser et créer une Pull Request
+
+→ [Guide de contribution](reference.md#contribution)
 
 ---
 
-**Version** : 1.0.0  
-**Dernière mise à jour** : 2025-01-XX  
-**Mainteneur** : TSD Contributors
+## 📝 Conventions
 
-💡 **Astuce** : Marquez cette page pour y revenir facilement !
+### Documentation Code (GoDoc)
+
+- **Langue** : Anglais
+- **Format** : GoDoc standard
+- **Cible** : Développeurs utilisant l'API Go
+
+### Documentation Technique
+
+- **Langue** : Français
+- **Format** : Markdown
+- **Cible** : Utilisateurs et contributeurs
+
+### Exemples
+
+Tous les exemples de code doivent être :
+- ✅ Testables
+- ✅ Fonctionnels
+- ✅ Documentés
+
+---
+
+## 📅 Versions
+
+- **Version actuelle** : 1.0.0
+- **Statut** : ✅ Production Ready
+- **Go minimum** : 1.21+
+
+---
+
+**Bon développement avec TSD ! 🚀**

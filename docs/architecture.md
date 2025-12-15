@@ -1542,6 +1542,95 @@ logger.Info("Fact asserted",
 
 ---
 
+## Bindings - Analyse et Résolution de Problèmes
+
+### Problème Historique (Décembre 2024)
+
+**Symptôme** : Dans les règles avec 3+ variables, le token final ne contenait que 2 bindings au lieu de 3.
+
+**Erreur observée** :
+```
+erreur évaluation argument 2: variable 'task' non trouvée (variables disponibles: [t u])
+```
+
+**Cause Racine Identifiée** : Bug dans la construction du réseau beta (`BetaChainBuilder`)
+
+Le deuxième JoinNode de la cascade recevait le **mauvais type de fait** du côté droit :
+- **Configuration du JoinNode** : `RightVariables: [task]` → attend des faits **Task**
+- **Fait réellement reçu** : Faits **Team** provenant de `passthrough_r2_t_Team_right`
+- **Résultat** : Le JoinNode détectait le fait Team comme variable 't' (au lieu de 'task') et créait un binding `[t]` au lieu de `[task]`
+
+**Impact** :
+- La jointure produisait `[u, t]` au lieu de `[u, t, task]`
+- Le token propagé au terminal manquait la variable 'task'
+- L'action échouait car elle attendait 3 variables
+
+**Solution Implémentée** :
+
+1. **BindingChain Immuable** : Remplacement du système mutable par une structure immuable
+2. **Validation stricte** : Vérification que le type de fait correspond aux RightVariables attendues
+3. **Propagation correcte** : Garantir que chaque JoinNode reçoit les bons faits
+4. **Tests E2E** : 80 tests dont 77 passent (3 en investigation)
+
+**Architecture de Propagation** :
+
+```
+Règle: {u: User, t: Team, task: Task} / task.teamId == t.id AND task.cost <= t.budget
+
+Construction du réseau:
+
+1. TypeNode(User) → passthrough_r1_u_User_left
+   ↓
+2. JoinNode1: 
+   - Left: [u]
+   - Right: TypeNode(Team) → [t]
+   - Result: [u, t]
+   ↓
+3. JoinNode2:
+   - Left: [u, t]
+   - Right: TypeNode(Task) → [task]  ← CORRECTION: Doit recevoir Task, pas Team
+   - Result: [u, t, task]
+   ↓
+4. TerminalNode: Exécute action avec [u, t, task]
+```
+
+**Validation** :
+
+Tests passants (77/80) :
+- ✅ Jointures 2 variables
+- ✅ Jointures 3 variables simples
+- ✅ Conditions arithmétiques
+- ✅ Type casting
+- ✅ String operations
+
+Tests en investigation (3/80) :
+- ⚠️ Cascades complexes avec conditions multiples
+- ⚠️ Propagation dans certains patterns spécifiques
+
+**Statut** : ⚠️ EN COURS - Architecture immuable implémentée, tests E2E partiellement échouants
+
+### Performance des Bindings
+
+**Benchmarks (Architecture Immuable vs Mutable)** :
+
+| Opération | Mutable | Immuable | Différence |
+|-----------|---------|----------|------------|
+| Add Binding | ~5ns | ~8ns | +60% (acceptable) |
+| Get Binding (n=3) | ~3ns | ~10ns | +233% (O(n) vs O(1)) |
+| Merge (n=5) | ~50ns | ~60ns | +20% |
+| Memory/Token | 48 bytes | 56 bytes | +17% |
+
+**Trade-offs Acceptés** :
+- **Performance Get** : +233% mais appelé rarement (uniquement à l'exécution d'action)
+- **Memory** : +17% mais garantit l'immutabilité et évite les bugs
+- **Correction** : Aucun binding perdu vs bugs critiques avec l'approche mutable
+
+**Conclusion** : Le coût en performance est largement compensé par :
+1. **Correction** : Aucun binding perdu
+2. **Thread-safety** : Immuabilité garantit la sécurité concurrente
+3. **Simplicité** : Code plus simple à raisonner
+4. **Maintenabilité** : Moins de bugs potentiels
+
 ## Contributeurs
 
 Pour contribuer au projet TSD :
