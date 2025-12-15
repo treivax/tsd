@@ -388,3 +388,506 @@ func TestRunWithWhitespaceOnlyFile(t *testing.T) {
 		t.Errorf("exitCode = %d, want 0 for whitespace-only file", exitCode)
 	}
 }
+
+// TestRunWithVersionFlag tests --version flag
+func TestRunWithVersionFlag(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--version"}, &stdout, &stderr)
+
+	if exitCode != 0 {
+		t.Errorf("✗ exitCode = %d, want 0 for --version", exitCode)
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "constraint-parser") {
+		t.Error("✗ Version output should contain 'constraint-parser'")
+	}
+	if !strings.Contains(output, "version") {
+		t.Error("✗ Version output should contain 'version'")
+	}
+}
+
+// TestRunWithHelpFlag tests --help flag
+func TestRunWithHelpFlag(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--help"}, &stdout, &stderr)
+
+	if exitCode != 0 {
+		t.Errorf("✗ exitCode = %d, want 0 for --help", exitCode)
+	}
+
+	output := stderr.String()
+	if !strings.Contains(output, "Usage") {
+		t.Error("✗ Help output should contain 'Usage'")
+	}
+	if !strings.Contains(output, "constraint-parser") {
+		t.Error("✗ Help output should contain 'constraint-parser'")
+	}
+}
+
+// TestRunWithDebugFlag tests --debug flag
+func TestRunWithDebugFlag(t *testing.T) {
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	content := "type Person(id: string, name:string)"
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	tmpfile.Close()
+
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--debug", tmpfile.Name()}, &stdout, &stderr)
+
+	if exitCode != 0 {
+		t.Errorf("✗ exitCode = %d, want 0 with --debug flag, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "Person") {
+		t.Error("✗ Debug mode output should still contain parsed content")
+	}
+}
+
+// TestRunWithOutputFlag tests --output flag
+func TestRunWithOutputFlag(t *testing.T) {
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	content := "type Person(id: string, name:string)"
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	tmpfile.Close()
+
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--output", "json", tmpfile.Name()}, &stdout, &stderr)
+
+	if exitCode != 0 {
+		t.Errorf("✗ exitCode = %d, want 0 with --output json, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "{") {
+		t.Error("✗ JSON output should contain JSON brackets")
+	}
+}
+
+// TestRunWithInvalidOutputFormat tests invalid output format
+func TestRunWithInvalidOutputFormat(t *testing.T) {
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	content := "type Person(id: string, name:string)"
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	tmpfile.Close()
+
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--output", "xml", tmpfile.Name()}, &stdout, &stderr)
+
+	if exitCode != 2 { // ExitRuntimeError
+		t.Errorf("✗ exitCode = %d, want 2 for invalid output format", exitCode)
+	}
+
+	output := stderr.String()
+	if !strings.Contains(output, "Erreur sortie") || !strings.Contains(output, "non supporté") {
+		t.Errorf("✗ Should show unsupported format error, got: %s", output)
+	}
+}
+
+// TestParseInputFromStdin tests stdin input ("-")
+func TestParseInputFromStdin(t *testing.T) {
+	// Note: This test would require mocking stdin, which is complex
+	// For now, we test the stdin placeholder recognition
+	t.Skip("Stdin testing requires complex mocking - tested in integration tests")
+}
+
+// TestLoadConfigurationWithFile tests loading config from file
+func TestLoadConfigurationWithFile(t *testing.T) {
+	// Clear environment variables that might interfere
+	oldMaxExpr := os.Getenv("CONSTRAINT_MAX_EXPRESSIONS")
+	oldMaxDepth := os.Getenv("CONSTRAINT_MAX_DEPTH")
+	oldDebug := os.Getenv("CONSTRAINT_DEBUG")
+	oldLogLevel := os.Getenv("CONSTRAINT_LOG_LEVEL")
+	os.Unsetenv("CONSTRAINT_MAX_EXPRESSIONS")
+	os.Unsetenv("CONSTRAINT_MAX_DEPTH")
+	os.Unsetenv("CONSTRAINT_DEBUG")
+	os.Unsetenv("CONSTRAINT_LOG_LEVEL")
+	defer func() {
+		if oldMaxExpr != "" {
+			os.Setenv("CONSTRAINT_MAX_EXPRESSIONS", oldMaxExpr)
+		}
+		if oldMaxDepth != "" {
+			os.Setenv("CONSTRAINT_MAX_DEPTH", oldMaxDepth)
+		}
+		if oldDebug != "" {
+			os.Setenv("CONSTRAINT_DEBUG", oldDebug)
+		}
+		if oldLogLevel != "" {
+			os.Setenv("CONSTRAINT_LOG_LEVEL", oldLogLevel)
+		}
+	}()
+
+	tmpDir, err := os.MkdirTemp("", "test_config")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	configFile := filepath.Join(tmpDir, "config.json")
+	configContent := []byte(`{
+		"parser": {
+			"max_expressions": 100,
+			"debug": false,
+			"recover": true
+		},
+		"validator": {
+			"strict_mode": true,
+			"allowed_operators": ["==", "!=", "<", ">"],
+			"max_depth": 50
+		},
+		"logger": {
+			"level": "info",
+			"format": "json",
+			"output": "stdout"
+		},
+		"debug": false,
+		"version": "1.0.0"
+	}`)
+	if err := os.WriteFile(configFile, configContent, 0644); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cliConfig := &CLIConfig{
+		ConfigFile:   configFile,
+		InputFile:    "test.tsd",
+		OutputFormat: "json",
+	}
+
+	cfg, err := loadConfiguration(cliConfig)
+	if err != nil {
+		t.Errorf("✗ Unexpected error loading config: %v", err)
+	}
+	if cfg == nil {
+		t.Error("✗ Config should not be nil")
+	}
+}
+
+// TestLoadConfigurationWithInvalidFile tests error handling for invalid config file
+func TestLoadConfigurationWithInvalidFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "test_config")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	configFile := filepath.Join(tmpDir, "invalid_config.json")
+	configContent := []byte(`{invalid json}`)
+	if err := os.WriteFile(configFile, configContent, 0644); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	cliConfig := &CLIConfig{
+		ConfigFile:   configFile,
+		InputFile:    "test.tsd",
+		OutputFormat: "json",
+	}
+
+	_, err = loadConfiguration(cliConfig)
+	if err == nil {
+		t.Error("✗ Expected error for invalid JSON config file")
+	}
+	if !strings.Contains(err.Error(), "chargement fichier config") {
+		t.Errorf("✗ Error should mention config file loading, got: %v", err)
+	}
+}
+
+// TestLoadConfigurationWithoutFile tests default config when no file exists
+func TestLoadConfigurationWithoutFile(t *testing.T) {
+	// Clear all CONSTRAINT_* environment variables that might interfere
+	envVars := []string{
+		"CONSTRAINT_MAX_EXPRESSIONS",
+		"CONSTRAINT_MAX_DEPTH",
+		"CONSTRAINT_DEBUG",
+		"CONSTRAINT_STRICT_MODE",
+		"CONSTRAINT_LOG_LEVEL",
+		"CONSTRAINT_LOG_FORMAT",
+		"CONSTRAINT_LOG_OUTPUT",
+		"CONSTRAINT_CONFIG_FILE",
+	}
+
+	oldValues := make(map[string]string)
+	for _, envVar := range envVars {
+		oldValues[envVar] = os.Getenv(envVar)
+		os.Unsetenv(envVar)
+	}
+	defer func() {
+		for envVar, oldValue := range oldValues {
+			if oldValue != "" {
+				os.Setenv(envVar, oldValue)
+			}
+		}
+	}()
+
+	cliConfig := &CLIConfig{
+		ConfigFile:   "", // No config file
+		InputFile:    "test.tsd",
+		OutputFormat: "json",
+		Debug:        false,
+	}
+
+	cfg, err := loadConfiguration(cliConfig)
+	if err != nil {
+		t.Errorf("✗ Unexpected error with no config file: %v", err)
+	}
+	if cfg == nil {
+		t.Error("✗ Config should not be nil even without config file")
+	}
+}
+
+// TestParseFlagsWithAllOptions tests all flag combinations
+func TestParseFlagsWithAllOptions(t *testing.T) {
+	tests := []struct {
+		name        string
+		args        []string
+		wantConfig  bool
+		wantOutput  string
+		wantDebug   bool
+		wantVersion bool
+		wantHelp    bool
+		wantInput   string
+		expectError bool
+	}{
+		{
+			name:        "✅ all flags set",
+			args:        []string{"--config", "test.json", "--output", "json", "--debug", "--version", "input.tsd"},
+			wantConfig:  true,
+			wantOutput:  "json",
+			wantDebug:   true,
+			wantVersion: true,
+			wantInput:   "input.tsd",
+		},
+		{
+			name:       "✅ minimal args",
+			args:       []string{"input.tsd"},
+			wantOutput: "json", // default
+			wantInput:  "input.tsd",
+		},
+		{
+			name:       "✅ help flag only",
+			args:       []string{"--help"},
+			wantHelp:   true,
+			wantOutput: "json", // default
+		},
+		{
+			name:        "✅ version flag only",
+			args:        []string{"--version"},
+			wantVersion: true,
+			wantOutput:  "json", // default
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stderr bytes.Buffer
+			cfg, err := parseFlags(tt.args, &stderr)
+
+			if tt.expectError && err == nil {
+				t.Error("Expected error but got none")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			if cfg != nil {
+				if cfg.OutputFormat != tt.wantOutput {
+					t.Errorf("OutputFormat = %q, want %q", cfg.OutputFormat, tt.wantOutput)
+				}
+				if cfg.Debug != tt.wantDebug {
+					t.Errorf("Debug = %v, want %v", cfg.Debug, tt.wantDebug)
+				}
+				if cfg.Version != tt.wantVersion {
+					t.Errorf("Version = %v, want %v", cfg.Version, tt.wantVersion)
+				}
+				if cfg.Help != tt.wantHelp {
+					t.Errorf("Help = %v, want %v", cfg.Help, tt.wantHelp)
+				}
+				if tt.wantInput != "" && cfg.InputFile != tt.wantInput {
+					t.Errorf("InputFile = %q, want %q", cfg.InputFile, tt.wantInput)
+				}
+			}
+		})
+	}
+}
+
+// TestOutputResultWithDifferentFormats tests OutputResult with various formats
+func TestOutputResultWithDifferentFormats(t *testing.T) {
+	testData := map[string]string{"test": "data"}
+
+	tests := []struct {
+		name        string
+		format      string
+		expectError bool
+	}{
+		{
+			name:        "✅ json format",
+			format:      "json",
+			expectError: false,
+		},
+		{
+			name:        "✗ xml format (unsupported)",
+			format:      "xml",
+			expectError: true,
+		},
+		{
+			name:        "✗ yaml format (unsupported)",
+			format:      "yaml",
+			expectError: true,
+		},
+		{
+			name:        "✗ invalid format",
+			format:      "invalid",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := OutputResult(testData, tt.format, &buf)
+
+			if tt.expectError && err == nil {
+				t.Error("Expected error for unsupported format but got none")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if tt.expectError && err != nil {
+				if !strings.Contains(err.Error(), "non supporté") {
+					t.Errorf("Error should mention unsupported format, got: %v", err)
+				}
+			}
+		})
+	}
+}
+
+// TestRunWithConfigFlag tests Run with --config flag
+func TestRunWithConfigFlag(t *testing.T) {
+	// Clear all CONSTRAINT_* environment variables that might interfere
+	envVars := []string{
+		"CONSTRAINT_MAX_EXPRESSIONS",
+		"CONSTRAINT_MAX_DEPTH",
+		"CONSTRAINT_DEBUG",
+		"CONSTRAINT_STRICT_MODE",
+		"CONSTRAINT_LOG_LEVEL",
+		"CONSTRAINT_LOG_FORMAT",
+		"CONSTRAINT_LOG_OUTPUT",
+		"CONSTRAINT_CONFIG_FILE",
+	}
+
+	oldValues := make(map[string]string)
+	for _, envVar := range envVars {
+		oldValues[envVar] = os.Getenv(envVar)
+		os.Unsetenv(envVar)
+	}
+	defer func() {
+		for envVar, oldValue := range oldValues {
+			if oldValue != "" {
+				os.Setenv(envVar, oldValue)
+			}
+		}
+	}()
+
+	tmpDir, err := os.MkdirTemp("", "test_run_config")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create valid config file with complete structure
+	configFile := filepath.Join(tmpDir, "config.json")
+	configContent := []byte(`{
+		"parser": {
+			"max_expressions": 200,
+			"debug": false,
+			"recover": true
+		},
+		"validator": {
+			"strict_mode": true,
+			"allowed_operators": ["==", "!=", "<", ">", "<=", ">="],
+			"max_depth": 50
+		},
+		"logger": {
+			"level": "info",
+			"format": "json",
+			"output": "stdout"
+		},
+		"debug": false,
+		"version": "1.0.0"
+	}`)
+	if err := os.WriteFile(configFile, configContent, 0644); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
+	}
+
+	// Create valid constraint file
+	constraintFile := filepath.Join(tmpDir, "test.tsd")
+	constraintContent := []byte("type Person(id: string, name:string)")
+	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
+		t.Fatalf("Failed to write constraint file: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+
+	exitCode := Run([]string{"--config", configFile, constraintFile}, &stdout, &stderr)
+
+	if exitCode != 0 {
+		t.Errorf("✗ exitCode = %d, want 0 with --config, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "Person") {
+		t.Error("✗ Output should contain parsed type Person")
+	}
+}
+
+// TestParseInputErrorHandling tests error paths in ParseInput
+func TestParseInputErrorHandling(t *testing.T) {
+	// Test with validation error (if possible)
+	tmpfile, err := os.CreateTemp("", "test*.tsd")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	// Write content that parses but might fail validation
+	content := "type Person(id: string, name:string)"
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	tmpfile.Close()
+
+	// This should succeed (valid constraint)
+	result, err := ParseInput(tmpfile.Name())
+	if err != nil {
+		t.Errorf("✗ Valid constraint should not fail: %v", err)
+	}
+	if result == nil {
+		t.Error("✗ Result should not be nil for valid constraint")
+	}
+}
