@@ -76,6 +76,94 @@ type Server struct {
 }
 
 // Run démarre le serveur TSD avec les arguments donnés et retourne un code de sortie
+// ServerInfo contient les informations de configuration du serveur pour affichage
+type ServerInfo struct {
+	Addr        string
+	Protocol    string
+	Version     string
+	TLSEnabled  bool
+	TLSCertFile string
+	TLSKeyFile  string
+	AuthEnabled bool
+	AuthType    string
+	Endpoints   []string
+}
+
+// prepareServerInfo prépare les informations du serveur (logique testable)
+func prepareServerInfo(config *Config, server *Server) *ServerInfo {
+	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
+
+	// Déterminer le protocole
+	protocol := "https"
+	if config.Insecure {
+		protocol = "http"
+	}
+
+	info := &ServerInfo{
+		Addr:        addr,
+		Protocol:    protocol,
+		Version:     Version,
+		TLSEnabled:  !config.Insecure,
+		TLSCertFile: config.TLSCertFile,
+		TLSKeyFile:  config.TLSKeyFile,
+		AuthEnabled: server.authManager.IsEnabled(),
+	}
+
+	if info.AuthEnabled {
+		info.AuthType = server.authManager.GetAuthType()
+	}
+
+	info.Endpoints = []string{
+		fmt.Sprintf("POST %s://%s/api/v1/execute - Exécuter un programme TSD", protocol, addr),
+		fmt.Sprintf("GET  %s://%s/health - Health check", protocol, addr),
+		fmt.Sprintf("GET  %s://%s/api/v1/version - Version info", protocol, addr),
+	}
+
+	return info
+}
+
+// logServerInfo affiche les informations du serveur (logique testable)
+func logServerInfo(logger *log.Logger, info *ServerInfo) {
+	logger.Printf("🚀 Démarrage du serveur TSD sur %s://%s", info.Protocol, info.Addr)
+	logger.Printf("📊 Version: %s", info.Version)
+
+	// Afficher le statut TLS
+	if info.TLSEnabled {
+		logger.Printf("🔒 TLS: activé")
+		logger.Printf("   Certificat: %s", info.TLSCertFile)
+		logger.Printf("   Clé: %s", info.TLSKeyFile)
+	} else {
+		logger.Printf("⚠️  TLS: désactivé (mode HTTP non sécurisé)")
+		logger.Printf("⚠️  AVERTISSEMENT: Ne pas utiliser en production!")
+	}
+
+	// Afficher le statut d'authentification
+	if info.AuthEnabled {
+		logger.Printf("🔒 Authentification: activée (%s)", info.AuthType)
+	} else {
+		logger.Printf("⚠️  Authentification: désactivée (mode développement)")
+	}
+
+	logger.Printf("🔗 Endpoints disponibles:")
+	for _, endpoint := range info.Endpoints {
+		logger.Printf("   %s", endpoint)
+	}
+}
+
+// createTLSConfig crée la configuration TLS (logique testable)
+func createTLSConfig() *tls.Config {
+	return &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		},
+		PreferServerCipherSuites: true,
+	}
+}
+
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	config := parseFlags(args)
 
@@ -87,61 +175,21 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
-
-	// Déterminer le protocole
-	protocol := "https"
-	if config.Insecure {
-		protocol = "http"
-	}
-
-	logger.Printf("🚀 Démarrage du serveur TSD sur %s://%s", protocol, addr)
-	logger.Printf("📊 Version: %s", Version)
-
-	// Afficher le statut TLS
-	if config.Insecure {
-		logger.Printf("⚠️  TLS: désactivé (mode HTTP non sécurisé)")
-		logger.Printf("⚠️  AVERTISSEMENT: Ne pas utiliser en production!")
-	} else {
-		logger.Printf("🔒 TLS: activé")
-		logger.Printf("   Certificat: %s", config.TLSCertFile)
-		logger.Printf("   Clé: %s", config.TLSKeyFile)
-	}
-
-	// Afficher le statut d'authentification
-	if server.authManager.IsEnabled() {
-		logger.Printf("🔒 Authentification: activée (%s)", server.authManager.GetAuthType())
-	} else {
-		logger.Printf("⚠️  Authentification: désactivée (mode développement)")
-	}
-
-	logger.Printf("🔗 Endpoints disponibles:")
-	logger.Printf("   POST %s://%s/api/v1/execute - Exécuter un programme TSD", protocol, addr)
-	logger.Printf("   GET  %s://%s/health - Health check", protocol, addr)
-	logger.Printf("   GET  %s://%s/api/v1/version - Version info", protocol, addr)
+	// Préparer et afficher les informations du serveur
+	info := prepareServerInfo(config, server)
+	logServerInfo(logger, info)
 
 	// Démarrer le serveur
 	var err error
 	if config.Insecure {
 		// Mode HTTP non sécurisé
-		err = http.ListenAndServe(addr, server.mux)
+		err = http.ListenAndServe(info.Addr, server.mux)
 	} else {
 		// Mode HTTPS avec TLS
-		tlsConfig := &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			},
-			PreferServerCipherSuites: true,
-		}
-
 		httpServer := &http.Server{
-			Addr:      addr,
+			Addr:      info.Addr,
 			Handler:   server.mux,
-			TLSConfig: tlsConfig,
+			TLSConfig: createTLSConfig(),
 		}
 
 		err = httpServer.ListenAndServeTLS(config.TLSCertFile, config.TLSKeyFile)

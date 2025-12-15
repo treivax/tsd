@@ -5,12 +5,15 @@ package servercmd
 
 import (
 	"bytes"
+	"crypto/tls"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/treivax/tsd/auth"
 	"github.com/treivax/tsd/tsdio"
 )
 
@@ -418,6 +421,326 @@ type Address(street: string, city: string)`,
 					t.Error("ExecutionTimeMs should be non-negative")
 				}
 			}
+		})
+	}
+}
+
+// TestPrepareServerInfo tests the prepareServerInfo function
+func TestPrepareServerInfo(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         *Config
+		authEnabled    bool
+		authType       string
+		wantProtocol   string
+		wantTLSEnabled bool
+		wantAuthType   string
+		endpointCount  int
+	}{
+		{
+			name: "✅ HTTPS with auth enabled",
+			config: &Config{
+				Host:        "localhost",
+				Port:        8443,
+				Insecure:    false,
+				TLSCertFile: "/path/to/cert.pem",
+				TLSKeyFile:  "/path/to/key.pem",
+			},
+			authEnabled:    true,
+			authType:       "jwt",
+			wantProtocol:   "https",
+			wantTLSEnabled: true,
+			wantAuthType:   "jwt",
+			endpointCount:  3,
+		},
+		{
+			name: "✅ HTTP insecure mode",
+			config: &Config{
+				Host:     "0.0.0.0",
+				Port:     8080,
+				Insecure: true,
+			},
+			authEnabled:    false,
+			authType:       "",
+			wantProtocol:   "http",
+			wantTLSEnabled: false,
+			wantAuthType:   "",
+			endpointCount:  3,
+		},
+		{
+			name: "✅ HTTPS with key auth",
+			config: &Config{
+				Host:        "127.0.0.1",
+				Port:        9000,
+				Insecure:    false,
+				TLSCertFile: "/etc/tsd/cert.crt",
+				TLSKeyFile:  "/etc/tsd/key.key",
+			},
+			authEnabled:    true,
+			authType:       "key",
+			wantProtocol:   "https",
+			wantTLSEnabled: true,
+			wantAuthType:   "key",
+			endpointCount:  3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock auth manager
+			authConfig := &auth.Config{
+				Type: "none",
+			}
+			if tt.authEnabled {
+				authConfig.Type = tt.authType
+				if tt.authType == "jwt" {
+					authConfig.JWTSecret = "test-secret-with-at-least-32-characters-for-security"
+				} else if tt.authType == "key" {
+					authConfig.AuthKeys = []string{"test-key-with-at-least-32-characters-for-security"}
+				}
+			}
+
+			authManager, err := auth.NewManager(authConfig)
+			if err != nil {
+				t.Fatalf("❌ Failed to create auth manager: %v", err)
+			}
+
+			server := &Server{
+				config:      tt.config,
+				authManager: authManager,
+			}
+
+			info := prepareServerInfo(tt.config, server)
+
+			// Check basic properties
+			if !strings.Contains(info.Addr, ":") {
+				t.Errorf("❌ Addr missing port separator")
+			}
+
+			if info.Protocol != tt.wantProtocol {
+				t.Errorf("❌ Protocol = %q, want %q", info.Protocol, tt.wantProtocol)
+			}
+
+			if info.TLSEnabled != tt.wantTLSEnabled {
+				t.Errorf("❌ TLSEnabled = %v, want %v", info.TLSEnabled, tt.wantTLSEnabled)
+			}
+
+			if info.AuthEnabled != tt.authEnabled {
+				t.Errorf("❌ AuthEnabled = %v, want %v", info.AuthEnabled, tt.authEnabled)
+			}
+
+			if tt.authEnabled && info.AuthType != tt.wantAuthType {
+				t.Errorf("❌ AuthType = %q, want %q", info.AuthType, tt.wantAuthType)
+			}
+
+			if info.TLSEnabled {
+				if info.TLSCertFile != tt.config.TLSCertFile {
+					t.Errorf("❌ TLSCertFile = %q, want %q", info.TLSCertFile, tt.config.TLSCertFile)
+				}
+				if info.TLSKeyFile != tt.config.TLSKeyFile {
+					t.Errorf("❌ TLSKeyFile = %q, want %q", info.TLSKeyFile, tt.config.TLSKeyFile)
+				}
+			}
+
+			if len(info.Endpoints) != tt.endpointCount {
+				t.Errorf("❌ Endpoints count = %d, want %d", len(info.Endpoints), tt.endpointCount)
+			}
+
+			// Verify endpoints contain expected content
+			for _, endpoint := range info.Endpoints {
+				if !strings.Contains(endpoint, info.Protocol) {
+					t.Errorf("❌ Endpoint %q should contain protocol %q", endpoint, info.Protocol)
+				}
+			}
+
+			if info.Version != Version {
+				t.Errorf("❌ Version = %q, want %q", info.Version, Version)
+			}
+		})
+	}
+}
+
+// TestLogServerInfo tests the logServerInfo function
+func TestLogServerInfo(t *testing.T) {
+	tests := []struct {
+		name            string
+		info            *ServerInfo
+		expectedStrings []string
+	}{
+		{
+			name: "✅ HTTPS with auth",
+			info: &ServerInfo{
+				Addr:        "localhost:8443",
+				Protocol:    "https",
+				Version:     "1.0.0",
+				TLSEnabled:  true,
+				TLSCertFile: "/path/to/cert.pem",
+				TLSKeyFile:  "/path/to/key.pem",
+				AuthEnabled: true,
+				AuthType:    "jwt",
+				Endpoints: []string{
+					"POST https://localhost:8443/api/v1/execute - Exécuter un programme TSD",
+					"GET  https://localhost:8443/health - Health check",
+				},
+			},
+			expectedStrings: []string{
+				"🚀 Démarrage du serveur TSD",
+				"https://localhost:8443",
+				"📊 Version: 1.0.0",
+				"🔒 TLS: activé",
+				"Certificat: /path/to/cert.pem",
+				"Clé: /path/to/key.pem",
+				"🔒 Authentification: activée (jwt)",
+				"🔗 Endpoints disponibles:",
+			},
+		},
+		{
+			name: "✅ HTTP insecure without auth",
+			info: &ServerInfo{
+				Addr:        "0.0.0.0:8080",
+				Protocol:    "http",
+				Version:     "2.0.0",
+				TLSEnabled:  false,
+				AuthEnabled: false,
+				Endpoints: []string{
+					"POST http://0.0.0.0:8080/api/v1/execute - Exécuter un programme TSD",
+				},
+			},
+			expectedStrings: []string{
+				"🚀 Démarrage du serveur TSD",
+				"http://0.0.0.0:8080",
+				"📊 Version: 2.0.0",
+				"⚠️  TLS: désactivé",
+				"⚠️  AVERTISSEMENT: Ne pas utiliser en production!",
+				"⚠️  Authentification: désactivée",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			logger := log.New(&buf, "[TEST] ", 0)
+
+			logServerInfo(logger, tt.info)
+
+			output := buf.String()
+
+			for _, expected := range tt.expectedStrings {
+				if !strings.Contains(output, expected) {
+					t.Errorf("❌ Output missing expected string %q\nGot: %s", expected, output)
+				}
+			}
+		})
+	}
+}
+
+// TestCreateTLSConfig tests the createTLSConfig function
+func TestCreateTLSConfig(t *testing.T) {
+	tlsConfig := createTLSConfig()
+
+	if tlsConfig == nil {
+		t.Fatal("❌ createTLSConfig returned nil")
+	}
+
+	// Check MinVersion
+	if tlsConfig.MinVersion != tls.VersionTLS12 {
+		t.Errorf("❌ MinVersion = %d, want %d (TLS 1.2)", tlsConfig.MinVersion, tls.VersionTLS12)
+	}
+
+	// Check CipherSuites
+	expectedCiphers := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	}
+
+	if len(tlsConfig.CipherSuites) != len(expectedCiphers) {
+		t.Errorf("❌ CipherSuites count = %d, want %d", len(tlsConfig.CipherSuites), len(expectedCiphers))
+	}
+
+	for i, cipher := range expectedCiphers {
+		if i < len(tlsConfig.CipherSuites) && tlsConfig.CipherSuites[i] != cipher {
+			t.Errorf("❌ CipherSuites[%d] = %d, want %d", i, tlsConfig.CipherSuites[i], cipher)
+		}
+	}
+
+	// Check PreferServerCipherSuites
+	if !tlsConfig.PreferServerCipherSuites {
+		t.Error("❌ PreferServerCipherSuites should be true")
+	}
+
+	t.Log("✅ TLS config validation passed")
+}
+
+// TestPrepareServerInfo_EdgeCases tests edge cases for prepareServerInfo
+func TestPrepareServerInfo_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name   string
+		config *Config
+		setup  func() (*Server, error)
+		verify func(*testing.T, *ServerInfo)
+	}{
+		{
+			name: "✅ Custom port formats",
+			config: &Config{
+				Host:     "custom.host",
+				Port:     9999,
+				Insecure: true,
+			},
+			setup: func() (*Server, error) {
+				authConfig := &auth.Config{Type: "none"}
+				authManager, err := auth.NewManager(authConfig)
+				if err != nil {
+					return nil, err
+				}
+				return &Server{authManager: authManager}, nil
+			},
+			verify: func(t *testing.T, info *ServerInfo) {
+				if !strings.Contains(info.Addr, "custom.host") {
+					t.Errorf("❌ Addr should contain custom.host, got %q", info.Addr)
+				}
+				if !strings.Contains(info.Addr, "9999") {
+					t.Errorf("❌ Addr should contain port 9999, got %q", info.Addr)
+				}
+			},
+		},
+		{
+			name: "✅ IPv6 address format",
+			config: &Config{
+				Host:     "::1",
+				Port:     8080,
+				Insecure: false,
+			},
+			setup: func() (*Server, error) {
+				authConfig := &auth.Config{Type: "none"}
+				authManager, err := auth.NewManager(authConfig)
+				if err != nil {
+					return nil, err
+				}
+				return &Server{authManager: authManager}, nil
+			},
+			verify: func(t *testing.T, info *ServerInfo) {
+				if info.Protocol != "https" {
+					t.Errorf("❌ Protocol should be https for non-insecure mode")
+				}
+				if !info.TLSEnabled {
+					t.Error("❌ TLS should be enabled")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server, err := tt.setup()
+			if err != nil {
+				t.Fatalf("❌ Setup failed: %v", err)
+			}
+
+			info := prepareServerInfo(tt.config, server)
+			tt.verify(t, info)
 		})
 	}
 }
