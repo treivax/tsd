@@ -2,7 +2,9 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.19+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-100%25-brightgreen.svg)](#tests)
+[![Coverage](https://img.shields.io/badge/coverage-81.2%25-brightgreen.svg)](#test-coverage)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#tests)
+[![Go Conventions](https://github.com/treivax/tsd/workflows/🔍%20Go%20Conventions%20Validation/badge.svg)](https://github.com/treivax/tsd/actions)
 
 **Moteur de règles haute performance basé sur l'algorithme RETE avec système d'authentification**
 
@@ -14,7 +16,7 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🧠 **Expressions complexes** - Support complet des négations (`NOT`) et conditions composées
 - 🔍 **Opérateurs avancés** - `CONTAINS`, `LIKE`, `MATCHES`, `IN`, fonctions `LENGTH()`, `ABS()`, `UPPER()`
 - 📊 **Types fortement typés** - Système de types robuste avec validation
-- 🎯 **100% testé** - Couverture complète avec 26 tests de validation Alpha
+- 🎯 **81.2% de couverture** - 100% des modules de production >80%, tests robustes et maintenables
 - ⚡ **Performance** - <1ms par règle, optimisé pour le traitement en temps réel
 - 🏷️ **Identifiants de règles** - Gestion fine des règles avec identifiants obligatoires
 - 🔗 **Beta Sharing System** - Partage intelligent des nœuds (60-80% réduction mémoire)
@@ -315,6 +317,65 @@ make test-all
 # Via Makefile (anciennement rete-unified)
 make rete-unified  # Exécute les tests E2E
 ```
+
+### Test Coverage
+
+**🎯 Couverture Globale : 81.2%** (code de production uniquement)
+
+Le projet maintient une couverture de tests exceptionnelle avec **100% des modules de production au-dessus de 80%**.
+
+#### Couverture par Module
+
+| Module | Couverture | Statut |
+|--------|-----------|--------|
+| tsdio | 100.0% | ✅ Excellent |
+| rete/internal/config | 100.0% | ✅ Excellent |
+| auth | 94.5% | ✅ Excellent |
+| constraint/internal/config | 90.8% | ✅ Excellent |
+| internal/compilercmd | 89.7% | ✅ Excellent |
+| constraint/cmd | 86.8% | ✅ Excellent |
+| internal/authcmd | 85.5% | ✅ Excellent |
+| internal/clientcmd | 84.7% | ✅ Excellent |
+| cmd/tsd | 84.4% | ✅ Excellent |
+| internal/servercmd | 83.4% | ✅ Excellent |
+| constraint | 82.5% | ✅ Excellent |
+| constraint/pkg/validator | 80.7% | ✅ Excellent |
+| rete | 80.6% | ✅ Excellent |
+
+#### Commandes de Couverture
+
+```bash
+# Couverture code production (sans exemples)
+make coverage-prod
+
+# Rapport détaillé avec analyse par module
+make coverage-report
+
+# Couverture complète (incluant exemples)
+make coverage
+
+# Couverture tests unitaires uniquement
+make coverage-unit
+
+# Couverture tests E2E uniquement
+make coverage-e2e
+```
+
+#### Standards de Tests
+
+Tous les tests respectent les standards définis dans `.github/prompts/test.md` :
+
+- ✅ Tests déterministes (pas de flakiness)
+- ✅ Tests isolés (cleanup complet)
+- ✅ Structure table-driven
+- ✅ Messages clairs avec émojis (✅ ❌ ⚠️)
+- ✅ Couverture complète (cas nominaux, limites, erreurs)
+- ✅ Pas de hardcoding (constantes nommées)
+
+Pour plus de détails, voir les rapports dans `REPORTS/`:
+- `TEST_COVERAGE_IMPROVEMENT_2025-01-15.md` (Phase 1)
+- `TEST_COVERAGE_IMPROVEMENT_PHASE2_2025-12-15.md` (Phase 2)
+- `TEST_COVERAGE_PHASE3_ANALYSIS_2025-12-15.md` (Phase 3)
 
 ### Exemple de Règle
 

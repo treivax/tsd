@@ -208,6 +208,18 @@ coverage: ## TEST - Rapport de couverture complet
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "$(GREEN)✅ Rapport généré: coverage.html$(NC)"
 
+coverage-prod: ## TEST - Couverture code production (sans exemples)
+	@echo "$(BLUE)📊 Génération couverture code production...$(NC)"
+	@echo "$(YELLOW)⚠️  Exclusion: examples/, rete/examples/, tests/shared/testutil$(NC)"
+	@go test -tags=e2e,integration -coverprofile=coverage-prod.out \
+		$$(go list ./... | grep -v '/examples' | grep -v '/testutil')
+	@go tool cover -html=coverage-prod.out -o coverage-prod.html
+	@echo ""
+	@echo "$(CYAN)📊 Couverture Globale Production:$(NC)"
+	@go tool cover -func=coverage-prod.out | grep total
+	@echo ""
+	@echo "$(GREEN)✅ Rapport production: coverage-prod.html$(NC)"
+
 coverage-unit: ## TEST - Couverture tests unitaires uniquement
 	@echo "$(BLUE)📊 Couverture tests unitaires...$(NC)"
 	@go test -short -coverprofile=coverage-unit.out ./constraint/... ./rete/...
@@ -219,6 +231,21 @@ coverage-e2e: ## TEST - Couverture tests E2E uniquement
 	@go test -tags=e2e -coverprofile=coverage-e2e.out ./tests/e2e/...
 	@go tool cover -html=coverage-e2e.out -o coverage-e2e.html
 	@echo "$(GREEN)✅ Rapport: coverage-e2e.html$(NC)"
+
+coverage-report: coverage-prod ## TEST - Rapport détaillé couverture production
+	@echo ""
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo "$(CYAN)📊 RAPPORT DE COUVERTURE - CODE PRODUCTION$(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "$(BLUE)📈 Couverture Globale:$(NC)"
+	@go tool cover -func=coverage-prod.out | grep total
+	@echo ""
+	@echo "$(BLUE)📋 Couverture par Module (>80%):$(NC)"
+	@go tool cover -func=coverage-prod.out | grep -E "github.com/treivax/tsd/(auth|cmd|constraint|internal|rete|tsdio)/" | grep -v "_test.go" | awk '{print $$1, $$NF}' | sort -t: -k2 -rn | head -20
+	@echo ""
+	@echo "$(GREEN)✅ Fichier HTML: coverage-prod.html$(NC)"
+	@echo "$(CYAN)═══════════════════════════════════════════════════════════$(NC)"
 
 bench: ## TEST - Benchmarks standards
 	@echo "$(BLUE)⏱️  Exécution des benchmarks...$(NC)"

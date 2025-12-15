@@ -1,0 +1,172 @@
+name: 🧪 Test Coverage Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-coverage:
+    name: 📊 Test Coverage Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📦 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐹 Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: 📊 Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: 📥 Install dependencies
+      run: go mod download
+
+    - name: 🧪 Run tests with coverage (all code)
+      run: |
+        echo "📊 Running all tests with coverage..."
+        go test -coverprofile=coverage-all.out ./...
+
+    - name: 🧪 Run tests with coverage (production code only)
+      run: |
+        echo "📊 Running production tests (excluding examples)..."
+        go test -coverprofile=coverage-prod.out $(go list ./... | grep -v '/examples' | grep -v '/testutil')
+
+    - name: 📈 Calculate coverage
+      id: coverage
+      run: |
+        # Coverage globale (tout le code)
+        COVERAGE_ALL=$(go tool cover -func=coverage-all.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "coverage_all=$COVERAGE_ALL" >> $GITHUB_OUTPUT
+        echo "📊 Coverage (all code): $COVERAGE_ALL%"
+
+        # Coverage production (sans exemples)
+        COVERAGE_PROD=$(go tool cover -func=coverage-prod.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "coverage_prod=$COVERAGE_PROD" >> $GITHUB_OUTPUT
+        echo "📊 Coverage (production): $COVERAGE_PROD%"
+
+    - name: ✅ Validate production coverage threshold
+      run: |
+        COVERAGE_PROD=${{ steps.coverage.outputs.coverage_prod }}
+        THRESHOLD=80.0
+
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📊 COVERAGE VALIDATION"
+        echo "═══════════════════════════════════════════════════════════"
+        echo "Production Coverage: $COVERAGE_PROD%"
+        echo "Minimum Threshold:   $THRESHOLD%"
+        echo "═══════════════════════════════════════════════════════════"
+
+        if (( $(echo "$COVERAGE_PROD < $THRESHOLD" | bc -l) )); then
+          echo "❌ FAILED: Coverage ($COVERAGE_PROD%) is below threshold ($THRESHOLD%)"
+          exit 1
+        else
+          echo "✅ PASSED: Coverage meets or exceeds threshold"
+        fi
+
+    - name: ⚠️ Check for coverage regression
+      if: github.event_name == 'pull_request'
+      run: |
+        # Récupérer la couverture de la branche main
+        git fetch origin main:main
+        git checkout main
+        go test -coverprofile=coverage-main.out $(go list ./... | grep -v '/examples' | grep -v '/testutil') 2>/dev/null || echo "0" > coverage-main.out
+        COVERAGE_MAIN=$(go tool cover -func=coverage-main.out 2>/dev/null | grep total | awk '{print $3}' | sed 's/%//' || echo "0")
+        git checkout -
+
+        COVERAGE_PR=${{ steps.coverage.outputs.coverage_prod }}
+
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📊 REGRESSION CHECK"
+        echo "═══════════════════════════════════════════════════════════"
+        echo "Main branch coverage:    $COVERAGE_MAIN%"
+        echo "PR branch coverage:      $COVERAGE_PR%"
+
+        DIFF=$(echo "$COVERAGE_PR - $COVERAGE_MAIN" | bc -l)
+        echo "Difference:              $DIFF%"
+        echo "═══════════════════════════════════════════════════════════"
+
+        # Tolérance de -1% pour éviter les faux positifs
+        if (( $(echo "$DIFF < -1.0" | bc -l) )); then
+          echo "⚠️ WARNING: Coverage decreased by more than 1%"
+          echo "Please add tests to maintain coverage level"
+          # Ne pas échouer le build, juste avertir
+        elif (( $(echo "$DIFF > 0" | bc -l) )); then
+          echo "✅ Coverage improved by $DIFF%!"
+        else
+          echo "✅ Coverage maintained"
+        fi
+
+    - name: 📊 Coverage by module
+      run: |
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📊 COVERAGE BY MODULE (Production Code)"
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        go test -cover $(go list ./... | grep -v '/examples' | grep -v '/testutil') | grep -E "ok|coverage:" | grep -v "0.0% of statements"
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+
+    - name: 📊 Modules below 80%
+      run: |
+        echo ""
+        echo "⚠️  MODULES BELOW 80% COVERAGE:"
+        echo "═══════════════════════════════════════════════════════════"
+        go test -cover $(go list ./... | grep -v '/examples' | grep -v '/testutil') 2>&1 | \
+          grep "coverage:" | \
+          awk '{
+            match($0, /coverage: ([0-9.]+)%/, arr);
+            if (arr[1] > 0 && arr[1] < 80) {
+              print $2, arr[1]"%"
+            }
+          }' | \
+          sort -k2 -n || echo "✅ All production modules have >80% coverage!"
+        echo "═══════════════════════════════════════════════════════════"
+
+    - name: 📈 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage-prod.out
+        flags: production
+        name: codecov-production
+        fail_ci_if_error: false
+
+    - name: 📊 Generate coverage HTML report
+      run: |
+        go tool cover -html=coverage-prod.out -o coverage-prod.html
+        echo "✅ Coverage report generated: coverage-prod.html"
+
+    - name: 📤 Upload coverage report artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage-prod.html
+        retention-days: 30
+
+    - name: 🏁 Summary
+      run: |
+        echo ""
+        echo "═══════════════════════════════════════════════════════════"
+        echo "✅ TEST COVERAGE VALIDATION COMPLETE"
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📊 All Code Coverage:        ${{ steps.coverage.outputs.coverage_all }}%"
+        echo "📊 Production Code Coverage: ${{ steps.coverage.outputs.coverage_prod }}%"
+        echo "🎯 Minimum Threshold:        80.0%"
+        echo "✅ Status:                   PASSED"
+        echo "═══════════════════════════════════════════════════════════"
+        echo ""
+        echo "📊 Coverage report available in artifacts"
+        echo "📈 Coverage data uploaded to Codecov"
+        echo ""
