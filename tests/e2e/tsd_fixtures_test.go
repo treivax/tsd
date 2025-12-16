@@ -15,13 +15,13 @@ import (
 
 const (
 	// ExpectedTotalFixtures nombre total de fixtures attendu
-	ExpectedTotalFixtures = 83 // 26 alpha + 26 beta + 31 integration
+	ExpectedTotalFixtures = 84 // 26 alpha + 27 beta + 31 integration
 
 	// ExpectedAlphaFixtures nombre de fixtures alpha minimum
 	ExpectedAlphaFixtures = 26
 
 	// ExpectedBetaFixtures nombre de fixtures beta minimum
-	ExpectedBetaFixtures = 26
+	ExpectedBetaFixtures = 27
 
 	// ExpectedIntegrationFixtures nombre de fixtures integration minimum
 	ExpectedIntegrationFixtures = 31

@@ -54,7 +54,8 @@ func TestLoad_1000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: DefaultLoadTestTimeout,
+		Timeout:        DefaultLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -72,7 +73,8 @@ func TestLoad_5000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: ExtendedLoadTestTimeout,
+		Timeout:        ExtendedLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -90,7 +92,8 @@ func TestLoad_10000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: LongLoadTestTimeout,
+		Timeout:        LongLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -104,6 +107,8 @@ func TestLoad_MultipleRulesWithFacts(t *testing.T) {
 
 	// Multiple rules with 500 facts each
 	rule := `type Person(name: string, age: number, salary: number, active: bool)
+
+action print(arg: string)
 
 rule r1 : {p: Person} / p.age > 18 ==> print("adult")
 rule r2 : {p: Person} / p.salary > 50000 ==> print("high_earner")
@@ -125,7 +130,8 @@ rule r4 : {p: Person} / p.age > 30 and p.salary > 60000 ==> print("senior_high_e
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: ExtendedLoadTestTimeout,
+		Timeout:        ExtendedLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -139,6 +145,8 @@ func TestLoad_ComplexConstraints(t *testing.T) {
 
 	// Complex constraint with multiple conditions
 	rule := `type Transaction(id: number, amount: number, category: string, verified: bool, timestamp: number)
+
+action print(arg: string)
 
 rule fraud_detection : {tx: Transaction} /
     tx.amount > 10000 and
@@ -169,7 +177,8 @@ rule high_value : {tx: Transaction} /
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: ExtendedLoadTestTimeout,
+		Timeout:        ExtendedLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -185,6 +194,8 @@ func TestLoad_JoinHeavy(t *testing.T) {
 	rule := `type Employee(id: number, name: string, dept_id: number)
 type Department(id: number, name: string, budget: number)
 type Project(id: number, dept_id: number, name: string)
+
+action print(arg: string)
 
 rule emp_dept_project : {e: Employee, d: Department, p: Project} /
     e.dept_id == d.id and
@@ -217,7 +228,8 @@ rule emp_dept_project : {e: Employee, d: Department, p: Project} /
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: ExtendedLoadTestTimeout,
+		Timeout:        ExtendedLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -267,6 +279,8 @@ func TestLoad_MemoryStress(t *testing.T) {
     field8: bool
 )
 
+action print(arg: string)
+
 rule r1 : {lr: LargeRecord} / lr.id > 0 ==> print("processed")
 
 `
@@ -287,7 +301,8 @@ rule r1 : {lr: LargeRecord} / lr.id > 0 ==> print("processed")
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: LongLoadTestTimeout,
+		Timeout:        LongLoadTestTimeout,
+		MaxActivations: -1,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -299,6 +314,8 @@ rule r1 : {lr: LargeRecord} / lr.id > 0 ==> print("processed")
 // generateRuleWithFacts creates a TSD rule with the specified number of facts
 func generateRuleWithFacts(count int) string {
 	rule := `type Item(id: number, value: string, score: number)
+
+action print(arg: string)
 
 rule r1 : {i: Item} / i.score > 0 ==> print("positive_score")
 
