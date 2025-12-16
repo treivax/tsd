@@ -94,29 +94,29 @@ rule r18 : {p: Product, o: Order} / p.id == o.product_id AND p.price > 0 ==> rou
 // Test 19: Multiples calculs dans action
 rule r19 : {p: Product, o: Order} / p.id == o.product_id AND p.price > 0 ==> order_details(p.id, o.id, p.price * o.quantity, (p.price - p.cost) * o.quantity, CEIL(o.quantity / p.quantity))
 
-# Faits pour join_arithmetic_complete.constraint
-# 3 produits et 6 commandes pour tester toutes les combinaisons
+// Faits pour join_arithmetic_complete.constraint
+// 3 produits et 6 commandes pour tester toutes les combinaisons
 
-# Produits avec prix, coût, remise, quantité de base
+// Produits avec prix, coût, remise, quantité de base
 Product(id:"PROD001", price:100, cost:60, discount:10, quantity:5)
 Product(id:"PROD002", price:50, cost:30, discount:5, quantity:10)
 Product(id:"PROD003", price:200, cost:150, discount:20, quantity:2)
 
-# Commandes variées pour tester différents cas
-# Commande 1: Grande quantité, faible shipping
+// Commandes variées pour tester différents cas
+// Commande 1: Grande quantité, faible shipping
 Order(id:"ORD001", product_id:"PROD001", quantity:10, tax_rate:0.2, shipping:15)
 
-# Commande 2: Petite quantité, shipping élevé
+// Commande 2: Petite quantité, shipping élevé
 Order(id:"ORD002", product_id:"PROD001", quantity:2, tax_rate:0.1, shipping:25)
 
-# Commande 3: Quantité multiple exacte
+// Commande 3: Quantité multiple exacte
 Order(id:"ORD003", product_id:"PROD002", quantity:30, tax_rate:0.15, shipping:10)
 
-# Commande 4: Division avec reste
+// Commande 4: Division avec reste
 Order(id:"ORD004", product_id:"PROD002", quantity:25, tax_rate:0.2, shipping:8)
 
-# Commande 5: Grande commande produit cher
+// Commande 5: Grande commande produit cher
 Order(id:"ORD005", product_id:"PROD003", quantity:6, tax_rate:0.25, shipping:50)
 
-# Commande 6: Petite commande
+// Commande 6: Petite commande
 Order(id:"ORD006", product_id:"PROD003", quantity:1, tax_rate:0.1, shipping:5)

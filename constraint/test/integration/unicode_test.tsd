@@ -6,7 +6,7 @@ type Adresse(utilisateur_id: string, rue: string, ville: string)
 
 // Fichier de test pour valider le support des caractères non-ASCII
 
-# Commentaire style shell
+// Commentaire style shell
 /* Commentaire multi-lignes
    avec des caractères accentués : àáâãäåæçèéêëìíîïñòóôõöøùúûüý */
 

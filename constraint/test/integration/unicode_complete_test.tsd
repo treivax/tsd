@@ -1,5 +1,5 @@
 // Test complet de la grammaire Unicode avec types et faits
-# Commentaire style shell
+// Commentaire style shell
 /* Commentaire multi-lignes
    avec accents français : éàèùâêîôûç */
 

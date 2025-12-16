@@ -1,11 +1,11 @@
-# Tests des fonctions mathématiques : ABS, ROUND, FLOOR, CEIL
-# Ce fichier teste l'utilisation des fonctions mathématiques dans les contraintes et actions
+// Tests des fonctions mathématiques : ABS, ROUND, FLOOR, CEIL
+// Ce fichier teste l'utilisation des fonctions mathématiques dans les contraintes et actions
 
 type Account(id:string, balance:number, temperature:number, rating:number)
 type Measurement(id:string, value:number, threshold:number)
 
-# Test 1: ABS - valeur absolue pour gérer valeurs négatives
-# ABS(balance) > 100 - détecte soldes importants (positifs ou négatifs)
+// Test 1: ABS - valeur absolue pour gérer valeurs négatives
+// ABS(balance) > 100 - détecte soldes importants (positifs ou négatifs)
 
 
 
@@ -23,38 +23,38 @@ action process_measurement(arg1: string, arg2: number, arg3: number, arg4: numbe
 
 rule r1 : {a: Account} / ABS(a.balance) > 100 ==> significant_balance(a.id)
 
-# Test 2: ROUND - arrondir au plus proche
-# ROUND(rating) == 4 - ratings autour de 4
+// Test 2: ROUND - arrondir au plus proche
+// ROUND(rating) == 4 - ratings autour de 4
 rule r2 : {a: Account} / ROUND(a.rating) == 4 ==> good_rating(a.id)
 
-# Test 3: FLOOR - arrondir vers le bas
-# FLOOR(temperature) < 20 - températures en dessous de 20
+// Test 3: FLOOR - arrondir vers le bas
+// FLOOR(temperature) < 20 - températures en dessous de 20
 rule r3 : {a: Account} / FLOOR(a.temperature) < 20 ==> cold_environment(a.id)
 
-# Test 4: CEIL - arrondir vers le haut
-# CEIL(rating) >= 5 - ratings qui atteignent 5 en arrondissant vers le haut
+// Test 4: CEIL - arrondir vers le haut
+// CEIL(rating) >= 5 - ratings qui atteignent 5 en arrondissant vers le haut
 rule r4 : {a: Account} / CEIL(a.rating) >= 5 ==> excellent_rating(a.id)
 
-# Test 5: Combiner fonctions mathématiques avec opérateurs
-# ABS(balance) + ROUND(rating) > 150
+// Test 5: Combiner fonctions mathématiques avec opérateurs
+// ABS(balance) + ROUND(rating) > 150
 rule r5 : {a: Account} / ABS(a.balance) + ROUND(a.rating) > 150 ==> combined_high_value(a.id)
 
-# Test 6: Fonctions dans expressions complexes
-# ROUND(ABS(temperature - 20)) < 5 - proche de 20 degrés
+// Test 6: Fonctions dans expressions complexes
+// ROUND(ABS(temperature - 20)) < 5 - proche de 20 degrés
 rule r6 : {a: Account} / ROUND(ABS(a.temperature - 20)) < 5 ==> optimal_temp(a.id)
 
-# Test 7: Fonctions multiples dans action
+// Test 7: Fonctions multiples dans action
 rule r7 : {m: Measurement} / m.value > 0 ==> process_measurement(m.id, ABS(m.value), ROUND(m.value), FLOOR(m.value), CEIL(m.value))
 
-# Test 8: Comparaison de fonctions
-# FLOOR(value) != CEIL(value) - détecte valeurs non-entières
+// Test 8: Comparaison de fonctions
+// FLOOR(value) != CEIL(value) - détecte valeurs non-entières
 rule r8 : {m: Measurement} / FLOOR(m.value) != CEIL(m.value) ==> decimal_value(m.id)
 
-# Test 9: CEIL avec division
-# CEIL(value / threshold) == 3 - nécessite 3 unités complètes
+// Test 9: CEIL avec division
+// CEIL(value / threshold) == 3 - nécessite 3 unités complètes
 rule r9 : {m: Measurement} / CEIL(m.value / m.threshold) == 3 ==> requires_three_units(m.id)
 
-# Faits de test pour arithmetic_math_functions
+// Faits de test pour arithmetic_math_functions
 Account(id:A1, balance:150, temperature:18.3, rating:3.8)
 Account(id:A2, balance:-120, temperature:22.7, rating:4.9)
 Account(id:A3, balance:50, temperature:19.1, rating:3.2)

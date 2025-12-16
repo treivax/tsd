@@ -1,11 +1,11 @@
-# Tests des fonctions de chaînes : LENGTH, UPPER, LOWER, TRIM, SUBSTRING
-# Ce fichier teste l'utilisation des fonctions de manipulation de chaînes
+// Tests des fonctions de chaînes : LENGTH, UPPER, LOWER, TRIM, SUBSTRING
+// Ce fichier teste l'utilisation des fonctions de manipulation de chaînes
 
 type User(id:string, name:string, email:string, country:string, password:string)
 type Product(id:string, code:string, description:string, category:string)
 
-# Test 1: LENGTH - vérifier longueur de chaîne
-# Mots de passe avec au moins 8 caractères
+// Test 1: LENGTH - vérifier longueur de chaîne
+// Mots de passe avec au moins 8 caractères
 
 
 // Action definitions
@@ -23,45 +23,45 @@ action toys_category(arg1: string)
 
 rule r1 : {u: User} / LENGTH(u.password) >= 8 ==> strong_password(u.id)
 
-# Test 2: UPPER - convertir en majuscules pour comparaison
-# Pays en France (insensible à la casse)
+// Test 2: UPPER - convertir en majuscules pour comparaison
+// Pays en France (insensible à la casse)
 rule r2 : {u: User} / UPPER(u.country) == "FRANCE" ==> french_user(u.id)
 
-# Test 3: LOWER - convertir en minuscules
-# Catégorie electronics en minuscules
+// Test 3: LOWER - convertir en minuscules
+// Catégorie electronics en minuscules
 rule r3 : {p: Product} / LOWER(p.category) == "electronics" ==> electronics_product(p.id)
 
-# Test 4: TRIM - supprimer espaces
-# Nom non-vide après suppression des espaces
+// Test 4: TRIM - supprimer espaces
+// Nom non-vide après suppression des espaces
 rule r4 : {u: User} / LENGTH(TRIM(u.name)) > 0 ==> valid_name(u.id)
 
-# Test 5: SUBSTRING - extraire sous-chaîne
-# Code commençant par "ABC"
+// Test 5: SUBSTRING - extraire sous-chaîne
+// Code commençant par "ABC"
 rule r5 : {p: Product} / SUBSTRING(p.code, 0, 3) == "ABC" ==> abc_series(p.id)
 
-# Test 6: Combiner LENGTH avec opérateurs arithmétiques
-# Email court (moins de 20 caractères)
+// Test 6: Combiner LENGTH avec opérateurs arithmétiques
+// Email court (moins de 20 caractères)
 rule r6 : {u: User} / LENGTH(u.email) < 20 ==> short_email(u.id)
 
-# Test 7: UPPER dans action
+// Test 7: UPPER dans action
 rule r7 : {u: User} / u.country != "" ==> normalize_country(u.id, UPPER(u.country))
 
-# Test 8: Fonctions multiples combinées
-# TRIM puis LENGTH puis comparaison
+// Test 8: Fonctions multiples combinées
+// TRIM puis LENGTH puis comparaison
 rule r8 : {u: User} / LENGTH(TRIM(u.password)) >= 8 AND LENGTH(u.email) > 5 ==> validated_user(u.id)
 
-# Test 9: SUBSTRING avec calculs
-# Extraire code postal (3 derniers caractères)
+// Test 9: SUBSTRING avec calculs
+// Extraire code postal (3 derniers caractères)
 rule r9 : {p: Product} / LENGTH(p.code) >= 6 AND SUBSTRING(p.code, LENGTH(p.code) - 3, 3) == "123" ==> postal_123(p.id)
 
-# Test 10: Combiner UPPER et SUBSTRING
-# Initiales en majuscules
+// Test 10: Combiner UPPER et SUBSTRING
+// Initiales en majuscules
 rule r10 : {u: User} / UPPER(SUBSTRING(u.name, 0, 1)) == "A" ==> starts_with_a(u.id)
 
-# Test 11: LOWER avec TRIM
+// Test 11: LOWER avec TRIM
 rule r11 : {p: Product} / LOWER(TRIM(p.category)) == "toys" ==> toys_category(p.id)
 
-# Faits de test pour arithmetic_string_functions
+// Faits de test pour arithmetic_string_functions
 User(id:U1, name:Alice, email:"alice@mail.com", country:France, password:secure123)
 User(id:U2, name:Bob, email:"bob@example.co", country:france, password:short)
 User(id:U3, name:"  Charlie  ", email:"charlie@longdomain.com", country:FRANCE, password:password1)

@@ -1,17 +1,17 @@
-# Test de propagation incrémentale multi-niveaux
-# Vérifie la propagation séquentielle User -> User+Order -> User+Order+Product
+// Test de propagation incrémentale multi-niveaux
+// Vérifie la propagation séquentielle User -> User+Order -> User+Order+Product
 
 type User(id: string, age: number)
 type Order(id: string, user_id: string, product_id: string)
 type Product(id: string, name: string)
 
-# Règle avec 3 niveaux de jointure et conditions étagées
+// Règle avec 3 niveaux de jointure et conditions étagées
 
 // Actions auto-générées
 action incremental_propagation_match(arg1: string, arg2: string, arg3: string)
 
 rule r1 : {u: User, o: Order, p: Product} / u.id == o.user_id AND o.product_id == p.id AND u.age >= 18 ==> incremental_propagation_match(u.id, o.id, p.id)
 
-# Faits de test pour la propagation incrémentale
-# Ces faits seront ajoutés séquentiellement par le test lui-même
-# (pas d'inline facts ici pour éviter les duplications)
+// Faits de test pour la propagation incrémentale
+// Ces faits seront ajoutés séquentiellement par le test lui-même
+// (pas d'inline facts ici pour éviter les duplications)

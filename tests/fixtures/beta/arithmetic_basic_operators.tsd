@@ -1,11 +1,11 @@
-# Tests des opérateurs arithmétiques de base : +, -, *, /
-# Ce fichier teste l'utilisation des 4 opérateurs dans les contraintes et actions
+// Tests des opérateurs arithmétiques de base : +, -, *, /
+// Ce fichier teste l'utilisation des 4 opérateurs dans les contraintes et actions
 
 type Product(id:string, price:number, quantity:number, discount:number)
 type Order(id:string, subtotal:number, tax_rate:number, shipping:number)
 
-# Test 1: Addition dans contrainte
-# Un produit avec price + discount >= 150 déclenche high_value
+// Test 1: Addition dans contrainte
+// Un produit avec price + discount >= 150 déclenche high_value
 
 
 // Action definitions
@@ -20,31 +20,31 @@ action low_price(arg1: string)
 
 rule r1 : {p: Product} / p.price + p.discount >= 150 ==> high_value(p.id)
 
-# Test 2: Soustraction dans contrainte
-# Un produit avec price - discount < 50 déclenche low_price
+// Test 2: Soustraction dans contrainte
+// Un produit avec price - discount < 50 déclenche low_price
 rule r2 : {p: Product} / p.price - p.discount < 50 ==> low_price(p.id)
 
-# Test 3: Multiplication dans contrainte
-# Un produit avec quantity * price > 500 déclenche bulk_order
+// Test 3: Multiplication dans contrainte
+// Un produit avec quantity * price > 500 déclenche bulk_order
 rule r3 : {p: Product} / p.quantity * p.price > 500 ==> bulk_order(p.id)
 
-# Test 4: Division dans contrainte
-# Un produit avec price / quantity < 20 déclenche unit_discount
+// Test 4: Division dans contrainte
+// Un produit avec price / quantity < 20 déclenche unit_discount
 rule r4 : {p: Product} / p.price / p.quantity < 20 ==> unit_discount(p.id)
 
-# Test 5: Addition dans action (calcul total)
+// Test 5: Addition dans action (calcul total)
 rule r5 : {o: Order} / o.subtotal > 0 ==> calculate_total(o.id, o.subtotal + o.shipping)
 
-# Test 6: Multiplication dans action (appliquer taxe)
+// Test 6: Multiplication dans action (appliquer taxe)
 rule r6 : {o: Order} / o.tax_rate > 0 ==> apply_tax(o.id, o.subtotal * o.tax_rate)
 
-# Test 7: Soustraction dans action (appliquer remise)
+// Test 7: Soustraction dans action (appliquer remise)
 rule r7 : {p: Product} / p.discount > 0 ==> final_price(p.id, p.price - p.discount)
 
-# Test 8: Division dans action (prix unitaire)
+// Test 8: Division dans action (prix unitaire)
 rule r8 : {p: Product} / p.quantity > 1 ==> unit_price(p.id, p.price / p.quantity)
 
-# Faits de test pour arithmetic_basic_operators
+// Faits de test pour arithmetic_basic_operators
 Product(id:P1, price:100, quantity:2, discount:20)
 Product(id:P2, price:150, quantity:1, discount:10)
 Product(id:P3, price:40, quantity:3, discount:5)

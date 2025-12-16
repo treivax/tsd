@@ -1,7 +1,7 @@
-# Test d'intégration pour plusieurs instructions reset successives
-# Ce fichier teste que plusieurs resets peuvent être appliqués sans problème
+// Test d'intégration pour plusieurs instructions reset successives
+// Ce fichier teste que plusieurs resets peuvent être appliqués sans problème
 
-# Phase 1: Premier ensemble de types
+// Phase 1: Premier ensemble de types
 type UserV1(id: string, username: string)
 type PostV1(id: string, user_id: string, content: string)
 
@@ -15,34 +15,34 @@ action log_user_v1(arg1: string)
 
 rule r1 : {u: UserV1} / u.username != "" ==> log_user_v1(u.username)
 
-# Premier reset
+// Premier reset
 reset
 
-# Phase 2: Deuxième ensemble de types (complètement différent)
+// Phase 2: Deuxième ensemble de types (complètement différent)
 type ProductV2(sku: string, name: string, stock: number)
 type SupplierV2(id: string, name: string, country: string)
 
 rule r2 : {p: ProductV2} / p.stock < 10 ==> log_low_stock(p.name)
 
-# Deuxième reset
+// Deuxième reset
 reset
 
-# Phase 3: Troisième ensemble de types (celui qui devrait rester)
+// Phase 3: Troisième ensemble de types (celui qui devrait rester)
 type Employee(id: string, name: string, department: string, salary: number)
 type Project(id: string, name: string, budget: number)
 type Assignment(employee_id: string, project_id: string, hours: number)
 
-# Règles finales (seules ces règles devraient exister après les resets)
+// Règles finales (seules ces règles devraient exister après les resets)
 rule r3 : {e: Employee} / e.salary > 50000 ==> log_high_salary_employee(e.name)
 
 rule r4 : {p: Project} / p.budget > 100000 ==> log_major_project(p.name)
 
 rule r5 : {a: Assignment, e: Employee, p: Project} / a.employee_id == e.id AND a.project_id == p.id AND a.hours > 40 ==> log_intensive_assignment(e.name, p.name)
 
-# Fichier de faits pour le test de resets multiples
-# Ces faits correspondent aux types définis APRÈS les deux resets dans multiple_resets_test.constraint
+// Fichier de faits pour le test de resets multiples
+// Ces faits correspondent aux types définis APRÈS les deux resets dans multiple_resets_test.constraint
 
-# Employés avec différents salaires
+// Employés avec différents salaires
 Employee(id:E001, name:Jean_Dupont, department:Engineering, salary:65000)
 Employee(id:E002, name:Marie_Martin, department:Marketing, salary:45000)
 Employee(id:E003, name:Pierre_Dubois, department:Engineering, salary:72000)
@@ -50,14 +50,14 @@ Employee(id:E004, name:Sophie_Bernard, department:Finance, salary:58000)
 Employee(id:E005, name:Luc_Petit, department:HR, salary:42000)
 Employee(id:E006, name:Anne_Leroy, department:Engineering, salary:80000)
 
-# Projets avec différents budgets
+// Projets avec différents budgets
 Project(id:P001, name:Cloud_Migration, budget:250000)
 Project(id:P002, name:Website_Redesign, budget:75000)
 Project(id:P003, name:ERP_Implementation, budget:500000)
 Project(id:P004, name:Mobile_App, budget:120000)
 Project(id:P005, name:Marketing_Campaign, budget:50000)
 
-# Assignations d'employés sur des projets
+// Assignations d'employés sur des projets
 Assignment(employee_id:E001, project_id:P001, hours:45)
 Assignment(employee_id:E001, project_id:P004, hours:20)
 Assignment(employee_id:E002, project_id:P005, hours:35)

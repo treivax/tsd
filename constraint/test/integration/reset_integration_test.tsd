@@ -1,52 +1,52 @@
-# Test d'intégration pour l'instruction reset
-# Ce fichier définit des types, règles et faits, puis effectue un reset
+// Test d'intégration pour l'instruction reset
+// Ce fichier définit des types, règles et faits, puis effectue un reset
 
-# Phase 1: Définitions initiales (seront effacées par le reset)
+// Phase 1: Définitions initiales (seront effacées par le reset)
 type User(id: string, name: string, age: number)
 type Order(id: string, user_id: string, amount: number)
 type Product(id: string, name: string, price: number)
 
-# Actions pour la phase 1
+// Actions pour la phase 1
 action log_adult_user(name: string)
 action log_important_order(id: string)
 
-# Règle 1: Utilisateurs majeurs
+// Règle 1: Utilisateurs majeurs
 rule r1 : {u: User} / u.age >= 18 ==> log_adult_user(u.name)
 
-# Règle 2: Commandes importantes
+// Règle 2: Commandes importantes
 rule r2 : {o: Order} / o.amount > 1000 ==> log_important_order(o.id)
 
-# Instruction reset - TOUT ce qui précède sera effacé
+// Instruction reset - TOUT ce qui précède sera effacé
 reset
 
-# Phase 2: Nouvelles définitions (après le reset)
+// Phase 2: Nouvelles définitions (après le reset)
 type Customer(id: string, name: string, vip: bool)
 type Invoice(id: string, customer_id: string, total: number)
 type Payment(id: string, invoice_id: string, method: string)
 
-# Actions pour la phase 2
+// Actions pour la phase 2
 action log_vip_customer(name: string)
 action log_high_invoice(id: string)
 action log_payment_for_invoice(id: string)
 
-# Nouvelles règles (complètement indépendantes des précédentes)
+// Nouvelles règles (complètement indépendantes des précédentes)
 rule r3 : {c: Customer} / c.vip == true ==> log_vip_customer(c.name)
 
 rule r4 : {i: Invoice} / i.total > 5000 ==> log_high_invoice(i.id)
 
 rule r5 : {p: Payment, i: Invoice} / p.invoice_id == i.id ==> log_payment_for_invoice(i.id)
 
-# Fichier de faits pour le test d'intégration reset
-# Ces faits correspondent aux types définis APRÈS le reset dans reset_integration_test.constraint
+// Fichier de faits pour le test d'intégration reset
+// Ces faits correspondent aux types définis APRÈS le reset dans reset_integration_test.constraint
 
-# Clients (certains VIP, d'autres non)
+// Clients (certains VIP, d'autres non)
 Customer(id:C001, name:Alice_Dupont, vip:true)
 Customer(id:C002, name:Bob_Martin, vip:false)
 Customer(id:C003, name:Claire_Dubois, vip:true)
 Customer(id:C004, name:David_Leroy, vip:false)
 Customer(id:C005, name:Emma_Bernard, vip:true)
 
-# Factures (certaines avec montants élevés)
+// Factures (certaines avec montants élevés)
 Invoice(id:INV001, customer_id:C001, total:6500.00)
 Invoice(id:INV002, customer_id:C002, total:450.00)
 Invoice(id:INV003, customer_id:C003, total:7800.00)
@@ -54,7 +54,7 @@ Invoice(id:INV004, customer_id:C004, total:120.00)
 Invoice(id:INV005, customer_id:C005, total:5200.00)
 Invoice(id:INV006, customer_id:C001, total:3400.00)
 
-# Paiements associés aux factures
+// Paiements associés aux factures
 Payment(id:PAY001, invoice_id:INV001, method:carte)
 Payment(id:PAY002, invoice_id:INV002, method:especes)
 Payment(id:PAY003, invoice_id:INV003, method:virement)
