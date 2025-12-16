@@ -1,6 +1,6 @@
 # 🎯 TSD - Type System Development
 
-[![Go Version](https://img.shields.io/badge/Go-1.19+-blue.svg)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/Go-1.24+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-81.2%25-brightgreen.svg)](#test-coverage)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](#tests)
@@ -187,6 +187,51 @@ tsd server \
   --tls-cert /etc/letsencrypt/live/tsd.example.com/fullchain.pem \
   --tls-key /etc/letsencrypt/live/tsd.example.com/privkey.pem
 ```
+
+## 🛡️ Sécurité
+
+TSD intègre plusieurs outils de sécurité pour garantir la qualité et la sûreté du code.
+
+### Scan de Vulnérabilités
+
+**govulncheck** scanne automatiquement les vulnérabilités CVE dans les dépendances Go :
+
+```bash
+# Installer les outils de sécurité
+make deps-dev
+
+# Scan complet de sécurité (gosec + govulncheck)
+make security-scan
+
+# Scan vulnérabilités uniquement
+make security-vulncheck
+
+# Analyse statique uniquement
+make security-gosec
+```
+
+**Intégration CI** : Le scan de vulnérabilités s'exécute automatiquement à chaque commit via GitHub Actions.
+
+**Documentation complète** : [docs/security/VULNERABILITY_SCANNING.md](docs/security/VULNERABILITY_SCANNING.md)
+
+### Outils de Sécurité
+
+| Outil | Fonction | Documentation |
+|-------|----------|---------------|
+| **govulncheck** | Scan CVE dans dépendances | [VULNERABILITY_SCANNING.md](docs/security/VULNERABILITY_SCANNING.md) |
+| **gosec** | Analyse statique sécurité | `.github/workflows/go-conventions.yml` |
+| **go vet** | Analyse statique standard | Exécuté par `make lint` |
+
+### En Cas de Vulnérabilité
+
+Si govulncheck détecte une vulnérabilité :
+
+1. **Ne pas merger** tant que non corrigée
+2. **Mettre à jour Go** vers la version corrigée (si stdlib)
+3. **Mettre à jour dépendances** (si externe)
+4. **Re-scanner** avec `make security-vulncheck`
+
+Voir la documentation complète pour plus de détails : [docs/security/VULNERABILITY_SCANNING.md](docs/security/VULNERABILITY_SCANNING.md)
 
 ## 📋 Usage
 
@@ -883,13 +928,30 @@ cd rete
 
 ## 🤝 Contribution
 
-1. Fork du projet
-2. Créer une branche feature (`git checkout -b feature/amazing-feature`)
-3. Commit des changements (`git commit -m 'Add amazing feature'`)
-4. Push vers la branche (`git push origin feature/amazing-feature`)
-5. Ouvrir une Pull Request
+Nous accueillons les contributions ! Consultez [CONTRIBUTING.md](CONTRIBUTING.md) pour :
 
-Voir [DEVELOPMENT_GUIDELINES.md](docs/development_guidelines.md) pour les standards de code.
+- 🛠️ **Setup environnement** - Installation et configuration complète
+- ✅ **Standards de code** - Règles strictes et conventions
+- 🧪 **Standards de tests** - Couverture, structure, bonnes pratiques
+- 📝 **Process de PR** - Workflow complet de contribution
+- 🔍 **Guidelines de review** - Ce qui est vérifié en review
+
+**Quick Start :**
+```bash
+# Fork et clone
+git clone https://github.com/VOTRE_USERNAME/tsd.git
+cd tsd
+
+# Installation complète
+make install
+
+# Validation avant commit
+make validate
+```
+
+**Nouveau contributeur ?** Cherchez les issues [good first issue](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+**Standards projet :** [.github/prompts/common.md](.github/prompts/common.md) ⭐
 
 ## 📈 Statut du Projet
 
