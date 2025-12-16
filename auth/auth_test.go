@@ -5,6 +5,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"errors"
 	"strings"
 	"testing"
@@ -889,11 +890,14 @@ func TestManager_ValidateJWT_WrongSigningMethod(t *testing.T) {
 	// HS512 is still HMAC so it will be accepted
 	// The code only checks if it's HMAC, not specifically HS256
 	// This test verifies that HMAC methods are accepted
+	jti, _ := generateJTI()
 	claims := Claims{
 		Username: TestUsername,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Audience:  jwt.ClaimStrings{TokenAudience},
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			Issuer:    TestIssuer,
+			ID:        jti, // JTI requis pour validation
 		},
 	}
 
@@ -1022,6 +1026,7 @@ func TestManager_ValidateJWT_NotBefore(t *testing.T) {
 	claims := Claims{
 		Username: TestUsername,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Audience:  jwt.ClaimStrings{"tsd-api"},
 			NotBefore: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
 		},
@@ -1146,6 +1151,7 @@ func TestManager_ValidateJWT_TokenWithoutExpiry(t *testing.T) {
 	claims := Claims{
 		Username: TestUsername,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Audience: jwt.ClaimStrings{"tsd-api"},
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
 	}
@@ -1156,5 +1162,310 @@ func TestManager_ValidateJWT_TokenWithoutExpiry(t *testing.T) {
 	err := manager.ValidateToken(tokenString)
 	if err == nil {
 		t.Errorf("ValidateToken() should fail for token without proper expiry")
+	}
+}
+
+// TestManager_ValidateJWT_InvalidAudience tests JWT with wrong audience
+func TestManager_ValidateJWT_InvalidAudience(t *testing.T) {
+	manager, _ := NewManager(&Config{
+		Type:      AuthTypeJWT,
+		JWTSecret: TestJWTSecret,
+		JWTIssuer: TestIssuer,
+	})
+
+	// Create token with wrong audience
+	claims := Claims{
+		Username: TestUsername,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Audience:  jwt.ClaimStrings{"other-service"}, // Wrong audience
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    TestIssuer,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString([]byte(TestJWTSecret))
+
+	err := manager.ValidateToken(tokenString)
+	if err == nil {
+		t.Error("❌ Token with wrong audience should be rejected")
+	} else {
+		t.Logf("✅ Token with wrong audience correctly rejected: %v", err)
+	}
+}
+
+// TestManager_ValidateJWT_MissingAudience tests JWT without audience claim
+func TestManager_ValidateJWT_MissingAudience(t *testing.T) {
+	manager, _ := NewManager(&Config{
+		Type:      AuthTypeJWT,
+		JWTSecret: TestJWTSecret,
+		JWTIssuer: TestIssuer,
+	})
+
+	// Create token without audience
+	claims := Claims{
+		Username: TestUsername,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    TestIssuer,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString([]byte(TestJWTSecret))
+
+	err := manager.ValidateToken(tokenString)
+	if err == nil {
+		t.Error("❌ Token without audience should be rejected")
+	} else {
+		t.Logf("✅ Token without audience correctly rejected: %v", err)
+	}
+}
+
+// TestGenerateJWT_HasAllRequiredClaims tests that generated JWT has all required claims
+func TestGenerateJWT_HasAllRequiredClaims(t *testing.T) {
+	manager, _ := NewManager(&Config{
+		Type:      AuthTypeJWT,
+		JWTSecret: TestJWTSecret,
+		JWTIssuer: TestIssuer,
+	})
+
+	tokenString, err := manager.GenerateJWT(TestUsername, []string{"admin", "user"})
+	if err != nil {
+		t.Fatalf("GenerateJWT() error = %v", err)
+	}
+
+	// Parse token to verify claims
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(TestJWTSecret), nil
+	})
+
+	if err != nil {
+		t.Fatalf("Failed to parse token: %v", err)
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		t.Fatal("Failed to cast claims")
+	}
+
+	// Verify all required claims are present
+	if claims.Subject != TestUsername {
+		t.Errorf("❌ Subject (sub) missing or incorrect: got %v, want %v", claims.Subject, TestUsername)
+	} else {
+		t.Log("✅ Subject (sub) claim present")
+	}
+
+	if len(claims.Audience) == 0 || claims.Audience[0] != "tsd-api" {
+		t.Errorf("❌ Audience (aud) missing or incorrect: got %v, want [tsd-api]", claims.Audience)
+	} else {
+		t.Log("✅ Audience (aud) claim present")
+	}
+
+	if claims.ID == "" {
+		t.Error("❌ JWT ID (jti) missing")
+	} else {
+		t.Logf("✅ JWT ID (jti) present: %s", claims.ID)
+	}
+
+	if claims.Issuer != TestIssuer {
+		t.Errorf("❌ Issuer (iss) incorrect: got %v, want %v", claims.Issuer, TestIssuer)
+	} else {
+		t.Log("✅ Issuer (iss) claim present")
+	}
+
+	if claims.ExpiresAt == nil {
+		t.Error("❌ ExpiresAt (exp) missing")
+	} else {
+		t.Log("✅ ExpiresAt (exp) claim present")
+	}
+
+	if claims.IssuedAt == nil {
+		t.Error("❌ IssuedAt (iat) missing")
+	} else {
+		t.Log("✅ IssuedAt (iat) claim present")
+	}
+
+	if claims.NotBefore == nil {
+		t.Error("❌ NotBefore (nbf) missing")
+	} else {
+		t.Log("✅ NotBefore (nbf) claim present")
+	}
+}
+
+// TestGenerateJWT_UniqueJTI tests that each generated JWT has a unique JTI
+func TestGenerateJWT_UniqueJTI(t *testing.T) {
+	manager, _ := NewManager(&Config{
+		Type:      AuthTypeJWT,
+		JWTSecret: TestJWTSecret,
+	})
+
+	// Generate 100 tokens and verify all have unique JTI
+	jtis := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		tokenString, err := manager.GenerateJWT(TestUsername, nil)
+		if err != nil {
+			t.Fatalf("GenerateJWT() error = %v", err)
+		}
+
+		token, _ := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(TestJWTSecret), nil
+		})
+
+		claims, _ := token.Claims.(*Claims)
+		jti := claims.ID
+
+		if jtis[jti] {
+			t.Errorf("❌ Duplicate JTI detected: %s", jti)
+		}
+		jtis[jti] = true
+	}
+
+	t.Logf("✅ Generated 100 tokens with unique JTI values")
+}
+
+// TestGenerateJTI_Format tests that JTI has correct format and length
+func TestGenerateJTI_Format(t *testing.T) {
+	t.Log("🧪 TEST FORMAT JTI")
+	t.Log("==================")
+
+	// Act - Générer plusieurs JTI
+	jti1, err := generateJTI()
+	if err != nil {
+		t.Fatalf("❌ Échec génération JTI: %v", err)
+	}
+
+	jti2, err := generateJTI()
+	if err != nil {
+		t.Fatalf("❌ Échec génération JTI: %v", err)
+	}
+
+	// Assert - Unicité
+	if jti1 == jti2 {
+		t.Error("❌ JTI identiques, devrait être unique")
+	} else {
+		t.Logf("✅ JTI uniques: %s != %s", jti1[:10]+"...", jti2[:10]+"...")
+	}
+
+	// Assert - Longueur raisonnable (base64 de 16 bytes ≈ 22-24 chars)
+	minLength := 20
+	maxLength := 30
+	if len(jti1) < minLength || len(jti1) > maxLength {
+		t.Errorf("❌ Longueur JTI anormale: %d (attendu entre %d et %d)", len(jti1), minLength, maxLength)
+	} else {
+		t.Logf("✅ Longueur JTI correcte: %d caractères", len(jti1))
+	}
+
+	// Assert - Format base64 URL-safe
+	decoded, err := base64.URLEncoding.DecodeString(jti1)
+	if err != nil {
+		t.Errorf("❌ JTI n'est pas base64 URL-safe valide: %v", err)
+	} else {
+		t.Logf("✅ JTI en base64 URL-safe valide (%d bytes décodés)", len(decoded))
+	}
+
+	// Assert - Longueur décodée devrait être JTILength
+	if len(decoded) != JTILength {
+		t.Errorf("❌ JTI décodé = %d bytes, attendu %d bytes", len(decoded), JTILength)
+	} else {
+		t.Logf("✅ JTI décodé = %d bytes (JTILength)", JTILength)
+	}
+}
+
+// TestGenerateJTI_Uniqueness tests JTI uniqueness with high volume
+func TestGenerateJTI_Uniqueness(t *testing.T) {
+	t.Log("🧪 TEST UNICITÉ JTI (HIGH VOLUME)")
+	t.Log("==================================")
+
+	const testCount = 1000
+	jtis := make(map[string]bool, testCount)
+
+	// Generate many JTIs and verify all are unique
+	for i := 0; i < testCount; i++ {
+		jti, err := generateJTI()
+		if err != nil {
+			t.Fatalf("❌ Échec génération JTI à l'itération %d: %v", i, err)
+		}
+
+		if jtis[jti] {
+			t.Errorf("❌ JTI dupliqué détecté à l'itération %d: %s", i, jti)
+			return
+		}
+		jtis[jti] = true
+	}
+
+	t.Logf("✅ %d JTI uniques générés sans collision", testCount)
+}
+
+// TestValidateJWT_MissingJTI tests that JWT without JTI is rejected
+func TestValidateJWT_MissingJTI(t *testing.T) {
+	t.Log("🧪 TEST VALIDATION JTI MANQUANT")
+	t.Log("================================")
+
+	// Arrange - Créer manager
+	manager, _ := NewManager(&Config{
+		Type:      AuthTypeJWT,
+		JWTSecret: TestJWTSecret,
+		JWTIssuer: TestIssuer,
+	})
+
+	// Créer token SANS JTI
+	claims := Claims{
+		Username: TestUsername,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   TestUsername,
+			Audience:  jwt.ClaimStrings{TokenAudience},
+			Issuer:    TestIssuer,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ID:        "", // ❌ JTI vide
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString([]byte(TestJWTSecret))
+
+	// Act - Valider token sans JTI
+	err := manager.ValidateToken(tokenString)
+
+	// Assert - Devrait échouer
+	if err == nil {
+		t.Error("❌ La validation devrait échouer pour un token sans JTI")
+	} else {
+		t.Logf("✅ Token sans JTI correctement rejeté: %v", err)
+	}
+
+	if !errors.Is(err, ErrInvalidToken) {
+		t.Errorf("❌ Erreur devrait être ErrInvalidToken, reçu: %v", err)
+	}
+}
+
+// TestConstants_JWTClaims tests that JWT claim constants are properly defined
+func TestConstants_JWTClaims(t *testing.T) {
+	t.Log("🧪 TEST CONSTANTES JWT CLAIMS")
+	t.Log("==============================")
+
+	// Vérifier TokenAudience
+	if TokenAudience == "" {
+		t.Error("❌ TokenAudience ne devrait pas être vide")
+	} else {
+		t.Logf("✅ TokenAudience défini: %q", TokenAudience)
+	}
+
+	// Vérifier DefaultTokenIssuer
+	if DefaultTokenIssuer == "" {
+		t.Error("❌ DefaultTokenIssuer ne devrait pas être vide")
+	} else {
+		t.Logf("✅ DefaultTokenIssuer défini: %q", DefaultTokenIssuer)
+	}
+
+	// Vérifier JTILength
+	minJTILength := 8
+	if JTILength < minJTILength {
+		t.Errorf("❌ JTILength trop court: %d (minimum recommandé: %d)", JTILength, minJTILength)
+	} else {
+		t.Logf("✅ JTILength approprié: %d bytes", JTILength)
 	}
 }

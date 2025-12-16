@@ -31,6 +31,17 @@ const (
 
 	// MinKeyLength est la longueur minimale d'une clé API
 	MinKeyLength = 32
+
+	// DefaultTokenIssuer est l'émetteur par défaut des JWT (RFC 7519 - claim "iss")
+	DefaultTokenIssuer = "tsd-server"
+
+	// TokenAudience identifie le service destinataire des JWT (RFC 7519 - claim "aud")
+	// Utilisé pour prévenir la réutilisation des tokens sur d'autres services
+	TokenAudience = "tsd-api"
+
+	// JTILength est la longueur en bytes du JWT ID pour génération aléatoire
+	// 16 bytes = 128 bits = ~22 caractères en base64 (sécurité et taille optimales)
+	JTILength = 16
 )
 
 var (
@@ -94,7 +105,7 @@ func NewManager(config *Config) (*Manager, error) {
 	}
 
 	if config.JWTIssuer == "" {
-		config.JWTIssuer = "tsd-server"
+		config.JWTIssuer = DefaultTokenIssuer
 	}
 
 	return &Manager{
@@ -209,13 +220,51 @@ func (m *Manager) validateJWT(tokenString string) (*Claims, error) {
 		return nil, ErrInvalidToken
 	}
 
+	// Vérifier l'audience (protection contre utilisation cross-service)
+	if len(claims.Audience) == 0 || !containsAudience(claims.Audience, TokenAudience) {
+		return nil, ErrInvalidToken
+	}
+
+	// Vérifier la présence du JTI (protection contre replay attacks)
+	if claims.ID == "" {
+		return nil, ErrInvalidToken
+	}
+
 	return claims, nil
 }
 
-// GenerateJWT génère un nouveau JWT
+// containsAudience vérifie si l'audience attendue est présente dans la liste
+func containsAudience(audiences jwt.ClaimStrings, expected string) bool {
+	for _, aud := range audiences {
+		if aud == expected {
+			return true
+		}
+	}
+	return false
+}
+
+// generateJTI génère un JWT ID unique pour prévenir les replay attacks.
+// Utilise crypto/rand pour garantir unicité cryptographique et non-prédictibilité.
+// Retourne une chaîne base64 URL-safe d'environ 22 caractères (16 bytes encodés).
+// Conforme à la RFC 7519 section 4.1.7 (claim "jti").
+func generateJTI() (string, error) {
+	b := make([]byte, JTILength)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("échec génération aléatoire JTI: %w", err)
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+// GenerateJWT génère un nouveau JWT avec tous les claims standard RFC 7519
 func (m *Manager) GenerateJWT(username string, roles []string) (string, error) {
 	if m.config.Type != AuthTypeJWT {
 		return "", errors.New("la génération de JWT n'est disponible qu'en mode JWT")
+	}
+
+	// Générer JTI unique pour prévenir replay attacks
+	jti, err := generateJTI()
+	if err != nil {
+		return "", err
 	}
 
 	now := time.Now()
@@ -223,10 +272,13 @@ func (m *Manager) GenerateJWT(username string, roles []string) (string, error) {
 		Username: username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.JWTExpiration)),
-			IssuedAt:  jwt.NewNumericDate(now),
-			NotBefore: jwt.NewNumericDate(now),
-			Issuer:    m.config.JWTIssuer,
+			Subject:   username,                                            // sub - Identifiant unique utilisateur (RFC 7519)
+			Audience:  jwt.ClaimStrings{TokenAudience},                     // aud - Service destinataire (RFC 7519)
+			ID:        jti,                                                 // jti - JWT ID unique anti-replay (RFC 7519)
+			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.JWTExpiration)), // exp - Date d'expiration
+			IssuedAt:  jwt.NewNumericDate(now),                             // iat - Date d'émission
+			NotBefore: jwt.NewNumericDate(now),                             // nbf - Valide à partir de maintenant
+			Issuer:    m.config.JWTIssuer,                                  // iss - Émetteur du token
 		},
 	}
 
