@@ -3,6 +3,7 @@
 REPORTS/*
 !REPORTS/README.md
 !REPORTS/.gitkeep
+!REPORTS/DEEP_CLEAN_*.md
 
 # Temporary report files (must be in REPORTS/ or deleted)
 COMMIT_MESSAGE_*.md
