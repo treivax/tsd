@@ -4,9 +4,10 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"os"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestOR_SingleNode_NotDecomposed vérifie qu'une expression OR n'est pas décomposée

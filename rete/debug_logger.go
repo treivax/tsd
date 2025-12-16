@@ -15,20 +15,20 @@ import (
 const (
 	// DebugEnvVar est la variable d'environnement pour activer le debug
 	DebugEnvVar = "TSD_DEBUG_BINDINGS"
-	
+
 	// DebugEnvValueEnabled est la valeur pour activer le debug
 	DebugEnvValueEnabled = "1"
-	
+
 	// Préfixes de log
 	LogPrefixDebug = "[DEBUG]"
-	
+
 	// Emojis pour logging (optionnel, peut être désactivé)
-	EmojiJoinNode    = "🔗"
-	EmojiStats       = "📊"
-	EmojiInspect     = "🔍"
-	EmojiMemory      = "📊"
-	EmojiFactSubmit  = "📥"
-	EmojiToken       = "🎫"
+	EmojiJoinNode   = "🔗"
+	EmojiStats      = "📊"
+	EmojiInspect    = "🔍"
+	EmojiMemory     = "📊"
+	EmojiFactSubmit = "📥"
+	EmojiToken      = "🎫"
 )
 
 // DebugLogger provides thread-safe debug logging to stderr for E2E debugging

@@ -4,9 +4,10 @@
 package rete
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
-	"testing"
 )
 
 // TestExtractConditions_SimpleComparison teste l'extraction d'une comparaison simple

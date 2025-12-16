@@ -45,7 +45,7 @@ func (rn *RootNode) ActivateRetract(factID string) error {
 func (rn *RootNode) ActivateRight(fact *Fact) error {
 	// Enregistrer l'activation
 	rn.recordActivation()
-	
+
 	rn.mutex.Lock()
 	if err := rn.Memory.AddFact(fact); err != nil {
 		rn.mutex.Unlock()

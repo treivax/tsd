@@ -5,10 +5,11 @@ package rete
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestCoherence_TransactionRollback teste que le rollback fonctionne correctement en cas d'incohérence

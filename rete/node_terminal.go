@@ -46,7 +46,7 @@ func NewTerminalNode(nodeID string, action *Action, storage Storage) *TerminalNo
 func (tn *TerminalNode) ActivateLeft(token *Token) error {
 	// Enregistrer l'activation
 	tn.recordActivation()
-	
+
 	// Stocker le token
 	tn.mutex.Lock()
 	if tn.Memory.Tokens == nil {

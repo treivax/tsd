@@ -4,9 +4,10 @@
 package rete
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // TestConstraintPipeline_buildNetwork tests the main network building function

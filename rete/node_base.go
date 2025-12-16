@@ -19,7 +19,7 @@ type BaseNode struct {
 	Storage  Storage        `json:"-"`
 	network  *ReteNetwork   `json:"-"` // Référence au réseau RETE parent
 	mutex    sync.RWMutex   `json:"-"`
-	
+
 	// Métriques de nœud
 	createdAt       time.Time `json:"-"` // Horodatage de création
 	activationCount int64     `json:"-"` // Compteur activations (atomic)

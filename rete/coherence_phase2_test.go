@@ -5,11 +5,12 @@ package rete
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestPhase2_BasicSynchronization vérifie que tous les faits sont immédiatement visibles après soumission

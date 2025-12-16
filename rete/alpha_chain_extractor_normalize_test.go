@@ -4,8 +4,9 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestIsCommutative_AllOperators vérifie que IsCommutative identifie correctement

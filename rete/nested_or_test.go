@@ -4,8 +4,9 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestAnalyzeNestedOR_Simple vérifie l'analyse d'expressions OR simples

@@ -5,9 +5,10 @@
 package rete
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/treivax/tsd/constraint"
-	"testing"
 )
 
 // TestExtractFromLogicalExpressionMap_ConstraintLogicalOperation tests the []constraint.LogicalOperation path

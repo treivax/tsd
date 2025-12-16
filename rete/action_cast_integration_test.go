@@ -4,9 +4,10 @@
 package rete
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // captureActionHandler is a simple action handler for testing

@@ -4,8 +4,9 @@
 package rete
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestPassthroughNodeKey tests the key generation for passthrough nodes

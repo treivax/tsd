@@ -4,10 +4,11 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestNewNormalizationCache teste la création d'un nouveau cache

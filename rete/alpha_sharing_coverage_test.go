@@ -5,8 +5,9 @@
 package rete
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // TestConditionHashCached_Coverage tests the cached hash function

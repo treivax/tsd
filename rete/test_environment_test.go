@@ -5,9 +5,10 @@ package rete
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNewTestEnvironment_Basic(t *testing.T) {

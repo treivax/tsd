@@ -4,8 +4,9 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestPipeline_SimpleCondition_NoChange vérifie que les conditions simples

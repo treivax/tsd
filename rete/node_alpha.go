@@ -24,12 +24,12 @@ type AlphaNode struct {
 func NewAlphaNode(nodeID string, condition interface{}, variableName string, storage Storage) *AlphaNode {
 	return &AlphaNode{
 		BaseNode: BaseNode{
-			ID:          nodeID,
-			Type:        "alpha",
-			Memory:      &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
-			Children:    make([]Node, 0),
-			Storage:     storage,
-			createdAt:   time.Now(),
+			ID:        nodeID,
+			Type:      "alpha",
+			Memory:    &WorkingMemory{NodeID: nodeID, Facts: make(map[string]*Fact), Tokens: make(map[string]*Token)},
+			Children:  make([]Node, 0),
+			Storage:   storage,
+			createdAt: time.Now(),
 		},
 		Condition:    condition,
 		VariableName: variableName,
@@ -41,7 +41,7 @@ func NewAlphaNode(nodeID string, condition interface{}, variableName string, sto
 func (an *AlphaNode) ActivateLeft(token *Token) error {
 	// Enregistrer l'activation
 	an.recordActivation()
-	
+
 	// Dans les cascades de jointures, l'AlphaNode doit propager le token
 	// pour préserver tous les bindings accumulés dans les jointures précédentes
 
@@ -84,7 +84,7 @@ func (an *AlphaNode) ActivateRetract(factID string) error {
 func (an *AlphaNode) ActivateRight(fact *Fact) error {
 	// Enregistrer l'activation
 	an.recordActivation()
-	
+
 	// Mode passthrough: pas de filtrage, conversion directe en token
 	if isPassthroughCondition(an.Condition) {
 		return an.handlePassthrough(fact)

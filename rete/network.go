@@ -182,7 +182,7 @@ func (rn *ReteNetwork) GetNetworkStats() map[string]interface{} {
 func (rn *ReteNetwork) GenerateFactID(typeName string) string {
 	rn.factIDMutex.Lock()
 	defer rn.factIDMutex.Unlock()
-	
+
 	rn.factIDCounter++
 	return fmt.Sprintf("%s_%d", typeName, rn.factIDCounter)
 }

@@ -4,8 +4,9 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestRemoveChain_AllNodesUnique_DeletesAll vérifie qu'une chaîne avec des nœuds

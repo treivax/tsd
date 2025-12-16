@@ -4,9 +4,10 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"strings"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestAnalyzeExpression_Simple teste l'analyse d'expressions simples

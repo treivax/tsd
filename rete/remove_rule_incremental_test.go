@@ -4,10 +4,11 @@
 package rete
 
 import (
-	"github.com/treivax/tsd/constraint"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/treivax/tsd/constraint"
 )
 
 // TestRemoveRuleIncremental_FullPipeline teste la suppression de règle de manière incrémentale
