@@ -92,11 +92,18 @@ FieldList <- first:Field rest:(_ "," _ Field)* {
     return fields, nil
 }
 
-Field <- name:IdentName _ ":" _ fieldType:FieldType {
-    return map[string]interface{}{
+Field <- primaryKey:"#"? name:IdentName _ ":" _ fieldType:FieldType {
+    result := map[string]interface{}{
         "name": name,
         "type": fieldType,
-    }, nil
+        "isPrimaryKey": false,
+    }
+
+    if primaryKey != nil {
+        result["isPrimaryKey"] = true
+    }
+
+    return result, nil
 }
 
 FieldType <- "string" { return "string", nil } /
@@ -650,7 +657,7 @@ _ <- (Whitespace / Comment)*
 
 Whitespace <- [ \t\r\n]
 
-Comment <- LineComment / BlockComment / EndOfLineComment
+Comment <- LineComment / BlockComment
 
 LineComment <- "//" CommentText:(![\r\n] .)* {
     return nil, nil  // Les commentaires ne retournent rien
@@ -658,10 +665,6 @@ LineComment <- "//" CommentText:(![\r\n] .)* {
 
 BlockComment <- "/*" CommentText:(!"*/" .)* "*/" {
     return nil, nil  // Les commentaires ne retournent rien
-}
-
-EndOfLineComment <- "#" CommentText:(![\r\n] .)* {
-    return nil, nil  // Support pour commentaires style shell/Python
 }
 
 EOF <- !.

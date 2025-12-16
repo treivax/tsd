@@ -77,7 +77,7 @@ func TestCommentaireSupport(t *testing.T) {
 	input := `// Commentaire ligne
 	/* Commentaire
 	   multi-lignes */
-	Utilisateur(id:U001, nom:"Test", age:25)  # Commentaire fin de ligne
+	Utilisateur(id:U001, nom:"Test", age:25)  // Commentaire fin de ligne
 	`
 
 	result, err := parseConstraintGrammar(strings.NewReader(input))

@@ -1287,7 +1287,7 @@ rule books : {i: Item} / i.category == "books" ==> log(i.id)
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		// File with only facts (no types or rules)
 		content := `
-# Just a comment, no actual content
+// Just a comment, no actual content
 `
 		if err := os.WriteFile(testFile, []byte(content), 0644); err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
