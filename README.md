@@ -190,6 +190,18 @@ tsd server \
 
 ## 🛡️ Sécurité
 
+### ⚠️ Reporting de Vulnérabilités
+
+**Vous avez trouvé une vulnérabilité de sécurité ?** Ne créez **PAS** d'issue publique.
+
+Consultez notre **[Security Policy](SECURITY.md)** pour :
+- 🚨 Reporter une vulnérabilité de manière privée
+- 📋 Connaître les versions supportées
+- 🔄 Comprendre notre processus de gestion
+- 🛡️ Suivre les best practices de déploiement
+
+### Scan de Vulnérabilités
+
 TSD intègre plusieurs outils de sécurité pour garantir la qualité et la sûreté du code.
 
 ### Scan de Vulnérabilités
@@ -666,11 +678,14 @@ make coverage
 Le projet suit les conventions Go avec des build tags pour organiser les tests :
 
 - **Unit Tests** : Tests rapides co-localisés avec le code (constraint/, rete/, cmd/)
+- **Integration Tests** : Tests d'intégration entre modules (tests/integration/)
+  - Intégration Constraint + RETE
+  - Pipeline complet de compilation et exécution
+  - Scénarios multi-modules complexes
 - **E2E Tests** : 83 fixtures TSD validées (tests/e2e/)
   - 26 fixtures Alpha (opérations arithmétiques, comparaisons)
   - 26 fixtures Beta (jointures, patterns complexes)
   - 31 fixtures Integration (scénarios complets)
-- **Integration Tests** : Interactions entre modules (tests/integration/)
 - **Performance Tests** : Load tests et benchmarks (tests/performance/)
 
 ### Couverture Complète
@@ -689,6 +704,10 @@ make test-e2e-alpha        # Fixtures alpha uniquement
 make test-e2e-beta         # Fixtures beta uniquement
 make test-e2e-integration  # Fixtures integration uniquement
 
+# Tests d'intégration détaillés
+make test-integration-verbose   # Avec logs détaillés
+make test-integration-coverage  # Avec rapport de couverture
+
 # Performance et profiling
 make test-load             # Tests de charge avec profiling
 make bench                 # Benchmarks
@@ -705,7 +724,9 @@ make test-race
 TEST_PARALLEL=8 make test-parallel
 ```
 
-📖 **Documentation complète des tests** : [tests/README.md](tests/README.md)
+📖 **Documentation complète des tests** :
+- [tests/README.md](tests/README.md) - Organisation générale
+- [tests/integration/README.md](tests/integration/README.md) - Guide des tests d'intégration
 
 ## 📖 Documentation
 
@@ -717,6 +738,21 @@ TEST_PARALLEL=8 make test-parallel
 - [📚 API Reference](docs/API_REFERENCE.md) - Référence complète de l'API
 - [📝 Guide de Logging](LOGGING_GUIDE.md) - Système de logging thread-safe
 - [🔧 Guide Développeur](docs/development_guidelines.md) - Standards et bonnes pratiques
+
+### 🏗️ Architecture et Diagrammes
+
+Pour comprendre l'architecture du système avec des diagrammes visuels :
+
+- [📊 **Diagrammes d'Architecture**](docs/architecture/diagrams/) - Collection complète de diagrammes Mermaid
+  - [Architecture Globale](docs/architecture/diagrams/01-global-architecture.md) - Vue système, couches, dépendances
+  - [Flux de Données](docs/architecture/diagrams/02-data-flow.md) - Séquences, propagation, compilation
+  - [Moteur RETE](docs/architecture/diagrams/03-rete-architecture.md) - Nœuds Alpha/Beta, optimisations
+  - [Sécurité](docs/architecture/diagrams/04-security-flow.md) - Authentification, TLS, JWT
+  - [Modèle de Données](docs/architecture/diagrams/05-data-model.md) - Types, règles, contraintes
+- [🏗️ Vue d'Ensemble Système](docs/architecture/SYSTEM_OVERVIEW.md) - Documentation architecture textuelle
+- [📐 Architecture Détaillée](docs/architecture.md) - Spécifications complètes
+
+> **💡 Nouveaux contributeurs ?** Commencez par [Architecture Globale](docs/architecture/diagrams/01-global-architecture.md) puis [Flux de Données](docs/architecture/diagrams/02-data-flow.md)
 
 > **Note** : Les rapports générés par l'assistant IA sont stockés dans `REPORTS/` (non versionné).
 

@@ -6,7 +6,7 @@
 PROJECT_NAME := tsd
 BINARY_NAME := tsd
 UNIVERSAL_RUNNER := universal-rete-runner
-GO_VERSION := 1.21
+GO_VERSION := 1.24
 BUILD_DIR := ./bin
 CMD_TSD_DIR := ./cmd/tsd
 CMD_UNIVERSAL_DIR := ./cmd/universal-rete-runner
@@ -49,6 +49,11 @@ help: ## Afficher cette aide
 	@echo "$(GREEN)coverage$(NC)             - Rapport de couverture"
 	@echo "$(GREEN)bench$(NC)                - Benchmarks"
 	@echo "$(GREEN)lint$(NC)                 - Analyse statique du code"
+	@echo ""
+	@echo "$(CYAN)🔒 SÉCURITÉ:$(NC)"
+	@echo "$(GREEN)security-scan$(NC)        - Scan sécurité complet (gosec + govulncheck)"
+	@echo "$(GREEN)security-gosec$(NC)       - Scan sécurité statique (gosec)"
+	@echo "$(GREEN)security-vulncheck$(NC)   - Scan vulnérabilités (govulncheck)"
 	@echo "$(GREEN)format$(NC)               - Formatage du code"
 	@echo "$(GREEN)check-conventions$(NC)    - Vérifier conventions Go"
 	@echo ""
@@ -162,6 +167,19 @@ test-integration: ## TEST - Tests d'intégration (modules)
 	@echo "$(BLUE)🔗 Exécution des tests d'intégration...$(NC)"
 	@go test -v -tags=integration -timeout=$(TEST_TIMEOUT) ./tests/integration/...
 	@echo "$(GREEN)✅ Tests d'intégration terminés$(NC)"
+
+test-integration-verbose: ## TEST - Tests d'intégration avec logs détaillés
+	@echo "$(BLUE)🔗 Tests d'intégration (verbose)...$(NC)"
+	@go test -v -tags=integration -count=1 -timeout=$(TEST_TIMEOUT) ./tests/integration/... 2>&1 | tee integration-test.log
+	@echo "$(GREEN)✅ Logs sauvegardés: integration-test.log$(NC)"
+
+test-integration-coverage: ## TEST - Tests d'intégration avec couverture
+	@echo "$(BLUE)🔗 Tests d'intégration avec couverture...$(NC)"
+	@go test -v -tags=integration -timeout=$(TEST_TIMEOUT) -coverprofile=integration-coverage.out ./tests/integration/...
+	@go tool cover -html=integration-coverage.out -o integration-coverage.html
+	@echo "$(GREEN)📊 Rapport de couverture: integration-coverage.html$(NC)"
+	@go tool cover -func=integration-coverage.out | grep total
+
 
 test-performance: ## TEST - Tests de performance et load
 	@echo "$(BLUE)⚡ Exécution des tests de performance...$(NC)"
@@ -293,6 +311,35 @@ lint: ## TEST - Analyse statique du code
 	fi
 	@echo "$(GREEN)✅ Analyse statique terminée$(NC)"
 
+security-gosec: ## SECURITY - Scanner sécurité statique avec gosec
+	@echo "$(BLUE)🔍 Analyse sécurité statique (gosec)...$(NC)"
+	@if command -v gosec >/dev/null 2>&1; then \
+		gosec -quiet ./...; \
+	else \
+		echo "$(YELLOW)⚠️ gosec non installé$(NC)"; \
+		echo "   Installation: go install github.com/securego/gosec/v2/cmd/gosec@latest"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ Analyse gosec terminée$(NC)"
+
+security-vulncheck: ## SECURITY - Scanner vulnérabilités dépendances avec govulncheck
+	@echo "$(BLUE)🛡️  Scan vulnérabilités (govulncheck)...$(NC)"
+	@if command -v govulncheck >/dev/null 2>&1; then \
+		govulncheck ./...; \
+	else \
+		echo "$(YELLOW)⚠️ govulncheck non installé$(NC)"; \
+		echo "   Installation: make deps-dev"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ Scan govulncheck terminé$(NC)"
+
+security-scan: security-gosec security-vulncheck ## SECURITY - Scan sécurité complet (gosec + govulncheck)
+	@echo ""
+	@echo "$(GREEN)🎉 SCAN SÉCURITÉ COMPLET RÉUSSI$(NC)"
+	@echo "================================="
+	@echo "$(GREEN)✅ Analyse statique (gosec)$(NC)"
+	@echo "$(GREEN)✅ Scan vulnérabilités (govulncheck)$(NC)"
+
 format: ## TEST - Formatage du code
 	@echo "$(BLUE)✨ Formatage du code...$(NC)"
 	@go fmt ./...
@@ -323,6 +370,8 @@ deps: ## DEV - Installer les dépendances
 deps-dev: ## DEV - Installer outils de développement
 	@echo "$(BLUE)🛠️ Installation des outils...$(NC)"
 	@go install golang.org/x/tools/cmd/goimports@latest
+	@go install golang.org/x/vuln/cmd/govulncheck@latest
+	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "$(CYAN)Installation de golangci-lint...$(NC)"; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin latest; \
@@ -354,12 +403,13 @@ watch-test: ## DEV - Surveiller et relancer tests
 # VALIDATION COMPLÈTE
 # ================================
 
-validate: format lint build test-complete ## VALIDATION COMPLÈTE (tous les tests)
+validate: format lint security-scan build test-complete ## VALIDATION COMPLÈTE (tous les tests)
 	@echo ""
 	@echo "$(GREEN)🎉 VALIDATION COMPLÈTE RÉUSSIE$(NC)"
 	@echo "==============================="
 	@echo "$(GREEN)✅ Formatage$(NC)"
 	@echo "$(GREEN)✅ Analyse statique$(NC)"
+	@echo "$(GREEN)✅ Scan de sécurité$(NC)"
 	@echo "$(GREEN)✅ Compilation$(NC)"
 	@echo "$(GREEN)✅ Tests unitaires$(NC)"
 	@echo "$(GREEN)✅ Tests fixtures$(NC)"

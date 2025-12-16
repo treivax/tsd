@@ -18,7 +18,8 @@ jobs:
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24'
+        cache: true
 
     - name: 📊 Cache des dépendances Go
       uses: actions/cache@v3
@@ -87,10 +88,23 @@ jobs:
     - name: 📦 Checkout du code
       uses: actions/checkout@v4
 
-    - name: 🛡️ Scan de sécurité Go
+    - name: 🐹 Configuration Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: 🛡️ Scan de sécurité Go (gosec)
       uses: securecodewarrior/github-action-gosec@master
       with:
         args: './...'
+
+    - name: 🔍 Vulnerability Scan (govulncheck)
+      run: |
+        echo "📊 Installation de govulncheck..."
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        echo "🔍 Scan des vulnérabilités..."
+        govulncheck ./...
 
   dependency-check:
     name: 📦 Vérification des Dépendances
@@ -103,7 +117,8 @@ jobs:
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24'
+        cache: true
 
     - name: 🔍 Vérification des dépendances
       run: |
@@ -117,6 +132,50 @@ jobs:
           echo "✅ Dépendances à jour"
         fi
 
+  test-integration:
+    name: 🔗 Tests d'Intégration
+    runs-on: ubuntu-latest
+    needs: [conventions-validation]
+
+    steps:
+    - name: 📦 Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 🐹 Configuration Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+        cache: true
+
+    - name: 📊 Cache des dépendances Go
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: 📥 Téléchargement des dépendances
+      run: go mod download
+
+    - name: 🔗 Exécution des tests d'intégration
+      run: |
+        echo "🔗 Running integration tests..."
+        go test -v -tags=integration -timeout=10m ./tests/integration/...
+      timeout-minutes: 15
+
+    - name: 📊 Upload des résultats de tests
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-test-results
+        path: |
+          tests/integration/*.log
+        retention-days: 7
+        if-no-files-found: ignore
+
   performance-check:
     name: ⚡ Tests de Performance
     runs-on: ubuntu-latest
@@ -128,7 +187,8 @@ jobs:
     - name: 🐹 Configuration Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.21'
+        go-version: '1.24'
+        cache: true
 
     - name: 🚀 Benchmarks
       run: |
