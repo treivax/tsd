@@ -190,13 +190,18 @@ func TestDispatch_UnknownRole(t *testing.T) {
 	output := buf.String()
 
 	// Vérifier le code de sortie
-	if exitCode != 1 {
-		t.Errorf("dispatch(unknown) exitCode = %d, want 1", exitCode)
+	if exitCode != ExitMisuseCommand {
+		t.Errorf("dispatch(unknown) exitCode = %d, want %d", exitCode, ExitMisuseCommand)
 	}
 
 	// Vérifier le message d'erreur
 	if !strings.Contains(output, "rôle inconnu") {
 		t.Errorf("dispatch(unknown) error message missing 'rôle inconnu', got: %s", output)
+	}
+
+	// Vérifier le message d'aide
+	if !strings.Contains(output, "--help") {
+		t.Errorf("dispatch(unknown) error message missing '--help' suggestion, got: %s", output)
 	}
 }
 

@@ -23,6 +23,11 @@ const (
 	RoleClient   = "client"
 	RoleServer   = "server"
 	RoleCompiler = "" // Rôle par défaut (compilateur)
+
+	// Exit codes standards
+	ExitSuccess       = 0
+	ExitGeneralError  = 1
+	ExitMisuseCommand = 2
 )
 
 func main() {
@@ -33,13 +38,13 @@ func main() {
 		// Aide globale
 		if firstArg == "--help" || firstArg == "-h" {
 			printGlobalHelp()
-			os.Exit(0)
+			os.Exit(ExitSuccess)
 		}
 
 		// Version globale
 		if firstArg == "--version" || firstArg == "-v" {
 			printGlobalVersion()
-			os.Exit(0)
+			os.Exit(ExitSuccess)
 		}
 	}
 
@@ -91,7 +96,8 @@ func dispatch(role string) int {
 
 	default:
 		fmt.Fprintf(os.Stderr, "Erreur: rôle inconnu '%s'\n", role)
-		return 1
+		fmt.Fprintf(os.Stderr, "Utilisez 'tsd --help' pour voir les rôles disponibles.\n")
+		return ExitMisuseCommand
 	}
 }
 
