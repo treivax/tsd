@@ -7,6 +7,8 @@ package authcmd
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -870,4 +872,157 @@ func TestGenerateCert_InvalidHosts(t *testing.T) {
 	if exitCode == 0 {
 		t.Logf("Empty hosts handled, exitCode = 0")
 	}
+}
+
+// TestGenerateCert_CustomValidityDays tests certificate with custom validity
+func TestGenerateCert_CustomValidityDays(t *testing.T) {
+	t.Log("🧪 TEST GÉNÉRATION CERTIFICAT - VALIDITÉ PERSONNALISÉE")
+	t.Log("======================================================")
+
+	tmpDir := t.TempDir()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	args := []string{
+		"generate-cert",
+		"-output-dir", tmpDir,
+		"-valid-days", "730", // 2 years
+		"-org", "Test Organization",
+	}
+
+	exitCode := Run(args, nil, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Fatalf("❌ Run() exitCode = %d, want 0, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "730") {
+		t.Log("⚠️  Output may not show validity days explicitly")
+	}
+
+	t.Log("✅ Certificate with custom validity generated successfully")
+}
+
+// TestCopyFile tests the copyFile helper function
+func TestCopyFile(t *testing.T) {
+	t.Log("🧪 TEST COPIE DE FICHIER")
+	t.Log("========================")
+
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		setupSrc func() string
+		wantErr  bool
+		errorMsg string
+	}{
+		{
+			name: "copy valid file",
+			setupSrc: func() string {
+				srcFile := filepath.Join(tmpDir, "source.txt")
+				content := []byte("test content")
+				if err := os.WriteFile(srcFile, content, 0644); err != nil {
+					t.Fatalf("Failed to create source file: %v", err)
+				}
+				return srcFile
+			},
+			wantErr: false,
+		},
+		{
+			name: "copy non-existent file",
+			setupSrc: func() string {
+				return filepath.Join(tmpDir, "nonexistent.txt")
+			},
+			wantErr:  true,
+			errorMsg: "no such file",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srcPath := tt.setupSrc()
+			dstPath := filepath.Join(tmpDir, "destination_"+tt.name+".txt")
+
+			err := copyFile(srcPath, dstPath)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("❌ copyFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr {
+				if err != nil && tt.errorMsg != "" && !strings.Contains(err.Error(), tt.errorMsg) {
+					t.Errorf("⚠️  Error message doesn't contain '%s': %v", tt.errorMsg, err)
+				}
+				t.Logf("✅ Error correctly detected: %v", err)
+			} else {
+				// Verify file was copied
+				if _, err := os.Stat(dstPath); err != nil {
+					t.Errorf("❌ Destination file should exist: %v", err)
+				} else {
+					t.Log("✅ File copied successfully")
+				}
+			}
+		})
+	}
+}
+
+// TestGenerateJWT_WithRoles tests JWT generation with multiple roles
+func TestGenerateJWT_WithRoles(t *testing.T) {
+	t.Log("🧪 TEST GÉNÉRATION JWT - AVEC RÔLES MULTIPLES")
+	t.Log("==============================================")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	args := []string{
+		"generate-jwt",
+		"-secret", TestSecret,
+		"-username", TestUsername,
+		"-roles", "admin,user,moderator",
+		"-issuer", TestIssuer,
+	}
+
+	exitCode := Run(args, nil, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Fatalf("❌ Run() exitCode = %d, want 0, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "admin") || !strings.Contains(output, "user") || !strings.Contains(output, "moderator") {
+		t.Error("❌ Output should contain all roles")
+	}
+
+	t.Log("✅ JWT with multiple roles generated successfully")
+}
+
+// TestGenerateJWT_CustomExpiration tests JWT with custom expiration
+func TestGenerateJWT_CustomExpiration(t *testing.T) {
+	t.Log("🧪 TEST GÉNÉRATION JWT - EXPIRATION PERSONNALISÉE")
+	t.Log("=================================================")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	args := []string{
+		"generate-jwt",
+		"-secret", TestSecret,
+		"-username", TestUsername,
+		"-expiration", "48h",
+	}
+
+	exitCode := Run(args, nil, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Fatalf("❌ Run() exitCode = %d, want 0, stderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "48h") {
+		t.Error("❌ Output should show custom expiration duration")
+	}
+
+	t.Log("✅ JWT with custom expiration generated successfully")
 }

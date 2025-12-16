@@ -70,6 +70,11 @@ func generateKey(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
+	if *count < 0 {
+		fmt.Fprintf(stderr, "❌ Erreur: le nombre de clés ne peut pas être négatif\n")
+		return 1
+	}
+
 	keys := make([]string, *count)
 	for i := 0; i < *count; i++ {
 		key, err := auth.GenerateAuthKey()

@@ -37,7 +37,7 @@ func formatCertOutputText(result *certGenerationResult, config *certConfig, stdo
 	fmt.Fprintf(stdout, "📄 Fichiers générés:\n")
 	fmt.Fprintf(stdout, "   - %s (certificat serveur)\n", result.certPath)
 	fmt.Fprintf(stdout, "   - %s (clé privée serveur)\n", result.keyPath)
-	fmt.Fprintf(stdout, "   - %s (certificat CA pour clients)\n\n", result.caPath)
+	fmt.Fprintf(stdout, "   - %s (copie du certificat pour trust store client)\n\n", result.caPath)
 	fmt.Fprintf(stdout, "🏷️  Hôtes autorisés: %s\n", strings.Join(config.hosts, ", "))
 	fmt.Fprintf(stdout, "📅 Valide de %s à %s\n", result.notBefore.Format("2006-01-02"), result.notAfter.Format("2006-01-02"))
 	fmt.Fprintf(stdout, "🏢 Organisation: %s\n\n", config.org)
