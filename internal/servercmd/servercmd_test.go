@@ -842,7 +842,7 @@ func TestWriteError(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	server.writeError(w, tsdio.ErrorTypeServerError, "test error", http.StatusBadRequest, time.Now())
+	server.sendErrorResponse(w, http.StatusBadRequest, "test error", time.Now())
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
@@ -1533,4 +1533,184 @@ Order(customerId:c2, amount:300.00, discount:0)
 	if execResp.Results.ActivationsCount == 0 {
 		t.Error("Expected at least 1 activation for VIP discount rule")
 	}
+}
+
+// TestSecurityHeaders vérifie que les headers de sécurité sont bien configurés
+func TestSecurityHeaders(t *testing.T) {
+	t.Log("🧪 TEST SECURITY HEADERS")
+	t.Log("========================")
+
+	config := &Config{
+		Host:     "localhost",
+		Port:     8080,
+		AuthType: "none",
+		Insecure: true,
+	}
+
+	logger := log.New(io.Discard, "", 0)
+	server, err := NewServer(config, logger)
+	if err != nil {
+		t.Fatalf("❌ Erreur création serveur: %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		header string
+		want   string
+	}{
+		{"HSTS", HeaderStrictTransportSecurity, ValueHSTS},
+		{"No Sniff", HeaderXContentTypeOptions, ValueNoSniff},
+		{"Frame Options", HeaderXFrameOptions, ValueDeny},
+		{"CSP", HeaderContentSecurityPolicy, ValueCSP},
+		{"XSS Protection", HeaderXXSSProtection, ValueXSSBlock},
+		{"Referrer Policy", HeaderReferrerPolicy, ValueNoReferrer},
+		{"Server", HeaderServer, ValueServerName},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/health", nil)
+			w := httptest.NewRecorder()
+
+			server.mux.ServeHTTP(w, req)
+
+			got := w.Header().Get(tt.header)
+			if got != tt.want {
+				t.Errorf("❌ Header %s = %q, want %q", tt.header, got, tt.want)
+			} else {
+				t.Logf("✅ Header %s correctement défini", tt.header)
+			}
+		})
+	}
+
+	t.Log("✅ Tous les tests de headers sécurité passés")
+}
+
+// TestSecurityHeadersOnAllEndpoints vérifie que les headers sont présents sur tous les endpoints
+func TestSecurityHeadersOnAllEndpoints(t *testing.T) {
+	t.Log("🧪 TEST SECURITY HEADERS SUR TOUS LES ENDPOINTS")
+	t.Log("================================================")
+
+	config := &Config{
+		Host:     "localhost",
+		Port:     8080,
+		AuthType: "none",
+		Insecure: true,
+	}
+
+	logger := log.New(io.Discard, "", 0)
+	server, err := NewServer(config, logger)
+	if err != nil {
+		t.Fatalf("❌ Erreur création serveur: %v", err)
+	}
+
+	endpoints := []struct {
+		path   string
+		method string
+	}{
+		{"/health", "GET"},
+		{"/api/v1/version", "GET"},
+	}
+
+	for _, endpoint := range endpoints {
+		t.Run(endpoint.path, func(t *testing.T) {
+			req := httptest.NewRequest(endpoint.method, endpoint.path, nil)
+			w := httptest.NewRecorder()
+
+			server.mux.ServeHTTP(w, req)
+
+			hsts := w.Header().Get(HeaderStrictTransportSecurity)
+			if hsts == "" {
+				t.Errorf("❌ HSTS absent sur %s", endpoint.path)
+			} else if hsts != ValueHSTS {
+				t.Errorf("❌ HSTS = %q, want %q", hsts, ValueHSTS)
+			} else {
+				t.Logf("✅ Headers sécurité présents sur %s", endpoint.path)
+			}
+		})
+	}
+
+	t.Log("✅ Tous les tests de headers sur endpoints passés")
+}
+
+// TestContentTypeValidation vérifie la validation du Content-Type sur /api/v1/execute
+func TestContentTypeValidation(t *testing.T) {
+	t.Log("🧪 TEST CONTENT-TYPE VALIDATION")
+	t.Log("================================")
+
+	config := &Config{
+		Host:     "localhost",
+		Port:     8080,
+		AuthType: "none",
+		Insecure: true,
+	}
+
+	logger := log.New(io.Discard, "", 0)
+	server, err := NewServer(config, logger)
+	if err != nil {
+		t.Fatalf("❌ Erreur création serveur: %v", err)
+	}
+
+	tests := []struct {
+		name               string
+		contentType        string
+		expectedStatusCode int
+		shouldContainError string
+	}{
+		{
+			name:               "✅ Content-Type application/json accepté",
+			contentType:        "application/json",
+			expectedStatusCode: http.StatusBadRequest, // Bad request car body invalide, mais Content-Type OK
+			shouldContainError: "",
+		},
+		{
+			name:               "❌ Content-Type vide rejeté",
+			contentType:        "",
+			expectedStatusCode: http.StatusUnsupportedMediaType,
+			shouldContainError: "Content-Type",
+		},
+		{
+			name:               "❌ Content-Type text/plain rejeté",
+			contentType:        "text/plain",
+			expectedStatusCode: http.StatusUnsupportedMediaType,
+			shouldContainError: "Content-Type",
+		},
+		{
+			name:               "❌ Content-Type text/html rejeté",
+			contentType:        "text/html",
+			expectedStatusCode: http.StatusUnsupportedMediaType,
+			shouldContainError: "Content-Type",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/api/v1/execute", strings.NewReader("{}"))
+			if tt.contentType != "" {
+				req.Header.Set("Content-Type", tt.contentType)
+			}
+			w := httptest.NewRecorder()
+
+			server.mux.ServeHTTP(w, req)
+
+			if w.Code != tt.expectedStatusCode {
+				t.Errorf("❌ Status code = %d, want %d", w.Code, tt.expectedStatusCode)
+			} else {
+				t.Logf("✅ Status code %d comme attendu", w.Code)
+			}
+
+			// Vérifier le message d'erreur si attendu
+			if tt.shouldContainError != "" {
+				var resp tsdio.ExecuteResponse
+				json.NewDecoder(w.Body).Decode(&resp)
+				if !strings.Contains(resp.Error, tt.shouldContainError) {
+					t.Errorf("❌ Message d'erreur devrait contenir '%s', got: %s", tt.shouldContainError, resp.Error)
+				} else {
+					t.Logf("✅ Message d'erreur correct: %s", resp.Error)
+				}
+			}
+		})
+	}
+
+	t.Log("✅ Tous les tests de validation Content-Type passés")
 }

@@ -5,21 +5,26 @@
 package servercmd
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/treivax/tsd/auth"
 	"github.com/treivax/tsd/constraint"
+	"github.com/treivax/tsd/internal/tlsconfig"
 	"github.com/treivax/tsd/rete"
 	"github.com/treivax/tsd/tsdio"
 )
@@ -45,6 +50,78 @@ const (
 
 	// DefaultKeyFile est le fichier de clé privée par défaut
 	DefaultKeyFile = "server.key"
+
+	// Content-Type standards
+	ContentTypeJSON        = "application/json"
+	ContentTypeJSONCharset = "application/json; charset=utf-8"
+
+	// Status codes HTTP métier (aliases pour clarté du code)
+	StatusOK                  = http.StatusOK                   // 200
+	StatusBadRequest          = http.StatusBadRequest           // 400
+	StatusUnauthorized        = http.StatusUnauthorized         // 401
+	StatusUnsupportedMedia    = http.StatusUnsupportedMediaType // 415
+	StatusInternalServerError = http.StatusInternalServerError  // 500
+	StatusServiceUnavailable  = http.StatusServiceUnavailable   // 503
+
+	// DefaultReadTimeout limite le temps pour lire la requête complète.
+	// Protège contre slow client attacks.
+	DefaultReadTimeout = 15 * time.Second
+
+	// DefaultWriteTimeout limite le temps pour écrire la réponse.
+	// Empêche blocage sur clients lents.
+	DefaultWriteTimeout = 15 * time.Second
+
+	// DefaultIdleTimeout limite le temps d'inactivité sur connexions keep-alive.
+	// Libère ressources des connexions zombies.
+	DefaultIdleTimeout = 60 * time.Second
+
+	// DefaultReadHeaderTimeout limite le temps pour lire les headers HTTP.
+	// Protection spécifique contre Slowloris.
+	DefaultReadHeaderTimeout = 5 * time.Second
+
+	// DefaultMaxHeaderBytes limite la taille maximale des headers HTTP (1 MB).
+	// Protège contre headers excessifs et attaques par volume.
+	DefaultMaxHeaderBytes = 1 << 20
+
+	// DefaultShutdownTimeout est le timeout pour le graceful shutdown (30 secondes)
+	DefaultShutdownTimeout = 30 * time.Second
+
+	// Headers de sécurité HTTP recommandés pour API TSD
+
+	// HeaderStrictTransportSecurity force HTTPS pour 1 an avec subdomains
+	HeaderStrictTransportSecurity = "Strict-Transport-Security"
+	// ValueHSTS est la valeur HSTS avec max-age d'un an et includeSubDomains
+	ValueHSTS = "max-age=31536000; includeSubDomains"
+
+	// HeaderXContentTypeOptions empêche MIME sniffing
+	HeaderXContentTypeOptions = "X-Content-Type-Options"
+	// ValueNoSniff désactive le MIME sniffing
+	ValueNoSniff = "nosniff"
+
+	// HeaderXFrameOptions empêche clickjacking
+	HeaderXFrameOptions = "X-Frame-Options"
+	// ValueDeny bloque totalement l'affichage en iframe
+	ValueDeny = "DENY"
+
+	// HeaderContentSecurityPolicy définit la politique de sécurité du contenu
+	HeaderContentSecurityPolicy = "Content-Security-Policy"
+	// ValueCSP est une politique stricte pour API (pas de contenu HTML/JS)
+	ValueCSP = "default-src 'none'; frame-ancestors 'none'"
+
+	// HeaderXXSSProtection active la protection XSS (legacy browsers)
+	HeaderXXSSProtection = "X-XSS-Protection"
+	// ValueXSSBlock active le blocage XSS
+	ValueXSSBlock = "1; mode=block"
+
+	// HeaderReferrerPolicy contrôle les informations de referrer
+	HeaderReferrerPolicy = "Referrer-Policy"
+	// ValueNoReferrer n'envoie aucune information de referrer
+	ValueNoReferrer = "no-referrer"
+
+	// HeaderServer masque la version du serveur
+	HeaderServer = "Server"
+	// ValueServerName est le nom générique du serveur
+	ValueServerName = "TSD"
 )
 
 var (
@@ -73,6 +150,7 @@ type Server struct {
 	logger      *log.Logger
 	mux         *http.ServeMux
 	authManager *auth.Manager
+	httpServer  *http.Server
 }
 
 // Run démarre le serveur TSD avec les arguments donnés et retourne un code de sortie
@@ -151,17 +229,9 @@ func logServerInfo(logger *log.Logger, info *ServerInfo) {
 }
 
 // createTLSConfig crée la configuration TLS (logique testable)
-func createTLSConfig() *tls.Config {
-	return &tls.Config{
-		MinVersion: tls.VersionTLS12,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-		},
-		PreferServerCipherSuites: true,
-	}
+func createTLSConfig(certFile, keyFile string) (*tls.Config, error) {
+	serverConfig := tlsconfig.DefaultServerConfig(certFile, keyFile)
+	return tlsconfig.NewServerTLSConfig(serverConfig)
 }
 
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -179,24 +249,68 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	info := prepareServerInfo(config, server)
 	logServerInfo(logger, info)
 
-	// Démarrer le serveur
-	var err error
-	if config.Insecure {
-		// Mode HTTP non sécurisé
-		err = http.ListenAndServe(info.Addr, server.mux)
-	} else {
-		// Mode HTTPS avec TLS
-		httpServer := &http.Server{
-			Addr:      info.Addr,
-			Handler:   server.mux,
-			TLSConfig: createTLSConfig(),
-		}
+	// Créer le serveur HTTP avec timeouts de sécurité et l'attacher à la struct Server
+	server.httpServer = &http.Server{
+		Addr:    info.Addr,
+		Handler: server.mux,
 
-		err = httpServer.ListenAndServeTLS(config.TLSCertFile, config.TLSKeyFile)
+		// Timeouts de sécurité
+		ReadTimeout:       DefaultReadTimeout,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		WriteTimeout:      DefaultWriteTimeout,
+		IdleTimeout:       DefaultIdleTimeout,
+
+		// Limites supplémentaires
+		MaxHeaderBytes: DefaultMaxHeaderBytes,
 	}
 
-	if err != nil {
+	// Si TLS activé, configurer TLS
+	if !config.Insecure {
+		tlsConf, tlsErr := createTLSConfig(config.TLSCertFile, config.TLSKeyFile)
+		if tlsErr != nil {
+			fmt.Fprintf(stderr, "❌ Erreur configuration TLS: %v\n", tlsErr)
+			return 1
+		}
+		server.httpServer.TLSConfig = tlsConf
+	}
+
+	// Canal pour capturer les erreurs du serveur
+	serverErrors := make(chan error, 1)
+
+	// Démarrer le serveur dans une goroutine
+	go func() {
+		var err error
+		if config.Insecure {
+			logger.Printf("⚠️  Démarrage en mode HTTP non sécurisé")
+			err = server.httpServer.ListenAndServe()
+		} else {
+			logger.Printf("🔒 Démarrage en mode HTTPS sécurisé")
+			err = server.httpServer.ListenAndServeTLS(config.TLSCertFile, config.TLSKeyFile)
+		}
+		if err != nil && err != http.ErrServerClosed {
+			serverErrors <- err
+		}
+	}()
+
+	// Canal pour capturer les signaux OS
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	// Attendre signal ou erreur
+	select {
+	case err := <-serverErrors:
 		fmt.Fprintf(stderr, "❌ Erreur démarrage serveur: %v\n", err)
+		return 1
+	case sig := <-sigChan:
+		logger.Printf("📡 Signal %v reçu, arrêt gracieux du serveur...", sig)
+	}
+
+	// Graceful shutdown avec timeout
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		fmt.Fprintf(stderr, "❌ Erreur lors du shutdown: %v\n", err)
 		return 1
 	}
 
@@ -309,9 +423,99 @@ func NewServer(config *Config, logger *log.Logger) (*Server, error) {
 
 // registerRoutes enregistre les routes HTTP
 func (s *Server) registerRoutes() {
-	s.mux.HandleFunc("/api/v1/execute", s.handleExecute)
-	s.mux.HandleFunc("/health", s.handleHealth)
-	s.mux.HandleFunc("/api/v1/version", s.handleVersion)
+	s.mux.HandleFunc("/api/v1/execute", s.withSecurityHeaders(s.validateContentType(s.handleExecute)))
+	s.mux.HandleFunc("/health", s.withSecurityHeaders(s.handleHealth))
+	s.mux.HandleFunc("/api/v1/version", s.withSecurityHeaders(s.handleVersion))
+}
+
+// Shutdown effectue un arrêt gracieux du serveur.
+// Les nouvelles connexions sont refusées et les requêtes en cours sont
+// terminées dans la limite du timeout spécifié via le contexte.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.httpServer == nil {
+		return nil
+	}
+
+	s.logger.Printf("🛑 Arrêt gracieux du serveur démarré...")
+
+	if err := s.httpServer.Shutdown(ctx); err != nil {
+		s.logger.Printf("❌ Erreur lors du shutdown: %v", err)
+		return fmt.Errorf("erreur shutdown serveur: %w", err)
+	}
+
+	s.logger.Printf("✅ Serveur arrêté proprement")
+	return nil
+}
+
+// withSecurityHeaders ajoute les headers de sécurité HTTP à toutes les réponses.
+// Ces headers protègent contre XSS, clickjacking, MIME sniffing et downgrade attacks.
+func (s *Server) withSecurityHeaders(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// HSTS - Force HTTPS (1 an)
+		w.Header().Set(HeaderStrictTransportSecurity, ValueHSTS)
+
+		// Empêche MIME sniffing
+		w.Header().Set(HeaderXContentTypeOptions, ValueNoSniff)
+
+		// Empêche clickjacking
+		w.Header().Set(HeaderXFrameOptions, ValueDeny)
+
+		// CSP stricte (API uniquement, pas de contenu HTML/JS)
+		w.Header().Set(HeaderContentSecurityPolicy, ValueCSP)
+
+		// XSS Protection (legacy browsers)
+		w.Header().Set(HeaderXXSSProtection, ValueXSSBlock)
+
+		// Pas de referrer
+		w.Header().Set(HeaderReferrerPolicy, ValueNoReferrer)
+
+		// Masque version serveur
+		w.Header().Set(HeaderServer, ValueServerName)
+
+		handler(w, r)
+	}
+}
+
+// validateContentType vérifie que le Content-Type est application/json pour les requêtes POST.
+// Retourne 415 Unsupported Media Type si invalide.
+func (s *Server) validateContentType(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Exemption pour GET (pas de body)
+		if r.Method == http.MethodGet {
+			handler(w, r)
+			return
+		}
+
+		// Extraire Content-Type (ignorer charset)
+		contentType := r.Header.Get("Content-Type")
+		if contentType == "" {
+			s.sendErrorResponse(w, StatusUnsupportedMedia, "Content-Type header requis", time.Now())
+			return
+		}
+
+		// Parser pour ignorer charset
+		mediaType, _, err := mime.ParseMediaType(contentType)
+		if err != nil {
+			s.sendErrorResponse(w, StatusUnsupportedMedia, "Content-Type invalide", time.Now())
+			return
+		}
+
+		// Valider que c'est application/json
+		if mediaType != ContentTypeJSON {
+			msg := fmt.Sprintf("Content-Type '%s' non supporté. Attendu: %s", mediaType, ContentTypeJSON)
+			s.sendErrorResponse(w, StatusUnsupportedMedia, msg, time.Now())
+			return
+		}
+
+		handler(w, r)
+	}
+}
+
+// sendErrorResponse envoie une réponse d'erreur JSON standardisée.
+func (s *Server) sendErrorResponse(w http.ResponseWriter, statusCode int, message string, startTime time.Time) {
+	executionTimeMs := time.Since(startTime).Milliseconds()
+	response := tsdio.NewErrorResponse(tsdio.ErrorTypeServerError, message, executionTimeMs)
+	s.writeJSON(w, response, statusCode)
 }
 
 // handleExecute gère les requêtes d'exécution de programmes TSD
@@ -320,29 +524,32 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	// Vérifier la méthode HTTP
 	if r.Method != http.MethodPost {
-		s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, startTime)
+		s.sendErrorResponse(w, http.StatusMethodNotAllowed, "Méthode non autorisée", startTime)
 		return
 	}
 
 	// Authentification
 	if err := s.authenticate(r); err != nil {
-		s.writeError(w, tsdio.ErrorTypeServerError, "Authentification échouée: "+err.Error(), http.StatusUnauthorized, startTime)
+		s.sendErrorResponse(w, StatusUnauthorized, "Authentification échouée: "+err.Error(), startTime)
 		return
 	}
 
 	// Limiter la taille de la requête
 	r.Body = http.MaxBytesReader(w, r.Body, MaxRequestSize)
 
-	// Décoder la requête JSON
+	// Décoder la requête JSON avec validation stricte
 	var req tsdio.ExecuteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.writeError(w, tsdio.ErrorTypeServerError, fmt.Sprintf("Erreur décodage JSON: %v", err), http.StatusBadRequest, startTime)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
+		s.sendErrorResponse(w, StatusBadRequest, fmt.Sprintf("JSON invalide: %v", err), startTime)
 		return
 	}
 
 	// Valider la requête
 	if req.Source == "" {
-		s.writeError(w, tsdio.ErrorTypeServerError, "Le champ 'source' est requis", http.StatusBadRequest, startTime)
+		s.sendErrorResponse(w, StatusBadRequest, "Le champ 'source' est requis", startTime)
 		return
 	}
 
@@ -358,7 +565,7 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 	response := s.executeTSDProgram(&req, startTime)
 
 	// Écrire la réponse
-	s.writeJSON(w, response, http.StatusOK)
+	s.writeJSON(w, response, StatusOK)
 
 	if s.config.Verbose || req.Verbose {
 		if response.Success {
@@ -562,7 +769,7 @@ func (s *Server) authenticate(r *http.Request) error {
 // handleHealth gère les requêtes de health check
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, time.Now())
+		s.sendErrorResponse(w, http.StatusMethodNotAllowed, "Méthode non autorisée", time.Now())
 		return
 	}
 
@@ -575,13 +782,13 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		Timestamp:     time.Now(),
 	}
 
-	s.writeJSON(w, response, http.StatusOK)
+	s.writeJSON(w, response, StatusOK)
 }
 
 // handleVersion gère les requêtes de version
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		s.writeError(w, tsdio.ErrorTypeServerError, "Méthode non autorisée", http.StatusMethodNotAllowed, time.Now())
+		s.sendErrorResponse(w, http.StatusMethodNotAllowed, "Méthode non autorisée", time.Now())
 		return
 	}
 
@@ -590,22 +797,15 @@ func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 		GoVersion: runtime.Version(),
 	}
 
-	s.writeJSON(w, response, http.StatusOK)
+	s.writeJSON(w, response, StatusOK)
 }
 
 // writeJSON écrit une réponse JSON
 func (s *Server) writeJSON(w http.ResponseWriter, data interface{}, statusCode int) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", ContentTypeJSON)
 	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		s.logger.Printf("❌ Erreur encodage JSON: %v", err)
 	}
-}
-
-// writeError écrit une réponse d'erreur
-func (s *Server) writeError(w http.ResponseWriter, errorType, message string, statusCode int, startTime time.Time) {
-	executionTimeMs := time.Since(startTime).Milliseconds()
-	response := tsdio.NewErrorResponse(errorType, message, executionTimeMs)
-	s.writeJSON(w, response, statusCode)
 }

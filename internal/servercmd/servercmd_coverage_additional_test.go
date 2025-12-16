@@ -637,7 +637,24 @@ func TestLogServerInfo(t *testing.T) {
 
 // TestCreateTLSConfig tests the createTLSConfig function
 func TestCreateTLSConfig(t *testing.T) {
-	tlsConfig := createTLSConfig()
+	// Create temporary certificate files for testing
+	tmpDir := t.TempDir()
+	certFile := filepath.Join(tmpDir, "test.crt")
+	keyFile := filepath.Join(tmpDir, "test.key")
+
+	// Create dummy cert and key files
+	if err := os.WriteFile(certFile, []byte("dummy cert"), 0644); err != nil {
+		t.Fatalf("❌ Failed to create test cert: %v", err)
+	}
+	if err := os.WriteFile(keyFile, []byte("dummy key"), 0644); err != nil {
+		t.Fatalf("❌ Failed to create test key: %v", err)
+	}
+
+	tlsConfig, err := createTLSConfig(certFile, keyFile)
+
+	if err != nil {
+		t.Fatalf("❌ createTLSConfig returned error: %v", err)
+	}
 
 	if tlsConfig == nil {
 		t.Fatal("❌ createTLSConfig returned nil")
