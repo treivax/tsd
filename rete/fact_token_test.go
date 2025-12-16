@@ -387,3 +387,71 @@ func TestWorkingMemory_ComplexClone(t *testing.T) {
 	nestedMap := clonedFact.Fields["nested"].(map[string]interface{})
 	assert.Equal(t, "Paris", nestedMap["city"])
 }
+
+// TestFact_IDHandling teste la manipulation des IDs de faits
+func TestFact_IDHandling(t *testing.T) {
+	t.Log("🧪 TEST: Fact ID Handling - Manipulation des IDs")
+	t.Log("==================================================")
+
+	tests := []struct {
+		name     string
+		fact     *Fact
+		wantID   string
+		wantType string
+	}{
+		{
+			name: "fait avec PK simple",
+			fact: &Fact{
+				ID:   "Person~Alice",
+				Type: "Person",
+				Fields: map[string]interface{}{
+					"nom": "Alice",
+					"age": 30,
+				},
+			},
+			wantID:   "Person~Alice",
+			wantType: "Person",
+		},
+		{
+			name: "fait avec PK composite",
+			fact: &Fact{
+				ID:   "Person~Alice_Dupont",
+				Type: "Person",
+				Fields: map[string]interface{}{
+					"prenom": "Alice",
+					"nom":    "Dupont",
+					"age":    30,
+				},
+			},
+			wantID:   "Person~Alice_Dupont",
+			wantType: "Person",
+		},
+		{
+			name: "fait avec hash",
+			fact: &Fact{
+				ID:   "Event~a1b2c3d4e5f6g7h8",
+				Type: "Event",
+				Fields: map[string]interface{}{
+					"timestamp": 1234567890,
+					"message":   "test",
+				},
+			},
+			wantID:   "Event~a1b2c3d4e5f6g7h8",
+			wantType: "Event",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.fact.ID != tt.wantID {
+				t.Errorf("❌ ID = %v, attendu %v", tt.fact.ID, tt.wantID)
+			}
+			if tt.fact.Type != tt.wantType {
+				t.Errorf("❌ Type = %v, attendu %v", tt.fact.Type, tt.wantType)
+			}
+			t.Log("✅ Test réussi")
+		})
+	}
+
+	t.Log("✅ Test complet: Fact ID Handling")
+}

@@ -100,7 +100,7 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string
 	}
 
 	// Cas spécial : le champ 'id' est stocké dans fact.ID, pas dans fact.Fields
-	if field == "id" {
+	if field == FieldNameID {
 		return fact.ID, nil
 	}
 

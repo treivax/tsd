@@ -8,8 +8,16 @@ import (
 	"fmt"
 )
 
+// FieldNameID est le nom du champ spécial pour l'identifiant du fait.
+// Ce champ est accessible dans les expressions mais stocké dans Fact.ID, pas dans Fact.Fields.
+const FieldNameID = "id"
+
 // Fact représente un fait dans le réseau RETE
 type Fact struct {
+	// ID est l'identifiant unique du fait.
+	// Il est soit généré à partir des clés primaires, soit calculé comme hash.
+	// Format: "TypeName~value1_value2..." ou "TypeName~<hash>"
+	// Accessible dans les expressions via le champ spécial 'id'.
 	ID         string                 `json:"id"`
 	Type       string                 `json:"type"`
 	Fields     map[string]interface{} `json:"fields"`

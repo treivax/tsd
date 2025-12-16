@@ -757,3 +757,138 @@ func TestAlphaConditionEvaluator_evaluateBinaryOperation(t *testing.T) {
 		})
 	}
 }
+
+// TestEvaluator_AccessIDField teste l'accès au champ spécial 'id' dans les expressions
+func TestEvaluator_AccessIDField(t *testing.T) {
+	t.Log("🧪 TEST: Evaluator Access ID Field - Accès au champ 'id'")
+	t.Log("=========================================================")
+
+	fact := &Fact{
+		ID:   "Person~Alice",
+		Type: "Person",
+		Fields: map[string]interface{}{
+			"nom": "Alice",
+			"age": 30,
+		},
+	}
+
+	evaluator := NewAlphaConditionEvaluator()
+	evaluator.variableBindings["p"] = fact
+
+	t.Run("accès au champ id", func(t *testing.T) {
+		idValue, err := evaluator.evaluateFieldAccessByName("p", "id")
+		if err != nil {
+			t.Fatalf("❌ evaluateFieldAccessByName(p, 'id') erreur = %v", err)
+		}
+
+		if idValue != "Person~Alice" {
+			t.Errorf("❌ evaluateFieldAccessByName(p, 'id') = %v, attendu %v", idValue, "Person~Alice")
+		} else {
+			t.Logf("✅ Accès au champ 'id' réussi: %v", idValue)
+		}
+	})
+
+	t.Run("accès au champ nom normal", func(t *testing.T) {
+		nomValue, err := evaluator.evaluateFieldAccessByName("p", "nom")
+		if err != nil {
+			t.Fatalf("❌ evaluateFieldAccessByName(p, 'nom') erreur = %v", err)
+		}
+
+		if nomValue != "Alice" {
+			t.Errorf("❌ evaluateFieldAccessByName(p, 'nom') = %v, attendu %v", nomValue, "Alice")
+		} else {
+			t.Logf("✅ Accès au champ 'nom' réussi: %v", nomValue)
+		}
+	})
+
+	t.Run("expression complète avec accès à id", func(t *testing.T) {
+		// Test avec une contrainte complète utilisant le champ id
+		constraint := map[string]interface{}{
+			"type":     "constraint",
+			"operator": "==",
+			"left": map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "id",
+			},
+			"right": map[string]interface{}{
+				"type":  "stringLiteral",
+				"value": "Person~Alice",
+			},
+		}
+
+		result, err := evaluator.evaluateConstraintMap(constraint)
+		if err != nil {
+			t.Fatalf("❌ Évaluation de la contrainte id erreur = %v", err)
+		}
+
+		if !result {
+			t.Errorf("❌ Expression 'p.id == \"Person~Alice\"' devrait être vraie")
+		} else {
+			t.Logf("✅ Expression 'p.id == \"Person~Alice\"' évaluée correctement")
+		}
+	})
+
+	t.Run("expression avec id dans jointure", func(t *testing.T) {
+		fact2 := &Fact{
+			ID:   "Order~O123",
+			Type: "Order",
+			Fields: map[string]interface{}{
+				"userId": "Person~Alice",
+				"amount": 100.0,
+			},
+		}
+
+		evaluator.variableBindings["o"] = fact2
+
+		// Test jointure: o.userId == p.id
+		constraint := map[string]interface{}{
+			"type":     "constraint",
+			"operator": "==",
+			"left": map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "o",
+				"field":  "userId",
+			},
+			"right": map[string]interface{}{
+				"type":   "fieldAccess",
+				"object": "p",
+				"field":  "id",
+			},
+		}
+
+		result, err := evaluator.evaluateConstraintMap(constraint)
+		if err != nil {
+			t.Fatalf("❌ Évaluation de la jointure erreur = %v", err)
+		}
+
+		if !result {
+			t.Errorf("❌ Expression 'o.userId == p.id' devrait être vraie")
+		} else {
+			t.Logf("✅ Jointure 'o.userId == p.id' évaluée correctement")
+		}
+	})
+
+	t.Run("utilisation de la constante FieldNameID", func(t *testing.T) {
+		// Vérifier que la constante FieldNameID est bien définie
+		if FieldNameID != "id" {
+			t.Errorf("❌ FieldNameID = %v, attendu 'id'", FieldNameID)
+		} else {
+			t.Logf("✅ Constante FieldNameID = %v", FieldNameID)
+		}
+
+		// Utiliser la constante dans l'évaluation
+		idValue, err := evaluator.evaluateFieldAccessByName("p", FieldNameID)
+		if err != nil {
+			t.Fatalf("❌ Accès avec FieldNameID erreur = %v", err)
+		}
+
+		if idValue != "Person~Alice" {
+			t.Errorf("❌ Accès avec FieldNameID = %v, attendu %v", idValue, "Person~Alice")
+		} else {
+			t.Logf("✅ Utilisation de FieldNameID réussie")
+		}
+	})
+
+	t.Log("✅ Test complet: Evaluator Access ID Field")
+}
