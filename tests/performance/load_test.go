@@ -14,6 +14,20 @@ import (
 	"github.com/treivax/tsd/tests/shared/testutil"
 )
 
+const (
+	// DefaultLoadTestTimeout timeout par défaut pour les tests de charge
+	DefaultLoadTestTimeout = 30 * time.Second
+
+	// ExtendedLoadTestTimeout timeout pour les tests de charge étendus
+	ExtendedLoadTestTimeout = 60 * time.Second
+
+	// LongLoadTestTimeout timeout pour les tests de charge longs
+	LongLoadTestTimeout = 120 * time.Second
+
+	// MinExpectedActivations nombre minimum d'activations attendues
+	MinExpectedActivations = 1
+)
+
 func TestLoad_100Facts(t *testing.T) {
 	testutil.SkipIfShort(t, "performance tests skipped in short mode")
 
@@ -40,7 +54,7 @@ func TestLoad_1000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 30 * time.Second,
+		Timeout: DefaultLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -58,7 +72,7 @@ func TestLoad_5000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 60 * time.Second,
+		Timeout: ExtendedLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -76,7 +90,7 @@ func TestLoad_10000Facts(t *testing.T) {
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 120 * time.Second,
+		Timeout: LongLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -111,7 +125,7 @@ rule r4 : {p: Person} / p.age > 30 and p.salary > 60000 ==> print("senior_high_e
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 60 * time.Second,
+		Timeout: ExtendedLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -155,7 +169,7 @@ rule high_value : {tx: Transaction} /
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 60 * time.Second,
+		Timeout: ExtendedLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
@@ -203,11 +217,11 @@ rule emp_dept_project : {e: Employee, d: Department, p: Project} /
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 60 * time.Second,
+		Timeout: ExtendedLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)
-	testutil.AssertMinActivations(t, result, 1)
+	testutil.AssertMinActivations(t, result, MinExpectedActivations)
 
 	t.Logf("Join-heavy test (100 employees, 10 depts, 50 projects): %d activations", result.Activations)
 }
@@ -273,7 +287,7 @@ rule r1 : {lr: LargeRecord} / lr.id > 0 ==> print("processed")
 	defer testutil.CleanupTempFiles(t, tempFile)
 
 	result := testutil.ExecuteTSDFileWithOptions(t, tempFile, &testutil.ExecutionOptions{
-		Timeout: 90 * time.Second,
+		Timeout: LongLoadTestTimeout,
 	})
 
 	testutil.AssertNoError(t, result)

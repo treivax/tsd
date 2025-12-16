@@ -13,6 +13,23 @@ import (
 	"github.com/treivax/tsd/tests/shared/testutil"
 )
 
+const (
+	// ExpectedTotalFixtures nombre total de fixtures attendu
+	ExpectedTotalFixtures = 83 // 26 alpha + 26 beta + 31 integration
+
+	// ExpectedAlphaFixtures nombre de fixtures alpha minimum
+	ExpectedAlphaFixtures = 26
+
+	// ExpectedBetaFixtures nombre de fixtures beta minimum
+	ExpectedBetaFixtures = 26
+
+	// ExpectedIntegrationFixtures nombre de fixtures integration minimum
+	ExpectedIntegrationFixtures = 31
+
+	// DefaultTestTimeout timeout par défaut pour les tests
+	DefaultTestTimeout = 30 * time.Second
+)
+
 // TestAlphaFixtures tests all alpha coverage fixtures
 func TestAlphaFixtures(t *testing.T) {
 	fixtures := testutil.GetFixturesByCategory(t, "alpha")
@@ -122,7 +139,7 @@ func TestIntegrationFixtures(t *testing.T) {
 					ExpectError:     true,
 					ValidateNetwork: false,
 					CaptureOutput:   true,
-					Timeout:         30 * time.Second,
+					Timeout:         DefaultTestTimeout,
 				})
 				testutil.AssertError(t, result)
 				t.Logf("✅ %s: Error detected as expected", fixture.Name)
@@ -174,7 +191,7 @@ func TestAllFixtures(t *testing.T) {
 				ExpectError:     true,
 				ValidateNetwork: false,
 				CaptureOutput:   true,
-				Timeout:         30 * time.Second,
+				Timeout:         DefaultTestTimeout,
 			})
 		} else {
 			result = testutil.ExecuteTSDFile(t, fixture.Path)
@@ -216,10 +233,9 @@ func TestAllFixtures(t *testing.T) {
 		t.Errorf("%d fixtures failed execution", failed)
 	}
 
-	// Validate expected fixture count (26 alpha + 26 beta + 31 integration = 83)
-	expectedTotal := 83
-	if len(allFixtures) != expectedTotal {
-		t.Errorf("Expected %d fixtures, found %d", expectedTotal, len(allFixtures))
+	// Validate expected fixture count
+	if len(allFixtures) != ExpectedTotalFixtures {
+		t.Errorf("Expected %d fixtures, found %d", ExpectedTotalFixtures, len(allFixtures))
 	}
 }
 
@@ -299,7 +315,7 @@ func TestErrorFixtures(t *testing.T) {
 				ExpectError:     true,
 				ValidateNetwork: false,
 				CaptureOutput:   true,
-				Timeout:         30 * time.Second,
+				Timeout:         DefaultTestTimeout,
 			})
 			testutil.AssertError(t, result)
 			t.Logf("✅ %s: Error correctly detected", fixtureName)
