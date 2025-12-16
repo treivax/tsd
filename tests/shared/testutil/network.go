@@ -27,7 +27,12 @@ func SlowServer(delay time.Duration) *httptest.Server {
 func UnreliableServer(failRate float64) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if rand.Float64() < failRate {
-			time.Sleep(10 * time.Second)
+			// Fermer la connexion au lieu d'attendre pour éviter les timeouts
+			hj, ok := w.(http.Hijacker)
+			if ok {
+				conn, _, _ := hj.Hijack()
+				conn.Close()
+			}
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -57,7 +62,14 @@ func ClosingServer() *httptest.Server {
 // Force un timeout côté client.
 func TimeoutServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(30 * time.Second)
+		// Attendre que le contexte de la requête soit annulé (timeout client)
+		// ou max 5 secondes pour éviter de bloquer les tests trop longtemps
+		select {
+		case <-r.Context().Done():
+			return
+		case <-time.After(5 * time.Second):
+			return
+		}
 	}))
 }
 

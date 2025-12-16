@@ -47,6 +47,16 @@ func TestClient_ExpiredCertificate(t *testing.T) {
 
 	client := NewClient(config)
 
+	// Désactiver les retries pour accélérer le test
+	retryConfig := RetryConfig{
+		MaxAttempts:          1,
+		BaseDelay:            0,
+		MaxDelay:             0,
+		Jitter:               0,
+		RetryableStatusCodes: []int{},
+	}
+	client.SetRetryConfig(retryConfig)
+
 	_, err = client.Execute("type Person : <id: string>", "<test>")
 
 	if err == nil {
@@ -80,6 +90,16 @@ func TestClient_SelfSignedCertificate(t *testing.T) {
 	}
 
 	client := NewClient(config)
+
+	// Désactiver les retries pour accélérer le test
+	retryConfig := RetryConfig{
+		MaxAttempts:          1,
+		BaseDelay:            0,
+		MaxDelay:             0,
+		Jitter:               0,
+		RetryableStatusCodes: []int{},
+	}
+	client.SetRetryConfig(retryConfig)
 
 	_, err := client.Execute("type Person : <id: string>", "<test>")
 
@@ -158,6 +178,16 @@ func TestClient_HostnameMismatch(t *testing.T) {
 	}
 
 	client := NewClient(config)
+
+	// Désactiver les retries pour accélérer le test
+	retryConfig := RetryConfig{
+		MaxAttempts:          1,
+		BaseDelay:            0,
+		MaxDelay:             0,
+		Jitter:               0,
+		RetryableStatusCodes: []int{},
+	}
+	client.SetRetryConfig(retryConfig)
 
 	_, err = client.Execute("type Person : <id: string>", "<test>")
 

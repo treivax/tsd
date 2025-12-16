@@ -276,18 +276,42 @@ func TestClient_ContextCancellation(t *testing.T) {
 	t.Log("🧪 TEST CLIENT - ANNULATION CONTEXTE")
 	t.Log("=====================================")
 
+	done := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		<-r.Context().Done()
+		select {
+		case <-r.Context().Done():
+			// Contexte annulé par le client
+			return
+		case <-done:
+			// Test terminé, cleanup
+			return
+		case <-time.After(10 * time.Second):
+			// Timeout de sécurité
+			return
+		}
 	}))
-	defer server.Close()
+	defer func() {
+		close(done)
+		server.Close()
+	}()
 
 	config := &Config{
 		ServerURL: server.URL,
-		Timeout:   30 * time.Second,
+		Timeout:   5 * time.Second,
 		Insecure:  true,
 	}
 
 	client := NewClient(config)
+
+	// Désactiver les retries pour accélérer le test
+	retryConfig := RetryConfig{
+		MaxAttempts:          1,
+		BaseDelay:            0,
+		MaxDelay:             0,
+		Jitter:               0,
+		RetryableStatusCodes: []int{},
+	}
+	client.SetRetryConfig(retryConfig)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
