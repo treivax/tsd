@@ -5,13 +5,53 @@
 package compilercmd
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/treivax/tsd/constraint"
 	"github.com/treivax/tsd/rete"
+)
+
+// Constants for input validation and security
+const (
+	// MaxInputSize limits the maximum size of input that can be parsed
+	// This prevents potential DoS attacks via extremely large inputs
+	MaxInputSize = 10 * 1024 * 1024 // 10 MB
+
+	// MaxStdinRead limits the amount of data read from stdin
+	MaxStdinRead = MaxInputSize
+
+	// Version information
+	ApplicationName        = "TSD (Type System Development)"
+	ApplicationVersion     = "v1.0"
+	ApplicationDescription = "Moteur de règles basé sur l'algorithme RETE"
+
+	// Source name constants
+	SourceNameStdin = "<stdin>"
+	SourceNameText  = "<text>"
+
+	// Exit codes
+	ExitSuccess         = 0
+	ExitErrorGeneric    = 1
+	ExitErrorParsing    = 1
+	ExitErrorValidation = 1
+	ExitErrorFileAccess = 1
+	ExitErrorExecution  = 1
+)
+
+// Error messages
+var (
+	ErrNoSource        = errors.New("aucune source spécifiée (-file, -text ou -stdin)")
+	ErrMultipleSources = errors.New("une seule source autorisée (-file, -text ou -stdin)")
+	ErrFileNotFound    = errors.New("fichier non trouvé")
+	ErrInputTooLarge   = errors.New("entrée trop volumineuse")
+	ErrInvalidPath     = errors.New("chemin de fichier non valide")
+	ErrPathTraversal   = errors.New("tentative de traversée de répertoire interdite")
 )
 
 // Config holds the CLI configuration
@@ -36,34 +76,33 @@ type Result struct {
 
 // Run executes the TSD compiler with the given arguments and returns an exit code
 // This function is the main entry point for the compiler command
-
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	config, err := ParseFlags(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "Erreur: %v\n", err)
-		return 1
+		return ExitErrorGeneric
 	}
 
 	if config.ShowHelp {
 		printHelp(stdout)
-		return 0
+		return ExitSuccess
 	}
 
 	if config.ShowVersion {
 		printVersion(stdout)
-		return 0
+		return ExitSuccess
 	}
 
 	if err := validateConfig(config); err != nil {
 		fmt.Fprintf(stderr, "Erreur: %v\n\n", err)
 		printHelp(stderr)
-		return 1
+		return ExitErrorGeneric
 	}
 
 	result, sourceName, err := parseConstraintSource(config, stdin)
 	if err != nil {
 		fmt.Fprintf(stderr, "Erreur de parsing: %v\n", err)
-		return 1
+		return ExitErrorParsing
 	}
 
 	if config.Verbose {
@@ -73,7 +112,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	if err := constraint.ValidateConstraintProgram(result); err != nil {
 		fmt.Fprintf(stderr, "Erreur de validation: %v\n", err)
-		return 1
+		return ExitErrorValidation
 	}
 
 	if config.Verbose {
@@ -133,11 +172,11 @@ func validateConfig(config *Config) error {
 	}
 
 	if sourcesCount == 0 {
-		return fmt.Errorf("aucune source spécifiée (-file, -text ou -stdin)")
+		return ErrNoSource
 	}
 
 	if sourcesCount > 1 {
-		return fmt.Errorf("une seule source autorisée (-file, -text ou -stdin)")
+		return ErrMultipleSources
 	}
 
 	return nil
@@ -158,11 +197,18 @@ func parseConstraintSource(config *Config, stdin io.Reader) (interface{}, string
 
 // parseFromStdin reads and parses constraints from stdin
 func parseFromStdin(config *Config, stdin io.Reader) (interface{}, string, error) {
-	sourceName := "<stdin>"
+	sourceName := SourceNameStdin
 
-	stdinContent, err := io.ReadAll(stdin)
+	// Use LimitReader to prevent reading unbounded data from stdin
+	limitedReader := io.LimitReader(stdin, MaxStdinRead+1)
+	stdinContent, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return nil, "", fmt.Errorf("lecture stdin: %w", err)
+	}
+
+	// Check if input exceeds maximum size
+	if len(stdinContent) > MaxStdinRead {
+		return nil, "", fmt.Errorf("%w: maximum %d bytes", ErrInputTooLarge, MaxStdinRead)
 	}
 
 	result, err := constraint.ParseConstraint(sourceName, stdinContent)
@@ -171,7 +217,12 @@ func parseFromStdin(config *Config, stdin io.Reader) (interface{}, string, error
 
 // parseFromText parses constraints from a text string
 func parseFromText(config *Config) (interface{}, string, error) {
-	sourceName := "<text>"
+	sourceName := SourceNameText
+
+	// Validate text input size
+	if len(config.ConstraintText) > MaxInputSize {
+		return nil, "", fmt.Errorf("%w: maximum %d bytes", ErrInputTooLarge, MaxInputSize)
+	}
 
 	result, err := constraint.ParseConstraint(sourceName, []byte(config.ConstraintText))
 	return result, sourceName, err
@@ -181,12 +232,71 @@ func parseFromText(config *Config) (interface{}, string, error) {
 func parseFromFile(config *Config) (interface{}, string, error) {
 	sourceName := config.File
 
-	if _, err := os.Stat(config.File); os.IsNotExist(err) {
-		return nil, "", fmt.Errorf("fichier non trouvé: %s", config.File)
+	// Validate and sanitize file path
+	if err := validateFilePath(config.File); err != nil {
+		return nil, "", err
+	}
+
+	// Check file existence with proper error message
+	fileInfo, err := os.Stat(config.File)
+	if os.IsNotExist(err) {
+		return nil, "", fmt.Errorf("%w: %s", ErrFileNotFound, config.File)
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("erreur accès fichier: %w", err)
+	}
+
+	// Validate file size to prevent potential DoS
+	if fileInfo.Size() > MaxInputSize {
+		return nil, "", fmt.Errorf("%w: fichier %s dépasse %d bytes", ErrInputTooLarge, config.File, MaxInputSize)
 	}
 
 	result, err := constraint.ParseConstraintFile(config.File)
 	return result, sourceName, err
+}
+
+// validateFilePath validates a file path for security
+// - Prevents path traversal attacks
+// - Validates path format
+// - Ensures path is clean and safe
+func validateFilePath(path string) error {
+	if path == "" {
+		return fmt.Errorf("%w: chemin vide", ErrInvalidPath)
+	}
+
+	// Clean the path (removes .., ., // etc.)
+	cleanPath := filepath.Clean(path)
+
+	// Check for path traversal attempts
+	// After cleaning, ".." should not appear in the path
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("%w: '..' détecté dans %s", ErrPathTraversal, path)
+	}
+
+	// Additional check: ensure the path doesn't escape when made absolute
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return fmt.Errorf("%w: impossible de résoudre le chemin absolu: %w", ErrInvalidPath, err)
+	}
+
+	// Get current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		// If we can't get cwd, we can't validate, but we've already done basic checks
+		// This is acceptable as we've blocked obvious traversal attempts
+		return nil
+	}
+
+	// If path is not absolute, ensure it stays within current directory tree
+	if !filepath.IsAbs(path) {
+		// The absolute path should be within or equal to cwd or its subdirectories
+		// We allow files in current directory and below
+		if !strings.HasPrefix(absPath, cwd) {
+			return fmt.Errorf("%w: le fichier sort du répertoire courant", ErrPathTraversal)
+		}
+	}
+
+	return nil
 }
 
 // runValidationOnly runs in validation-only mode (no facts file)
@@ -199,7 +309,7 @@ func runValidationOnly(config *Config, stdout io.Writer) int {
 		fmt.Fprintf(stdout, "ℹ️  Utilisez -facts <file> pour exécuter le pipeline RETE complet.\n")
 	}
 
-	return 0
+	return ExitSuccess
 }
 
 // runWithFacts runs the full RETE pipeline with facts and returns exit code
@@ -210,19 +320,37 @@ func runWithFacts(config *Config, sourceName string, stdout, stderr io.Writer) i
 		fmt.Fprintf(stdout, "Fichier faits: %s\n\n", config.FactsFile)
 	}
 
-	if _, err := os.Stat(config.FactsFile); os.IsNotExist(err) {
-		fmt.Fprintf(stderr, "Fichier faits non trouvé: %s\n", config.FactsFile)
-		return 1
+	// Validate facts file path
+	if err := validateFilePath(config.FactsFile); err != nil {
+		fmt.Fprintf(stderr, "Erreur validation chemin faits: %v\n", err)
+		return ExitErrorFileAccess
+	}
+
+	// Check file existence with proper error handling
+	fileInfo, err := os.Stat(config.FactsFile)
+	if os.IsNotExist(err) {
+		fmt.Fprintf(stderr, "%v: %s\n", ErrFileNotFound, config.FactsFile)
+		return ExitErrorFileAccess
+	}
+	if err != nil {
+		fmt.Fprintf(stderr, "Erreur accès fichier faits: %v\n", err)
+		return ExitErrorFileAccess
+	}
+
+	// Validate facts file size
+	if fileInfo.Size() > MaxInputSize {
+		fmt.Fprintf(stderr, "Fichier faits trop volumineux: %s (max %d bytes)\n", config.FactsFile, MaxInputSize)
+		return ExitErrorFileAccess
 	}
 
 	result, err := executePipeline(sourceName, config.FactsFile)
 	if err != nil {
 		fmt.Fprintf(stderr, "Erreur pipeline RETE: %v\n", err)
-		return 1
+		return ExitErrorExecution
 	}
 
 	printResults(config, result, stdout)
-	return 0
+	return ExitSuccess
 }
 
 // executePipeline executes the RETE pipeline and returns the result
@@ -315,8 +443,8 @@ func printActivationDetails(network *rete.ReteNetwork, stdout io.Writer) {
 
 // printVersion prints the version information
 func printVersion(w io.Writer) {
-	fmt.Fprintln(w, "TSD (Type System Development) v1.0")
-	fmt.Fprintln(w, "Moteur de règles basé sur l'algorithme RETE")
+	fmt.Fprintf(w, "%s %s\n", ApplicationName, ApplicationVersion)
+	fmt.Fprintln(w, ApplicationDescription)
 }
 
 // printHelp prints the help message

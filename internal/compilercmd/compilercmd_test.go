@@ -940,3 +940,210 @@ func TestRun_DeprecatedConstraintFlag(t *testing.T) {
 		t.Logf("Note: deprecation warning may not be shown in stderr")
 	}
 }
+
+// TestValidateFilePath tests file path validation and security
+func TestValidateFilePath(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errType error
+	}{
+		{
+			name:    "valid relative path",
+			path:    "test.tsd",
+			wantErr: false,
+		},
+		{
+			name:    "valid path with subdirectory",
+			path:    "subdir/test.tsd",
+			wantErr: false,
+		},
+		{
+			name:    "empty path",
+			path:    "",
+			wantErr: true,
+			errType: ErrInvalidPath,
+		},
+		{
+			name:    "path traversal with ..",
+			path:    "../../../etc/passwd",
+			wantErr: true,
+			errType: ErrPathTraversal,
+		},
+		{
+			name:    "path traversal hidden in middle",
+			path:    "safe/../../../etc/passwd",
+			wantErr: true,
+			errType: ErrPathTraversal,
+		},
+		{
+			name:    "valid absolute path in current directory",
+			path:    "/tmp/test.tsd", // Will be tested differently
+			wantErr: false,           // Absolute paths are allowed
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateFilePath(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateFilePath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && tt.errType != nil {
+				// Check if error contains expected error type
+				if !strings.Contains(err.Error(), tt.errType.Error()) {
+					t.Errorf("validateFilePath() error = %v, want to contain %v", err, tt.errType)
+				}
+			}
+		})
+	}
+}
+
+// TestParseFromStdin_LargeInput tests stdin size limits
+func TestParseFromStdin_LargeInput(t *testing.T) {
+	config := &Config{UseStdin: true}
+
+	// Create input larger than MaxStdinRead
+	largeInput := make([]byte, MaxStdinRead+1000)
+	for i := range largeInput {
+		largeInput[i] = 'A'
+	}
+	stdin := bytes.NewReader(largeInput)
+
+	_, _, err := parseFromStdin(config, stdin)
+
+	// Should fail with size limit error
+	if err == nil {
+		t.Error("parseFromStdin() should fail with large input")
+	}
+
+	if !strings.Contains(err.Error(), "trop volumineuse") {
+		t.Errorf("parseFromStdin() error = %v, want size limit error", err)
+	}
+}
+
+// TestParseFromText_LargeInput tests text input size limits
+func TestParseFromText_LargeInput(t *testing.T) {
+	// Create text larger than MaxInputSize
+	largeText := strings.Repeat("A", MaxInputSize+1000)
+	config := &Config{ConstraintText: largeText}
+
+	_, _, err := parseFromText(config)
+
+	// Should fail with size limit error
+	if err == nil {
+		t.Error("parseFromText() should fail with large input")
+	}
+
+	if !strings.Contains(err.Error(), "trop volumineuse") {
+		t.Errorf("parseFromText() error = %v, want size limit error", err)
+	}
+}
+
+// TestParseFromFile_LargeFile tests file size limits
+func TestParseFromFile_LargeFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "large.tsd")
+
+	// Create file larger than MaxInputSize
+	largeContent := make([]byte, MaxInputSize+1000)
+	for i := range largeContent {
+		largeContent[i] = 'A'
+	}
+
+	err := os.WriteFile(tmpFile, largeContent, 0644)
+	if err != nil {
+		t.Fatalf("Failed to create large file: %v", err)
+	}
+
+	config := &Config{File: tmpFile}
+
+	_, _, err = parseFromFile(config)
+
+	// Should fail with size limit error
+	if err == nil {
+		t.Error("parseFromFile() should fail with large file")
+	}
+
+	if !strings.Contains(err.Error(), "trop volumineuse") && !strings.Contains(err.Error(), "dépasse") {
+		t.Errorf("parseFromFile() error = %v, want size limit error", err)
+	}
+}
+
+// TestConstants tests that all constants are defined correctly
+func TestConstants(t *testing.T) {
+	tests := []struct {
+		name  string
+		value interface{}
+		check func(interface{}) bool
+	}{
+		{
+			name:  "MaxInputSize is reasonable",
+			value: MaxInputSize,
+			check: func(v interface{}) bool {
+				size := v.(int)
+				return size > 0 && size == 10*1024*1024 // 10 MB
+			},
+		},
+		{
+			name:  "ExitSuccess is 0",
+			value: ExitSuccess,
+			check: func(v interface{}) bool {
+				return v.(int) == 0
+			},
+		},
+		{
+			name:  "Exit error codes are non-zero",
+			value: ExitErrorGeneric,
+			check: func(v interface{}) bool {
+				return v.(int) != 0
+			},
+		},
+		{
+			name:  "ApplicationName is not empty",
+			value: ApplicationName,
+			check: func(v interface{}) bool {
+				return len(v.(string)) > 0
+			},
+		},
+		{
+			name:  "ApplicationVersion is not empty",
+			value: ApplicationVersion,
+			check: func(v interface{}) bool {
+				return len(v.(string)) > 0
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !tt.check(tt.value) {
+				t.Errorf("Constant check failed for %s", tt.name)
+			}
+		})
+	}
+}
+
+// TestErrorConstants tests that error constants are defined
+func TestErrorConstants(t *testing.T) {
+	errors := []error{
+		ErrNoSource,
+		ErrMultipleSources,
+		ErrFileNotFound,
+		ErrInputTooLarge,
+		ErrInvalidPath,
+		ErrPathTraversal,
+	}
+
+	for _, err := range errors {
+		if err == nil {
+			t.Error("Error constant should not be nil")
+		}
+		if err.Error() == "" {
+			t.Errorf("Error constant should have non-empty message: %v", err)
+		}
+	}
+}
