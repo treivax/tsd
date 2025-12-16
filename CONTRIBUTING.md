@@ -38,6 +38,27 @@ Si vous observez un comportement inapproprié, contactez les mainteneurs du proj
 
 ---
 
+## 🔒 Reporting de Vulnérabilités de Sécurité
+
+**⚠️ Important : Ne reportez JAMAIS de vulnérabilités de sécurité via des issues publiques GitHub.**
+
+Si vous découvrez une vulnérabilité de sécurité dans TSD :
+
+1. **NE PAS** créer d'issue publique
+2. **Consultez** notre [Security Policy](SECURITY.md)
+3. **Utilisez** GitHub Security Advisory (recommandé)
+4. **Ou contactez** directement les mainteneurs de manière privée
+
+Notre [Security Policy](SECURITY.md) détaille :
+- Comment reporter de manière responsable
+- Nos délais de réponse
+- Le processus de gestion des vulnérabilités
+- La politique de divulgation coordonnée
+
+**Merci de protéger les utilisateurs de TSD en suivant cette procédure.**
+
+---
+
 ## 🎯 Comment Contribuer
 
 ### Types de Contributions Acceptées
@@ -54,22 +75,45 @@ Si vous observez un comportement inapproprié, contactez les mainteneurs du proj
 2. **Good First Issue** : Issues taguées pour débutants
 3. **Help Wanted** : Issues où de l'aide est bienvenue
 
-### Proposer une Feature
+---
 
-1. Créer une issue avec le template "Feature Request"
+## 📋 Utilisation des Templates
+
+### Créer une Issue
+
+Utilisez les templates appropriés :
+
+- **🐛 Bug Report** : Pour signaler un bug
+- **✨ Feature Request** : Pour proposer une amélioration
+- **❓ Question** : Pour poser une question
+
+Les templates vous guideront pour fournir toutes les informations nécessaires.
+
+#### Proposer une Feature
+
+1. Créer une issue avec le template "✨ Feature Request"
 2. Décrire clairement le besoin et la solution proposée
 3. Attendre validation avant d'implémenter
 4. Discuter de l'approche avec les mainteneurs
 
-### Reporter un Bug
+#### Reporter un Bug
 
-1. Créer une issue avec le template "Bug Report"
+1. Créer une issue avec le template "🐛 Bug Report"
 2. Fournir :
    - Description du problème
    - Étapes de reproduction
    - Comportement attendu vs observé
    - Version de Go, OS, etc.
    - Logs/erreurs si disponibles
+
+### Créer une Pull Request
+
+Le template de PR inclut une checklist complète. Assurez-vous de :
+
+1. Remplir toutes les sections
+2. Cocher tous les items de la checklist
+3. Lier l'issue correspondante
+4. Fournir des instructions de test
 
 ---
 

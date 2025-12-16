@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security Issue
+    url: https://github.com/treivax/tsd/security/advisories/new
+    about: Signaler une vulnérabilité de sécurité (privé)
+  - name: 📚 Documentation
+    url: https://github.com/treivax/tsd/tree/main/docs
+    about: Consulter la documentation technique
+  - name: 🤝 Contributing Guide
+    url: https://github.com/treivax/tsd/blob/main/CONTRIBUTING.md
+    about: Guide de contribution au projet
