@@ -3,7 +3,17 @@
 REPORTS/*
 !REPORTS/README.md
 !REPORTS/.gitkeep
-!REPORTS/REFACTORING_*.md
+
+# Temporary report files (must be in REPORTS/ or deleted)
+COMMIT_MESSAGE_*.md
+IMPLEMENTATION_*.md
+EXECUTION_*.md
+REFACTORING_*.md
+REFACTORING_*.txt
+INTEGRATION_TESTS_*.txt
+DOCUMENTATION_INVENTORY.md
+TODO_ACTIFS.md
+nouveauxprompts.txt
 
 # TLS Certificates (never commit private keys!)
 certs/
@@ -33,12 +43,16 @@ complete_test_report.txt
 *_test_report.txt
 *_report*.txt
 coverage_report*.txt
-RAPPORT_RETE_*.md
-RAPPORT_CORRECTIF_*.md
+RAPPORT_*.md
 VALIDATION_*.md
-BETA_VALIDATION_*.md
 NETTOYAGE_*.md
-RAPPORT_UNIFIE*.md
+SESSION_*.md
+SUMMARY_*.txt
+CHANGES_*.md
+REVIEW_*.md
+AMELIORATION_*.md
+MODIFICATIONS_*.md
+INDEX_*.md
 
 # Backup files
 *.backup
@@ -89,6 +103,13 @@ coverage*.out
 coverage*.html
 *.prof
 
+# Compiled binaries
+tsd
+e2e.test
+*.test
+
 # Scripts review environment
 scripts/review/.env
+scripts/review-*/
+scripts/status
 diagnostic_*.log

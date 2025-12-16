@@ -464,11 +464,3 @@ func TestArithmeticDecomposition_WithJoin(t *testing.T) {
 		t.Log("✅ Join successful! Token created and propagated to terminal")
 	}
 }
-
-// getBindingKeys returns the list of variable names from a BindingChain
-func getBindingKeys(bindings *BindingChain) []string {
-	if bindings == nil {
-		return []string{}
-	}
-	return bindings.Variables()
-}

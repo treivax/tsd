@@ -88,10 +88,10 @@ func IncompleteResponseServer() *httptest.Server {
 // FlakyServer crée un serveur qui alterne entre succès et échec.
 // Utile pour tester la logique de retry.
 type FlakyServer struct {
-	server        *httptest.Server
-	requestCount  int
-	failureCount  int
-	successAfter  int
+	server       *httptest.Server
+	requestCount int
+	failureCount int
+	successAfter int
 }
 
 // NewFlakyServer crée un serveur qui réussit après un nombre spécifié de tentatives.

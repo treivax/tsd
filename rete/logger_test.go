@@ -20,14 +20,14 @@ func TestLogger_Levels(t *testing.T) {
 		expectedLevel string
 		shouldLog     bool
 	}{
-		{"Debug at Debug level", LogLevelDebug, func(l *Logger, msg string) { l.Debug(msg) }, "DEBUG", true},
-		{"Debug at Info level", LogLevelInfo, func(l *Logger, msg string) { l.Debug(msg) }, "DEBUG", false},
-		{"Info at Info level", LogLevelInfo, func(l *Logger, msg string) { l.Info(msg) }, "INFO", true},
-		{"Info at Warn level", LogLevelWarn, func(l *Logger, msg string) { l.Info(msg) }, "INFO", false},
-		{"Warn at Warn level", LogLevelWarn, func(l *Logger, msg string) { l.Warn(msg) }, "WARN", true},
-		{"Warn at Error level", LogLevelError, func(l *Logger, msg string) { l.Warn(msg) }, "WARN", false},
-		{"Error at Error level", LogLevelError, func(l *Logger, msg string) { l.Error(msg) }, "ERROR", true},
-		{"Error at Silent level", LogLevelSilent, func(l *Logger, msg string) { l.Error(msg) }, "ERROR", false},
+		{"Debug at Debug level", LogLevelDebug, func(l *Logger, msg string) { l.Debug("%s", msg) }, "DEBUG", true},
+		{"Debug at Info level", LogLevelInfo, func(l *Logger, msg string) { l.Debug("%s", msg) }, "DEBUG", false},
+		{"Info at Info level", LogLevelInfo, func(l *Logger, msg string) { l.Info("%s", msg) }, "INFO", true},
+		{"Info at Warn level", LogLevelWarn, func(l *Logger, msg string) { l.Info("%s", msg) }, "INFO", false},
+		{"Warn at Warn level", LogLevelWarn, func(l *Logger, msg string) { l.Warn("%s", msg) }, "WARN", true},
+		{"Warn at Error level", LogLevelError, func(l *Logger, msg string) { l.Warn("%s", msg) }, "WARN", false},
+		{"Error at Error level", LogLevelError, func(l *Logger, msg string) { l.Error("%s", msg) }, "ERROR", true},
+		{"Error at Silent level", LogLevelSilent, func(l *Logger, msg string) { l.Error("%s", msg) }, "ERROR", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

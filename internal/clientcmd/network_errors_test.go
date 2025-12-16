@@ -69,7 +69,7 @@ func TestClient_Timeout(t *testing.T) {
 	}
 
 	client := NewClient(config)
-	
+
 	retryConfig := RetryConfig{
 		MaxAttempts:          1,
 		BaseDelay:            0,
@@ -246,7 +246,7 @@ func TestClient_SlowServer(t *testing.T) {
 	}
 
 	client := NewClient(config)
-	
+
 	retryConfig := RetryConfig{
 		MaxAttempts:          1,
 		BaseDelay:            0,
