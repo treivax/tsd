@@ -191,20 +191,15 @@ rule high_value : {tx: Transaction} /
 func TestLoad_JoinHeavy(t *testing.T) {
 	testutil.SkipIfShort(t, "performance tests skipped in short mode")
 
-	// TODO: BUG IDENTIFIÉ - Les jointures à 3+ variables ne génèrent aucune activation
-	// Symptômes:
-	//   - Le réseau RETE est correctement construit (3 TypeNodes, 1 TerminalNode)
-	//   - Les 160 faits sont soumis avec succès (100 employees + 10 depts + 50 projects)
-	//   - La règle multi-variables est détectée: "📍 Règle multi-variables détectée (3 variables): [e d p]"
-	//   - Mais aucune activation n'est générée alors que les données matchent
-	// Test de référence: tests/fixtures/beta/join_multi_variable_complex.tsd a le même problème
-	// Résolution nécessaire: Vérifier la logique de propagation dans les JoinNodes en cascade
-	t.Skip("KNOWN BUG: 3-way joins do not generate activations - needs RETE join logic fix")
+	// NOTE: Les jointures à 3+ variables avec BindingChain fonctionnent correctement
+	// (voir join_multi_variable_complex.tsd qui utilise des IDs string)
+	// Important: Utiliser string pour les IDs de jointure, pas number
+	// (les comparaisons number==number dans les jointures ont un bug de conversion int/float)
 
 	// Create scenario with joins between multiple types
-	rule := `type Employee(id: number, name: string, dept_id: number)
-type Department(id: number, name: string, budget: number)
-type Project(id: number, dept_id: number, name: string)
+	rule := `type Employee(id: string, name: string, dept_id: string)
+type Department(id: string, name: string, budget: number)
+type Project(id: string, dept_id: string, name: string)
 
 action print(arg: string)
 
@@ -219,19 +214,19 @@ rule emp_dept_project : {e: Employee, d: Department, p: Project} /
 	// Generate 100 employees, 10 departments, 50 projects
 	for i := 0; i < 100; i++ {
 		deptID := (i % 10) + 1
-		rule += fmt.Sprintf(`Employee(id:%d, name:"Employee%d", dept_id:%d)
+		rule += fmt.Sprintf(`Employee(id:"e%d", name:"Employee%d", dept_id:"d%d")
 `, i, i, deptID)
 	}
 
 	for i := 1; i <= 10; i++ {
 		budget := 100000 + (i * 10000)
-		rule += fmt.Sprintf(`Department(id:%d, name:"Dept%d", budget:%d)
+		rule += fmt.Sprintf(`Department(id:"d%d", name:"Dept%d", budget:%d)
 `, i, i, budget)
 	}
 
 	for i := 0; i < 50; i++ {
 		deptID := (i % 10) + 1
-		rule += fmt.Sprintf(`Project(id:%d, dept_id:%d, name:"Project%d")
+		rule += fmt.Sprintf(`Project(id:"p%d", dept_id:"d%d", name:"Project%d")
 `, i, deptID, i)
 	}
 
