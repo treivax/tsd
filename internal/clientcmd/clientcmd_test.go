@@ -922,3 +922,230 @@ func TestPrintHelp(t *testing.T) {
 		}
 	}
 }
+
+// TestExecuteRequestWithRetry_Success vérifie le retry avec succès immédiat
+func TestExecuteRequestWithRetry_Success(t *testing.T) {
+	t.Log("🧪 TEST RETRY - SUCCÈS IMMÉDIAT")
+	t.Log("================================")
+
+	// Mock serveur qui réussit immédiatement
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"success": true}`))
+	}))
+	defer server.Close()
+
+	config := &Config{
+		ServerURL: server.URL,
+		Insecure:  true,
+		Timeout:   TestTimeout,
+	}
+
+	client := NewClient(config)
+	client.httpClient = server.Client()
+
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+
+	resp, err := client.executeRequestWithRetry(req)
+	if err != nil {
+		t.Fatalf("❌ Erreur inattendue: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("❌ Status = %d, attendu 200", resp.StatusCode)
+	}
+
+	t.Logf("✅ Requête réussie sans retry")
+}
+
+// TestExecuteRequestWithRetry_SuccessAfterRetry vérifie le retry avec succès après tentative
+func TestExecuteRequestWithRetry_SuccessAfterRetry(t *testing.T) {
+	t.Log("🧪 TEST RETRY - SUCCÈS APRÈS RETRY")
+	t.Log("===================================")
+
+	attempts := 0
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 2 {
+			// Première tentative : 503
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		// Deuxième tentative : succès
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"success": true}`))
+	}))
+	defer server.Close()
+
+	config := &Config{
+		ServerURL: server.URL,
+		Insecure:  true,
+		Timeout:   TestTimeout,
+		Verbose:   false,
+	}
+
+	client := NewClient(config)
+	client.httpClient = server.Client()
+	// Accélérer les tests
+	client.retryConfig.BaseDelay = 10 * time.Millisecond
+	client.retryConfig.MaxDelay = 100 * time.Millisecond
+
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+
+	resp, err := client.executeRequestWithRetry(req)
+	if err != nil {
+		t.Fatalf("❌ Erreur inattendue: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("❌ Status = %d, attendu 200", resp.StatusCode)
+	}
+
+	if attempts != 2 {
+		t.Errorf("❌ Nombre de tentatives = %d, attendu 2", attempts)
+	}
+
+	t.Logf("✅ Succès après %d tentatives", attempts)
+}
+
+// TestExecuteRequestWithRetry_FailureNonRetryable vérifie qu'on ne retry pas les erreurs 4xx
+func TestExecuteRequestWithRetry_FailureNonRetryable(t *testing.T) {
+	t.Log("🧪 TEST RETRY - ÉCHEC NON RETRYABLE")
+	t.Log("====================================")
+
+	attempts := 0
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusBadRequest) // 400 = non retryable
+		w.Write([]byte(`{"error": "bad request"}`))
+	}))
+	defer server.Close()
+
+	config := &Config{
+		ServerURL: server.URL,
+		Insecure:  true,
+		Timeout:   TestTimeout,
+	}
+
+	client := NewClient(config)
+	client.httpClient = server.Client()
+
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+
+	resp, err := client.executeRequestWithRetry(req)
+	if err != nil {
+		t.Fatalf("❌ Erreur inattendue: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("❌ Status = %d, attendu 400", resp.StatusCode)
+	}
+
+	if attempts != 1 {
+		t.Errorf("❌ Nombre de tentatives = %d, attendu 1 (pas de retry)", attempts)
+	}
+
+	t.Logf("✅ Pas de retry sur erreur 400")
+}
+
+// TestExecuteRequestWithRetry_AllRetriesFailed vérifie l'échec après tous les retries
+func TestExecuteRequestWithRetry_AllRetriesFailed(t *testing.T) {
+	t.Log("🧪 TEST RETRY - TOUS LES RETRIES ÉCHOUENT")
+	t.Log("==========================================")
+
+	attempts := 0
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		// Toujours retourner 503
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte(`{"error": "service unavailable"}`))
+	}))
+	defer server.Close()
+
+	config := &Config{
+		ServerURL: server.URL,
+		Insecure:  true,
+		Timeout:   TestTimeout,
+		Verbose:   false,
+	}
+
+	client := NewClient(config)
+	client.httpClient = server.Client()
+	// Accélérer les tests
+	client.retryConfig.BaseDelay = 10 * time.Millisecond
+	client.retryConfig.MaxDelay = 100 * time.Millisecond
+
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+
+	resp, err := client.executeRequestWithRetry(req)
+	if err != nil {
+		t.Fatalf("❌ Erreur inattendue: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("❌ Status = %d, attendu 503", resp.StatusCode)
+	}
+
+	if attempts != client.retryConfig.MaxAttempts {
+		t.Errorf("❌ Nombre de tentatives = %d, attendu %d", attempts, client.retryConfig.MaxAttempts)
+	}
+
+	t.Logf("✅ Tous les retries épuisés après %d tentatives", attempts)
+}
+
+// TestSetRetryConfig vérifie la modification de la config retry
+func TestSetRetryConfig(t *testing.T) {
+	t.Log("🧪 TEST CONFIGURATION RETRY PERSONNALISÉE")
+	t.Log("==========================================")
+
+	config := &Config{
+		ServerURL: "https://localhost:8080",
+		Insecure:  true,
+		Timeout:   TestTimeout,
+	}
+
+	client := NewClient(config)
+
+	// Vérifier config par défaut
+	if client.retryConfig.MaxAttempts != DefaultMaxAttempts {
+		t.Errorf("❌ MaxAttempts initial = %d, attendu %d", client.retryConfig.MaxAttempts, DefaultMaxAttempts)
+	}
+
+	// Modifier la config
+	customConfig := RetryConfig{
+		MaxAttempts:          5,
+		BaseDelay:            2 * time.Second,
+		MaxDelay:             20 * time.Second,
+		Jitter:               0.3,
+		RetryableStatusCodes: []int{500, 503},
+	}
+
+	client.SetRetryConfig(customConfig)
+
+	// Vérifier la nouvelle config
+	if client.retryConfig.MaxAttempts != 5 {
+		t.Errorf("❌ MaxAttempts = %d, attendu 5", client.retryConfig.MaxAttempts)
+	}
+
+	if client.retryConfig.BaseDelay != 2*time.Second {
+		t.Errorf("❌ BaseDelay = %v, attendu 2s", client.retryConfig.BaseDelay)
+	}
+
+	if client.retryConfig.MaxDelay != 20*time.Second {
+		t.Errorf("❌ MaxDelay = %v, attendu 20s", client.retryConfig.MaxDelay)
+	}
+
+	if client.retryConfig.Jitter != 0.3 {
+		t.Errorf("❌ Jitter = %f, attendu 0.3", client.retryConfig.Jitter)
+	}
+
+	if len(client.retryConfig.RetryableStatusCodes) != 2 {
+		t.Errorf("❌ RetryableStatusCodes count = %d, attendu 2", len(client.retryConfig.RetryableStatusCodes))
+	}
+
+	t.Logf("✅ Configuration personnalisée appliquée")
+}

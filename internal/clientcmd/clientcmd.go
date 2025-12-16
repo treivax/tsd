@@ -6,16 +6,19 @@ package clientcmd
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"mime"
+	"net"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/treivax/tsd/internal/tlsconfig"
 	"github.com/treivax/tsd/tsdio"
 )
 
@@ -26,8 +29,35 @@ const (
 	// DefaultTimeout est le timeout par défaut des requêtes
 	DefaultTimeout = 30 * time.Second
 
+	// DefaultDialTimeout est le timeout de connexion TCP
+	DefaultDialTimeout = 10 * time.Second
+
+	// DefaultTLSHandshakeTimeout est le timeout du handshake TLS
+	DefaultTLSHandshakeTimeout = 10 * time.Second
+
+	// DefaultResponseHeaderTimeout est le timeout de lecture des headers de réponse
+	DefaultResponseHeaderTimeout = 10 * time.Second
+
+	// DefaultExpectContinueTimeout est le timeout pour Expect: 100-continue
+	DefaultExpectContinueTimeout = 1 * time.Second
+
 	// DefaultCAFile est le fichier CA par défaut
 	DefaultCAFile = "./certs/ca.crt"
+
+	// ExampleServerHTTPURL est une URL HTTP d'exemple pour la documentation
+	ExampleServerHTTPURL = "http://localhost:8080"
+
+	// Content-Type standards
+	ContentTypeJSON        = "application/json"
+	ContentTypeJSONCharset = "application/json; charset=utf-8"
+
+	// Status codes HTTP métier (aliases pour clarté du code)
+	StatusOK                  = http.StatusOK                   // 200
+	StatusBadRequest          = http.StatusBadRequest           // 400
+	StatusUnauthorized        = http.StatusUnauthorized         // 401
+	StatusUnsupportedMedia    = http.StatusUnsupportedMediaType // 415
+	StatusInternalServerError = http.StatusInternalServerError  // 500
+	StatusServiceUnavailable  = http.StatusServiceUnavailable   // 503
 )
 
 // Config contient la configuration du client
@@ -49,9 +79,10 @@ type Config struct {
 
 // Client représente le client HTTP TSD
 type Client struct {
-	config     *Config
-	httpClient *http.Client
-	tlsConfig  *tls.Config
+	config      *Config
+	httpClient  *http.Client
+	tlsConfig   *tls.Config
+	retryConfig RetryConfig
 }
 
 // Run exécute le client avec les arguments donnés et retourne un code de sortie
@@ -217,36 +248,42 @@ func readSource(config *Config, stdin io.Reader) (string, string, error) {
 
 // NewClient crée un nouveau client TSD
 func NewClient(config *Config) *Client {
-	// Configurer TLS
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
+	// Configurer TLS via le package tlsconfig
+	clientTLSConfig := &tlsconfig.ClientConfig{
+		CAFile:             config.TLSCAFile,
+		InsecureSkipVerify: config.Insecure,
 	}
 
-	// Si mode insecure, désactiver la vérification
-	if config.Insecure {
-		tlsConfig.InsecureSkipVerify = true
-	} else {
-		// Charger le CA si fourni et fichier existe
-		if config.TLSCAFile != "" {
-			if _, err := os.Stat(config.TLSCAFile); err == nil {
-				caCert, err := os.ReadFile(config.TLSCAFile)
-				if err == nil {
-					caCertPool := x509.NewCertPool()
-					if caCertPool.AppendCertsFromPEM(caCert) {
-						tlsConfig.RootCAs = caCertPool
-					}
-				}
-			}
+	tlsConf, err := tlsconfig.NewClientTLSConfig(clientTLSConfig)
+	if err != nil {
+		// En cas d'erreur de configuration CA, utiliser config de base
+		// mais logger un warning si en mode sécurisé
+		if !config.Insecure {
+			fmt.Fprintf(os.Stderr, "⚠️  Erreur configuration TLS: %v\n", err)
+			fmt.Fprintf(os.Stderr, "⚠️  Utilisation configuration TLS par défaut\n")
+		}
+		tlsConf = &tls.Config{
+			InsecureSkipVerify: config.Insecure,
 		}
 	}
 
+	// Configurer le transport avec timeouts granulaires
 	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
+		TLSClientConfig: tlsConf,
+		DialContext: (&net.Dialer{
+			Timeout: DefaultDialTimeout,
+		}).DialContext,
+		TLSHandshakeTimeout:   DefaultTLSHandshakeTimeout,
+		ResponseHeaderTimeout: DefaultResponseHeaderTimeout,
+		ExpectContinueTimeout: DefaultExpectContinueTimeout,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
 	}
 
 	return &Client{
-		config:    config,
-		tlsConfig: tlsConfig,
+		config:      config,
+		tlsConfig:   tlsConf,
+		retryConfig: DefaultRetryConfig(),
 		httpClient: &http.Client{
 			Timeout:   config.Timeout,
 			Transport: transport,
@@ -254,75 +291,258 @@ func NewClient(config *Config) *Client {
 	}
 }
 
-// Execute envoie une requête d'exécution au serveur
-func (c *Client) Execute(source, sourceName string) (*tsdio.ExecuteResponse, error) {
-	// Créer la requête
+// SetRetryConfig permet de configurer le comportement de retry.
+func (c *Client) SetRetryConfig(config RetryConfig) {
+	c.retryConfig = config
+}
+
+// logRetryAttempt affiche un log de tentative de retry si en mode verbeux.
+func (c *Client) logRetryAttempt(attempt int) {
+	if attempt > 0 && c.config.Verbose {
+		fmt.Printf("🔄 Tentative %d/%d...\n", attempt+1, c.retryConfig.MaxAttempts)
+	}
+}
+
+// logRetryBackoff affiche un log d'attente avant retry si en mode verbeux.
+func (c *Client) logRetryBackoff(backoff time.Duration, err error, statusCode int) {
+	if !c.config.Verbose {
+		return
+	}
+	if err != nil {
+		fmt.Printf("⏱️  Erreur réseau transitoire, retry dans %v...\n", backoff)
+	} else {
+		fmt.Printf("⏱️  Erreur HTTP %d (transitoire), retry dans %v...\n", statusCode, backoff)
+	}
+}
+
+// isSuccessResponse vérifie si la réponse est un succès.
+func isSuccessResponse(err error, resp *http.Response) bool {
+	return err == nil && resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 500
+}
+
+// waitForBackoff attend le délai de backoff ou retourne si le contexte est annulé.
+func waitForBackoff(ctx context.Context, backoff time.Duration) error {
+	select {
+	case <-time.After(backoff):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// executeRequestWithRetry exécute une requête HTTP avec retry automatique.
+func (c *Client) executeRequestWithRetry(req *http.Request) (*http.Response, error) {
+	var lastErr error
+	var resp *http.Response
+
+	for attempt := 0; attempt < c.retryConfig.MaxAttempts; attempt++ {
+		c.logRetryAttempt(attempt)
+
+		resp, lastErr = c.httpClient.Do(req.Clone(req.Context()))
+
+		if isSuccessResponse(lastErr, resp) {
+			return resp, nil
+		}
+
+		statusCode := 0
+		if resp != nil {
+			statusCode = resp.StatusCode
+			resp.Body.Close()
+		}
+
+		if !isRetryableError(lastErr, statusCode, c.retryConfig) {
+			if lastErr != nil {
+				return nil, lastErr
+			}
+			return resp, nil
+		}
+
+		if attempt == c.retryConfig.MaxAttempts-1 {
+			break
+		}
+
+		backoff := calculateBackoff(attempt, c.retryConfig)
+		c.logRetryBackoff(backoff, lastErr, statusCode)
+
+		if err := waitForBackoff(req.Context(), backoff); err != nil {
+			return nil, err
+		}
+	}
+
+	if lastErr != nil {
+		return nil, fmt.Errorf("échec après %d tentatives: %w", c.retryConfig.MaxAttempts, lastErr)
+	}
+
+	return resp, nil
+}
+
+// validateResponse vérifie que la réponse HTTP est valide.
+func validateResponse(resp *http.Response) error {
+	if resp == nil {
+		return fmt.Errorf("réponse nil")
+	}
+
+	// Vérifier Content-Type
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		return fmt.Errorf("réponse sans Content-Type (status=%d)", resp.StatusCode)
+	}
+
+	// Parser Content-Type
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return fmt.Errorf("Content-Type invalide '%s': %w", contentType, err)
+	}
+
+	// Valider que c'est JSON
+	if mediaType != ContentTypeJSON {
+		return fmt.Errorf("Content-Type inattendu: '%s' (attendu: %s)", mediaType, ContentTypeJSON)
+	}
+
+	return nil
+}
+
+// parseErrorResponse extrait le message d'erreur du body JSON.
+func parseErrorResponse(resp *http.Response) string {
+	var errResp struct {
+		Error   string `json:"error"`
+		Message string `json:"message"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+		// Impossible de parser, retourner message générique
+		return fmt.Sprintf("Erreur HTTP %d", resp.StatusCode)
+	}
+
+	// Essayer d'abord le champ 'error', puis 'message'
+	if errResp.Error != "" {
+		return errResp.Error
+	}
+	if errResp.Message != "" {
+		return errResp.Message
+	}
+
+	return fmt.Sprintf("Erreur HTTP %d", resp.StatusCode)
+}
+
+// logExecuteRequest affiche des logs de requête si en mode verbeux.
+func (c *Client) logExecuteRequest(url string) {
+	if !c.config.Verbose {
+		return
+	}
+	fmt.Printf("📤 Envoi requête à %s...\n", url)
+	if c.config.AuthToken != "" {
+		fmt.Printf("🔒 Authentification: activée\n")
+	}
+	if c.config.Insecure {
+		fmt.Printf("⚠️  TLS: vérification désactivée (mode insecure)\n")
+	}
+}
+
+// createExecuteRequest crée une requête HTTP pour l'exécution.
+func (c *Client) createExecuteRequest(source, sourceName string) (*http.Request, error) {
 	req := tsdio.ExecuteRequest{
 		Source:     source,
 		SourceName: sourceName,
 		Verbose:    c.config.Verbose,
 	}
 
-	// Encoder en JSON
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("encodage JSON: %w", err)
 	}
 
-	// Créer la requête HTTP
 	url := c.config.ServerURL + "/api/v1/execute"
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("création requête: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Ajouter le token d'authentification si fourni
+	httpReq.Header.Set("Content-Type", ContentTypeJSON)
 	if c.config.AuthToken != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+c.config.AuthToken)
 	}
 
-	// Envoyer la requête
-	if c.config.Verbose {
-		fmt.Printf("📤 Envoi requête à %s...\n", url)
-		if c.config.AuthToken != "" {
-			fmt.Printf("🔒 Authentification: activée\n")
+	return httpReq, nil
+}
+
+// handleExecuteResponse traite la réponse HTTP et retourne la réponse TSD.
+func handleExecuteResponse(resp *http.Response) (*tsdio.ExecuteResponse, error) {
+	switch resp.StatusCode {
+	case StatusOK:
+		var response tsdio.ExecuteResponse
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, fmt.Errorf("erreur parsing réponse: %w", err)
 		}
-		if c.config.Insecure {
-			fmt.Printf("⚠️  TLS: vérification désactivée (mode insecure)\n")
-		}
+		return &response, nil
+
+	case StatusBadRequest:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("requête invalide: %s", msg)
+
+	case StatusUnauthorized:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("non autorisé: %s (token invalide/expiré?)", msg)
+
+	case StatusUnsupportedMedia:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("Content-Type non supporté: %s", msg)
+
+	case StatusInternalServerError:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("erreur serveur: %s", msg)
+
+	case StatusServiceUnavailable:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("serveur indisponible: %s", msg)
+
+	default:
+		msg := parseErrorResponse(resp)
+		return nil, fmt.Errorf("erreur HTTP %d: %s", resp.StatusCode, msg)
+	}
+}
+
+// Execute envoie une requête d'exécution au serveur
+func (c *Client) Execute(source, sourceName string) (*tsdio.ExecuteResponse, error) {
+	httpReq, err := c.createExecuteRequest(source, sourceName)
+	if err != nil {
+		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(httpReq)
+	c.logExecuteRequest(c.config.ServerURL + "/api/v1/execute")
+
+	resp, err := c.executeRequestWithRetry(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("envoi requête: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Lire la réponse
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("lecture réponse: %w", err)
+	if err := validateResponse(resp); err != nil {
+		return nil, err
 	}
 
-	// Décoder la réponse
-	var response tsdio.ExecuteResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("décodage JSON: %w (body: %s)", err, string(body))
-	}
-
-	return &response, nil
+	return handleExecuteResponse(resp)
 }
 
 // HealthCheck vérifie la santé du serveur
 func (c *Client) HealthCheck() (*tsdio.HealthResponse, error) {
 	url := c.config.ServerURL + "/health"
-	resp, err := c.httpClient.Get(url)
+	httpReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("création requête health: %w", err)
+	}
+
+	resp, err := c.executeRequestWithRetry(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("requête health: %w", err)
 	}
 	defer resp.Body.Close()
+
+	// Vérifier le status code
+	if resp.StatusCode != StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("erreur HTTP %d: %s", resp.StatusCode, string(body))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -496,7 +716,7 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  tsd client program.tsd -insecure")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Utiliser un serveur en HTTP non sécurisé")
-	fmt.Fprintln(w, "  tsd client -server http://localhost:8080 program.tsd")
+	fmt.Fprintf(w, "  tsd client -server %s program.tsd\n", ExampleServerHTTPURL)
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "  # Format JSON pour intégration")
 	fmt.Fprintln(w, "  tsd client program.tsd -format json")
