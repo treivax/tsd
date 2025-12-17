@@ -5,7 +5,7 @@
 // 1. CASTING NUMBER → STRING
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Product(id: string, price: number, quantity: number, discount: number)
+type Product(#id: string, price: number, quantity: number, discount: number)
 
 // Exemple 1.1: Convertir un prix numérique en chaîne pour comparaison
 rule priceAsString : {p:Product} /

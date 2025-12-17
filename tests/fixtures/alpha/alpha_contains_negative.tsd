@@ -1,5 +1,5 @@
 // Test opérateur CONTAINS (contenance) - négation
-type Message(id: string, content: string, urgent: bool)
+type Message(#id: string, content: string, urgent: bool)
 
 
 // Action definitions

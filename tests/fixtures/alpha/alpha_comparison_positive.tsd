@@ -1,5 +1,5 @@
 // Test comparaison numérique positive
-type Product(id: string, price: number, category: string)
+type Product(#id: string, price: number, category: string)
 
 
 // Action definitions

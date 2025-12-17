@@ -1,5 +1,5 @@
 // Test opérateur MATCHES (regex)
-type Code(id: string, value: string, active: bool)
+type Code(#id: string, value: string, active: bool)
 
 
 // Action definitions

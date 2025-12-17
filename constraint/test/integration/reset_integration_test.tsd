@@ -2,9 +2,9 @@
 // Ce fichier définit des types, règles et faits, puis effectue un reset
 
 // Phase 1: Définitions initiales (seront effacées par le reset)
-type User(id: string, name: string, age: number)
-type Order(id: string, user_id: string, amount: number)
-type Product(id: string, name: string, price: number)
+type User(#id: string, name: string, age: number)
+type Order(#id: string, user_id: string, amount: number)
+type Product(#id: string, name: string, price: number)
 
 // Actions pour la phase 1
 action log_adult_user(name: string)
@@ -20,9 +20,9 @@ rule r2 : {o: Order} / o.amount > 1000 ==> log_important_order(o.id)
 reset
 
 // Phase 2: Nouvelles définitions (après le reset)
-type Customer(id: string, name: string, vip: bool)
-type Invoice(id: string, customer_id: string, total: number)
-type Payment(id: string, invoice_id: string, method: string)
+type Customer(#id: string, name: string, vip: bool)
+type Invoice(#id: string, customer_id: string, total: number)
+type Payment(#id: string, invoice_id: string, method: string)
 
 // Actions pour la phase 2
 action log_vip_customer(name: string)

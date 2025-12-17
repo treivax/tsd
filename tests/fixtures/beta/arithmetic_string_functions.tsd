@@ -1,8 +1,8 @@
 // Tests des fonctions de chaînes : LENGTH, UPPER, LOWER, TRIM, SUBSTRING
 // Ce fichier teste l'utilisation des fonctions de manipulation de chaînes
 
-type User(id:string, name:string, email:string, country:string, password:string)
-type Product(id:string, code:string, description:string, category:string)
+type User(#id:string, name:string, email:string, country:string, password:string)
+type Product(#id:string, code:string, description:string, category:string)
 
 // Test 1: LENGTH - vérifier longueur de chaîne
 // Mots de passe avec au moins 8 caractères

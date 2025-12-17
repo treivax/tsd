@@ -1,5 +1,5 @@
 // Test égalité négative simple
-type Person(id: string, age: number, status: string)
+type Person(#id: string, age: number, status: string)
 
 
 // Action definitions

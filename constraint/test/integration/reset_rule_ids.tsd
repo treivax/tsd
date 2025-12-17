@@ -1,7 +1,7 @@
 // Test d'intégration : Réutilisation des identifiants de règles après reset
 // Ce fichier démontre que les IDs de règles peuvent être réutilisés après un reset
 
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 
 // Première série de règles avec des IDs spécifiques
 
@@ -31,7 +31,7 @@ reset
 // Après le reset, on peut réutiliser les mêmes IDs de règles
 // C'est maintenant un nouveau contexte
 
-type Product(id: string, name: string, price: number, category: string)
+type Product(#id: string, name: string, price: number, category: string)
 
 // ✅ VALIDE : Réutilisation de r1, r2, r3 après reset
 rule r1 : {prod: Product} / prod.price > 100 ==> expensive_product(prod.id, prod.price)

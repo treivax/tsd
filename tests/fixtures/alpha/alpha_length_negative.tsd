@@ -1,5 +1,5 @@
 // Test fonction LENGTH() - négation
-type Password(id: string, value: string, secure: bool)
+type Password(#id: string, value: string, secure: bool)
 
 
 // Action definitions

@@ -1,8 +1,8 @@
 // Test JoinNode sharing with incremental conditions
 // Vérifie que les règles avec des conditions supplémentaires partagent bien les JoinNodes communs
 
-type User(id: string, name: string, age: number, status: string)
-type Order(id: string, user_id: string, amount: number, product: string)
+type User(#id: string, name: string, age: number, status: string)
+type Order(#id: string, user_id: string, amount: number, product: string)
 
 // Action definitions
 action basic_order(user_id: string, order_id: string)

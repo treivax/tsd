@@ -1,5 +1,5 @@
-type Transaction(id: string, amount: number, status: string)
-type Account(id: string, balance: number, active: bool)
+type Transaction(#id: string, amount: number, status: string)
+type Account(#id: string, balance: number, active: bool)
 
 
 // Actions auto-générées

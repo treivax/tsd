@@ -1,5 +1,5 @@
 // Test fonction UPPER() (majuscules) - négation
-type Department(id: string, name: string, active: bool)
+type Department(#id: string, name: string, active: bool)
 
 
 // Action definitions

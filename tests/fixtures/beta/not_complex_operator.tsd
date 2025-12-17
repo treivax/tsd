@@ -1,6 +1,6 @@
 // Test opérateur NOT complexe dans nœuds beta
-type Employee(id: string, name: string, department: string, active: bool)
-type Project(id: string, lead_id: string, status: string, budget: number)
+type Employee(#id: string, name: string, department: string, active: bool)
+type Project(#id: string, lead_id: string, status: string, budget: number)
 
 
 // Action definitions

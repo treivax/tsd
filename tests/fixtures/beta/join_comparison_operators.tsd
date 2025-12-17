@@ -1,6 +1,6 @@
 // Test opérateurs de comparaison dans jointures beta
-type User(id: string, name: string, score: number, created: number)
-type Activity(id: string, user_id: string, points: number, timestamp: number)
+type User(#id: string, name: string, score: number, created: number)
+type Activity(#id: string, user_id: string, points: number, timestamp: number)
 
 
 // Action definitions

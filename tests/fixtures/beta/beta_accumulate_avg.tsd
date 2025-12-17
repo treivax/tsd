@@ -1,5 +1,5 @@
-type Employee(id: string, name: string, department: string)
-type Performance(id: string, employee_id: string, score: number)
+type Employee(#id: string, name: string, department: string)
+type Performance(#id: string, employee_id: string, score: number)
 
 
 // Action definitions

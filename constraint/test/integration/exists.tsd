@@ -1,7 +1,7 @@
 // Test 4 : Quantification Existentielle (ExistsNode)
 // Types pour tests d'existence
-type Account(id: string, owner: string, balance: number, type: string)
-type Transaction(id: string, account_id: string, amount: number, type: string, timestamp: number)
+type Account(#id: string, owner: string, balance: number, type: string)
+type Transaction(#id: string, account_id: string, amount: number, type: string, timestamp: number)
 type Alert(account_id: string, type: string, severity: string, message: string)
 
 // Existence simple - il existe au moins une transaction suspecte

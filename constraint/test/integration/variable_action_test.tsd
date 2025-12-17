@@ -1,6 +1,6 @@
 // Test des actions avec variables entières
 
-type TestUser(id: string, name: string, age: number)
+type TestUser(#id: string, name: string, age: number)
 
 // Test avec variable entière comme argument
 

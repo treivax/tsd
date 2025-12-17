@@ -10,16 +10,20 @@
 // ========================================
 
 // Type pour représenter un utilisateur
-type User(id: number, name: string, email: string, age: number, vip: bool)
+// ID généré automatiquement au format: User~<id>
+type User(#id: number, name: string, email: string, age: number, vip: bool)
 
 // Type pour représenter un produit
-type Product(id: number, name: string, price: number, stock: number, category: string)
+// ID généré automatiquement au format: Product~<id>
+type Product(#id: number, name: string, price: number, stock: number, category: string)
 
 // Type pour représenter une commande
-type Order(orderId: number, userId: number, total: number, paid: bool, itemCount: number)
+// ID généré automatiquement au format: Order~<orderId>
+type Order(#orderId: number, userId: number, total: number, paid: bool, itemCount: number)
 
 // Type pour représenter un événement système
-type SystemEvent(eventId: number, eventType: string, timestamp: number, severity: string)
+// ID généré automatiquement au format: SystemEvent~<eventId>
+type SystemEvent(#eventId: number, eventType: string, timestamp: number, severity: string)
 
 // ========================================
 // DÉFINITION DES ACTIONS
@@ -139,25 +143,25 @@ rule complexRule : {u: User, p: Product, o: Order} /
 // DONNÉES DE TEST (FAITS)
 // ========================================
 
-// Utilisateurs
+// Utilisateurs (IDs générés: User~1, User~2, etc.)
 User(id: 1, name: "Alice", email: "alice@example.com", age: 30, vip: true)
 User(id: 2, name: "Bob", email: "bob@example.com", age: 70, vip: false)
 User(id: 3, name: "Charlie", email: "charlie@example.com", age: 25, vip: false)
 User(id: 4, name: "Diana", email: "diana@example.com", age: 45, vip: true)
 
-// Produits
+// Produits (IDs générés: Product~101, Product~102, etc.)
 Product(id: 101, name: "Laptop Pro", price: 1500, stock: 5, category: "electronics")
 Product(id: 102, name: "Mouse", price: 25, stock: 100, category: "accessories")
 Product(id: 103, name: "Monitor 4K", price: 800, stock: 8, category: "electronics")
 Product(id: 104, name: "Keyboard", price: 120, stock: 50, category: "accessories")
 
-// Commandes
+// Commandes (IDs générés: Order~2001, Order~2002, etc.)
 Order(orderId: 2001, userId: 1, total: 1500, paid: false, itemCount: 2)
 Order(orderId: 2002, userId: 2, total: 600, paid: true, itemCount: 5)
 Order(orderId: 2003, userId: 3, total: 50, paid: false, itemCount: 1)
 Order(orderId: 2004, userId: 4, total: 2500, paid: false, itemCount: 15)
 
-// Événements système
+// Événements système (IDs générés: SystemEvent~3001, SystemEvent~3002, etc.)
 SystemEvent(eventId: 3001, eventType: "USER_LOGIN", timestamp: 1640000000, severity: "INFO")
 SystemEvent(eventId: 3002, eventType: "SYSTEM_ERROR", timestamp: 1640000100, severity: "CRITICAL")
 SystemEvent(eventId: 3003, eventType: "DATA_BACKUP", timestamp: 1640000200, severity: "INFO")

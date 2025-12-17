@@ -1,7 +1,7 @@
 // Fichier de faits pour tests massifs des nœuds Beta
 
 // Type definitions
-type Utilisateur(id: string, nom: string, prenom: string, age: number)
+type Utilisateur(#id: string, nom: string, prenom: string, age: number)
 type Adresse(utilisateur_id: string, rue: string, ville: string)
 
 // Format: TypeName(champ1:valeur1, champ2:valeur2, ...)

@@ -1,8 +1,8 @@
 // Tests des expressions arithmétiques complexes
 // Ce fichier teste les parenthèses, imbrication et priorité des opérateurs
 
-type Invoice(id:string, amount:number, tax:number, discount:number, fee:number)
-type Transaction(id:string, base:number, multiplier:number, offset:number)
+type Invoice(#id:string, amount:number, tax:number, discount:number, fee:number)
+type Transaction(#id:string, base:number, multiplier:number, offset:number)
 
 // Test 1: Parenthèses - forcer priorité
 // (amount + tax) * discount != amount + tax * discount

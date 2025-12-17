@@ -6,10 +6,14 @@
 // DÉFINITIONS DE TYPES
 // ===================================================================
 
-type Person(id: string, name: string, age: number, salary: number, status: string)
-type Department(id: string, name: string, budget: number)
-type Employee(id: string, personId: string, deptId: string, position: string)
-type AuditLog(id: string, action: string, timestamp: number, details: string)
+// Type avec clé primaire simple - ID généré au format: Person~<id>
+type Person(#id: string, name: string, age: number, salary: number, status: string)
+// Type avec clé primaire simple - ID généré au format: Department~<id>
+type Department(#id: string, name: string, budget: number)
+// Type avec clé primaire simple - ID généré au format: Employee~<id>
+type Employee(#id: string, personId: string, deptId: string, position: string)
+// Type avec clé primaire simple - ID généré au format: AuditLog~<id>
+type AuditLog(#id: string, action: string, timestamp: number, details: string)
 
 // ===================================================================
 // RÈGLES AVEC DIFFÉRENTS TYPES D'ARGUMENTS
@@ -64,7 +68,7 @@ rule performance_review : {e: Employee, p: Person} / e.personId == p.id AND p.ag
 // FAITS DE TEST
 // ===================================================================
 
-// Personnes
+// Personnes - IDs générés automatiquement: Person~p1, Person~p2, etc.
 Person(id:"p1", name:"Alice", age:25, salary:55000, status:"active")
 Person(id:"p2", name:"Bob", age:30, salary:45000, status:"active")
 Person(id:"p3", name:"Charlie", age:16, salary:20000, status:"new")
@@ -72,12 +76,12 @@ Person(id:"p4", name:"Diana", age:28, salary:35000, status:"active")
 Person(id:"p5", name:"Eve", age:45, salary:85000, status:"active")
 Person(id:"p6", name:"Frank", age:50, salary:95000, status:"active")
 
-// Départements
+// Départements - IDs générés automatiquement: Department~d1, Department~d2, etc.
 Department(id:"d1", name:"Engineering", budget:500000)
 Department(id:"d2", name:"Sales", budget:300000)
 Department(id:"d3", name:"Marketing", budget:200000)
 
-// Employés
+// Employés - IDs générés automatiquement: Employee~e1, Employee~e2, etc.
 Employee(id:"e1", personId:"p1", deptId:"d1", position:"Senior Developer")
 Employee(id:"e2", personId:"p2", deptId:"d1", position:"Developer")
 Employee(id:"e4", personId:"p4", deptId:"d2", position:"Sales Rep")
@@ -90,41 +94,41 @@ Employee(id:"e6", personId:"p6", deptId:"d1", position:"Engineering Manager")
 
 // Lors de l'exécution, les actions suivantes seront loggées :
 //
-// Pour Alice (p1):
+// Pour Alice (ID: Person~p1):
 // - log("Adult person detected")
 // - process(p1)
 // - notify_hr("Alice")
 // - create_account("p1")
 // - schedule_review("p1", "Alice")
 //
-// Pour Bob (p2):
+// Pour Bob (ID: Person~p2):
 // - log("Adult person detected")
 // - process(p2)
 // - create_account("p2")
 // - schedule_review("p2", "Bob")
 //
-// Pour Diana (p4):
+// Pour Diana (ID: Person~p4):
 // - log("Adult person detected")
 // - process(p4)
 // - calculate_bonus("p4", 38500)
 // - create_account("p4")
 // - schedule_review("p4", "Diana")
 //
-// Pour Eve (p5):
+// Pour Eve (ID: Person~p5):
 // - log("Adult person detected")
 // - process(p5)
 // - notify_hr("Eve")
 // - flag_vip("p5")
 // - schedule_review("p5", "Eve")
 //
-// Pour Frank (p6):
+// Pour Frank (ID: Person~p6):
 // - log("Adult person detected")
 // - process(p6)
 // - notify_hr("Frank")
 // - flag_vip("p6")
 // - schedule_review("p6", "Frank")
 //
-// Agrégation Engineering:
+// Agrégation Engineering (ID: Department~d1):
 // - print_stats("Engineering", 63750)
 // - update_dashboard("d1", 63750)
 // - alert_if_high(63750)

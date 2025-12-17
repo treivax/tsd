@@ -1,5 +1,5 @@
 // Test opérateur == (égalité)
-type Customer(id: string, tier: string, points: number)
+type Customer(#id: string, tier: string, points: number)
 
 
 // Action definitions

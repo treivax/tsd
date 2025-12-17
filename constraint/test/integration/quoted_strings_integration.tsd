@@ -1,8 +1,8 @@
 // Integration test for quoted strings in TSD
 // Tests that quoted strings work correctly in types, facts, and rules
 
-type Person(id: string, name: string, city: string, bio: string)
-type Message(id: string, sender: string, text: string, status: string)
+type Person(#id: string, name: string, city: string, bio: string)
+type Message(#id: string, sender: string, text: string, status: string)
 
 // Facts with quoted strings (including spaces and special characters)
 Person(id:"p1", name:"Alice Smith", city:"New York", bio:"Software engineer at TechCorp")

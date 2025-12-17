@@ -1,8 +1,8 @@
 // Test d'intégration : Validation de l'unicité des identifiants de règles
 // Ce fichier démontre le comportement du parseur face aux IDs de règles dupliqués
 
-type Person(id: string, name: string, age: number)
-type Order(id: string, customer_id: string, amount: number)
+type Person(#id: string, name: string, age: number)
+type Order(#id: string, customer_id: string, amount: number)
 
 // Règle 1 : Détection des adultes
 

@@ -16,15 +16,22 @@
 // ================================================================================
 
 // Types de base pour un système de gestion de commandes e-commerce
-type Customer(id: string, name: string, email: string, vip: bool, creditScore: number)
-type Product(id: string, name: string, category: string, price: number, stock: number)
-type Order(orderId: string, customerId: string, totalAmount: number, status: string, itemCount: number)
-type Payment(paymentId: string, orderId: string, amount: number, method: string, processed: bool)
-type Shipment(shipmentId: string, orderId: string, address: string, status: string, priority: number)
+// IDs générés automatiquement au format: Customer~<id>
+type Customer(#id: string, name: string, email: string, vip: bool, creditScore: number)
+// IDs générés automatiquement au format: Product~<id>
+type Product(#id: string, name: string, category: string, price: number, stock: number)
+// IDs générés automatiquement au format: Order~<orderId>
+type Order(#orderId: string, customerId: string, totalAmount: number, status: string, itemCount: number)
+// IDs générés automatiquement au format: Payment~<paymentId>
+type Payment(#paymentId: string, orderId: string, amount: number, method: string, processed: bool)
+// IDs générés automatiquement au format: Shipment~<shipmentId>
+type Shipment(#shipmentId: string, orderId: string, address: string, status: string, priority: number)
 
 // Types pour le système de notifications
-type Notification(id: string, recipient: string, message: string, priority: number, sent: bool)
-type Alert(id: string, type: string, severity: string, message: string, timestamp: number)
+// IDs générés automatiquement au format: Notification~<id>
+type Notification(#id: string, recipient: string, message: string, priority: number, sent: bool)
+// IDs générés automatiquement au format: Alert~<id>
+type Alert(#id: string, type: string, severity: string, message: string, timestamp: number)
 
 // ================================================================================
 // SECTION 2: DÉFINITION DES ACTIONS
@@ -216,7 +223,7 @@ rule vipOrderOrchestration : {c: Customer, o: Order, p: Payment, s: Shipment} /
 // ================================================================================
 
 // -----------------------------------------------
-// Clients
+// Clients - IDs générés: Customer~C001, Customer~C002, etc.
 // -----------------------------------------------
 Customer(id: "C001", name: "Alice Johnson", email: "alice@example.com", vip: true, creditScore: 800)
 Customer(id: "C002", name: "Bob Smith", email: "bob@example.com", vip: false, creditScore: 650)
@@ -225,7 +232,7 @@ Customer(id: "C004", name: "Diana Prince", email: "diana@example.com", vip: fals
 Customer(id: "C005", name: "Eve White", email: "eve@example.com", vip: true, creditScore: 820)
 
 // -----------------------------------------------
-// Produits
+// Produits - IDs générés: Product~P001, Product~P002, etc.
 // -----------------------------------------------
 Product(id: "P001", name: "Laptop Pro 15", category: "electronics", price: 1500, stock: 5)
 Product(id: "P002", name: "Wireless Mouse", category: "electronics", price: 25, stock: 100)
@@ -234,7 +241,7 @@ Product(id: "P004", name: "External SSD 1TB", category: "electronics", price: 12
 Product(id: "P005", name: "Mechanical Keyboard", category: "electronics", price: 150, stock: 50)
 
 // -----------------------------------------------
-// Commandes
+// Commandes - IDs générés: Order~O001, Order~O002, etc.
 // -----------------------------------------------
 Order(orderId: "O001", customerId: "C001", totalAmount: 1500, status: "pending", itemCount: 2)
 Order(orderId: "O002", customerId: "C002", totalAmount: 75, status: "pending", itemCount: 3)
@@ -243,7 +250,7 @@ Order(orderId: "O004", customerId: "C004", totalAmount: 50, status: "pending", i
 Order(orderId: "O005", customerId: "C005", totalAmount: 3000, status: "confirmed", itemCount: 20)
 
 // -----------------------------------------------
-// Paiements
+// Paiements - IDs générés: Payment~PAY001, Payment~PAY002, etc.
 // -----------------------------------------------
 Payment(paymentId: "PAY001", orderId: "O001", amount: 1500, method: "credit_card", processed: false)
 Payment(paymentId: "PAY002", orderId: "O002", amount: 75, method: "paypal", processed: true)
@@ -251,7 +258,7 @@ Payment(paymentId: "PAY003", orderId: "O003", amount: 2500, method: "credit_card
 Payment(paymentId: "PAY004", orderId: "O005", amount: 3000, method: "wire_transfer", processed: true)
 
 // -----------------------------------------------
-// Expéditions
+// Expéditions - IDs générés: Shipment~S001, Shipment~S002, etc.
 // -----------------------------------------------
 Shipment(shipmentId: "S001", orderId: "O001", address: "123 Main St", status: "ready", priority: 8)
 Shipment(shipmentId: "S002", orderId: "O002", address: "456 Oak Ave", status: "ready", priority: 3)
@@ -259,7 +266,7 @@ Shipment(shipmentId: "S003", orderId: "O003", address: "789 Pine Rd", status: "r
 Shipment(shipmentId: "S004", orderId: "O005", address: "321 Elm St", status: "ready", priority: 10)
 
 // -----------------------------------------------
-// Alertes
+// Alertes - IDs générés: Alert~A001, Alert~A002, etc.
 // -----------------------------------------------
 Alert(id: "A001", type: "inventory", severity: "critical", message: "Critical stock levels", timestamp: 1640000000)
 Alert(id: "A002", type: "payment", severity: "warning", message: "Payment gateway slow", timestamp: 1640000100)

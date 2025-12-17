@@ -5,13 +5,13 @@
 type User(name: string, age: number)
 
 // Définir un second type
-type Order(id: number, amount: number)
+type Order(#id: number, amount: number)
 
 // Utiliser l'instruction reset pour tout effacer
 reset
 
 // Après reset, on peut redéfinir de nouveaux types
-type Product(id: string, name: string, price: number)
+type Product(#id: string, name: string, price: number)
 
 type Category(name: string, priority: number)
 

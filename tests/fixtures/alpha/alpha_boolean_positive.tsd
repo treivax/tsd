@@ -1,5 +1,5 @@
 // Test condition booléenne positive
-type Account(id: string, balance: number, active: bool)
+type Account(#id: string, balance: number, active: bool)
 
 
 // Action definitions

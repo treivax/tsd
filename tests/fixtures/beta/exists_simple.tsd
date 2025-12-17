@@ -1,5 +1,5 @@
 // Test existence simple
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 type Order(customer_id: string, amount: number)
 
 

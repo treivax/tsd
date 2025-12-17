@@ -1,5 +1,5 @@
 // Test opérateur IN (appartenance) - négation
-type Status(id: string, state: string, priority: number)
+type Status(#id: string, state: string, priority: number)
 
 
 // Action definitions

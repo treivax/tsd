@@ -1,6 +1,6 @@
 // Test opérateurs arithmétiques dans jointures beta
-type Account(id: string, balance: number, credit_limit: number, fees: number)
-type Transaction(id: string, account_id: string, amount: number, type: string)
+type Account(#id: string, balance: number, credit_limit: number, fees: number)
+type Transaction(#id: string, account_id: string, amount: number, type: string)
 
 
 // Action definitions

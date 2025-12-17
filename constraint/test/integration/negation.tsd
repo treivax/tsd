@@ -1,6 +1,6 @@
 // Test 3 : Négation (NotNode)
 // Types pour tests de négation
-type User(id: string, name: string, active: bool, last_login: number)
+type User(#id: string, name: string, active: bool, last_login: number)
 type Login(user_id: string, timestamp: number, success: bool, ip: string)
 type SecurityEvent(user_id: string, event_type: string, severity: string, timestamp: number)
 

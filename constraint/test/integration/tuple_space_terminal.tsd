@@ -1,7 +1,7 @@
 /* Test tuple-space terminal - Customer authorization */
 
 /* Type definitions */
-type Customer(id: string, age: number, vip: bool)
+type Customer(#id: string, age: number, vip: bool)
 
 /* Rule: Authorize adult customers */
 

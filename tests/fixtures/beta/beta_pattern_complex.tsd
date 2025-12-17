@@ -1,7 +1,7 @@
 // Test Beta PatternNode - Motifs et patterns complexes 
-type Transaction(id: string, account_id: string, amount: number, type: string, timestamp: string)
-type Account(id: string, customer_id: string, balance: number, type: string, status: string)
-type Customer(id: string, name: string, risk_level: string, country: string)
+type Transaction(#id: string, account_id: string, amount: number, type: string, timestamp: string)
+type Account(#id: string, customer_id: string, balance: number, type: string, status: string)
+type Customer(#id: string, name: string, risk_level: string, country: string)
 
 
 // Action definitions

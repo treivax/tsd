@@ -1,8 +1,8 @@
 // Test complet des opérateurs arithmétiques dans jointures beta (2+ variables)
 // Couvre: opérateurs de base, expressions complexes, fonctions mathématiques, parenthèses
 
-type Product(id: string, price: number, cost: number, discount: number, quantity: number)
-type Order(id: string, product_id: string, quantity: number, tax_rate: number, shipping: number)
+type Product(#id: string, price: number, cost: number, discount: number, quantity: number)
+type Order(#id: string, product_id: string, quantity: number, tax_rate: number, shipping: number)
 
 // === SECTION 1: Opérateurs de base avec 2 variables ===
 

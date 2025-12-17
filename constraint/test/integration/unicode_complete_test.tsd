@@ -4,7 +4,7 @@
    avec accents français : éàèùâêîôûç */
 
 // === DÉFINITIONS DE TYPES ===
-type Utilisateur(id:string, nom:string, prenom:string, age:number)
+type Utilisateur(#id:string, nom:string, prenom:string, age:number)
 type Adresse(utilisateur_id:string, rue:string, ville:string)
 
 // === FAITS AVEC CARACTÈRES UNICODE ===

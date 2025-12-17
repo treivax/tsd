@@ -2,8 +2,8 @@
 // Tous opérateurs, types, succès/échecs, combinaisons logiques
 
 // Types étendus pour tests exhaustifs
-type TestPerson(id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string)
-type TestProduct(id: string, name: string, price: number, category: string, available: bool, rating: number, keywords: string, brand: string)
+type TestPerson(#id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string)
+type TestProduct(#id: string, name: string, price: number, category: string, available: bool, rating: number, keywords: string, brand: string)
 
 // ===============================================================
 // PARTIE 1 : TESTS DE COMPARAISON BASIQUE (SUCCESS + FAILURE)

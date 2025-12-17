@@ -2,10 +2,10 @@
 // This file demonstrates how to use aggregations over multiple joined fact types
 
 // Define types for HR analytics
-type Department(id: string, name: string, budget: number)
-type Employee(id: string, name: string, deptId: string, salary: number, hireDate: string)
-type Performance(id: string, employeeId: string, score: number, year: number)
-type Training(id: string, employeeId: string, hours: number, cost: number)
+type Department(#id: string, name: string, budget: number)
+type Employee(#id: string, name: string, deptId: string, salary: number, hireDate: string)
+type Performance(#id: string, employeeId: string, score: number, year: number)
+type Training(#id: string, employeeId: string, hours: number, cost: number)
 
 // Example 1: Basic two-source aggregation
 // Combine salary and performance data by department

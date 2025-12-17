@@ -1,5 +1,5 @@
 // Test inégalité positive
-type Order(id: string, total: number, status: string)
+type Order(#id: string, total: number, status: string)
 
 
 // Action definitions

@@ -1,8 +1,8 @@
 // Test 5 : Agrégation (AccumulateNode)
 // Types pour tests d'agrégation
-type Portfolio(id: string, owner: string, type: string, created: number)
-type Asset(id: string, portfolio_id: string, value: number, type: string, risk_level: number)
-type Trade(id: string, portfolio_id: string, asset_id: string, amount: number, price: number, timestamp: number)
+type Portfolio(#id: string, owner: string, type: string, created: number)
+type Asset(#id: string, portfolio_id: string, value: number, type: string, risk_level: number)
+type Trade(#id: string, portfolio_id: string, asset_id: string, amount: number, price: number, timestamp: number)
 
 // Agrégation SUM - somme des valeurs
 

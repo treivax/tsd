@@ -1,5 +1,5 @@
 // Test opérateur LIKE (motif)
-type Email(id: string, address: string, verified: bool)
+type Email(#id: string, address: string, verified: bool)
 
 
 // Action definitions

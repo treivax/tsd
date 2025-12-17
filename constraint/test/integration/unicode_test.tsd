@@ -1,7 +1,7 @@
 // Test Unicode et caractères étendus
 
 // Type definition
-type Utilisateur(id: string, nom: string, prenom: string, age: number)
+type Utilisateur(#id: string, nom: string, prenom: string, age: number)
 type Adresse(utilisateur_id: string, rue: string, ville: string)
 
 // Fichier de test pour valider le support des caractères non-ASCII

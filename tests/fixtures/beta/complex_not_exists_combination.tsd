@@ -1,7 +1,7 @@
 // Test combinaison NOT + EXISTS avec jointures
-type Student(id: string, name: string, grade: number, active: bool)
-type Course(id: string, title: string, level: string, credits: number)
-type Enrollment(id: string, student_id: string, course_id: string, status: string)
+type Student(#id: string, name: string, grade: number, active: bool)
+type Course(#id: string, title: string, level: string, credits: number)
+type Enrollment(#id: string, student_id: string, course_id: string, status: string)
 
 
 // Action definitions

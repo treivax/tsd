@@ -2,8 +2,8 @@
 // Ce fichier teste que plusieurs resets peuvent être appliqués sans problème
 
 // Phase 1: Premier ensemble de types
-type UserV1(id: string, username: string)
-type PostV1(id: string, user_id: string, content: string)
+type UserV1(#id: string, username: string)
+type PostV1(#id: string, user_id: string, content: string)
 
 
 // Actions auto-générées
@@ -20,7 +20,7 @@ reset
 
 // Phase 2: Deuxième ensemble de types (complètement différent)
 type ProductV2(sku: string, name: string, stock: number)
-type SupplierV2(id: string, name: string, country: string)
+type SupplierV2(#id: string, name: string, country: string)
 
 rule r2 : {p: ProductV2} / p.stock < 10 ==> log_low_stock(p.name)
 
@@ -28,8 +28,8 @@ rule r2 : {p: ProductV2} / p.stock < 10 ==> log_low_stock(p.name)
 reset
 
 // Phase 3: Troisième ensemble de types (celui qui devrait rester)
-type Employee(id: string, name: string, department: string, salary: number)
-type Project(id: string, name: string, budget: number)
+type Employee(#id: string, name: string, department: string, salary: number)
+type Project(#id: string, name: string, budget: number)
 type Assignment(employee_id: string, project_id: string, hours: number)
 
 // Règles finales (seules ces règles devraient exister après les resets)

@@ -1,5 +1,5 @@
-type Employee(id: string, name: string, department: string)
-type Order(id: string, employee_id: string, amount: number)
+type Employee(#id: string, name: string, department: string)
+type Order(#id: string, employee_id: string, amount: number)
 
 
 // Action definitions

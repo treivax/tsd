@@ -1,5 +1,5 @@
-type Department(id: string, name: string, budget: number)
-type Employee(id: string, name: string, department: string, salary: number)
+type Department(#id: string, name: string, budget: number)
+type Employee(#id: string, name: string, department: string, salary: number)
 
 
 // Action definitions

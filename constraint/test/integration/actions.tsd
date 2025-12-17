@@ -1,8 +1,8 @@
 // Test 6 : Actions et Jobs (TerminalNode)
 // Types pour tests d'actions
-type Alarm(id: string, source: string, severity: string, message: string, timestamp: number)
-type System(id: string, name: string, status: string, cpu_usage: number, memory_usage: number)
-type Incident(id: string, system_id: string, type: string, priority: string, resolved: bool)
+type Alarm(#id: string, source: string, severity: string, message: string, timestamp: number)
+type System(#id: string, name: string, status: string, cpu_usage: number, memory_usage: number)
+type Incident(#id: string, system_id: string, type: string, priority: string, resolved: bool)
 
 // Actions simples
 

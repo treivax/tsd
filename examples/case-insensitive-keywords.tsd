@@ -2,7 +2,7 @@
 // Ce fichier montre que les mots-clés peuvent être écrits en UPPERCASE, lowercase ou Capitalized
 
 // Définitions de types
-type Employee(id: string, name: string, salary: number, department: string, active: bool)
+type Employee(#id: string, name: string, salary: number, department: string, active: bool)
 type Sale(employeeId: string, amount: number, date: string)
 type Department(name: string, budget: number)
 

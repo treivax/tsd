@@ -1,4 +1,4 @@
-type TestUser(id: string, name: string)
+type TestUser(#id: string, name: string)
 
 
 // Actions auto-générées

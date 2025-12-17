@@ -1,8 +1,8 @@
 // Tests des fonctions mathématiques : ABS, ROUND, FLOOR, CEIL
 // Ce fichier teste l'utilisation des fonctions mathématiques dans les contraintes et actions
 
-type Account(id:string, balance:number, temperature:number, rating:number)
-type Measurement(id:string, value:number, threshold:number)
+type Account(#id:string, balance:number, temperature:number, rating:number)
+type Measurement(#id:string, value:number, threshold:number)
 
 // Test 1: ABS - valeur absolue pour gérer valeurs négatives
 // ABS(balance) > 100 - détecte soldes importants (positifs ou négatifs)

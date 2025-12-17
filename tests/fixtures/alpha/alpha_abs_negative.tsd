@@ -1,5 +1,5 @@
 // Test fonction ABS() (valeur absolue) - négation
-type Balance(id: string, amount: number, type: string)
+type Balance(#id: string, amount: number, type: string)
 
 
 // Action definitions

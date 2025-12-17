@@ -14,7 +14,7 @@
 // 1. STRING CONCATENATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-type User(id: string, firstName: string, lastName: string, email: string, role: string)
+type User(#id: string, firstName: string, lastName: string, email: string, role: string)
 
 // Example 1.1: Simple string concatenation
 rule greetUser : {u:User} /
@@ -41,7 +41,7 @@ rule formatReport : {u:User} /
 // 2. CONCATENATION WITH TYPE CASTING
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Product(id: string, name: string, price: number, quantity: number, inStock: bool)
+type Product(#id: string, name: string, price: number, quantity: number, inStock: bool)
 
 // Example 2.1: Concatenate number as string
 rule formatPrice : {p:Product} /
@@ -68,7 +68,7 @@ rule productSummary : {p:Product} /
 // 3. STRING PATTERN MATCHING - LIKE OPERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Customer(id: string, name: string, email: string, phone: string, country: string)
+type Customer(#id: string, name: string, email: string, phone: string, country: string)
 
 // Example 3.1: Prefix matching with LIKE
 rule checkEmailDomain : {c:Customer} /
@@ -95,7 +95,7 @@ rule nonCompanyEmail : {c:Customer} /
 // 4. STRING CONTAINMENT - CONTAINS OPERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Document(id: string, title: string, content: string, author: string, tags: string)
+type Document(#id: string, title: string, content: string, author: string, tags: string)
 
 // Example 4.1: Simple substring search
 rule urgentDocument : {d:Document} /
@@ -122,7 +122,7 @@ rule taggedDocument : {d:Document} /
 // 5. REGULAR EXPRESSIONS - MATCHES OPERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-type LogEntry(id: string, message: string, level: string, timestamp: string, source: string)
+type LogEntry(#id: string, message: string, level: string, timestamp: string, source: string)
 
 // Example 5.1: Pattern matching with regex
 rule errorPattern : {l:LogEntry} /
@@ -149,7 +149,7 @@ rule criticalLog : {l:LogEntry} /
 // 6. SET MEMBERSHIP - IN OPERATOR
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Order(id: string, status: string, priority: string, region: string, customer: string)
+type Order(#id: string, status: string, priority: string, region: string, customer: string)
 
 // Example 6.1: Check status in set
 rule pendingOrders : {o:Order} /

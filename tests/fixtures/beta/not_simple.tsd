@@ -1,5 +1,5 @@
 // Test négation simple
-type Person(id: string, name: string, active: bool)
+type Person(#id: string, name: string, active: bool)
 
 
 // Action definitions

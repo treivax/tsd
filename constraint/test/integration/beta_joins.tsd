@@ -1,8 +1,8 @@
 // Test 2 : Jointures Beta (JoinNodeImpl)
 // Types pour jointures multi-faits
-type Customer(id: string, name: string, age: number, vip: bool)
-type Order(id: string, customer_id: string, total: number, date: string)
-type Product(id: string, name: string, price: number, category: string)
+type Customer(#id: string, name: string, age: number, vip: bool)
+type Order(#id: string, customer_id: string, total: number, date: string)
+type Product(#id: string, name: string, price: number, category: string)
 
 // Jointures simples entre deux faits
 

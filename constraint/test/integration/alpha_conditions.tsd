@@ -1,7 +1,7 @@
 // Test 1 : Conditions Alpha Simples (AlphaNode)
 // Types de base
-type Transaction(id: string, amount: number, status: string, timestamp: number)
-type Account(id: string, balance: number, type: string, active: bool)
+type Transaction(#id: string, amount: number, status: string, timestamp: number)
+type Account(#id: string, balance: number, type: string, active: bool)
 
 // Expressions alpha simples - conditions sur un seul fait
 

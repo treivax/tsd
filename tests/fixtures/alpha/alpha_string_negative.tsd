@@ -1,5 +1,5 @@
 // Test condition string négative
-type User(id: string, name: string, role: string)
+type User(#id: string, name: string, role: string)
 
 
 // Action definitions

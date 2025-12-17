@@ -1,8 +1,8 @@
 // Fichier de faits pour tests exhaustifs des nœuds Alpha
 
 // Type definition
-type TestPerson(id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string)
-type TestProduct(id: string, name: string, price: number, category: string, available: bool, rating: number, keywords: string, brand: string)
+type TestPerson(#id: string, name: string, age: number, salary: number, active: bool, score: number, tags: string, status: string)
+type TestProduct(#id: string, name: string, price: number, category: string, available: bool, rating: number, keywords: string, brand: string)
 
 // Format: TypeName(champ:valeur, champ2:valeur2, ...)
 
