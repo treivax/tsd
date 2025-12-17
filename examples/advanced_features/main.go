@@ -54,8 +54,8 @@ func demonstrateIncrementalValidation(tmpDir string) {
 	// Fichier 1 : Définir les types
 	typesFile := filepath.Join(tmpDir, "types.tsd")
 	typesContent := `
-type Employee(id: string, name: string, salary: number, department: string)
-type Department(id: string, name: string, budget: number)
+type Employee(#id: string, name: string, salary: number, department: string)
+type Department(#id: string, name: string, budget: number)
 `
 	writeFile(typesFile, typesContent)
 
@@ -107,7 +107,7 @@ func demonstrateGarbageCollection(tmpDir string) {
 	// Session 1 : Créer un réseau volumineux
 	session1File := filepath.Join(tmpDir, "session1.tsd")
 	session1Content := `
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 action print(msg: string)
 
 rule rule1: {p: Person} / p.age >= 18 ==> print("Adult")
@@ -131,7 +131,7 @@ Person(id: "p2", name: "Bob", age: 15)
 	session2Content := `
 reset
 
-type Vehicle(id: string, brand: string, model: string)
+type Vehicle(#id: string, brand: string, model: string)
 action print(msg: string)
 
 rule luxury_car: {v: Vehicle} / v.brand == "BMW" ==> print("Luxury vehicle")
@@ -156,7 +156,7 @@ func demonstrateTransactions(tmpDir string) {
 	// État initial
 	initialFile := filepath.Join(tmpDir, "initial.tsd")
 	initialContent := `
-type Book(id: string, title: string, author: string, pages: number)
+type Book(#id: string, title: string, author: string, pages: number)
 
 Book(id: "b1", title: "Go Programming", author: "John Doe", pages: 300)
 `
@@ -218,7 +218,7 @@ func demonstrateMetricsCollection(tmpDir string) {
 	// Fichier 1 : Types de base
 	file1 := filepath.Join(tmpDir, "base_types.tsd")
 	file1Content := `
-type Student(id: string, name: string, grade: number)
+type Student(#id: string, name: string, grade: number)
 `
 	writeFile(file1, file1Content)
 
@@ -271,7 +271,7 @@ Student(id: "s2", name: "Bob", grade: 55)
 	file3Content := `
 reset
 
-type Course(id: string, name: string, credits: number)
+type Course(#id: string, name: string, credits: number)
 action print(msg: string)
 
 rule credit_heavy_course: {c: Course} / c.credits > 3 ==> print(c.name)

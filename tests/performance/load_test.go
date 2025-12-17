@@ -145,7 +145,7 @@ func TestLoad_ComplexConstraints(t *testing.T) {
 	testutil.SkipIfShort(t, "performance tests skipped in short mode")
 
 	// Complex constraint with multiple conditions
-	rule := `type Transaction(id: number, amount: number, category: string, verified: bool, timestamp: number)
+	rule := `type Transaction(#id: number, amount: number, category: string, verified: bool, timestamp: number)
 
 action print(arg: string)
 
@@ -197,9 +197,9 @@ func TestLoad_JoinHeavy(t *testing.T) {
 	// (les comparaisons number==number dans les jointures ont un bug de conversion int/float)
 
 	// Create scenario with joins between multiple types
-	rule := `type Employee(id: string, name: string, dept_id: string)
-type Department(id: string, name: string, budget: number)
-type Project(id: string, dept_id: string, name: string)
+	rule := `type Employee(#id: string, name: string, dept_id: string)
+type Department(#id: string, name: string, budget: number)
+type Project(#id: string, dept_id: string, name: string)
 
 action print(arg: string)
 
@@ -338,7 +338,7 @@ rule r1 : {lr: LargeRecord} / lr.id > 0 ==> print("processed")
 
 // generateRuleWithFacts creates a TSD rule with the specified number of facts
 func generateRuleWithFacts(count int) string {
-	rule := `type Item(id: number, value: string, score: number)
+	rule := `type Item(#id: number, value: string, score: number)
 
 action print(arg: string)
 

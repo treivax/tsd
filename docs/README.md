@@ -10,6 +10,7 @@
 |----------|-------------|
 | **[Installation](installation.md)** | Installation et démarrage rapide (5 min) |
 | **[Guides](guides.md)** | Tutoriels et guides utilisateur complets |
+| **[Clés Primaires](primary-keys.md)** | 🆔 Génération automatique d'IDs et clés primaires |
 | **[Architecture](architecture.md)** | Architecture interne et algorithme RETE |
 | **[Configuration](configuration.md)** | Configuration système complète |
 | **[API](api.md)** | API publique Go |
@@ -91,6 +92,8 @@ tsd hello.tsd
 
 - **Installer TSD** → [Installation](installation.md)
 - **Apprendre la syntaxe** → [Guides](guides.md)
+- **Utiliser les clés primaires** → [Clés Primaires](primary-keys.md)
+- **Migrer vers les clés primaires** → [Migration Guide](MIGRATION_IDS.md)
 - **Configurer le système** → [Configuration](configuration.md)
 - **Intégrer dans mon app Go** → [API](api.md)
 - **Utiliser le serveur HTTP** → [Référence API HTTP](reference.md#api-httprest)
@@ -111,6 +114,15 @@ tsd hello.tsd
 - [TODO Actifs](../TODO_ACTIFS.md) - Améliorations futures
 - [Archives](../ARCHIVES/README.md) - Documentation archivée
 - [Reports](../REPORTS/README.md) - Rapports techniques
+
+### Tutoriels
+
+- [Tutoriel Clés Primaires](tutorials/primary-keys-tutorial.md) - Système de blog complet (30 min)
+
+### Référence API
+
+- [API ID Generator](api/id-generator.md) - Référence complète API génération d'IDs
+- [Architecture ID Generation](architecture/id-generation.md) - Architecture interne
 
 ### Exemples
 
@@ -134,15 +146,18 @@ tsd examples/*.tsd    # Exécuter les exemples
 Définissent la structure des données :
 
 ```tsd
-type Product(name: string, price: number, inStock: bool)
+type Product(#sku: string, name: string, price: number, inStock: bool)
 ```
+
+**Note :** Le préfixe `#` marque `sku` comme clé primaire. L'ID sera généré automatiquement : `Product~LAPTOP-001`
 
 ### Faits
 
 Instances de types :
 
 ```tsd
-Product(name: "Laptop", price: 999.99, inStock: true)
+Product(sku: "LAPTOP-001", name: "Laptop", price: 999.99, inStock: true)
+// ID généré automatiquement: Product~LAPTOP-001
 ```
 
 ### Règles
@@ -150,8 +165,10 @@ Product(name: "Laptop", price: 999.99, inStock: true)
 Logique métier avec pattern matching :
 
 ```tsd
-rule expensive : {p: Product} / p.price > 500 ==> markAsPremium(p.name)
+rule expensive : {p: Product} / p.price > 500 ==> markAsPremium(p.name, p.id)
 ```
+
+**Note :** Le champ `id` est toujours disponible et contient l'ID généré automatiquement.
 
 ### Actions
 

@@ -37,7 +37,7 @@ const (
 
 const (
 	// SimpleTSDProgram est un programme TSD simple pour les tests E2E
-	SimpleTSDProgram = `type Person(id: string, age: number)
+	SimpleTSDProgram = `type Person(#id: string, age: number)
 
 action adult(id: string)
 

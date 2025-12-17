@@ -2,8 +2,8 @@
 // This file contains a simple rule with mixed alpha and beta conditions
 
 // Define types
-type Produit(id: string, prix: number)
-type Commande(id: string, produit_id: string, qte: number)
+type Produit(#id: string, prix: number)
+type Commande(#id: string, produit_id: string, qte: number)
 
 // Define action
 action resultat(commande_id: string, produit_id: string)

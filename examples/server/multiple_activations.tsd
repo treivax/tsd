@@ -6,8 +6,8 @@
 // Ce fichier démontre comment plusieurs faits peuvent déclencher plusieurs actions
 
 // Définition des types
-type Employee(id: string, name: string, department: string, salary: number)
-type Project(id: string, name: string, budget: number)
+type Employee(#id: string, name: string, department: string, salary: number)
+type Project(#id: string, name: string, budget: number)
 type Assignment(employee_id: string, project_id: string)
 
 // Définition des actions

@@ -6,10 +6,10 @@
 // Ce fichier démontre les fonctionnalités de base du système
 
 // Définition du type Person
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 
 // Définition du type Order
-type Order(id: string, customer_id: string, amount: number)
+type Order(#id: string, customer_id: string, amount: number)
 
 // Définition des actions
 action notify(message: string)

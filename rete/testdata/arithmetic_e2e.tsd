@@ -2,9 +2,9 @@
 // Ce fichier teste les expressions arithmetiques avec imbrication et operateurs multiples
 
 // Definition des types
-type Produit(id: string, prix: number, quantite: number, poids: number)
-type Commande(id: string, produit_id: string, qte: number, remise: number)
-type Client(id: string, niveau: string, reduction_supplementaire: number)
+type Produit(#id: string, prix: number, quantite: number, poids: number)
+type Commande(#id: string, produit_id: string, qte: number, remise: number)
+type Client(#id: string, niveau: string, reduction_supplementaire: number)
 
 // Definition des actions
 action facture_calculee(

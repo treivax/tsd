@@ -43,6 +43,15 @@ func AddTypeField(td *TypeDefinition, name, fieldType string) {
 	})
 }
 
+// AddTypePrimaryKeyField adds a primary key field to a TypeDefinition
+func AddTypePrimaryKeyField(td *TypeDefinition, name, fieldType string) {
+	td.Fields = append(td.Fields, Field{
+		Name:         name,
+		Type:         fieldType,
+		IsPrimaryKey: true,
+	})
+}
+
 // GetProgramTypeByName finds a type definition by name in a program
 func GetProgramTypeByName(p *Program, name string) *TypeDefinition {
 	for i := range p.Types {

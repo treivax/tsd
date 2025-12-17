@@ -187,8 +187,8 @@ Record(a:25, b:75, c:65, d:true, e:"test3")
 }
 
 func BenchmarkJoinOperations_TwoTypes(b *testing.B) {
-	rule := `type Person(id: number, name: string)
-type Company(id: number, person_id: number, name: string)
+	rule := `type Person(#id: number, name: string)
+type Company(#id: number, person_id: number, name: string)
 
 rule r1 : {p: Person, c: Company} / p.id == c.person_id ==> print("match")
 
@@ -209,9 +209,9 @@ Company(id:2, person_id:2, name:"TechCorp")
 }
 
 func BenchmarkJoinOperations_ThreeTypes(b *testing.B) {
-	rule := `type A(id: number, value: string)
-type B(id: number, a_id: number, value: string)
-type C(id: number, b_id: number, value: string)
+	rule := `type A(#id: number, value: string)
+type B(#id: number, a_id: number, value: string)
+type C(#id: number, b_id: number, value: string)
 
 rule r1 : {a: A, b: B, c: C} /
     a.id == b.a_id and
@@ -318,7 +318,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 
 // generateBenchmarkRule creates a simple TSD rule with the specified number of facts
 func generateBenchmarkRule(factCount int) string {
-	rule := `type BenchItem(id: number, value: number)
+	rule := `type BenchItem(#id: number, value: number)
 
 rule r1 : {bi: BenchItem} / bi.value > 0 ==> print("positive")
 

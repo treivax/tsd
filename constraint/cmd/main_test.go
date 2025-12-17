@@ -33,7 +33,7 @@ func TestMainIntegration(t *testing.T) {
 
 	// Create test constraint file
 	validConstraint := filepath.Join(tempDir, "valid.tsd")
-	validContent := []byte("type Person(id: string, name: string, age:number)")
+	validContent := []byte("type Person(#id: string, name: string, age:number)")
 	if err := os.WriteFile(validConstraint, validContent, 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestValidConstraintParsing(t *testing.T) {
 	}{
 		{
 			name:           "simple type definition",
-			constraintText: "type Person(id: string, name:string)",
+			constraintText: "type Person(#id: string, name:string)",
 			expectedInJSON: []string{
 				"Person",
 				"id",
@@ -144,7 +144,7 @@ func TestValidConstraintParsing(t *testing.T) {
 		},
 		{
 			name: "multiple types",
-			constraintText: `type Person(id: string, name:string)
+			constraintText: `type Person(#id: string, name:string)
 type Address(street: string, city:string)`,
 			expectedInJSON: []string{
 				"Person",
@@ -155,7 +155,7 @@ type Address(street: string, city:string)`,
 		},
 		{
 			name:           "type with different field types",
-			constraintText: "type User(id: string, age: number, active:bool)",
+			constraintText: "type User(#id: string, age: number, active:bool)",
 			expectedInJSON: []string{
 				"User",
 				"id",
@@ -168,7 +168,7 @@ type Address(street: string, city:string)`,
 		},
 		{
 			name: "type with constraint",
-			constraintText: `type Person(id: string, age:number)
+			constraintText: `type Person(#id: string, age:number)
 
 action adult(id: string)
 
@@ -234,12 +234,12 @@ func TestInvalidConstraintFiles(t *testing.T) {
 		},
 		{
 			name:           "invalid syntax - missing bracket",
-			constraintText: "type Person(id: string",
+			constraintText: "type Person(#id: string",
 			errorContains:  "Erreur:",
 		},
 		{
 			name:           "invalid field type",
-			constraintText: "type Person(id:invalidtype)",
+			constraintText: "type Person(#id:invalidtype)",
 			errorContains:  "Erreur",
 		},
 	}
@@ -281,7 +281,7 @@ func TestFileReadError(t *testing.T) {
 
 	// Create a file with no read permissions (Unix-like systems)
 	noReadFile := filepath.Join(tempDir, "noread.tsd")
-	if err := os.WriteFile(noReadFile, []byte("type Person(id:string)"), 0000); err != nil {
+	if err := os.WriteFile(noReadFile, []byte("type Person(#id:string)"), 0000); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 	defer os.Chmod(noReadFile, 0644) // Restore permissions for cleanup
@@ -347,7 +347,7 @@ func TestJSONOutput(t *testing.T) {
 	tempDir := t.TempDir()
 
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	constraintContent := []byte("type Person(id: string, name:string)")
+	constraintContent := []byte("type Person(#id: string, name:string)")
 	if err := os.WriteFile(constraintFile, constraintContent, 0644); err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
 	}
@@ -390,7 +390,7 @@ func TestMultipleArguments(t *testing.T) {
 	file1 := filepath.Join(tempDir, "test1.tsd")
 	file2 := filepath.Join(tempDir, "test2.tsd")
 
-	content := []byte("type Person(id:string)")
+	content := []byte("type Person(#id:string)")
 	os.WriteFile(file1, content, 0644)
 	os.WriteFile(file2, content, 0644)
 
@@ -444,7 +444,7 @@ func TestStdoutCapture(t *testing.T) {
 	tempDir := t.TempDir()
 
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	content := []byte("type Person(id:string)")
+	content := []byte("type Person(#id:string)")
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
@@ -486,7 +486,7 @@ func TestValidationError(t *testing.T) {
 
 	// Create a valid constraint (validation should pass)
 	constraintFile := filepath.Join(tempDir, "test.tsd")
-	content := []byte("type Person(id: string, name:string)")
+	content := []byte("type Person(#id: string, name:string)")
 	if err := os.WriteFile(constraintFile, content, 0644); err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
