@@ -1,0 +1,247 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ================================================================================
+// EXEMPLE: GÉNÉRATION D'IDS PAR HASH (SANS CLÉ PRIMAIRE)
+// ================================================================================
+// Ce fichier démontre la génération automatique d'IDs par hash lorsqu'aucune
+// clé primaire n'est définie sur un type.
+//
+// CONCEPT:
+// - Quand aucun champ n'est marqué avec #, un hash est calculé sur tous les champs
+// - Les IDs sont générés au format: TypeName~<hash-16-caractères-hex>
+// - Le hash est déterministe: mêmes valeurs = même hash
+// - Utile pour les événements, logs, ou données sans identifiant naturel
+// ================================================================================
+
+// ================================================================================
+// DÉFINITION DES TYPES SANS CLÉ PRIMAIRE
+// ================================================================================
+
+// Événement de log - pas d'identifiant naturel unique
+// Format d'ID: LogEvent~<hash>
+// Exemple: LogEvent~a1b2c3d4e5f6g7h8
+type LogEvent(timestamp: number, level: string, message: string, source: string)
+
+// Mesure de capteur - les valeurs peuvent se répéter
+// Format d'ID: SensorReading~<hash>
+// Exemple: SensorReading~1a2b3c4d5e6f7g8h
+type SensorReading(sensorId: string, temperature: number, humidity: number, timestamp: number)
+
+// Notification système - événements éphémères
+// Format d'ID: Notification~<hash>
+// Exemple: Notification~9z8y7x6w5v4u3t2s
+type Notification(recipient: string, message: string, priority: number, timestamp: number)
+
+// Métrique de performance - données agrégées temporelles
+// Format d'ID: Metric~<hash>
+// Exemple: Metric~fedcba9876543210
+type Metric(name: string, value: number, unit: string, timestamp: number)
+
+// Transaction bancaire - peut avoir plusieurs transactions identiques
+// Format d'ID: Transaction~<hash>
+// Exemple: Transaction~0123456789abcdef
+type Transaction(accountId: string, amount: number, type: string, timestamp: number)
+
+// ================================================================================
+// DÉFINITION DES ACTIONS
+// ================================================================================
+
+action logError(level: string, message: string)
+action alertAdmin(message: string, priority: number)
+action recordMetric(name: string, value: number)
+action processTransaction(accountId: string, amount: number)
+action sendNotification(recipient: string, message: string)
+action triggerAlert(source: string, level: string)
+
+// ================================================================================
+// RÈGLES MÉTIER
+// ================================================================================
+
+// Règle 1: Événements critiques
+rule criticalEvents : {e: LogEvent} / e.level == "ERROR" OR e.level == "CRITICAL"
+    ==> logError(e.level, e.message),
+        triggerAlert(e.source, e.level)
+
+// Règle 2: Température élevée
+rule highTemperature : {s: SensorReading} / s.temperature > 30
+    ==> alertAdmin("High temperature detected", 5),
+        recordMetric("temp_alert", s.temperature)
+
+// Règle 3: Notifications prioritaires
+rule urgentNotifications : {n: Notification} / n.priority >= 8
+    ==> sendNotification(n.recipient, n.message),
+        alertAdmin("Urgent notification", n.priority)
+
+// Règle 4: Métriques anormales
+rule abnormalMetrics : {m: Metric} / m.value > 100 AND m.name == "cpu_usage"
+    ==> recordMetric("cpu_alert", m.value),
+        alertAdmin("CPU usage high", 7)
+
+// Règle 5: Transactions importantes
+rule largeTransactions : {t: Transaction} / t.amount > 10000
+    ==> processTransaction(t.accountId, t.amount),
+        alertAdmin("Large transaction detected", 6)
+
+// Règle 6: Corrélation entre capteurs et métriques
+rule sensorMetricCorrelation : {s: SensorReading, m: Metric} /
+    s.sensorId == "TEMP-001" AND
+    m.name == "cpu_usage" AND
+    s.temperature > 25 AND
+    m.value > 80
+    ==> alertAdmin("Correlation detected: high temp and CPU", 8),
+        recordMetric("correlation_alert", 1)
+
+// ================================================================================
+// DONNÉES DE TEST
+// ================================================================================
+
+// Événements de log - IDs générés par hash
+LogEvent(timestamp: 1704067200, level: "INFO", message: "Application started", source: "app")
+// ID généré: LogEvent~<hash basé sur tous les champs>
+// Le hash est calculé sur: timestamp=1704067200, level="INFO", message="Application started", source="app"
+
+LogEvent(timestamp: 1704067201, level: "ERROR", message: "Database connection failed", source: "db")
+// ID généré: LogEvent~<hash différent>
+
+LogEvent(timestamp: 1704067202, level: "CRITICAL", message: "Out of memory", source: "system")
+// ID généré: LogEvent~<hash différent>
+
+LogEvent(timestamp: 1704067203, level: "WARN", message: "High memory usage", source: "app")
+// ID généré: LogEvent~<hash différent>
+
+LogEvent(timestamp: 1704067204, level: "ERROR", message: "API request timeout", source: "api")
+// ID généré: LogEvent~<hash différent>
+
+// Lectures de capteurs - IDs générés par hash
+SensorReading(sensorId: "TEMP-001", temperature: 22.5, humidity: 45, timestamp: 1704067200)
+// ID généré: SensorReading~<hash>
+
+SensorReading(sensorId: "TEMP-001", temperature: 32.8, humidity: 48, timestamp: 1704067260)
+// ID généré: SensorReading~<hash différent>
+
+SensorReading(sensorId: "TEMP-002", temperature: 25.0, humidity: 50, timestamp: 1704067200)
+// ID généré: SensorReading~<hash différent>
+
+SensorReading(sensorId: "TEMP-002", temperature: 35.5, humidity: 52, timestamp: 1704067260)
+// ID généré: SensorReading~<hash différent>
+
+// Notifications - IDs générés par hash
+Notification(recipient: "admin@example.com", message: "System maintenance required", priority: 5, timestamp: 1704067200)
+// ID généré: Notification~<hash>
+
+Notification(recipient: "admin@example.com", message: "Critical security alert", priority: 10, timestamp: 1704067300)
+// ID généré: Notification~<hash différent>
+
+Notification(recipient: "user@example.com", message: "Password reset requested", priority: 3, timestamp: 1704067400)
+// ID généré: Notification~<hash différent>
+
+Notification(recipient: "admin@example.com", message: "Backup completed", priority: 2, timestamp: 1704067500)
+// ID généré: Notification~<hash différent>
+
+// Métriques - IDs générés par hash
+Metric(name: "cpu_usage", value: 85, unit: "percent", timestamp: 1704067200)
+// ID généré: Metric~<hash>
+
+Metric(name: "memory_usage", value: 72, unit: "percent", timestamp: 1704067200)
+// ID généré: Metric~<hash différent>
+
+Metric(name: "cpu_usage", value: 105, unit: "percent", timestamp: 1704067260)
+// ID généré: Metric~<hash différent>
+
+Metric(name: "disk_io", value: 45, unit: "mb_per_sec", timestamp: 1704067260)
+// ID généré: Metric~<hash différent>
+
+// Transactions - IDs générés par hash
+Transaction(accountId: "ACC-001", amount: 5000, type: "deposit", timestamp: 1704067200)
+// ID généré: Transaction~<hash>
+
+Transaction(accountId: "ACC-002", amount: 15000, type: "withdrawal", timestamp: 1704067300)
+// ID généré: Transaction~<hash différent>
+
+Transaction(accountId: "ACC-001", amount: 500, type: "transfer", timestamp: 1704067400)
+// ID généré: Transaction~<hash différent>
+
+Transaction(accountId: "ACC-003", amount: 25000, type: "deposit", timestamp: 1704067500)
+// ID généré: Transaction~<hash différent>
+
+// Transaction identique à la première (pour démontrer le déterminisme)
+Transaction(accountId: "ACC-001", amount: 5000, type: "deposit", timestamp: 1704067200)
+// ID généré: Transaction~<même hash que la première transaction>
+// Note: Cette assertion créera le même ID que la première car tous les champs sont identiques
+
+// ================================================================================
+// RÉSULTATS ATTENDUS
+// ================================================================================
+//
+// Activations de règles:
+//
+// criticalEvents:
+// - LogEvent avec level="ERROR" (2 événements)
+// - LogEvent avec level="CRITICAL" (1 événement)
+//
+// highTemperature:
+// - SensorReading avec temperature=32.8 (TEMP-001)
+// - SensorReading avec temperature=35.5 (TEMP-002)
+//
+// urgentNotifications:
+// - Notification avec priority=10 (Critical security alert)
+//
+// abnormalMetrics:
+// - Metric avec cpu_usage=105
+//
+// largeTransactions:
+// - Transaction avec amount=15000 (ACC-002)
+// - Transaction avec amount=25000 (ACC-003)
+//
+// sensorMetricCorrelation:
+// - SensorReading TEMP-001 (temp=32.8) + Metric cpu_usage=105
+//
+// ================================================================================
+// NOTES SUR LA GÉNÉRATION D'IDS PAR HASH
+// ================================================================================
+//
+// 1. QUAND UTILISER SANS CLÉ PRIMAIRE:
+//    - Événements temporels (logs, métriques, notifications)
+//    - Données sans identifiant naturel unique
+//    - Données éphémères ou de monitoring
+//    - Cas où l'unicité n'est pas critique
+//
+// 2. ALGORITHME DE HASH:
+//    - Hash déterministe: mêmes valeurs → même hash
+//    - Format: 16 caractères hexadécimaux
+//    - Calculé sur tous les champs du fait (ordre, valeurs, types)
+//    - Collision possible mais très improbable en pratique
+//
+// 3. CARACTÉRISTIQUES DU HASH:
+//    - Déterminisme: LogEvent(ts: 100, level: "INFO", msg: "test", src: "app")
+//      → produira toujours le même ID
+//    - Unicité pratique: probabilité de collision extrêmement faible
+//    - Non lisible: contrairement à User~alice, le hash n'est pas parlant
+//
+// 4. AVANTAGES:
+//    - Pas besoin de gérer manuellement les IDs
+//    - Détection automatique des doublons exacts
+//    - Déterminisme garantit la reproductibilité
+//
+// 5. INCONVÉNIENTS:
+//    - IDs non lisibles (difficile pour le débogage)
+//    - Impossible de prédire l'ID à l'avance
+//    - Pas de tri naturel des IDs
+//
+// 6. COMPARAISON AVEC CLÉ PRIMAIRE:
+//    - Avec PK: User~alice (lisible, prévisible)
+//    - Sans PK: LogEvent~a1b2c3d4e5f6g7h8 (opaque, non prévisible)
+//
+// 7. DÉBOGAGE:
+//    - Utiliser le champ 'id' dans les actions pour logger l'ID généré
+//    - Exemple: logError(e.level, e.message + " (ID: " + e.id + ")")
+//
+// 8. BONNES PRATIQUES:
+//    - Réserver aux types sans identifiant naturel
+//    - Documenter pourquoi aucune clé primaire n'est définie
+//    - Considérer une clé primaire si le débogage est important
+//    - Logger les IDs générés pour la traçabilité
+//
+// ================================================================================

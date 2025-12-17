@@ -1,0 +1,190 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ================================================================================
+// EXEMPLE: CLÉ PRIMAIRE SIMPLE
+// ================================================================================
+// Ce fichier démontre l'utilisation d'une clé primaire simple pour la génération
+// automatique d'identifiants.
+//
+// CONCEPT:
+// - Une clé primaire simple est un seul champ marqué avec le préfixe #
+// - Les IDs sont générés au format: TypeName~valeur
+// - La valeur de la clé primaire est échappée si elle contient des caractères spéciaux
+// ================================================================================
+
+// ================================================================================
+// DÉFINITION DES TYPES AVEC CLÉ PRIMAIRE SIMPLE
+// ================================================================================
+
+// Utilisateur avec username comme clé primaire
+// Format d'ID: User~<username>
+// Exemple: User~alice, User~bob
+type User(#username: string, email: string, fullName: string, age: number)
+
+// Produit avec SKU comme clé primaire
+// Format d'ID: Product~<sku>
+// Exemple: Product~LAPTOP-001, Product~MOUSE-042
+type Product(#sku: string, name: string, price: number, category: string)
+
+// Pays avec code ISO comme clé primaire
+// Format d'ID: Country~<code>
+// Exemple: Country~FR, Country~US
+type Country(#code: string, name: string, population: number, continent: string)
+
+// Étudiant avec numéro d'étudiant comme clé primaire
+// Format d'ID: Student~<studentNumber>
+// Exemple: Student~2024001, Student~2024002
+type Student(#studentNumber: number, name: string, major: string, gpa: number)
+
+// ================================================================================
+// DÉFINITION DES ACTIONS
+// ================================================================================
+
+action logUser(username: string, message: string)
+action processOrder(sku: string, quantity: number)
+action sendWelcome(email: string, name: string)
+action updateInventory(sku: string)
+action reportStatistics(country: string, stat: string)
+action awardScholarship(studentNumber: number, amount: number)
+
+// ================================================================================
+// RÈGLES MÉTIER
+// ================================================================================
+
+// Règle 1: Utilisateurs adultes
+// Accès au champ 'id' généré automatiquement
+rule adultUsers : {u: User} / u.age >= 18
+    ==> logUser(u.username, "Adult user access granted"),
+        sendWelcome(u.email, u.fullName)
+
+// Règle 2: Produits chers
+rule expensiveProducts : {p: Product} / p.price > 1000
+    ==> processOrder(p.sku, 1),
+        updateInventory(p.sku)
+
+// Règle 3: Pays très peuplés
+rule populousCountries : {c: Country} / c.population > 100000000
+    ==> reportStatistics(c.code, "High population")
+
+// Règle 4: Étudiants excellents
+rule topStudents : {s: Student} / s.gpa >= 3.8
+    ==> awardScholarship(s.studentNumber, 5000)
+
+// Règle 5: Utilisateurs et étudiants
+// Jointure basée sur les noms
+rule userStudents : {u: User, s: Student} / u.fullName == s.name
+    ==> logUser(u.username, "Student account detected"),
+        awardScholarship(s.studentNumber, 1000)
+
+// ================================================================================
+// DONNÉES DE TEST
+// ================================================================================
+
+// Utilisateurs - IDs générés automatiquement
+User(username: "alice", email: "alice@example.com", fullName: "Alice Johnson", age: 25)
+// ID généré: User~alice
+
+User(username: "bob", email: "bob@example.com", fullName: "Bob Smith", age: 17)
+// ID généré: User~bob
+
+User(username: "charlie", email: "charlie@example.com", fullName: "Charlie Brown", age: 30)
+// ID généré: User~charlie
+
+User(username: "diana", email: "diana@example.com", fullName: "Diana Prince", age: 28)
+// ID généré: User~diana
+
+// Produits - IDs générés automatiquement
+Product(sku: "LAPTOP-001", name: "Professional Laptop", price: 1500, category: "electronics")
+// ID généré: Product~LAPTOP-001
+
+Product(sku: "MOUSE-042", name: "Wireless Mouse", price: 25, category: "accessories")
+// ID généré: Product~MOUSE-042
+
+Product(sku: "DESK-007", name: "Standing Desk", price: 800, category: "furniture")
+// ID généré: Product~DESK-007
+
+Product(sku: "MONITOR-4K", name: "4K Monitor 32 inch", price: 1200, category: "electronics")
+// ID généré: Product~MONITOR-4K
+
+// Pays - IDs générés automatiquement
+Country(code: "FR", name: "France", population: 67000000, continent: "Europe")
+// ID généré: Country~FR
+
+Country(code: "US", name: "United States", population: 331000000, continent: "America")
+// ID généré: Country~US
+
+Country(code: "CN", name: "China", population: 1400000000, continent: "Asia")
+// ID généré: Country~CN
+
+Country(code: "IN", name: "India", population: 1380000000, continent: "Asia")
+// ID généré: Country~IN
+
+// Étudiants - IDs générés automatiquement
+Student(studentNumber: 2024001, name: "Alice Johnson", major: "Computer Science", gpa: 3.9)
+// ID généré: Student~2024001
+
+Student(studentNumber: 2024002, name: "Charlie Brown", major: "Mathematics", gpa: 3.5)
+// ID généré: Student~2024002
+
+Student(studentNumber: 2024003, name: "Emma Wilson", major: "Physics", gpa: 3.95)
+// ID généré: Student~2024003
+
+Student(studentNumber: 2024004, name: "Frank Miller", major: "Engineering", gpa: 3.2)
+// ID généré: Student~2024004
+
+// ================================================================================
+// RÉSULTATS ATTENDUS
+// ================================================================================
+//
+// Activations de règles:
+//
+// adultUsers:
+// - User~alice (age: 25)
+// - User~charlie (age: 30)
+// - User~diana (age: 28)
+//
+// expensiveProducts:
+// - Product~LAPTOP-001 (price: 1500)
+// - Product~MONITOR-4K (price: 1200)
+//
+// populousCountries:
+// - Country~US (population: 331000000)
+// - Country~CN (population: 1400000000)
+// - Country~IN (population: 1380000000)
+//
+// topStudents:
+// - Student~2024001 (gpa: 3.9)
+// - Student~2024003 (gpa: 3.95)
+//
+// userStudents:
+// - User~alice + Student~2024001 (nom: "Alice Johnson")
+// - User~charlie + Student~2024002 (nom: "Charlie Brown")
+//
+// ================================================================================
+// NOTES
+// ================================================================================
+//
+// 1. AVANTAGES DES CLÉS PRIMAIRES SIMPLES:
+//    - IDs lisibles et prévisibles
+//    - Facilite le débogage
+//    - Permet des références explicites dans les règles
+//    - Évite les duplications naturelles
+//
+// 2. BONNES PRATIQUES:
+//    - Choisir une clé naturelle unique (username, sku, code)
+//    - Préférer des valeurs stables (qui ne changent pas)
+//    - Utiliser des formats standards (codes ISO, SKU d'entreprise)
+//
+// 3. FORMAT DES IDS:
+//    - Clé primaire string: TypeName~valeur
+//    - Clé primaire number: TypeName~123
+//    - Caractères spéciaux échappés: ~ → %7E, _ → %5F, % → %25, espace → %20
+//
+// 4. ACCÈS À L'ID DANS LES RÈGLES:
+//    - Le champ 'id' est toujours disponible: u.id, p.id, etc.
+//    - Type du champ 'id': toujours string
+//    - Peut être utilisé dans les conditions et actions
+//
+// ================================================================================

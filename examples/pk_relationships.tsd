@@ -1,0 +1,392 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ================================================================================
+// EXEMPLE: RELATIONS ENTRE TYPES AVEC IDS AUTOMATIQUES
+// ================================================================================
+// Ce fichier démontre comment utiliser les IDs générés automatiquement pour
+// créer des relations entre différents types de faits.
+//
+// CONCEPT:
+// - Les clés primaires créent des IDs uniques et déterministes
+// - Les relations utilisent des champs de référence (clés étrangères)
+// - Les jointures dans les règles utilisent ces références
+// - Le champ 'id' généré est accessible pour la traçabilité
+// ================================================================================
+
+// ================================================================================
+// DÉFINITION DES TYPES AVEC RELATIONS
+// ================================================================================
+
+// Type de base: Utilisateur
+// Clé primaire: username (unique)
+// Format d'ID: User~<username>
+type User(#username: string, email: string, fullName: string, role: string, active: bool)
+
+// Type: Organisation
+// Clé primaire: orgId
+// Format d'ID: Organization~<orgId>
+type Organization(#orgId: string, name: string, industry: string, size: number)
+
+// Type: Appartenance (relation User ↔ Organization)
+// Clé primaire composite: username + orgId
+// Format d'ID: Membership~<username>_<orgId>
+// Référence: username → User, orgId → Organization
+type Membership(#username: string, #orgId: string, role: string, joinDate: number)
+
+// Type: Projet
+// Clé primaire: projectId
+// Format d'ID: Project~<projectId>
+// Référence: ownerUsername → User
+type Project(#projectId: string, name: string, ownerUsername: string, budget: number, status: string)
+
+// Type: Assignation (relation User ↔ Project)
+// Clé primaire composite: username + projectId
+// Format d'ID: Assignment~<username>_<projectId>
+// Référence: username → User, projectId → Project
+type Assignment(#username: string, #projectId: string, hoursAllocated: number, role: string)
+
+// Type: Tâche
+// Clé primaire composite: projectId + taskNumber
+// Format d'ID: Task~<projectId>_<taskNumber>
+// Référence: projectId → Project, assignedTo → User
+type Task(#projectId: string, #taskNumber: number, title: string, assignedTo: string, priority: number, completed: bool)
+
+// Type: Commentaire
+// Clé primaire: commentId
+// Format d'ID: Comment~<commentId>
+// Référence: taskProjectId + taskNumber → Task, authorUsername → User
+type Comment(#commentId: string, taskProjectId: string, taskNumber: number, authorUsername: string, content: string, timestamp: number)
+
+// ================================================================================
+// DÉFINITION DES ACTIONS
+// ================================================================================
+
+action notifyUser(username: string, message: string)
+action logActivity(activity: string, userId: string)
+action sendReport(email: string, subject: string, details: string)
+action escalateTask(projectId: string, taskNumber: number, reason: string)
+action updateProjectStatus(projectId: string, status: string)
+action grantAccess(username: string, orgId: string, level: string)
+
+// ================================================================================
+// RÈGLES MÉTIER - DÉMONSTRATION DES RELATIONS
+// ================================================================================
+
+// Règle 1: Utilisateurs actifs dans des organisations
+// Jointure: User → Membership → Organization
+rule activeOrgMembers : {u: User, m: Membership, o: Organization} /
+    u.username == m.username AND
+    m.orgId == o.orgId AND
+    u.active == true
+    ==> grantAccess(u.username, o.orgId, m.role),
+        logActivity("User active in org", u.username)
+
+// Règle 2: Gestionnaires de projets
+// Jointure: User → Project (via ownerUsername)
+rule projectManagers : {u: User, p: Project} /
+    p.ownerUsername == u.username AND
+    p.status == "active"
+    ==> notifyUser(u.username, "Project status update"),
+        sendReport(u.email, "Project Report", p.name)
+
+// Règle 3: Assignations de projets
+// Jointure: User → Assignment → Project
+rule projectAssignments : {u: User, a: Assignment, p: Project} /
+    a.username == u.username AND
+    a.projectId == p.projectId AND
+    a.hoursAllocated > 20
+    ==> notifyUser(u.username, "High workload on " + p.name),
+        logActivity("Heavy assignment", u.username)
+
+// Règle 4: Tâches prioritaires non complétées
+// Jointure: Task → User (via assignedTo)
+rule urgentTasks : {t: Task, u: User} /
+    t.assignedTo == u.username AND
+    t.priority >= 8 AND
+    t.completed == false
+    ==> notifyUser(u.username, "Urgent task pending"),
+        escalateTask(t.projectId, t.taskNumber, "High priority")
+
+// Règle 5: Tâches avec commentaires récents
+// Jointure: Task → Comment → User
+rule tasksWithComments : {t: Task, c: Comment, u: User} /
+    c.taskProjectId == t.projectId AND
+    c.taskNumber == t.taskNumber AND
+    c.authorUsername == u.username AND
+    c.timestamp > 1704000000
+    ==> notifyUser(t.assignedTo, "New comment from " + u.fullName),
+        logActivity("Comment added", u.username)
+
+// Règle 6: Projets avec budget élevé et membres actifs
+// Jointure complexe: Project → Assignment → User
+rule highBudgetProjects : {p: Project, a: Assignment, u: User} /
+    p.projectId == a.projectId AND
+    a.username == u.username AND
+    p.budget > 100000 AND
+    u.role == "senior"
+    ==> updateProjectStatus(p.projectId, "monitored"),
+        sendReport(u.email, "High Budget Project", p.name)
+
+// Règle 7: Organisations avec projets actifs
+// Jointure: Organization → Membership → User → Project
+rule orgsWithActiveProjects : {o: Organization, m: Membership, u: User, p: Project} /
+    m.orgId == o.orgId AND
+    m.username == u.username AND
+    p.ownerUsername == u.username AND
+    p.status == "active" AND
+    o.size > 50
+    ==> sendReport("admin@example.com", "Org Activity", o.name),
+        logActivity("Large org with active projects", o.orgId)
+
+// Règle 8: Tâches complétées dans les projets actifs
+// Jointure: Project → Task
+rule completedTasks : {p: Project, t: Task} /
+    p.projectId == t.projectId AND
+    t.completed == true AND
+    p.status == "active"
+    ==> logActivity("Task completed in active project", p.projectId)
+
+// ================================================================================
+// DONNÉES DE TEST - DÉMONSTRATION DES RELATIONS
+// ================================================================================
+
+// -----------------------------------------------
+// Utilisateurs (entités de base)
+// -----------------------------------------------
+User(username: "alice", email: "alice@example.com", fullName: "Alice Johnson", role: "senior", active: true)
+// ID: User~alice
+
+User(username: "bob", email: "bob@example.com", fullName: "Bob Smith", role: "junior", active: true)
+// ID: User~bob
+
+User(username: "charlie", email: "charlie@example.com", fullName: "Charlie Brown", role: "senior", active: true)
+// ID: User~charlie
+
+User(username: "diana", email: "diana@example.com", fullName: "Diana Prince", role: "manager", active: false)
+// ID: User~diana
+
+User(username: "eve", email: "eve@example.com", fullName: "Eve Williams", role: "senior", active: true)
+// ID: User~eve
+
+// -----------------------------------------------
+// Organisations (entités de base)
+// -----------------------------------------------
+Organization(orgId: "ORG-001", name: "TechCorp", industry: "Technology", size: 100)
+// ID: Organization~ORG-001
+
+Organization(orgId: "ORG-002", name: "DataSystems", industry: "Data Analytics", size: 50)
+// ID: Organization~ORG-002
+
+Organization(orgId: "ORG-003", name: "CloudServices", industry: "Cloud Computing", size: 200)
+// ID: Organization~ORG-003
+
+// -----------------------------------------------
+// Appartenances (relation User ↔ Organization)
+// -----------------------------------------------
+Membership(username: "alice", orgId: "ORG-001", role: "developer", joinDate: 1640000000)
+// ID: Membership~alice_ORG-001
+// Relie: User~alice ↔ Organization~ORG-001
+
+Membership(username: "bob", orgId: "ORG-001", role: "developer", joinDate: 1640100000)
+// ID: Membership~bob_ORG-001
+// Relie: User~bob ↔ Organization~ORG-001
+
+Membership(username: "charlie", orgId: "ORG-002", role: "architect", joinDate: 1640200000)
+// ID: Membership~charlie_ORG-002
+// Relie: User~charlie ↔ Organization~ORG-002
+
+Membership(username: "eve", orgId: "ORG-003", role: "lead", joinDate: 1640300000)
+// ID: Membership~eve_ORG-003
+// Relie: User~eve ↔ Organization~ORG-003
+
+Membership(username: "alice", orgId: "ORG-002", role: "consultant", joinDate: 1640400000)
+// ID: Membership~alice_ORG-002
+// Relie: User~alice ↔ Organization~ORG-002
+// Note: Alice appartient à 2 organisations
+
+// -----------------------------------------------
+// Projets (avec référence au propriétaire)
+// -----------------------------------------------
+Project(projectId: "PROJ-001", name: "API Migration", ownerUsername: "alice", budget: 150000, status: "active")
+// ID: Project~PROJ-001
+// Référence: ownerUsername="alice" → User~alice
+
+Project(projectId: "PROJ-002", name: "Data Pipeline", ownerUsername: "charlie", budget: 80000, status: "active")
+// ID: Project~PROJ-002
+// Référence: ownerUsername="charlie" → User~charlie
+
+Project(projectId: "PROJ-003", name: "Mobile App", ownerUsername: "eve", budget: 200000, status: "active")
+// ID: Project~PROJ-003
+// Référence: ownerUsername="eve" → User~eve
+
+Project(projectId: "PROJ-004", name: "Analytics Dashboard", ownerUsername: "bob", budget: 50000, status: "planning")
+// ID: Project~PROJ-004
+// Référence: ownerUsername="bob" → User~bob
+
+// -----------------------------------------------
+// Assignations (relation User ↔ Project)
+// -----------------------------------------------
+Assignment(username: "alice", projectId: "PROJ-001", hoursAllocated: 30, role: "lead")
+// ID: Assignment~alice_PROJ-001
+// Relie: User~alice ↔ Project~PROJ-001
+
+Assignment(username: "bob", projectId: "PROJ-001", hoursAllocated: 25, role: "developer")
+// ID: Assignment~bob_PROJ-001
+// Relie: User~bob ↔ Project~PROJ-001
+
+Assignment(username: "charlie", projectId: "PROJ-002", hoursAllocated: 40, role: "architect")
+// ID: Assignment~charlie_PROJ-002
+// Relie: User~charlie ↔ Project~PROJ-002
+
+Assignment(username: "eve", projectId: "PROJ-003", hoursAllocated: 35, role: "lead")
+// ID: Assignment~eve_PROJ-003
+// Relie: User~eve ↔ Project~PROJ-003
+
+Assignment(username: "alice", projectId: "PROJ-002", hoursAllocated: 15, role: "consultant")
+// ID: Assignment~alice_PROJ-002
+// Relie: User~alice ↔ Project~PROJ-002
+// Note: Alice travaille sur 2 projets
+
+// -----------------------------------------------
+// Tâches (avec référence au projet et à l'assigné)
+// -----------------------------------------------
+Task(projectId: "PROJ-001", taskNumber: 1, title: "Setup infrastructure", assignedTo: "alice", priority: 9, completed: false)
+// ID: Task~PROJ-001_1
+// Références: projectId="PROJ-001" → Project~PROJ-001, assignedTo="alice" → User~alice
+
+Task(projectId: "PROJ-001", taskNumber: 2, title: "Migrate database", assignedTo: "bob", priority: 8, completed: false)
+// ID: Task~PROJ-001_2
+// Références: projectId="PROJ-001" → Project~PROJ-001, assignedTo="bob" → User~bob
+
+Task(projectId: "PROJ-001", taskNumber: 3, title: "Write tests", assignedTo: "alice", priority: 5, completed: true)
+// ID: Task~PROJ-001_3
+
+Task(projectId: "PROJ-002", taskNumber: 1, title: "Design schema", assignedTo: "charlie", priority: 7, completed: true)
+// ID: Task~PROJ-002_1
+// Références: projectId="PROJ-002" → Project~PROJ-002, assignedTo="charlie" → User~charlie
+
+Task(projectId: "PROJ-003", taskNumber: 1, title: "UI mockups", assignedTo: "eve", priority: 10, completed: false)
+// ID: Task~PROJ-003_1
+// Références: projectId="PROJ-003" → Project~PROJ-003, assignedTo="eve" → User~eve
+
+// -----------------------------------------------
+// Commentaires (avec référence à la tâche et à l'auteur)
+// -----------------------------------------------
+Comment(commentId: "C001", taskProjectId: "PROJ-001", taskNumber: 1, authorUsername: "bob", content: "Good progress on this", timestamp: 1704100000)
+// ID: Comment~C001
+// Références: taskProjectId="PROJ-001" + taskNumber=1 → Task~PROJ-001_1, authorUsername="bob" → User~bob
+
+Comment(commentId: "C002", taskProjectId: "PROJ-001", taskNumber: 2, authorUsername: "alice", content: "Need help here", timestamp: 1704200000)
+// ID: Comment~C002
+// Références: taskProjectId="PROJ-001" + taskNumber=2 → Task~PROJ-001_2, authorUsername="alice" → User~alice
+
+Comment(commentId: "C003", taskProjectId: "PROJ-003", taskNumber: 1, authorUsername: "charlie", content: "Looks great!", timestamp: 1704300000)
+// ID: Comment~C003
+// Références: taskProjectId="PROJ-003" + taskNumber=1 → Task~PROJ-003_1, authorUsername="charlie" → User~charlie
+
+// ================================================================================
+// GRAPHE DES RELATIONS
+// ================================================================================
+//
+// User ←→ Membership ←→ Organization
+//   ↓
+//   ├→ Project (owner)
+//   │    ↓
+//   │    └→ Task
+//   │         ↓
+//   │         └→ Comment
+//   │              ↓
+//   └→ Assignment ←┘
+//
+// Exemples de chemins de navigation:
+// 1. User → Membership → Organization : Utilisateurs dans leurs organisations
+// 2. User → Project : Propriétaires de projets
+// 3. User → Assignment → Project : Contributeurs de projets
+// 4. Project → Task → User : Tâches assignées
+// 5. Task → Comment → User : Commentaires sur les tâches
+// 6. Organization → Membership → User → Project : Projets des membres d'une org
+//
+// ================================================================================
+
+// ================================================================================
+// RÉSULTATS ATTENDUS
+// ================================================================================
+//
+// activeOrgMembers (User actifs avec appartenances):
+// - User~alice + Membership~alice_ORG-001 + Organization~ORG-001
+// - User~bob + Membership~bob_ORG-001 + Organization~ORG-001
+// - User~charlie + Membership~charlie_ORG-002 + Organization~ORG-002
+// - User~eve + Membership~eve_ORG-003 + Organization~ORG-003
+// - User~alice + Membership~alice_ORG-002 + Organization~ORG-002
+//
+// projectManagers (Propriétaires de projets actifs):
+// - User~alice + Project~PROJ-001
+// - User~charlie + Project~PROJ-002
+// - User~eve + Project~PROJ-003
+//
+// projectAssignments (Assignations > 20h):
+// - User~alice + Assignment~alice_PROJ-001 + Project~PROJ-001 (30h)
+// - User~bob + Assignment~bob_PROJ-001 + Project~PROJ-001 (25h)
+// - User~charlie + Assignment~charlie_PROJ-002 + Project~PROJ-002 (40h)
+// - User~eve + Assignment~eve_PROJ-003 + Project~PROJ-003 (35h)
+//
+// urgentTasks (Tâches prioritaires non complétées):
+// - Task~PROJ-001_1 + User~alice (priority=9, completed=false)
+// - Task~PROJ-001_2 + User~bob (priority=8, completed=false)
+// - Task~PROJ-003_1 + User~eve (priority=10, completed=false)
+//
+// tasksWithComments (Tâches avec commentaires récents):
+// - Task~PROJ-001_1 + Comment~C001 + User~bob
+// - Task~PROJ-001_2 + Comment~C002 + User~alice
+// - Task~PROJ-003_1 + Comment~C003 + User~charlie
+//
+// highBudgetProjects (Projets > 100k avec seniors):
+// - Project~PROJ-001 + Assignment~alice_PROJ-001 + User~alice (budget=150k, role=senior)
+// - Project~PROJ-003 + Assignment~eve_PROJ-003 + User~eve (budget=200k, role=senior)
+//
+// orgsWithActiveProjects (Grandes orgs avec projets actifs):
+// - Organization~ORG-001 + Membership~alice_ORG-001 + User~alice + Project~PROJ-001 (size=100)
+// - Organization~ORG-003 + Membership~eve_ORG-003 + User~eve + Project~PROJ-003 (size=200)
+//
+// completedTasks (Tâches complétées dans projets actifs):
+// - Project~PROJ-001 + Task~PROJ-001_3
+// - Project~PROJ-002 + Task~PROJ-002_1
+//
+// ================================================================================
+// NOTES SUR LES RELATIONS
+// ================================================================================
+//
+// 1. TYPES DE RELATIONS:
+//    - One-to-Many: User → Projects (un user possède plusieurs projets)
+//    - Many-to-Many: User ↔ Organization (via Membership)
+//    - Many-to-Many: User ↔ Project (via Assignment)
+//
+// 2. CLÉS ÉTRANGÈRES:
+//    - Champs de référence: ownerUsername, assignedTo, authorUsername, etc.
+//    - Correspondent aux valeurs de clés primaires des types référencés
+//    - Permettent les jointures dans les règles
+//
+// 3. INTÉGRITÉ RÉFÉRENTIELLE:
+//    - Non vérifiée automatiquement par TSD
+//    - Responsabilité de l'application de fournir des données cohérentes
+//    - Les règles ne s'activent que si les jointures réussissent
+//
+// 4. AVANTAGES DES IDS AUTOMATIQUES:
+//    - IDs déterministes facilitent le débogage des relations
+//    - Format prévisible: User~alice, Project~PROJ-001, etc.
+//    - Pas besoin de gérer manuellement les IDs
+//
+// 5. BONNES PRATIQUES:
+//    - Nommer clairement les champs de référence (suffixes: Id, Username, etc.)
+//    - Documenter les relations dans les commentaires
+//    - Utiliser des clés primaires significatives
+//    - Tester les jointures complexes avec des données réalistes
+//
+// 6. ACCÈS AUX IDS DANS LES RÈGLES:
+//    - Utiliser u.id, p.id, etc. pour accéder aux IDs générés
+//    - Utile pour le logging et la traçabilité
+//    - Type: toujours string
+//
+// ================================================================================

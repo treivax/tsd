@@ -1,0 +1,300 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ================================================================================
+// EXEMPLE: ÉCHAPPEMENT DE CARACTÈRES SPÉCIAUX DANS LES CLÉS PRIMAIRES
+// ================================================================================
+// Ce fichier démontre comment les caractères spéciaux sont échappés dans les
+// clés primaires lors de la génération automatique des IDs.
+//
+// CONCEPT:
+// - Certains caractères sont réservés pour le format d'ID: ~ (séparateur type),
+//   _ (séparateur composite), % (échappement)
+// - Ces caractères sont échappés en utilisant le format URL-encoding
+// - D'autres caractères courants (/, espace, etc.) sont aussi échappés
+// ================================================================================
+
+// ================================================================================
+// RÈGLES D'ÉCHAPPEMENT
+// ================================================================================
+//
+// Caractères échappés:
+// - ~ (tilde)      → %7E  (séparateur type/valeur)
+// - _ (underscore) → %5F  (séparateur composite)
+// - % (percent)    → %25  (caractère d'échappement)
+// - espace         → %20  (caractère spécial)
+// - / (slash)      → %2F  (caractère spécial)
+//
+// Exemples de transformation:
+// - "user~admin"       → "user%7Eadmin"
+// - "first_last"       → "first%5Flast"
+// - "discount 10%"     → "discount%2010%25"
+// - "/home/user"       → "%2Fhome%2Fuser"
+// - "a~b_c%d e/f"      → "a%7Eb%5Fc%25d%20e%2Ff"
+//
+// ================================================================================
+
+// ================================================================================
+// DÉFINITION DES TYPES AVEC CARACTÈRES SPÉCIAUX
+// ================================================================================
+
+// Utilisateur avec nom contenant des caractères spéciaux
+// Format d'ID: User~<username échappé>
+type User(#username: string, email: string, role: string)
+
+// Fichier système avec chemin comme clé primaire
+// Format d'ID: File~<path échappé>
+type File(#path: string, size: number, owner: string, permissions: string)
+
+// Produit avec description contenant des caractères spéciaux
+// Format d'ID: Product~<category échappée>_<name échappé>
+type Product(#category: string, #name: string, price: number, discount: string)
+
+// Adresse avec rue comme clé primaire
+// Format d'ID: Address~<street échappée>_<number>
+type Address(#street: string, #number: number, city: string, zipCode: string)
+
+// Tag avec label contenant caractères spéciaux
+// Format d'ID: Tag~<label échappé>
+type Tag(#label: string, color: string, priority: number)
+
+// Configuration avec clé contenant caractères spéciaux
+// Format d'ID: Config~<key échappée>
+type Config(#key: string, value: string, environment: string)
+
+// ================================================================================
+// DÉFINITION DES ACTIONS
+// ================================================================================
+
+action logUser(username: string, role: string)
+action processFile(path: string, size: number)
+action updateProduct(category: string, name: string, discount: string)
+action validateAddress(street: string, number: number)
+action applyTag(label: string, priority: number)
+action setConfig(key: string, value: string)
+
+// ================================================================================
+// RÈGLES MÉTIER
+// ================================================================================
+
+// Règle 1: Utilisateurs admin
+rule adminUsers : {u: User} / u.role == "admin"
+    ==> logUser(u.username, u.role)
+
+// Règle 2: Gros fichiers
+rule largeFiles : {f: File} / f.size > 1000000
+    ==> processFile(f.path, f.size)
+
+// Règle 3: Produits en promotion
+rule discountedProducts : {p: Product} / p.discount != "0%"
+    ==> updateProduct(p.category, p.name, p.discount)
+
+// Règle 4: Adresses dans Paris
+rule parisAddresses : {a: Address} / a.city == "Paris"
+    ==> validateAddress(a.street, a.number)
+
+// Règle 5: Tags prioritaires
+rule priorityTags : {t: Tag} / t.priority >= 5
+    ==> applyTag(t.label, t.priority)
+
+// Règle 6: Configurations de production
+rule productionConfigs : {c: Config} / c.environment == "production"
+    ==> setConfig(c.key, c.value)
+
+// ================================================================================
+// DONNÉES DE TEST - DÉMONSTRATION DES ÉCHAPPEMENTS
+// ================================================================================
+
+// -----------------------------------------------
+// CAS 1: Tilde (~) dans les valeurs
+// -----------------------------------------------
+User(username: "user~admin", email: "admin@example.com", role: "admin")
+// ID généré: User~user%7Eadmin
+// Le ~ est échappé car c'est le séparateur type/valeur
+
+User(username: "test~user~123", email: "test@example.com", role: "user")
+// ID généré: User~test%7Euser%7E123
+// Tous les ~ sont échappés
+
+// -----------------------------------------------
+// CAS 2: Underscore (_) dans les valeurs
+// -----------------------------------------------
+User(username: "first_last", email: "name@example.com", role: "user")
+// ID généré: User~first%5Flast
+// Le _ est échappé car c'est le séparateur composite
+
+User(username: "my_user_name", email: "user@example.com", role: "user")
+// ID généré: User~my%5Fuser%5Fname
+// Tous les _ sont échappés
+
+// -----------------------------------------------
+// CAS 3: Pourcent (%) dans les valeurs
+// -----------------------------------------------
+Product(category: "Electronics", name: "Laptop", price: 1200, discount: "10%")
+// ID généré: Product~Electronics_Laptop
+// Pas de % dans les clés primaires ici
+
+Product(category: "Sale 50%", name: "Clearance", price: 100, discount: "50%")
+// ID généré: Product~Sale%2050%25_Clearance
+// L'espace devient %20, le % devient %25
+
+// -----------------------------------------------
+// CAS 4: Espace dans les valeurs
+// -----------------------------------------------
+Address(street: "Rue de Rivoli", number: 123, city: "Paris", zipCode: "75001")
+// ID généré: Address~Rue%20de%20Rivoli_123
+// Les espaces deviennent %20
+
+Address(street: "Avenue des Champs Élysées", number: 45, city: "Paris", zipCode: "75008")
+// ID généré: Address~Avenue%20des%20Champs%20%C3%89lys%C3%A9es_45
+// Espaces et caractères unicode échappés
+
+// -----------------------------------------------
+// CAS 5: Slash (/) dans les valeurs
+// -----------------------------------------------
+File(path: "/home/user/documents", size: 1024, owner: "user", permissions: "rwx")
+// ID généré: File~%2Fhome%2Fuser%2Fdocuments
+// Les / sont échappés
+
+File(path: "/var/log/app.log", size: 2048000, owner: "root", permissions: "r--")
+// ID généré: File~%2Fvar%2Flog%2Fapp.log
+// Les / sont échappés
+
+File(path: "C:/Windows/System32", size: 512000, owner: "system", permissions: "rwx")
+// ID généré: File~C%3A%2FWindows%2FSystem32
+// Le : et / sont échappés
+
+// -----------------------------------------------
+// CAS 6: Combinaison de caractères spéciaux
+// -----------------------------------------------
+Tag(label: "urgent~high", color: "red", priority: 10)
+// ID généré: Tag~urgent%7Ehigh
+
+Tag(label: "backend/api", color: "blue", priority: 5)
+// ID généré: Tag~backend%2Fapi
+
+Tag(label: "discount_10%", color: "green", priority: 3)
+// ID généré: Tag~discount%5F10%25
+
+Tag(label: "TODO: fix bug #123", color: "yellow", priority: 8)
+// ID généré: Tag~TODO%3A%20fix%20bug%20%23123
+
+// -----------------------------------------------
+// CAS 7: Clés composites avec échappements
+// -----------------------------------------------
+Product(category: "Home & Garden", name: "BBQ Grill", price: 350, discount: "15%")
+// ID généré: Product~Home%20%26%20Garden_BBQ%20Grill
+// & devient %26, espaces deviennent %20
+
+Product(category: "Books/Magazines", name: "TSD Guide 2024", price: 45, discount: "0%")
+// ID généré: Product~Books%2FMagazines_TSD%20Guide%202024
+// / devient %2F, espaces deviennent %20
+
+// -----------------------------------------------
+// CAS 8: Caractères de configuration
+// -----------------------------------------------
+Config(key: "database.host", value: "localhost", environment: "development")
+// ID généré: Config~database.host
+// Le . n'est pas échappé
+
+Config(key: "api/v1/endpoint", value: "https://api.example.com", environment: "production")
+// ID généré: Config~api%2Fv1%2Fendpoint
+// Les / sont échappés
+
+Config(key: "feature_flags/discount_enabled", value: "true", environment: "production")
+// ID généré: Config~feature%5Fflags%2Fdiscount%5Fenabled
+// _ et / sont échappés
+
+Config(key: "cache~timeout", value: "3600", environment: "production")
+// ID généré: Config~cache%7Etimeout
+// ~ est échappé
+
+// -----------------------------------------------
+// CAS 9: Tous les échappements possibles
+// -----------------------------------------------
+User(username: "a~b_c%d e/f", email: "complex@example.com", role: "admin")
+// ID généré: User~a%7Eb%5Fc%25d%20e%2Ff
+// Tous les caractères spéciaux sont échappés:
+// ~ → %7E, _ → %5F, % → %25, espace → %20, / → %2F
+
+// ================================================================================
+// RÉSULTATS ATTENDUS
+// ================================================================================
+//
+// Activations de règles:
+//
+// adminUsers:
+// - User~user%7Eadmin
+// - User~a%7Eb%5Fc%25d%20e%2Ff
+//
+// largeFiles:
+// - File~%2Fvar%2Flog%2Fapp.log
+//
+// discountedProducts:
+// - Product~Electronics_Laptop (discount: 10%)
+// - Product~Sale%2050%25_Clearance (discount: 50%)
+// - Product~Home%20%26%20Garden_BBQ%20Grill (discount: 15%)
+//
+// parisAddresses:
+// - Address~Rue%20de%20Rivoli_123
+// - Address~Avenue%20des%20Champs%20%C3%89lys%C3%A9es_45
+//
+// priorityTags:
+// - Tag~urgent%7Ehigh (priority: 10)
+// - Tag~backend%2Fapi (priority: 5)
+// - Tag~TODO%3A%20fix%20bug%20%23123 (priority: 8)
+//
+// productionConfigs:
+// - Config~api%2Fv1%2Fendpoint
+// - Config~feature%5Fflags%2Fdiscount%5Fenabled
+// - Config~cache%7Etimeout
+//
+// ================================================================================
+// NOTES SUR L'ÉCHAPPEMENT
+// ================================================================================
+//
+// 1. CARACTÈRES TOUJOURS ÉCHAPPÉS:
+//    - ~ (tilde) → %7E : séparateur type/valeur dans le format d'ID
+//    - _ (underscore) → %5F : séparateur de clés composites
+//    - % (percent) → %25 : caractère d'échappement lui-même
+//    - espace → %20 : pour éviter les problèmes de parsing
+//    - / (slash) → %2F : caractère de séparation de chemin
+//
+// 2. POURQUOI L'ÉCHAPPEMENT EST NÉCESSAIRE:
+//    - Préserver la structure: TypeName~value ou TypeName~val1_val2
+//    - Éviter l'ambiguïté: sans échappement, "a_b" et "a", "b" seraient confondus
+//    - Compatibilité: IDs utilisables dans URLs, fichiers, bases de données
+//
+// 3. FORMAT URL-ENCODING:
+//    - Standard bien établi (RFC 3986)
+//    - Réversible: on peut décoder pour retrouver la valeur originale
+//    - Compatible avec la plupart des systèmes
+//
+// 4. IMPACT SUR LA LISIBILITÉ:
+//    - IDs moins lisibles avec échappement: User~a%7Eb%5Fc%25d%20e%2Ff
+//    - Recommandation: éviter les caractères spéciaux dans les clés primaires
+//    - Préférer: User~alice plutôt que User~alice%7Eadmin
+//
+// 5. BONNES PRATIQUES:
+//    - Choisir des clés primaires simples (alphanumériques, tirets)
+//    - Éviter ~, _, %, /, espaces dans les valeurs de clés primaires
+//    - Si impossible, documenter les valeurs échappées
+//    - Tester avec des valeurs représentatives
+//
+// 6. DÉBOGAGE:
+//    - Les IDs échappés peuvent être difficiles à lire dans les logs
+//    - Utiliser des outils de décodage URL si nécessaire
+//    - Logger à la fois la clé primaire brute et l'ID généré
+//
+// 7. DÉTERMINISME:
+//    - L'échappement est déterministe: même valeur → même échappement
+//    - User(username: "a~b") produira toujours User~a%7Eb
+//    - Garantit la cohérence des IDs
+//
+// 8. CAS PARTICULIERS:
+//    - Caractères unicode: échappés en UTF-8 puis URL-encoded
+//    - Caractères de contrôle: échappés
+//    - NULL bytes: échappés
+//
+// ================================================================================

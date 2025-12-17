@@ -1,0 +1,262 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ================================================================================
+// EXEMPLE: CLÉ PRIMAIRE COMPOSITE
+// ================================================================================
+// Ce fichier démontre l'utilisation de clés primaires composites pour la
+// génération automatique d'identifiants.
+//
+// CONCEPT:
+// - Une clé primaire composite combine plusieurs champs marqués avec #
+// - Les IDs sont générés au format: TypeName~valeur1_valeur2_valeur3
+// - Les valeurs sont concaténées avec underscore (_)
+// - Utile quand aucun champ seul n'est unique
+// ================================================================================
+
+// ================================================================================
+// DÉFINITION DES TYPES AVEC CLÉ PRIMAIRE COMPOSITE
+// ================================================================================
+
+// Produit avec catégorie + nom comme clé composite
+// Format d'ID: Product~<category>_<name>
+// Exemple: Product~Electronics_Laptop, Product~Books_TSD%20Guide
+type Product(#category: string, #name: string, price: number, stock: number)
+
+// Commande avec année + numéro comme clé composite
+// Format d'ID: Order~<year>_<orderNumber>
+// Exemple: Order~2024_1001, Order~2024_1002
+type Order(#year: number, #orderNumber: number, customerId: string, total: number, status: string)
+
+// Location géographique avec pays + ville comme clé composite
+// Format d'ID: Location~<country>_<city>
+// Exemple: Location~France_Paris, Location~USA_New%20York
+type Location(#country: string, #city: string, population: number, timezone: string)
+
+// Cours universitaire avec département + code comme clé composite
+// Format d'ID: Course~<department>_<code>
+// Exemple: Course~CS_101, Course~MATH_201
+type Course(#department: string, #code: string, title: string, credits: number)
+
+// Inscription étudiant avec studentId + courseId comme clé composite
+// Format d'ID: Enrollment~<studentId>_<courseId>
+// Exemple: Enrollment~S2024001_CS101, Enrollment~S2024002_MATH201
+type Enrollment(#studentId: string, #courseId: string, grade: string, semester: string)
+
+// Réservation de salle avec bâtiment + salle + date comme clé composite
+// Format d'ID: Reservation~<building>_<room>_<date>
+// Exemple: Reservation~A_101_2024-03-15
+type Reservation(#building: string, #room: string, #date: string, time: string, duration: number)
+
+// ================================================================================
+// DÉFINITION DES ACTIONS
+// ================================================================================
+
+action notifyLowStock(category: string, name: string, currentStock: number)
+action processOrder(year: number, orderNumber: number)
+action updateLocation(country: string, city: string, info: string)
+action enrollStudent(studentId: string, courseId: string)
+action confirmReservation(building: string, room: string, date: string)
+action logActivity(message: string)
+
+// ================================================================================
+// RÈGLES MÉTIER
+// ================================================================================
+
+// Règle 1: Produits en rupture de stock
+rule lowStockAlert : {p: Product} / p.stock < 10
+    ==> notifyLowStock(p.category, p.name, p.stock),
+        logActivity("Low stock alert")
+
+// Règle 2: Commandes importantes
+rule largeOrders : {o: Order} / o.total > 1000
+    ==> processOrder(o.year, o.orderNumber),
+        logActivity("Large order processed")
+
+// Règle 3: Grandes villes
+rule majorCities : {l: Location} / l.population > 1000000
+    ==> updateLocation(l.country, l.city, "Major city"),
+        logActivity("City statistics updated")
+
+// Règle 4: Cours avec beaucoup de crédits
+rule intensiveCourses : {c: Course} / c.credits >= 4
+    ==> logActivity("Intensive course detected")
+
+// Règle 5: Inscriptions avec bonnes notes
+rule excellentGrades : {e: Enrollment} / e.grade == "A"
+    ==> enrollStudent(e.studentId, e.courseId),
+        logActivity("Excellent performance")
+
+// Règle 6: Jointure Produits et Commandes
+// Démontre l'utilisation de clés composites dans les jointures
+rule productOrders : {p: Product, o: Order} /
+    p.category == "Electronics" AND
+    o.total > 500 AND
+    o.year == 2024
+    ==> processOrder(o.year, o.orderNumber),
+        notifyLowStock(p.category, p.name, p.stock)
+
+// Règle 7: Réservations longues durées
+rule longReservations : {r: Reservation} / r.duration > 120
+    ==> confirmReservation(r.building, r.room, r.date),
+        logActivity("Long reservation confirmed")
+
+// ================================================================================
+// DONNÉES DE TEST
+// ================================================================================
+
+// Produits avec clé composite (category, name)
+Product(category: "Electronics", name: "Laptop", price: 1200, stock: 5)
+// ID généré: Product~Electronics_Laptop
+
+Product(category: "Electronics", name: "Mouse", price: 25, stock: 100)
+// ID généré: Product~Electronics_Mouse
+
+Product(category: "Books", name: "TSD Guide", price: 30, stock: 8)
+// ID généré: Product~Books_TSD%20Guide
+// Note: L'espace dans "TSD Guide" est échappé en %20
+
+Product(category: "Furniture", name: "Desk", price: 350, stock: 15)
+// ID généré: Product~Furniture_Desk
+
+Product(category: "Books", name: "Go Programming", price: 45, stock: 50)
+// ID généré: Product~Books_Go%20Programming
+
+// Commandes avec clé composite (year, orderNumber)
+Order(year: 2024, orderNumber: 1001, customerId: "C001", total: 1200, status: "pending")
+// ID généré: Order~2024_1001
+
+Order(year: 2024, orderNumber: 1002, customerId: "C002", total: 75, status: "shipped")
+// ID généré: Order~2024_1002
+
+Order(year: 2024, orderNumber: 1003, customerId: "C003", total: 1500, status: "pending")
+// ID généré: Order~2024_1003
+
+Order(year: 2023, orderNumber: 9999, customerId: "C004", total: 500, status: "delivered")
+// ID généré: Order~2023_9999
+
+// Locations avec clé composite (country, city)
+Location(country: "France", name: "Paris", population: 2200000, timezone: "CET")
+// ID généré: Location~France_Paris
+
+Location(country: "USA", name: "New York", population: 8400000, timezone: "EST")
+// ID généré: Location~USA_New%20York
+// Note: L'espace dans "New York" est échappé en %20
+
+Location(country: "Japan", name: "Tokyo", population: 14000000, timezone: "JST")
+// ID généré: Location~Japan_Tokyo
+
+Location(country: "France", name: "Lyon", population: 500000, timezone: "CET")
+// ID généré: Location~France_Lyon
+
+// Cours avec clé composite (department, code)
+Course(department: "CS", code: "101", title: "Introduction to Programming", credits: 3)
+// ID généré: Course~CS_101
+
+Course(department: "CS", code: "201", title: "Data Structures", credits: 4)
+// ID généré: Course~CS_201
+
+Course(department: "MATH", code: "301", title: "Advanced Calculus", credits: 4)
+// ID généré: Course~MATH_301
+
+Course(department: "PHYS", code: "101", title: "Physics Fundamentals", credits: 3)
+// ID généré: Course~PHYS_101
+
+// Inscriptions avec clé composite (studentId, courseId)
+Enrollment(studentId: "S2024001", courseId: "CS101", grade: "A", semester: "Fall2024")
+// ID généré: Enrollment~S2024001_CS101
+
+Enrollment(studentId: "S2024001", courseId: "MATH301", grade: "B", semester: "Fall2024")
+// ID généré: Enrollment~S2024001_MATH301
+
+Enrollment(studentId: "S2024002", courseId: "CS101", grade: "A", semester: "Fall2024")
+// ID généré: Enrollment~S2024002_CS101
+
+Enrollment(studentId: "S2024002", courseId: "CS201", grade: "A", semester: "Fall2024")
+// ID généré: Enrollment~S2024002_CS201
+
+// Réservations avec clé composite (building, room, date)
+Reservation(building: "A", room: "101", date: "2024-03-15", time: "09:00", duration: 60)
+// ID généré: Reservation~A_101_2024-03-15
+
+Reservation(building: "A", room: "101", date: "2024-03-16", time: "14:00", duration: 90)
+// ID généré: Reservation~A_101_2024-03-16
+
+Reservation(building: "B", room: "205", date: "2024-03-15", time: "10:00", duration: 180)
+// ID généré: Reservation~B_205_2024-03-15
+
+Reservation(building: "C", room: "301", date: "2024-03-20", time: "08:00", duration: 120)
+// ID généré: Reservation~C_301_2024-03-20
+
+// ================================================================================
+// RÉSULTATS ATTENDUS
+// ================================================================================
+//
+// Activations de règles:
+//
+// lowStockAlert:
+// - Product~Electronics_Laptop (stock: 5)
+// - Product~Books_TSD%20Guide (stock: 8)
+//
+// largeOrders:
+// - Order~2024_1001 (total: 1200)
+// - Order~2024_1003 (total: 1500)
+//
+// majorCities:
+// - Location~France_Paris (population: 2200000)
+// - Location~USA_New%20York (population: 8400000)
+// - Location~Japan_Tokyo (population: 14000000)
+//
+// intensiveCourses:
+// - Course~CS_201 (credits: 4)
+// - Course~MATH_301 (credits: 4)
+//
+// excellentGrades:
+// - Enrollment~S2024001_CS101 (grade: A)
+// - Enrollment~S2024002_CS101 (grade: A)
+// - Enrollment~S2024002_CS201 (grade: A)
+//
+// longReservations:
+// - Reservation~B_205_2024-03-15 (duration: 180)
+// - Reservation~C_301_2024-03-20 (duration: 120)
+//
+// ================================================================================
+// NOTES
+// ================================================================================
+//
+// 1. AVANTAGES DES CLÉS PRIMAIRES COMPOSITES:
+//    - Permet l'unicité naturelle quand aucun champ seul n'est unique
+//    - Reflète la structure métier (produit = catégorie + nom)
+//    - IDs toujours déterministes et lisibles
+//    - Évite les collisions d'IDs
+//
+// 2. QUAND UTILISER UNE CLÉ COMPOSITE:
+//    - Plusieurs champs forment ensemble une clé unique
+//    - Pas d'identifiant unique naturel unique
+//    - Structure hiérarchique (département + code, pays + ville)
+//    - Relations many-to-many (étudiant + cours)
+//
+// 3. FORMAT DES IDS:
+//    - Séparateur: underscore (_)
+//    - Ordre: celui de la déclaration dans le type
+//    - Échappement: ~ → %7E, _ → %5F, % → %25, espace → %20
+//    - Exemple: Product~Books_Go%20Programming
+//
+// 4. BONNES PRATIQUES:
+//    - Limiter à 2-3 champs dans la clé composite
+//    - Choisir des champs stables (qui ne changent pas)
+//    - Préférer des champs courts pour des IDs lisibles
+//    - Éviter les valeurs avec beaucoup de caractères spéciaux
+//
+// 5. COMPARAISON AVEC CLÉ SIMPLE:
+//    - Clé simple: Product~LAPTOP-001
+//    - Clé composite: Product~Electronics_Laptop
+//    - La clé composite est plus descriptive mais plus longue
+//
+// 6. ACCÈS À L'ID DANS LES RÈGLES:
+//    - Le champ 'id' est toujours disponible
+//    - Contient la valeur complète: "Product~Electronics_Laptop"
+//    - Type: toujours string
+//
+// ================================================================================
