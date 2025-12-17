@@ -329,6 +329,67 @@ assert Person(personId: "custom_id", name: "Alice", age: 30)
 
 ---
 
+## ⚠️ Point Important : Le Champ `id` est Toujours un String
+
+Le champ `id` virtuel généré automatiquement est **toujours de type `string`**, quelle que soit le type de la clé primaire.
+
+### Exemples
+
+```tsd
+// Même avec une clé primaire de type number...
+type Product(#productId: number, name: string)
+assert Product(productId: 123, name: "Laptop")
+
+// ...le champ id virtuel est un string
+rule CheckProduct : {p: Product} / p.id != "" ==> print(p.id)
+// p.id vaut "Product~123" (string, pas number)
+```
+
+### Conséquences pour les Comparaisons
+
+**❌ INCORRECT** - Comparer `id` avec un nombre :
+```tsd
+type Item(#itemId: number)
+rule CheckItem : {i: Item} / i.id > 0 ==> print("Found")
+// ❌ Erreur: type incompatibility in comparison: string vs number
+```
+
+**✅ CORRECT** - Comparer la clé primaire ou utiliser des comparaisons string :
+```tsd
+type Item(#itemId: number)
+
+// Option 1: Comparer la clé primaire directement
+rule CheckItem : {i: Item} / i.itemId > 0 ==> print("Found")
+
+// Option 2: Vérifier que l'id n'est pas vide
+rule CheckItem : {i: Item} / i.id != "" ==> print("Found")
+```
+
+### Migration de Tests Existants
+
+Si vous avez des tests avec `#id: number` et des comparaisons numériques sur `id` :
+
+**Avant** :
+```tsd
+type Item(#id: number)
+rule AllItems : {i: Item} / i.id > 0 ==> print("Item found")
+```
+
+**Après** (Solution recommandée) :
+```tsd
+type Item(#itemId: string)
+rule AllItems : {i: Item} / i.itemId != "" ==> print("Item found")
+```
+
+**Ou** (Si vous devez garder un numéro) :
+```tsd
+type Item(#itemId: number, otherField: string)
+rule AllItems : {i: Item} / i.itemId > 0 ==> print("Item found")
+// Utiliser itemId pour les comparaisons numériques, pas id
+```
+
+---
+
 ## Dépannage
 
 ### Erreur : "field 'id' is reserved"
@@ -354,6 +415,32 @@ assert Person(age: 30)
 assert Person(name: "Alice", age: 30)
 ```
 
+### Erreur : "type incompatibility in comparison: string vs number"
+
+**Cause** : Vous comparez le champ virtuel `id` (toujours un string) avec un nombre.
+
+**Exemple problématique** :
+```tsd
+type Item(#itemId: number)
+rule CheckItem : {i: Item} / i.id > 0 ==> print("Found")
+// ❌ Erreur - i.id est un string, pas un number
+```
+
+**Solutions** :
+```tsd
+// Solution 1: Comparer la clé primaire directement
+type Item(#itemId: number)
+rule CheckItem : {i: Item} / i.itemId > 0 ==> print("Found")
+
+// Solution 2: Utiliser une clé primaire string
+type Item(#itemId: string)
+rule CheckItem : {i: Item} / i.itemId != "" ==> print("Found")
+
+// Solution 3: Vérifier l'existence avec le champ id
+type Item(#itemId: number)
+rule CheckItem : {i: Item} / i.id != "" ==> print("Found")
+```
+
 ### Erreur : "primary key field must be a primitive type"
 
 **Cause** : Les clés primaires doivent être de type primitif (string, number, bool).
@@ -364,7 +451,7 @@ assert Person(name: "Alice", age: 30)
 type Person(#data: object, age: number)
 
 // ✅ Correct - utiliser un champ primitif
-type Person(#id: string, age: number)
+type Person(#personId: string, age: number)
 ```
 
 ### IDs Non Lisibles (Hash)
