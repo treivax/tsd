@@ -16,6 +16,7 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🧠 **Expressions complexes** - Support complet des négations (`NOT`) et conditions composées
 - 🔍 **Opérateurs avancés** - `CONTAINS`, `LIKE`, `MATCHES`, `IN`, fonctions `LENGTH()`, `ABS()`, `UPPER()`
 - 📊 **Types fortement typés** - Système de types robuste avec validation
+- 🆔 **Génération automatique d'IDs** - Clés primaires et IDs déterministes basés sur les données métier
 - 🎯 **81.2% de couverture** - 100% des modules de production >80%, tests robustes et maintenables
 - ⚡ **Performance** - <1ms par règle, optimisé pour le traitement en temps réel
 - 🏷️ **Identifiants de règles** - Gestion fine des règles avec identifiants obligatoires
@@ -62,6 +63,67 @@ rule vip_check : {p: Person} /
 ```bash
 bash scripts/add_rule_ids.sh
 ```
+
+## 🆔 Clés Primaires et Génération d'IDs
+
+TSD génère automatiquement des identifiants uniques et déterministes pour tous les faits basés sur des clés primaires.
+
+### Définition de Clés Primaires
+
+Marquez les champs de clé primaire avec le préfixe `#` :
+
+```tsd
+// Clé primaire simple
+type User(#username: string, email: string, role: string)
+
+// Clé primaire composite
+type Product(#category: string, #name: string, price: number)
+
+// Sans clé primaire (génération par hash)
+type LogEvent(timestamp: number, level: string, message: string)
+```
+
+### Format des IDs Générés
+
+**Clé simple** : `TypeName~valeur`
+```tsd
+User(username: "alice", email: "alice@example.com", role: "admin")
+// ID généré: User~alice
+```
+
+**Clé composite** : `TypeName~valeur1_valeur2`
+```tsd
+Product(category: "Electronics", name: "Laptop", price: 1200)
+// ID généré: Product~Electronics_Laptop
+```
+
+**Sans clé primaire** : `TypeName~<hash-16-chars>`
+```tsd
+LogEvent(timestamp: 1704067200, level: "ERROR", message: "Connection failed")
+// ID généré: LogEvent~a1b2c3d4e5f6g7h8
+```
+
+### Utilisation dans les Règles
+
+Le champ `id` est toujours disponible :
+
+```tsd
+rule logAdmins : {u: User} / u.role == "admin"
+    ==> notify(u.id, u.username)
+    // u.id vaut "User~alice"
+```
+
+### Échappement des Caractères
+
+Les caractères spéciaux sont automatiquement échappés :
+- `~` → `%7E` (séparateur type/valeur)
+- `_` → `%5F` (séparateur composite)
+- `%` → `%25` (caractère d'échappement)
+- ` ` → `%20` (espace)
+
+**📖 Documentation complète :** [docs/MIGRATION_IDS.md](docs/MIGRATION_IDS.md)
+
+**🔍 Exemples :** Consultez `examples/pk_*.tsd` pour voir tous les cas d'usage
 
 ## 🚀 Installation Rapide
 
