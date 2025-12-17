@@ -9,9 +9,9 @@ import (
 
 // TestMultiSourceAggregationSyntax_TwoSources tests parsing of aggregation with two sources
 func TestMultiSourceAggregationSyntax_TwoSources(t *testing.T) {
-	input := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
-type Performance(id: string, employeeId: string, score:number)
+	input := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
+type Performance(#id: string, employeeId: string, score:number)
 
 rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score)} / {e: Employee} / {p: Performance} / e.deptId == d.id AND p.employeeId == e.id ==> print("Combined metrics")
 `
@@ -194,10 +194,10 @@ rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 
 // TestMultiSourceAggregationSyntax_ThreeSources tests parsing with three sources
 func TestMultiSourceAggregationSyntax_ThreeSources(t *testing.T) {
-	input := `type Department(id:string)
-type Employee(id: string, deptId:string)
-type Performance(id: string, employeeId:string)
-type Training(id: string, employeeId:string)
+	input := `type Department(#id:string)
+type Employee(#id: string, deptId:string)
+type Performance(#id: string, employeeId:string)
+type Training(#id: string, employeeId:string)
 
 rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score), total_hours: SUM(t.hours)} / {e: Employee} / {p: Performance} / {t: Training} / e.deptId == d.id AND p.employeeId == e.id AND t.employeeId == e.id ==> print("Full metrics")
 `
@@ -266,9 +266,9 @@ rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(
 
 // TestMultiSourceAggregationSyntax_WithThresholds tests parsing with multiple thresholds
 func TestMultiSourceAggregationSyntax_WithThresholds(t *testing.T) {
-	input := `type Department(id:string)
-type Employee(id: string, deptId: string, salary:number)
-type Performance(id: string, employeeId: string, score:number)
+	input := `type Department(#id:string)
+type Employee(#id: string, deptId: string, salary:number)
+type Performance(#id: string, employeeId: string, score:number)
 
 rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(p.score)} / {e: Employee} / {p: Performance} / e.deptId == d.id AND p.employeeId == e.id AND avg_sal > 50000 AND avg_score > 80 ==> print("High performing")
 `
@@ -343,9 +343,9 @@ func TestMultiSourceAggregationSyntax_MixedFunctions(t *testing.T) {
 
 	for _, tc := range functions {
 		t.Run(tc.name, func(t *testing.T) {
-			input := `type Dept(id:string)
-type Emp(id: string, deptId: string, salary:number)
-type Perf(id: string, empId: string, score:number)
+			input := `type Dept(#id:string)
+type Emp(#id: string, deptId: string, salary:number)
+type Perf(#id: string, empId: string, score:number)
 
 rule test : {d: Dept, agg1: ` + tc.funcName + `(e.salary), agg2: ` + tc.funcName + `(p.score)} / {e: Emp} / {p: Perf} / e.deptId == d.id AND p.empId == e.id ==> print("x")
 `
@@ -387,22 +387,22 @@ func TestMultiSourceAggregationSyntax_ErrorCases(t *testing.T) {
 	}{
 		{
 			name: "Missing closing paren",
-			input: `type D(id:string)
-type E(id:string)
+			input: `type D(#id:string)
+type E(#id:string)
 rule bad : {d: D, avg: AVG(e.sal} / {e: E} / e.id == d.id ==> print("x")`,
 			shouldError: true,
 		},
 		{
 			name: "Invalid function name",
-			input: `type D(id:string)
-type E(id:string)
+			input: `type D(#id:string)
+type E(#id:string)
 rule bad : {d: D, avg: AVERAGE(e.sal)} / {e: E} / e.id == d.id ==> print("x")`,
 			shouldError: true,
 		},
 		{
 			name: "Missing field in aggregation",
-			input: `type D(id:string)
-type E(id:string)
+			input: `type D(#id:string)
+type E(#id:string)
 rule bad : {d: D, avg: AVG()} / {e: E} / e.id == d.id ==> print("x")`,
 			shouldError: true,
 		},
@@ -423,10 +423,10 @@ rule bad : {d: D, avg: AVG()} / {e: E} / e.id == d.id ==> print("x")`,
 
 // TestMultiSourceAggregationSyntax_ComplexJoinConditions tests complex join patterns
 func TestMultiSourceAggregationSyntax_ComplexJoinConditions(t *testing.T) {
-	input := `type Project(id: string, name:string)
-type Task(id: string, projectId: string, assignedTo:string)
-type Employee(id: string, departmentId:string)
-type Department(id: string, managerId:string)
+	input := `type Project(#id: string, name:string)
+type Task(#id: string, projectId: string, assignedTo:string)
+type Employee(#id: string, departmentId:string)
+type Department(#id: string, managerId:string)
 
 rule complex_join : {p: Project, avg_task: AVG(t.effort), emp_count: COUNT(e.id)} / {t: Task} / {e: Employee} / {d: Department} / t.projectId == p.id AND t.assignedTo == e.id AND e.departmentId == d.id ==> print("Complex")
 `

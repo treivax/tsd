@@ -18,8 +18,8 @@ func TestArithmeticE2E_NetworkVisualization(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "arithmetic_viz.tsd")
 	// Multiple rules with different arithmetic conditions to test sharing
-	content := `type Product(id: string, price: number, stock: number, weight: number)
-type Order(id: string, productId: string, quantity: number)
+	content := `type Product(#id: string, price: number, stock: number, weight: number)
+type Order(#id: string, productId: string, quantity: number)
 action notify_expensive(productId: string)
 action notify_heavy(productId: string)
 action notify_low_stock(productId: string)
@@ -412,7 +412,7 @@ func TestArithmeticE2E_SharingOpportunities(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "sharing.tsd")
 	// Rules with intentional duplication to test sharing detection
-	content := `type Item(id: string, value: number)
+	content := `type Item(#id: string, value: number)
 action log(msg: string)
 rule expensive_1 : {i: Item} / i.value * 1.5 > 100 ==> log("Expensive 1")
 rule expensive_2 : {i: Item} / i.value * 1.5 > 100 ==> log("Expensive 2")

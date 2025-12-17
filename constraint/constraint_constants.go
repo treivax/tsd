@@ -4,6 +4,8 @@
 
 package constraint
 
+import "sync"
+
 // Constraint type constants define the different types of constraints
 // supported in the constraint system.
 const (
@@ -104,16 +106,23 @@ const (
 	MaxBase64DecodeSize = 1024 * 1024 // 1MB
 )
 
-// IsValidOperator checks if an operator string is a valid operator
-func IsValidOperator(op string) bool {
-	validOps := getValidOperators()
-	return validOps[op]
-}
+// validOperatorsMap holds the set of valid operators.
+// Initialized once using sync.Once for thread-safe lazy loading.
+var (
+	validOperatorsMap     map[string]bool
+	validOperatorsMapOnce sync.Once
+)
 
-// getValidOperators returns the set of valid operators
-// This function creates the map on each call to ensure immutability
-func getValidOperators() map[string]bool {
-	return map[string]bool{
+// validPrimitiveTypesMap holds the set of valid primitive types.
+// Initialized once using sync.Once for thread-safe lazy loading.
+var (
+	validPrimitiveTypesMap     map[string]bool
+	validPrimitiveTypesMapOnce sync.Once
+)
+
+// initValidOperatorsMap initializes the validOperatorsMap exactly once.
+func initValidOperatorsMap() {
+	validOperatorsMap = map[string]bool{
 		OpEq:  true,
 		OpNeq: true,
 		OpLt:  true,
@@ -131,22 +140,55 @@ func getValidOperators() map[string]bool {
 	}
 }
 
-// IsValidPrimitiveType checks if a type string is a valid primitive type
-func IsValidPrimitiveType(typeName string) bool {
-	validTypes := getValidPrimitiveTypes()
-	return validTypes[typeName]
-}
-
-// getValidPrimitiveTypes returns the set of valid primitive types
-// This function creates the map on each call to ensure immutability
-func getValidPrimitiveTypes() map[string]bool {
-	return map[string]bool{
+// initValidPrimitiveTypesMap initializes the validPrimitiveTypesMap exactly once.
+func initValidPrimitiveTypesMap() {
+	validPrimitiveTypesMap = map[string]bool{
 		ValueTypeString:  true,
 		ValueTypeNumber:  true,
 		ValueTypeBool:    true,
 		ValueTypeBoolean: true,
 		"integer":        true,
 	}
+}
+
+// IsValidOperator checks if an operator string is a valid operator.
+// Thread-safe and efficient - the map is initialized only once.
+func IsValidOperator(op string) bool {
+	validOperatorsMapOnce.Do(initValidOperatorsMap)
+	return validOperatorsMap[op]
+}
+
+// IsValidPrimitiveType checks if a type string is a valid primitive type.
+// Thread-safe and efficient - the map is initialized only once.
+func IsValidPrimitiveType(typeName string) bool {
+	validPrimitiveTypesMapOnce.Do(initValidPrimitiveTypesMap)
+	return validPrimitiveTypesMap[typeName]
+}
+
+// getValidOperators returns the set of valid operators.
+// Deprecated: This function is kept for backward compatibility.
+// Prefer using IsValidOperator for individual checks.
+func getValidOperators() map[string]bool {
+	validOperatorsMapOnce.Do(initValidOperatorsMap)
+	// Return a copy to prevent external modification
+	result := make(map[string]bool, len(validOperatorsMap))
+	for k, v := range validOperatorsMap {
+		result[k] = v
+	}
+	return result
+}
+
+// getValidPrimitiveTypes returns the set of valid primitive types.
+// Deprecated: This function is kept for backward compatibility.
+// Prefer using IsValidPrimitiveType for individual checks.
+func getValidPrimitiveTypes() map[string]bool {
+	validPrimitiveTypesMapOnce.Do(initValidPrimitiveTypesMap)
+	// Return a copy to prevent external modification
+	result := make(map[string]bool, len(validPrimitiveTypesMap))
+	for k, v := range validPrimitiveTypesMap {
+		result[k] = v
+	}
+	return result
 }
 
 // ValidOperators is deprecated: use IsValidOperator instead

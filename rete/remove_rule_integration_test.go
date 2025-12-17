@@ -14,7 +14,7 @@ func TestRemoveRuleCommand_ParseAndExecute(t *testing.T) {
 	t.Log("========================================")
 	// Créer un fichier .tsd temporaire avec une règle et sa suppression
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 action notify(message: string)
 action notify_senior(message: string)
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
@@ -79,7 +79,7 @@ func TestRemoveRuleCommand_MultipleRules(t *testing.T) {
 	t.Log("🧪 TEST REMOVE MULTIPLE RULES")
 	t.Log("=============================")
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 action action1(arg: string)
 action action2(arg: string)
 action action3(arg: string)
@@ -130,7 +130,7 @@ func TestRemoveRuleCommand_WithSharedAlphaNodes(t *testing.T) {
 	t.Log("🧪 TEST REMOVE RULE WITH SHARED ALPHA NODES")
 	t.Log("===========================================")
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 action action_adult(arg: string)
 action action_voting(arg: string)
 rule adult_rule : {p: Person} / p.age >= 18 ==> action_adult(p.id)
@@ -181,7 +181,7 @@ func TestRemoveRuleCommand_NonExistentRule(t *testing.T) {
 	t.Log("🧪 TEST REMOVE NON-EXISTENT RULE")
 	t.Log("=================================")
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 action action(arg: string)
 rule existing_rule : {p: Person} / p.age > 18 ==> action(p.id)
 remove rule non_existent_rule
@@ -220,7 +220,7 @@ func TestRemoveRuleCommand_AfterFactSubmission(t *testing.T) {
 	t.Log("==========================================")
 	// Étape 1: Créer le réseau avec une règle
 	content1 := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 action notify(id: string)
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 `

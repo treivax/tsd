@@ -187,7 +187,7 @@ func TestValidateConstraintProgram_EdgeCases(t *testing.T) {
 		{
 			name: "Program with action using undefined type",
 			input: `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 action Notify(personId: string)
 rule r1: {p: UnknownType} / p.id == "test" ==> Notify(p.id)
 `,
@@ -197,7 +197,7 @@ rule r1: {p: UnknownType} / p.id == "test" ==> Notify(p.id)
 		{
 			name: "Action with wrong parameter type",
 			input: `
-type Person(id: string, age: number)
+type Person(#id: string, age: number)
 action SetAge(personId: string, newAge: string)
 rule r1: {p: Person} / p.age > 18 ==> SetAge(p.id, p.age)
 `,
@@ -214,7 +214,7 @@ action DoSomething()
 		{
 			name: "Action with no parameters",
 			input: `
-type Event(id: string)
+type Event(#id: string)
 action Trigger()
 rule r1: {e: Event} / e.id == "test" ==> Trigger()
 `,
@@ -223,7 +223,7 @@ rule r1: {e: Event} / e.id == "test" ==> Trigger()
 		{
 			name: "Multiple actions in rule",
 			input: `
-type Order(id: string, status: string)
+type Order(#id: string, status: string)
 action UpdateStatus(orderId: string, status: string)
 action SendNotification(orderId: string)
 rule r1: {o: Order} / o.status == "pending" ==> UpdateStatus(o.id, "processed")
@@ -233,7 +233,7 @@ rule r1: {o: Order} / o.status == "pending" ==> UpdateStatus(o.id, "processed")
 		{
 			name: "Rule with field access to undefined field",
 			input: `
-type Product(id: string, name: string)
+type Product(#id: string, name: string)
 action Alert(msg: string)
 rule r1: {p: Product} / p.price > 100 ==> Alert("Expensive")
 `,
@@ -278,7 +278,7 @@ func TestExtractFactsFromProgram_EdgeCases(t *testing.T) {
 		{
 			name: "Program with no facts",
 			input: `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 rule r1: {p: Person} / p.id == "test" ==> Alert()
 `,
 			wantFacts: 0,
@@ -287,7 +287,7 @@ rule r1: {p: Person} / p.id == "test" ==> Alert()
 		{
 			name: "Program with multiple facts",
 			input: `
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 Person(id: "p1", name: "Alice", age: 30)
 Person(id: "p2", name: "Bob", age: 25)
 Person(id: "p3", name: "Charlie", age: 35)
@@ -378,7 +378,7 @@ func TestConvertResultToProgram_EdgeCases(t *testing.T) {
 		},
 		{
 			name:       "Only types",
-			input:      "type Person(id: string)\ntype Company(name: string)",
+			input:      "type Person(#id: string)\ntype Company(name: string)",
 			checkTypes: true,
 			checkRules: false,
 			checkFacts: false,
@@ -395,7 +395,7 @@ func TestConvertResultToProgram_EdgeCases(t *testing.T) {
 		{
 			name: "Complex program",
 			input: `
-type Order(id: string, amount: number, status: string)
+type Order(#id: string, amount: number, status: string)
 action ProcessOrder(orderId: string)
 Order(id: "O1", amount: 100, status: "pending")
 Order(id: "O2", amount: 200, status: "pending")
@@ -464,7 +464,7 @@ func TestConvertToReteProgram_EdgeCases(t *testing.T) {
 		{
 			name: "Program with actions",
 			input: `
-type Event(id: string)
+type Event(#id: string)
 action Log(msg: string)
 rule r1: {e: Event} / e.id != "" ==> Log("Event detected")
 `,
@@ -632,7 +632,7 @@ func TestIterativeParser_ErrorRecovery(t *testing.T) {
 	parser := NewIterativeParser()
 
 	// Parse valid types
-	validTypes := "type Person(id: string, name: string)"
+	validTypes := "type Person(#id: string, name: string)"
 	err := parser.ParseContent(validTypes, "types.tsd")
 	if err != nil {
 		t.Fatalf("Failed to parse valid types: %v", err)

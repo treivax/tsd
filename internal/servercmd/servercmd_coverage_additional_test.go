@@ -336,7 +336,7 @@ func TestExecuteTSDProgram_ValidationErrors(t *testing.T) {
 	// This test documents that validation is called
 	t.Run("✅ valid program passes validation", func(t *testing.T) {
 		request := &tsdio.ExecuteRequest{
-			Source:     "type Person(id: string, name: string)",
+			Source:     "type Person(#id: string, name: string)",
 			SourceName: "valid.tsd",
 		}
 
@@ -375,13 +375,13 @@ func TestExecuteTSDProgram_SuccessfulExecution(t *testing.T) {
 	}{
 		{
 			name:        "✅ simple type definition",
-			source:      "type Person(id: string, name: string, age: number)",
+			source:      "type Person(#id: string, name: string, age: number)",
 			sourceName:  "person.tsd",
 			wantSuccess: true,
 		},
 		{
 			name: "✅ type with rule",
-			source: `type Person(id: string, age: number)
+			source: `type Person(#id: string, age: number)
 action adult(id: string)
 rule r1: {p: Person} / p.age >= 18 ==> adult(p.id)`,
 			sourceName:  "adult.tsd",
@@ -389,7 +389,7 @@ rule r1: {p: Person} / p.age >= 18 ==> adult(p.id)`,
 		},
 		{
 			name: "✅ multiple types",
-			source: `type Person(id: string, name: string)
+			source: `type Person(#id: string, name: string)
 type Address(street: string, city: string)`,
 			sourceName:  "multi.tsd",
 			wantSuccess: true,

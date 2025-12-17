@@ -77,6 +77,24 @@ Person(name: "Bob", age: 25)
 func TestExtractFactsFromProgram(t *testing.T) {
 	t.Run("extract facts from valid program", func(t *testing.T) {
 		program := map[string]interface{}{
+			"types": []interface{}{
+				map[string]interface{}{
+					"type": "typeDefinition",
+					"name": "Person",
+					"fields": []interface{}{
+						map[string]interface{}{
+							"name":         "name",
+							"type":         "string",
+							"isPrimaryKey": false,
+						},
+						map[string]interface{}{
+							"name":         "age",
+							"type":         "number",
+							"isPrimaryKey": false,
+						},
+					},
+				},
+			},
 			"facts": []interface{}{
 				map[string]interface{}{
 					"type":     "fact",

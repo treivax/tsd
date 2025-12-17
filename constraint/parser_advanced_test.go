@@ -30,7 +30,7 @@ rule r1 : {p: Person} / p.age <= 65 ==> print("Not retired")
 		{
 			name: "NOT with complex expression",
 			input: `
-type Employee(id: string, salary: number, active: bool)
+type Employee(#id: string, salary: number, active: bool)
 
 rule r2 : {e: Employee} / e.salary <= 100000 || e.active == false ==> print("Standard employee")
 `,
@@ -39,7 +39,7 @@ rule r2 : {e: Employee} / e.salary <= 100000 || e.active == false ==> print("Sta
 		{
 			name: "NOT with field comparison",
 			input: `
-type Product(id: string, price: number, inStock: bool)
+type Product(#id: string, price: number, inStock: bool)
 
 rule r3 : {p: Product} / p.inStock == true ==> print("Available")
 `,
@@ -79,8 +79,8 @@ func TestParser_ExistsConstraint(t *testing.T) {
 		{
 			name: "simple EXISTS constraint",
 			input: `
-type Order(id: string, customerId: string, total: number)
-type Customer(id: string, name: string)
+type Order(#id: string, customerId: string, total: number)
+type Customer(#id: string, name: string)
 
 rule r1 : {o: Order} / EXISTS (c: Customer / c.id == o.customerId) ==> print("Order has customer")
 `,
@@ -89,8 +89,8 @@ rule r1 : {o: Order} / EXISTS (c: Customer / c.id == o.customerId) ==> print("Or
 		{
 			name: "EXISTS with multiple conditions",
 			input: `
-type Person(id: string, age: number, city: string)
-type Event(id: string, city: string, date: string)
+type Person(#id: string, age: number, city: string)
+type Event(#id: string, city: string, date: string)
 
 rule r2 : {p: Person} / EXISTS (e: Event / e.city == p.city && p.age >= 18) ==> print("Can attend event")
 `,
@@ -99,8 +99,8 @@ rule r2 : {p: Person} / EXISTS (e: Event / e.city == p.city && p.age >= 18) ==> 
 		{
 			name: "EXISTS with complex expression",
 			input: `
-type Student(id: string, gpa: number)
-type Course(id: string, minGpa: number)
+type Student(#id: string, gpa: number)
+type Course(#id: string, minGpa: number)
 
 rule r3 : {s: Student} / EXISTS (c: Course / s.gpa >= c.minGpa) ==> print("Eligible for course")
 `,
@@ -144,7 +144,7 @@ rule r1 : {i: Item} / i.name == "test" ==> process([1, 2, 3, 4, 5])
 			input: `
 action notify(names: string)
 
-type User(id: string)
+type User(#id: string)
 
 rule r2 : {u: User} / u.id == "1" ==> notify(["Alice", "Bob", "Charlie"])
 `,
@@ -155,7 +155,7 @@ rule r2 : {u: User} / u.id == "1" ==> notify(["Alice", "Bob", "Charlie"])
 			input: `
 action log(data: string)
 
-type Record(id: string)
+type Record(#id: string)
 
 rule r3 : {r: Record} / r.id == "1" ==> log([1, "text", true, 3.14])
 `,
@@ -177,7 +177,7 @@ rule r4 : {d: Data} / d.value == "test" ==> empty([])
 			input: `
 action nested(data: string)
 
-type Matrix(id: string)
+type Matrix(#id: string)
 
 rule r5 : {m: Matrix} / m.id == "1" ==> nested([[1, 2], [3, 4], [5, 6]])
 `,
@@ -384,7 +384,7 @@ rule r1 : {u: User} / LENGTH(u.name) >= 3 ==> print("Valid name length")
 			input: `
 action process(ids: string)
 
-type Item(id: string, category: string)
+type Item(#id: string, category: string)
 type Category(name: string)
 
 rule r2 : {i: Item} / EXISTS (c: Category / c.name == i.category) ==> process([i.id])
@@ -396,7 +396,7 @@ rule r2 : {i: Item} / EXISTS (c: Category / c.name == i.category) ==> process([i
 			input: `
 action batch(items: string)
 
-type Job(id: string, status: string)
+type Job(#id: string, status: string)
 
 rule r3 : {j: Job} / j.status == "pending" ==> batch(["task1", "task2", "task3"])
 `,
@@ -405,8 +405,8 @@ rule r3 : {j: Job} / j.status == "pending" ==> batch(["task1", "task2", "task3"]
 		{
 			name: "NOT EXISTS combination",
 			input: `
-type Employee(id: string, departmentId: string)
-type Department(id: string, name: string)
+type Employee(#id: string, departmentId: string)
+type Department(#id: string, name: string)
 
 rule r4 : {e: Employee} / e.departmentId == "unknown" ==> print("Orphaned employee")
 `,
@@ -434,7 +434,7 @@ rule r6 : {r: Record} / r.status != "deleted" && r.value >= 0 && r.active == tru
 			name: "function call in EXISTS",
 			input: `
 type Message(senderId: string, content: string)
-type User(id: string, name: string)
+type User(#id: string, name: string)
 
 rule r7 : {m: Message} / EXISTS (u: User / u.id == m.senderId && LENGTH(u.name) > 0) ==> print("Valid sender")
 `,
@@ -467,7 +467,7 @@ func TestParser_EdgeCases(t *testing.T) {
 			input: `
 action process(data: string)
 
-type Task(id: string)
+type Task(#id: string)
 
 rule r1 : {t: Task} / t.id == "1" ==> process([])
 `,

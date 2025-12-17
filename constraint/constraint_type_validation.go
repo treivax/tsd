@@ -9,10 +9,16 @@ import (
 )
 
 // ValidateTypes vérifie que tous les types référencés dans les expressions sont définis
+// et valide également la cohérence des clés primaires.
 func ValidateTypes(program Program) error {
 	definedTypes := make(map[string]bool)
 	for _, typeDef := range program.Types {
 		definedTypes[typeDef.Name] = true
+
+		// Valider la clé primaire du type
+		if err := ValidateTypePrimaryKey(typeDef); err != nil {
+			return err
+		}
 	}
 
 	// Vérifier les variables typées dans toutes les expressions

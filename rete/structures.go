@@ -4,9 +4,12 @@
 
 package rete
 
+// Field represents a single field within a type definition.
+// It contains the field name, its type, and whether it's part of the primary key.
 type Field struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name         string `json:"name"`                   // Field name (e.g., "id", "name")
+	Type         string `json:"type"`                   // Field type (e.g., "string", "number", "bool")
+	IsPrimaryKey bool   `json:"isPrimaryKey,omitempty"` // True if field is part of primary key (marked with #)
 }
 
 type Parameter struct {
@@ -73,7 +76,8 @@ type Program struct {
 	Expressions []Expression     `json:"expressions"`
 }
 
-// Clone crée une copie profonde de TypeDefinition
+// Clone crée une copie profonde de TypeDefinition.
+// Tous les champs incluant IsPrimaryKey sont copiés.
 func (td TypeDefinition) Clone() TypeDefinition {
 	clone := TypeDefinition{
 		Type:   td.Type,
@@ -81,7 +85,7 @@ func (td TypeDefinition) Clone() TypeDefinition {
 		Fields: make([]Field, len(td.Fields)),
 	}
 
-	// Copier les champs
+	// Copier les champs (copy() copie tous les champs de la struct incluant IsPrimaryKey)
 	copy(clone.Fields, td.Fields)
 
 	return clone

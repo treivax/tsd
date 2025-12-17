@@ -22,6 +22,16 @@ func ValidateFacts(program Program) error {
 			return fmt.Errorf("fait %d: type non défini: %s", i+1, fact.TypeName)
 		}
 
+		// Valider la clé primaire du fait
+		if err := ValidateFactPrimaryKey(fact, typeDef); err != nil {
+			return fmt.Errorf("fait %d: %v", i+1, err)
+		}
+
+		// Valider les valeurs des champs PK
+		if err := ValidateFactPrimaryKeyValues(fact, typeDef); err != nil {
+			return fmt.Errorf("fait %d: %v", i+1, err)
+		}
+
 		// Créer une map des champs définis pour ce type
 		definedFields := make(map[string]string)
 		for _, field := range typeDef.Fields {
@@ -77,63 +87,78 @@ func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName st
 }
 
 // ConvertFactsToReteFormat convertit les faits parsés par la grammaire vers le format attendu par le réseau RETE
-func ConvertFactsToReteFormat(program Program) []map[string]interface{} {
-	var reteFacts []map[string]interface{}
+func ConvertFactsToReteFormat(program Program) ([]map[string]interface{}, error) {
+	reteFacts := make([]map[string]interface{}, 0, len(program.Facts))
+	typeMap := buildTypeMap(program.Types)
 
 	for i, fact := range program.Facts {
-		reteFact := map[string]interface{}{
-			FieldNameReteType: fact.TypeName, // Type RETE (ex: "Balance")
+		typeDef, exists := typeMap[fact.TypeName]
+		if !exists {
+			return nil, fmt.Errorf("fait %d: type '%s' non défini", i+1, fact.TypeName)
 		}
 
-		// Convertir les champs
-		convertFactFieldsToMap(fact.Fields, reteFact)
-
-		// Gérer l'ID du fait
-		factID := ensureFactID(reteFact, i)
+		reteFact := createReteFact(fact, typeDef)
+		factID, err := ensureFactID(reteFact, fact, typeDef)
+		if err != nil {
+			return nil, fmt.Errorf("fait %d: %v", i+1, err)
+		}
 		reteFact[FieldNameID] = factID
-
-		// CORRECTION CRITIQUE: Assurer que le type RETE est toujours préservé
 		reteFact[FieldNameReteType] = fact.TypeName
 
 		reteFacts = append(reteFacts, reteFact)
 	}
 
-	return reteFacts
+	return reteFacts, nil
 }
 
-// convertFactFieldsToMap converts fact fields to a map, handling value conversion
+// buildTypeMap crée une map des types pour lookup rapide.
+func buildTypeMap(types []TypeDefinition) map[string]TypeDefinition {
+	typeMap := make(map[string]TypeDefinition, len(types))
+	for _, typeDef := range types {
+		typeMap[typeDef.Name] = typeDef
+	}
+	return typeMap
+}
+
+// createReteFact crée un fait RETE avec les champs convertis.
+func createReteFact(fact Fact, typeDef TypeDefinition) map[string]interface{} {
+	reteFact := map[string]interface{}{
+		FieldNameReteType: fact.TypeName,
+	}
+	convertFactFieldsToMap(fact.Fields, reteFact)
+	return reteFact
+}
+
+// convertFactFieldsToMap converts fact fields to a map, handling value conversion.
 func convertFactFieldsToMap(fields []FactField, targetMap map[string]interface{}) {
 	for _, field := range fields {
-		convertedValue := convertFactFieldValue(field.Value)
-		targetMap[field.Name] = convertedValue
+		targetMap[field.Name] = field.Value.Unwrap()
 	}
 }
 
-// ensureFactID ensures a fact has an ID, generating one if necessary
-func ensureFactID(reteFact map[string]interface{}, factIndex int) string {
-	// Check if ID was explicitly provided in the fields
+// ensureFactID ensures a fact has an ID, generating one if necessary using primary keys or hash.
+func ensureFactID(reteFact map[string]interface{}, fact Fact, typeDef TypeDefinition) (string, error) {
+	// Check if ID was explicitly provided (should be prevented by validation)
 	if id, exists := reteFact[FieldNameID]; exists {
 		if idStr, ok := id.(string); ok && idStr != "" {
-			return idStr
+			// ID was provided, this should have been caught by validation
+			// but we allow it for backward compatibility in some cases
+			return idStr, nil
 		}
 	}
 
-	// Generate ID if not provided
-	return fmt.Sprintf("parsed_fact_%d", factIndex+1)
+	// Generate ID based on primary key or hash
+	id, err := GenerateFactID(fact, typeDef)
+	if err != nil {
+		return "", fmt.Errorf("génération d'ID pour le fait de type '%s': %v", fact.TypeName, err)
+	}
+
+	return id, nil
 }
 
-// convertFactFieldValue converts a fact field value to its appropriate Go type
+// convertFactFieldValue converts a fact field value to its appropriate Go type.
+// Deprecated: Use FactValue.Unwrap() method instead.
+// This function is kept for backward compatibility.
 func convertFactFieldValue(value FactValue) interface{} {
-	switch value.Type {
-	case ValueTypeString, ValueTypeNumber, ValueTypeBoolean:
-		if valMap, ok := value.Value.(map[string]interface{}); ok {
-			return valMap["value"]
-		}
-		return value.Value
-	case ValueTypeIdentifier:
-		// Les identifiants non-quotés sont traités comme des strings
-		return value.Value
-	default:
-		return value.Value
-	}
+	return value.Unwrap()
 }

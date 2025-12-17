@@ -80,7 +80,7 @@ rule Adults : {p: Person} / p.age >= 18 ==> print(p.name)`
 func TestTestEnvironment_RequireIngestFileContent(t *testing.T) {
 	env := NewTestEnvironment(t, WithTimestamps(false))
 	defer env.Cleanup()
-	content := `type Employee(id: number, name: string, salary: number)
+	content := `type Employee(#id: number, name: string, salary: number)
 action print(message: string)
 rule HighEarners : {e: Employee} / e.salary > 100000 ==> print(e.name)`
 	network := env.RequireIngestFileContent(content)
@@ -109,7 +109,7 @@ func TestTestEnvironment_GetFactCount(t *testing.T) {
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
 	assert.Equal(t, 0, env.GetFactCount())
-	content := `type Item(id: number)`
+	content := `type Item(#id: number)`
 	env.RequireIngestFileContent(content)
 	for i := 1; i <= 3; i++ {
 		fact := Fact{

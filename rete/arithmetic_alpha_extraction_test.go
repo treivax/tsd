@@ -15,7 +15,7 @@ import (
 func TestArithmeticAlphaExtraction_SingleVariable(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "arithmetic_alpha.tsd")
-	content := `type Commande(id: string, qte: number, price: number)
+	content := `type Commande(#id: string, qte: number, price: number)
 action log(msg: string)
 rule high_quantity : {c: Commande} / c.qte * 23 - 10 > 100
     ==> log("High quantity")
@@ -83,7 +83,7 @@ rule expensive : {c: Commande} / c.price * 1.2 > 1000
 func TestArithmeticAlphaExtraction_ComplexNested(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "complex_arithmetic.tsd")
-	content := `type Order(id: string, quantity: number, price: number, discount: number)
+	content := `type Order(#id: string, quantity: number, price: number, discount: number)
 action process(msg: string)
 rule complex_calc : {o: Order} / (o.quantity * o.price - o.discount) / 2 > 50
     ==> process("Complex calculation passed")
@@ -139,9 +139,9 @@ rule complex_calc : {o: Order} / (o.quantity * o.price - o.discount) / 2 > 50
 func TestArithmeticAlphaExtraction_MultiVariable(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "multi_var_arithmetic.tsd")
-	content := `type Product(id: string, basePrice: number)
-type Customer(id: string, discount: number)
-type Order(id: string, productId: string, customerId: string)
+	content := `type Product(#id: string, basePrice: number)
+type Customer(#id: string, discount: number)
+type Order(#id: string, productId: string, customerId: string)
 action notify(msg: string)
 rule discount_calc : {p: Product, c: Customer, o: Order}
     / o.productId == p.id AND o.customerId == c.id AND p.basePrice * (1 - c.discount) > 100
@@ -208,7 +208,7 @@ rule discount_calc : {p: Product, c: Customer, o: Order}
 func TestArithmeticAlphaExtraction_MixedConditions(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "mixed_conditions.tsd")
-	content := `type Item(id: string, name: string, weight: number, value: number)
+	content := `type Item(#id: string, name: string, weight: number, value: number)
 action ship(msg: string)
 rule valuable_heavy : {i: Item}
     / i.name == "Gold" AND i.weight * 2 > 10 AND i.value > 1000
@@ -291,7 +291,7 @@ func TestArithmeticAlphaExtraction_EdgeCases(t *testing.T) {
 	}{
 		{
 			name: "division with zero result",
-			tsdContent: `type Data(id: string, value: number)
+			tsdContent: `type Data(#id: string, value: number)
 action alert(msg: string)
 rule zero_div : {d: Data} / d.value / 10 == 0 ==> alert("Zero")`,
 			factFields: map[string]interface{}{
@@ -303,7 +303,7 @@ rule zero_div : {d: Data} / d.value / 10 == 0 ==> alert("Zero")`,
 		},
 		{
 			name: "negative arithmetic",
-			tsdContent: `type Account(id: string, balance: number)
+			tsdContent: `type Account(#id: string, balance: number)
 action warn(msg: string)
 rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 			factFields: map[string]interface{}{
@@ -316,7 +316,7 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 		// TODO: Enable when parser supports % operator
 		// {
 		// 	name: "modulo operation",
-		// 	tsdContent: `type Number(id: string, value: number)
+		// 	tsdContent: `type Number(#id: string, value: number)
 		// action check(msg: string)
 		// rule even : {n: Number} / n.value % 2 == 0 ==> check("Even")`,
 		// 	factFields: map[string]interface{}{
@@ -371,7 +371,7 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 func BenchmarkArithmeticInAlpha(b *testing.B) {
 	tempDir := b.TempDir()
 	tsdFile := filepath.Join(tempDir, "bench.tsd")
-	content := `type Order(id: string, qty: number, price: number)
+	content := `type Order(#id: string, qty: number, price: number)
 action process(msg: string)
 rule expensive : {o: Order} / o.qty * o.price > 500 ==> process("Expensive")
 `

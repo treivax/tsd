@@ -57,8 +57,9 @@ func (ac *ASTConverter) convertFields(constraintFields []constraint.Field) []Fie
 	fields := make([]Field, len(constraintFields))
 	for i, field := range constraintFields {
 		fields[i] = Field{
-			Name: field.Name,
-			Type: field.Type,
+			Name:         field.Name,
+			Type:         field.Type,
+			IsPrimaryKey: field.IsPrimaryKey,
 		}
 	}
 	return fields

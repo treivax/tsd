@@ -366,7 +366,11 @@ func (cp *ConstraintPipeline) propagateToNewRules(ctx *ingestionContext) error {
 // submitNewFacts soumet les nouveaux faits au réseau
 func (cp *ConstraintPipeline) submitNewFacts(ctx *ingestionContext) error {
 	if len(ctx.program.Facts) > 0 {
-		ctx.factsForRete = constraint.ConvertFactsToReteFormat(*ctx.program)
+		factsForRete, err := constraint.ConvertFactsToReteFormat(*ctx.program)
+		if err != nil {
+			return fmt.Errorf("❌ Erreur conversion faits: %w", err)
+		}
+		ctx.factsForRete = factsForRete
 		cp.logger.Info("📥 Soumission de %d nouveaux faits", len(ctx.factsForRete))
 		submissionStart := time.Now()
 		if err := ctx.network.SubmitFactsFromGrammar(ctx.factsForRete); err != nil {

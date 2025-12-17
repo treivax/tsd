@@ -70,8 +70,9 @@ func (iv *IncrementalValidator) extractExistingTypes() []constraint.TypeDefiniti
 		fields := make([]constraint.Field, len(typeDef.Fields))
 		for i, field := range typeDef.Fields {
 			fields[i] = constraint.Field{
-				Name: field.Name,
-				Type: field.Type,
+				Name:         field.Name,
+				Type:         field.Type,
+				IsPrimaryKey: field.IsPrimaryKey,
 			}
 		}
 

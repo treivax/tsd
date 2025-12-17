@@ -70,7 +70,7 @@ func TestCoherence_MultipleFactSubmission_WithTestEnv(t *testing.T) {
 	env := NewTestEnvironment(t, WithTimestamps(false))
 	defer env.Cleanup()
 	// Set up type with rule
-	content := `type Product(id: number, name: string, price: number)
+	content := `type Product(#id: number, name: string, price: number)
 action print(message: string)
 rule ExpensiveProducts : {p: Product} / p.price > 1000 ==> print(p.name)`
 	env.RequireIngestFileContent(content)
@@ -98,7 +98,7 @@ func TestCoherence_TransactionPattern_WithTestEnv(t *testing.T) {
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
 	// Set up type
-	content := `type Order(id: number, total: number)`
+	content := `type Order(#id: number, total: number)`
 	env.RequireIngestFileContent(content)
 	// Create transaction explicitly
 	tx := env.Network.BeginTransaction()
@@ -130,7 +130,7 @@ func TestCoherence_SubEnvironmentSharing_WithTestEnv(t *testing.T) {
 	mainEnv := NewTestEnvironment(t, WithLogPrefix("[MAIN]"), WithTimestamps(false))
 	defer mainEnv.Cleanup()
 	// Set up shared type and fact
-	content := `type SharedData(id: number, value: string)`
+	content := `type SharedData(#id: number, value: string)`
 	mainEnv.RequireIngestFileContent(content)
 	sharedFact := Fact{
 		ID:   "S1",
@@ -175,7 +175,7 @@ func TestCoherence_ConcurrentAccess_WithTestEnv(t *testing.T) {
 	env := NewTestEnvironment(t, WithLogLevel(LogLevelInfo), WithTimestamps(false))
 	defer env.Cleanup()
 	// Set up type
-	content := `type Counter(id: number, value: number)`
+	content := `type Counter(#id: number, value: number)`
 	env.RequireIngestFileContent(content)
 	// Submit fact via helper (which handles transactions)
 	fact := Fact{

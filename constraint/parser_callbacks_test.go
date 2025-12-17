@@ -85,7 +85,7 @@ rule r6 : {p: Person} / (p.age > 18 AND p.age < 30) OR p.age > 65 ==> process("e
 		{
 			name: "Multiple types in rule",
 			input: `
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 type Order(person_id: string, amount: number)
 action process(name: string, amt: number)
 
@@ -317,7 +317,7 @@ func TestParserCallbacks_EdgeCases(t *testing.T) {
 			name: "Multiple types in program",
 			input: `
 type Person(name: string, age: number)
-type Order(id: string, amount: number)
+type Order(#id: string, amount: number)
 type Product(name: string, price: number)
 
 action process(msg: string)
@@ -388,7 +388,7 @@ rule reorder_check : {p: Product} / p.stock < 10 AND p.price > 0 ==> reorder("id
 			name: "Empty program with just types",
 			input: `
 type Person(name: string, age: number)
-type Order(id: string)
+type Order(#id: string)
 `,
 			expectError: false,
 			description: "Program with only type definitions",

@@ -27,7 +27,7 @@ rule r1 : {p: Person} / NOT (p.age < 18) ==> alert("adult")
 		{
 			name: "NOT with complex expression",
 			input: `
-type User(id: string, status: string)
+type User(#id: string, status: string)
 rule r1 : {u: User} / NOT (u.status == "active" AND u.id == "admin") ==> notify("inactive")
 `,
 			wantErr: false,
@@ -62,7 +62,7 @@ func TestParserAccumulateConstraint(t *testing.T) {
 		{
 			name: "ACCUMULATE with SUM",
 			input: `
-type Order(id: string, amount: number)
+type Order(#id: string, amount: number)
 rule r1 : {o: Order} / SUM(x: Order / x.id == o.id ; x.amount) > 1000 ==> alert("high")
 `,
 			wantErr: false,
@@ -357,7 +357,7 @@ func TestParserComplexCombinations(t *testing.T) {
 		{
 			name: "NOT with ACCUMULATE",
 			input: `
-type Event(id: string, count: number)
+type Event(#id: string, count: number)
 rule r1 : {e: Event} / NOT (COUNT(x: Event / x.id == e.id) > 10) ==> process("few")
 `,
 			wantErr: false,
@@ -389,7 +389,7 @@ rule r1 : {c: Complex} / NOT ((c.x + c.y) * c.z < 0) ==> validate("positive")
 		{
 			name: "multiple patterns with NOT and accumulate",
 			input: `
-type Sensor(id: string, value: number)
+type Sensor(#id: string, value: number)
 type Alert(sensor_id: string, threshold: number)
 rule r1 : {s: Sensor, a: Alert} / s.id == a.sensor_id AND NOT (s.value < a.threshold) AND COUNT(x: Sensor / x.id == s.id) > 5 ==> trigger("complex")
 `,
@@ -457,7 +457,7 @@ rule r1 : {x: Deep} / ((((x.a + x.b) * x.c) - x.d) + 1) > 0 ==> process("deep")
 		{
 			name: "NOT with EXISTS",
 			input: `
-type User(id: string, role: string)
+type User(#id: string, role: string)
 type Permission(user_id: string, access: string)
 rule r1 : {u: User} / NOT (EXISTS (p: Permission / p.user_id == u.id AND p.access == "admin")) ==> restrict("limited")
 `,

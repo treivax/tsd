@@ -231,7 +231,7 @@ func TestMergeFactsNilProgramState(t *testing.T) {
 		{
 			TypeName: "Person",
 			Fields: []FactField{
-				{Name: "id", Value: FactValue{Type: "identifier", Value: "P001"}},
+				{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 			},
 		},
 	}
@@ -264,7 +264,7 @@ func TestToProgram(t *testing.T) {
 	ps.AddFactForTesting(&Fact{
 		TypeName: "Person",
 		Fields: []FactField{
-			{Name: "id", Value: FactValue{Type: "identifier", Value: "P001"}},
+			{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 		},
 	})
 
@@ -500,7 +500,7 @@ func TestValidateFactWithWrongFieldType(t *testing.T) {
 	fact := &Fact{
 		TypeName: "Person",
 		Fields: []FactField{
-			{Name: "id", Value: FactValue{Type: "identifier", Value: "P001"}},
+			{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 			{Name: "age", Value: FactValue{Type: "string", Value: "25"}},
 		},
 	}
@@ -801,7 +801,7 @@ func TestExtractVariablesFromArg(t *testing.T) {
 func TestParseAndMergeContentValidInput(t *testing.T) {
 	ps := NewProgramState()
 
-	content := "type Person(id: string, name:string)"
+	content := "type Person(#id: string, name:string)"
 	err := ps.ParseAndMergeContent(content, "test.tsd")
 	if err != nil {
 		t.Errorf("Expected no error for valid content, got %v", err)
@@ -820,7 +820,7 @@ func TestValidateFacts(t *testing.T) {
 				{
 					Name: "Person",
 					Fields: []Field{
-						{Name: "id", Type: "string"},
+						{Name: "name", Type: "string"},
 						{Name: "age", Type: "number"},
 					},
 				},
@@ -829,7 +829,7 @@ func TestValidateFacts(t *testing.T) {
 				{
 					TypeName: "Person",
 					Fields: []FactField{
-						{Name: "id", Value: FactValue{Type: "string", Value: "p1"}},
+						{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 						{Name: "age", Value: FactValue{Type: "number", Value: 25}},
 					},
 				},
@@ -857,7 +857,7 @@ func TestValidateFacts(t *testing.T) {
 	t.Run("undefined field", func(t *testing.T) {
 		program := Program{
 			Types: []TypeDefinition{
-				{Name: "Person", Fields: []Field{{Name: "id", Type: "string"}}},
+				{Name: "Person", Fields: []Field{{Name: "name", Type: "string"}}},
 			},
 			Facts: []Fact{
 				{
@@ -1038,6 +1038,17 @@ func TestValidateProgram(t *testing.T) {
 // TestConvertFactsToReteFormat tests ConvertFactsToReteFormat function
 func TestConvertFactsToReteFormat(t *testing.T) {
 	program := Program{
+		Types: []TypeDefinition{
+			{
+				Name: "Person",
+				Fields: []Field{
+					{Name: "id", Type: "identifier", IsPrimaryKey: false},
+					{Name: "name", Type: "string", IsPrimaryKey: false},
+					{Name: "age", Type: "number", IsPrimaryKey: false},
+					{Name: "active", Type: "boolean", IsPrimaryKey: false},
+				},
+			},
+		},
 		Facts: []Fact{
 			{
 				TypeName: "Person",
@@ -1051,7 +1062,10 @@ func TestConvertFactsToReteFormat(t *testing.T) {
 		},
 	}
 
-	reteFacts := ConvertFactsToReteFormat(program)
+	reteFacts, err := ConvertFactsToReteFormat(program)
+	if err != nil {
+		t.Fatalf("ConvertFactsToReteFormat failed: %v", err)
+	}
 
 	if len(reteFacts) != 1 {
 		t.Fatalf("Expected 1 rete fact, got %d", len(reteFacts))

@@ -16,8 +16,8 @@ func TestValidateFactWithInvalidType(t *testing.T) {
 	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
-			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
 		},
 	})
 
@@ -25,7 +25,7 @@ func TestValidateFactWithInvalidType(t *testing.T) {
 	fact := &Fact{
 		TypeName: "UnknownType",
 		Fields: []FactField{
-			{Name: "id", Value: FactValue{Type: "identifier", Value: "U001"}},
+			{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 		},
 	}
 
@@ -46,8 +46,8 @@ func TestValidateFactWithInvalidField(t *testing.T) {
 	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
-			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
 		},
 	})
 
@@ -55,7 +55,7 @@ func TestValidateFactWithInvalidField(t *testing.T) {
 	fact := &Fact{
 		TypeName: "Person",
 		Fields: []FactField{
-			{Name: "id", Value: FactValue{Type: "identifier", Value: "U001"}},
+			{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
 			{Name: "invalidField", Value: FactValue{Type: "string", Value: "test"}},
 		},
 	}
@@ -74,8 +74,8 @@ func TestValidateFactSuccess(t *testing.T) {
 	ps.AddTypeForTesting("Person", &TypeDefinition{
 		Name: "Person",
 		Fields: []Field{
-			{Name: "id", Type: "identifier"},
 			{Name: "name", Type: "string"},
+			{Name: "age", Type: "number"},
 		},
 	})
 
@@ -83,8 +83,8 @@ func TestValidateFactSuccess(t *testing.T) {
 	fact := &Fact{
 		TypeName: "Person",
 		Fields: []FactField{
-			{Name: "id", Value: FactValue{Type: "identifier", Value: "U001"}},
 			{Name: "name", Value: FactValue{Type: "string", Value: "John"}},
+			{Name: "age", Value: FactValue{Type: "number", Value: float64(30)}},
 		},
 	}
 

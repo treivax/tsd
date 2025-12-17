@@ -12,8 +12,8 @@ import (
 func TestAggregationCalculation_AVG(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "avg_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Avg salary")
 `
@@ -84,8 +84,8 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 func TestAggregationCalculation_SUM(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "sum_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_total_salary : {d: Department, total_sal: SUM(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Total salary")
 `
@@ -142,8 +142,8 @@ rule dept_total_salary : {d: Department, total_sal: SUM(e.salary)} / {e: Employe
 func TestAggregationCalculation_COUNT(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "count_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_emp_count : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.deptId == d.id ==> print("Employee count")
 `
@@ -193,8 +193,8 @@ rule dept_emp_count : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / 
 func TestAggregationCalculation_MIN(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "min_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_min_salary : {d: Department, min_sal: MIN(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Min salary")
 `
@@ -261,8 +261,8 @@ rule dept_min_salary : {d: Department, min_sal: MIN(e.salary)} / {e: Employee} /
 func TestAggregationCalculation_MAX(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "max_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_max_salary : {d: Department, max_sal: MAX(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Max salary")
 `
@@ -329,8 +329,8 @@ rule dept_max_salary : {d: Department, max_sal: MAX(e.salary)} / {e: Employee} /
 func TestAggregationCalculation_MultipleAggregates(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "multi_agg_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary), min_sal: MIN(e.salary), count: COUNT(e.id)} / {e: Employee} / e.deptId == d.id ==> print("Stats")
 `
@@ -397,8 +397,8 @@ rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary)
 func TestAggregationCalculation_EmptySet(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "empty_test.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Avg salary")
 `

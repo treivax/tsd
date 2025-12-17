@@ -67,7 +67,7 @@ func TestConstraintPipeline_InfoLogging(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
 	network.SetLogger(logger)
-	constraintContent := `type Employee(id: number, name: string, salary: number)
+	constraintContent := `type Employee(#id: number, name: string, salary: number)
 action print(message: string)
 rule HighEarners : {e: Employee} / e.salary > 100000 ==> print(e.name)
 `
@@ -151,7 +151,7 @@ rule Adults : {p: Person} / p.age >= 18 ==> print(p.name)
 	_, _, err := pipeline.IngestFile(tmpFile1, network, storage)
 	require.NoError(t, err)
 	// Second file (extending network)
-	file2Content := `type Employee(id: number, name: string, salary: number)
+	file2Content := `type Employee(#id: number, name: string, salary: number)
 rule AllEmployees : {e: Employee} / e.salary > 0 ==> print(e.name)
 `
 	tmpFile2 := createTempLoggerTestFile(t, file2Content)
@@ -183,7 +183,7 @@ func TestConstraintPipeline_LoggerIsolation(t *testing.T) {
 	network1.SetLogger(logger1)
 	network2 := NewReteNetwork(storage)
 	network2.SetLogger(logger2)
-	constraintContent := `type Item(id: number)
+	constraintContent := `type Item(#id: number)
 action print(message: string)
 rule AllItems : {i: Item} / i.id > 0 ==> print("Item found")
 `
@@ -239,7 +239,7 @@ func TestConstraintPipeline_ContextualLogging(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
 	network.SetLogger(contextLogger)
-	constraintContent := `type Event(id: number)
+	constraintContent := `type Event(#id: number)
 action print(message: string)
 rule AllEvents : {e: Event} / e.id > 0 ==> print("Event found")
 `

@@ -104,102 +104,121 @@ func (av *ActionValidator) ValidateActionCall(jobCall *JobCall, ruleVariables ma
 
 // inferArgumentType infers the type of an argument expression with recursion depth tracking.
 func (av *ActionValidator) inferArgumentType(arg interface{}, ruleVariables map[string]string, depth int) (string, error) {
-	// Prevent stack overflow with deeply nested structures
 	if depth > MaxValidationDepth {
 		return "", fmt.Errorf("maximum validation depth exceeded (%d)", MaxValidationDepth)
 	}
 
-	switch v := arg.(type) {
-	case map[string]interface{}:
-		argType, ok := v["type"].(string)
-		if !ok {
-			return "", fmt.Errorf("argument missing type field")
-		}
-
-		switch argType {
-		case ValueTypeString, ArgTypeStringLiteral:
-			return ValueTypeString, nil
-		case ValueTypeNumber, ArgTypeNumberLiteral:
-			return ValueTypeNumber, nil
-		case ValueTypeBoolean, ArgTypeBoolLiteral, ValueTypeBool:
-			return ValueTypeBool, nil
-		case ValueTypeVariable:
-			// Look up the variable type from rule variables
-			varName, ok := v["name"].(string)
-			if !ok {
-				return "", fmt.Errorf("variable missing name")
-			}
-			varType, exists := ruleVariables[varName]
-			if !exists {
-				return "", fmt.Errorf("variable '%s' not found in rule", sanitizeForLog(varName, 50))
-			}
-			return varType, nil
-		case ConstraintTypeFieldAccess:
-			// For field access, we need to look up the object type and then the field type
-			objName, ok := v["object"].(string)
-			if !ok {
-				return "", fmt.Errorf("fieldAccess missing object name")
-			}
-			fieldName, ok := v["field"].(string)
-			if !ok {
-				return "", fmt.Errorf("fieldAccess missing field name")
-			}
-
-			// Get the type of the object
-			objType, exists := ruleVariables[objName]
-			if !exists {
-				return "", fmt.Errorf("object '%s' not found in rule", sanitizeForLog(objName, 50))
-			}
-
-			// Get the type definition
-			typeDef, exists := av.types[objType]
-			if !exists {
-				return "", fmt.Errorf("type '%s' not found", sanitizeForLog(objType, 50))
-			}
-
-			// Find the field in the type
-			for _, field := range typeDef.Fields {
-				if field.Name == fieldName {
-					return field.Type, nil
-				}
-			}
-
-			return "", fmt.Errorf("field '%s' not found in type '%s'",
-				sanitizeForLog(fieldName, 50), sanitizeForLog(objType, 50))
-		case ArgTypeBinaryOp, ArgTypeBinaryOp2, ArgTypeBinaryOp3:
-			// For binary operations, infer from operands
-			op, ok := v["operator"].(string)
-			if !ok {
-				return "", fmt.Errorf("binaryOp missing operator")
-			}
-
-			// The operator might be base64 encoded, try to decode it safely
-			if decoded, err := safeBase64Decode(op); err == nil {
-				op = decoded
-			}
-
-			// Arithmetic operations return number
-			if isArithmeticOperator(op) {
-				return ValueTypeNumber, nil
-			}
-			// Comparison operations return bool
-			if isComparisonOperator(op) {
-				return ValueTypeBool, nil
-			}
-			return "", fmt.Errorf("unknown operator '%s'", sanitizeForLog(op, 20))
-		case ArgTypeFunctionCall:
-			// Function calls - use function registry
-			funcName, ok := v["name"].(string)
-			if !ok {
-				return "", fmt.Errorf("functionCall missing name")
-			}
-			return av.functionRegistry.GetReturnType(funcName, ValueTypeString), nil
-		default:
-			return "", fmt.Errorf("unknown argument type: %s", sanitizeForLog(argType, 50))
-		}
-	default:
+	argMap, ok := arg.(map[string]interface{})
+	if !ok {
 		return "", fmt.Errorf("unexpected argument structure")
 	}
+
+	argType, ok := argMap["type"].(string)
+	if !ok {
+		return "", fmt.Errorf("argument missing type field")
+	}
+
+	return av.inferComplexType(argType, argMap, ruleVariables)
+}
+
+// inferComplexType infers the type based on argument type and map
+func (av *ActionValidator) inferComplexType(argType string, argMap map[string]interface{}, ruleVariables map[string]string) (string, error) {
+	switch argType {
+	case ValueTypeString, ArgTypeStringLiteral:
+		return ValueTypeString, nil
+	case ValueTypeNumber, ArgTypeNumberLiteral:
+		return ValueTypeNumber, nil
+	case ValueTypeBoolean, ArgTypeBoolLiteral, ValueTypeBool:
+		return ValueTypeBool, nil
+	case ValueTypeVariable:
+		return av.inferVariableType(argMap, ruleVariables)
+	case ConstraintTypeFieldAccess:
+		return av.inferFieldAccessType(argMap, ruleVariables)
+	case ArgTypeBinaryOp, ArgTypeBinaryOp2, ArgTypeBinaryOp3:
+		return av.inferBinaryOpType(argMap)
+	case ArgTypeFunctionCall:
+		return av.inferFunctionCallType(argMap)
+	default:
+		return "", fmt.Errorf("unknown argument type: %s", sanitizeForLog(argType, 50))
+	}
+}
+
+// inferVariableType infers the type of a variable reference
+func (av *ActionValidator) inferVariableType(argMap map[string]interface{}, ruleVariables map[string]string) (string, error) {
+	varName, ok := argMap["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("variable missing name")
+	}
+	varType, exists := ruleVariables[varName]
+	if !exists {
+		return "", fmt.Errorf("variable '%s' not found in rule", sanitizeForLog(varName, 50))
+	}
+	return varType, nil
+}
+
+// inferFieldAccessType infers the type of a field access expression
+func (av *ActionValidator) inferFieldAccessType(argMap map[string]interface{}, ruleVariables map[string]string) (string, error) {
+	objName, ok := argMap["object"].(string)
+	if !ok {
+		return "", fmt.Errorf("fieldAccess missing object name")
+	}
+	fieldName, ok := argMap["field"].(string)
+	if !ok {
+		return "", fmt.Errorf("fieldAccess missing field name")
+	}
+
+	objType, exists := ruleVariables[objName]
+	if !exists {
+		return "", fmt.Errorf("object '%s' not found in rule", sanitizeForLog(objName, 50))
+	}
+
+	// Le champ 'id' est un champ spécial généré automatiquement, toujours de type string
+	if fieldName == FieldNameID {
+		return "string", nil
+	}
+
+	typeDef, exists := av.types[objType]
+	if !exists {
+		return "", fmt.Errorf("type '%s' not found", sanitizeForLog(objType, 50))
+	}
+
+	for _, field := range typeDef.Fields {
+		if field.Name == fieldName {
+			return field.Type, nil
+		}
+	}
+
+	return "", fmt.Errorf("field '%s' not found in type '%s'",
+		sanitizeForLog(fieldName, 50), sanitizeForLog(objType, 50))
+}
+
+// inferBinaryOpType infers the type of a binary operation
+func (av *ActionValidator) inferBinaryOpType(argMap map[string]interface{}) (string, error) {
+	op, ok := argMap["operator"].(string)
+	if !ok {
+		return "", fmt.Errorf("binaryOp missing operator")
+	}
+
+	if decoded, err := safeBase64Decode(op); err == nil {
+		op = decoded
+	}
+
+	if isArithmeticOperator(op) {
+		return ValueTypeNumber, nil
+	}
+	if isComparisonOperator(op) {
+		return ValueTypeBool, nil
+	}
+	return "", fmt.Errorf("unknown operator '%s'", sanitizeForLog(op, 20))
+}
+
+// inferFunctionCallType infers the type of a function call
+func (av *ActionValidator) inferFunctionCallType(argMap map[string]interface{}) (string, error) {
+	funcName, ok := argMap["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("functionCall missing name")
+	}
+	return av.functionRegistry.GetReturnType(funcName, ValueTypeString), nil
 }
 
 // inferFunctionReturnType returns the return type of a function using the function registry.

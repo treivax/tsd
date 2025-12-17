@@ -15,7 +15,7 @@ func TestAlphaChain_TwoRules_SameConditions_DifferentOrder(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
 	// Deux règles avec les mêmes conditions mais dans un ordre différent
-	content := `type Person(id: string, age: number, name:string)
+	content := `type Person(#id: string, age: number, name:string)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 AND p.name == 'toto' ==> print("A")
 rule r2 : {p: Person} / p.name == 'toto' AND p.age > 18 ==> print("B")
@@ -89,7 +89,7 @@ func TestAlphaChain_PartialSharing_ThreeRules(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
 	// Trois règles avec partage partiel progressif
-	content := `type Person(id: string, age: number, name: string, salary:number)
+	content := `type Person(#id: string, age: number, name: string, salary:number)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 ==> print("A")
 rule r2 : {p: Person} / p.age > 18 AND p.name == 'toto' ==> print("B")
@@ -227,7 +227,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 func TestAlphaChain_FactPropagation_ThroughChain(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Person(id: string, age: number, name: string, salary:number)
+	content := `type Person(#id: string, age: number, name: string, salary:number)
 action print(message: string)
 rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> print("Complete")
 `
@@ -326,7 +326,7 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 func TestAlphaChain_RuleRemoval_PreservesShared(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Person(id: string, age: number, name:string)
+	content := `type Person(#id: string, age: number, name:string)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 ==> print("A")
 rule r2 : {p: Person} / p.age > 18 AND p.name == 'toto' ==> print("B")
@@ -412,7 +412,7 @@ rule r3 : {p: Person} / p.age > 18 ==> print("C")
 func TestAlphaChain_ComplexScenario_FraudDetection(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Transaction(id: string, amount: number, country: string, risk:number)
+	content := `type Transaction(#id: string, amount: number, country: string, risk:number)
 action print(message: string)
 rule fraud_low : {t: Transaction} / t.amount > 1000 AND t.country == 'XX' ==> print("LOW")
 rule fraud_med : {t: Transaction} / t.amount > 1000 AND t.country == 'XX' AND t.risk > 50 ==> print("MED")
@@ -572,7 +572,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 func TestAlphaChain_OR_NotDecomposed(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Person(id: string, age: number, status:string)
+	content := `type Person(#id: string, age: number, status:string)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 `
@@ -689,7 +689,7 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 func TestAlphaChain_NetworkStats_Accurate(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Person(id: string, age: number, name: string, salary:number)
+	content := `type Person(#id: string, age: number, name: string, salary:number)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 ==> print("R1")
 rule r2 : {p: Person} / p.age > 18 AND p.name == 'toto' ==> print("R2")
@@ -807,7 +807,7 @@ rule r5 : {p: Person} / p.age > 21 AND p.salary > 2000 ==> print("R5")
 func TestAlphaChain_MixedConditions_ComplexSharing(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
-	content := `type Person(id: string, age: number, name: string, salary: number, city:string)
+	content := `type Person(#id: string, age: number, name: string, salary: number, city:string)
 action print(message: string)
 rule simple1 : {p: Person} / p.age > 18 ==> print("S1")
 rule simple2 : {p: Person} / p.salary > 1000 ==> print("S2")

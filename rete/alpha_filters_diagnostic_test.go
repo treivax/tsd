@@ -15,8 +15,8 @@ func TestAlphaFiltersDiagnostic_JoinRules(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "test.tsd")
 	// Two join rules with different alpha filters on the same variable
-	content := `type Person(id: string, age: number)
-type Order(id: string, personId: string, amount: number)
+	content := `type Person(#id: string, age: number)
+type Order(#id: string, personId: string, amount: number)
 action print(msg: string)
 rule large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount > 100
     ==> print("Large order")

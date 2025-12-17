@@ -18,7 +18,7 @@ func TestNonBlockingValidation(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	mixedFile := filepath.Join(tempDir, "mixed.tsd")
-	mixedContent := "type Person(id: string, name: string, age:number)\n\nPerson(id: \"P001\", name: \"Alice\", age: 30)\nUnknownType(id: \"U001\", field: \"value\")\nPerson(id: \"P002\", name: \"Bob\", age: 25)\n"
+	mixedContent := "type Person(#id: string, name: string, age:number)\n\nPerson(id: \"P001\", name: \"Alice\", age: 30)\nUnknownType(id: \"U001\", field: \"value\")\nPerson(id: \"P002\", name: \"Bob\", age: 25)\n"
 
 	err = os.WriteFile(mixedFile, []byte(mixedContent), 0644)
 	if err != nil {

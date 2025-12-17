@@ -320,11 +320,15 @@ func (cp *ConstraintPipeline) submitFactsInternal(ctx *ingestionContext) error {
 		return nil
 	}
 
-	ctx.factsForRete = constraint.ConvertFactsToReteFormat(*ctx.program)
+	factsForRete, err := constraint.ConvertFactsToReteFormat(*ctx.program)
+	if err != nil {
+		return fmt.Errorf("❌ Erreur conversion faits: %w", err)
+	}
+	ctx.factsForRete = factsForRete
 	cp.GetLogger().Info("📥 Soumission de %d nouveaux faits", len(ctx.factsForRete))
 
 	submissionStart := time.Now()
-	err := ctx.network.SubmitFactsFromGrammar(ctx.factsForRete)
+	err = ctx.network.SubmitFactsFromGrammar(ctx.factsForRete)
 	if err != nil {
 		return fmt.Errorf("❌ Erreur soumission faits: %w", err)
 	}

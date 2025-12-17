@@ -52,55 +52,75 @@ func ValidateAction(program Program, action Action, expressionIndex int) error {
 
 // extractVariablesFromArg extrait les noms de variables utilisées dans un argument d'action
 func extractVariablesFromArg(arg interface{}) []string {
-	var vars []string
-
 	// Si c'est une string simple, c'est potentiellement un nom de variable
-	// (le parser peut produire des simples strings pour les variables dans certains contextes)
 	if str, ok := arg.(string); ok {
-		vars = append(vars, str)
-		return vars
+		return []string{str}
 	}
 
 	// Si c'est un objet (map), extraire les variables selon le type
-	if argMap, ok := arg.(map[string]interface{}); ok {
-		argType, _ := argMap["type"].(string)
-		switch argType {
-		case "fieldAccess":
-			// Accès à un champ d'objet : l'objet est une variable
-			if object, ok := argMap["object"].(string); ok {
-				vars = append(vars, object)
-			}
-		case "variable":
-			// Variable explicitement typée
-			if name, ok := argMap["name"].(string); ok {
-				vars = append(vars, name)
-			}
-		case ArgTypeStringLiteral, "string":
-			// String literals ne contiennent pas de variables
-		case ArgTypeNumberLiteral, "number":
-			// Number literals ne contiennent pas de variables
-		case ArgTypeBoolLiteral, ValueTypeBoolean:
-			// Boolean literals ne contiennent pas de variables
-		default:
-			// Vérifier si c'est un type d'opération binaire (plusieurs variantes possibles)
-			if isBinaryOperationType(argType) {
-				// Pour les opérations binaires, extraire récursivement des opérandes
-				if left := argMap["left"]; left != nil {
-					vars = append(vars, extractVariablesFromArg(left)...)
-				}
-				if right := argMap["right"]; right != nil {
-					vars = append(vars, extractVariablesFromArg(right)...)
-				}
-			} else if argType == ArgTypeFunctionCall {
-				// Pour les appels de fonction, extraire des arguments
-				if args, ok := argMap["args"].([]interface{}); ok {
-					for _, funcArg := range args {
-						vars = append(vars, extractVariablesFromArg(funcArg)...)
-					}
-				}
-			}
-		}
+	argMap, ok := arg.(map[string]interface{})
+	if !ok {
+		return []string{}
 	}
 
+	argType, _ := argMap["type"].(string)
+	return extractVariablesByType(argType, argMap)
+}
+
+// extractVariablesByType extrait les variables en fonction du type d'argument
+func extractVariablesByType(argType string, argMap map[string]interface{}) []string {
+	switch argType {
+	case "fieldAccess":
+		return extractFromFieldAccess(argMap)
+	case "variable":
+		return extractFromVariable(argMap)
+	case ArgTypeStringLiteral, "string", ArgTypeNumberLiteral, "number", ArgTypeBoolLiteral, ValueTypeBoolean:
+		return []string{} // Literals ne contiennent pas de variables
+	case ArgTypeFunctionCall:
+		return extractFromFunctionCall(argMap)
+	default:
+		if isBinaryOperationType(argType) {
+			return extractFromBinaryOp(argMap)
+		}
+		return []string{}
+	}
+}
+
+// extractFromFieldAccess extrait la variable d'un accès à un champ
+func extractFromFieldAccess(argMap map[string]interface{}) []string {
+	if object, ok := argMap["object"].(string); ok {
+		return []string{object}
+	}
+	return []string{}
+}
+
+// extractFromVariable extrait le nom d'une variable explicitement typée
+func extractFromVariable(argMap map[string]interface{}) []string {
+	if name, ok := argMap["name"].(string); ok {
+		return []string{name}
+	}
+	return []string{}
+}
+
+// extractFromFunctionCall extrait les variables des arguments d'un appel de fonction
+func extractFromFunctionCall(argMap map[string]interface{}) []string {
+	vars := []string{}
+	if args, ok := argMap["args"].([]interface{}); ok {
+		for _, funcArg := range args {
+			vars = append(vars, extractVariablesFromArg(funcArg)...)
+		}
+	}
+	return vars
+}
+
+// extractFromBinaryOp extrait les variables des opérandes d'une opération binaire
+func extractFromBinaryOp(argMap map[string]interface{}) []string {
+	vars := []string{}
+	if left := argMap["left"]; left != nil {
+		vars = append(vars, extractVariablesFromArg(left)...)
+	}
+	if right := argMap["right"]; right != nil {
+		vars = append(vars, extractVariablesFromArg(right)...)
+	}
 	return vars
 }

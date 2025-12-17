@@ -14,7 +14,7 @@ func TestBackwardCompatibility_SimpleRules(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "simple_rules.tsd")
 	// Règles simples basiques qui doivent toujours fonctionner
-	content := `type Person(id: string, age: number, name:string)
+	content := `type Person(#id: string, age: number, name:string)
 action print(message: string)
 action print(message: string)
 rule adult : {p: Person} / p.age >= 18 ==> print("Adult detected")
@@ -72,8 +72,8 @@ func TestBackwardCompatibility_ExistingBehavior(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "behavior_test.tsd")
 	// Test simplifié avec des règles alpha uniquement (pas de join)
-	content := `type Order(id: string, amount:number)
-type Customer(id: string, name: string, vip:number)
+	content := `type Order(#id: string, amount:number)
+type Customer(#id: string, name: string, vip:number)
 action print(message: string)
 rule large_order : {o: Order} / o.amount > 1000 ==> print("Large order")
 rule vip_customer : {c: Customer} / c.vip == 1 ==> print("VIP customer")
@@ -156,7 +156,7 @@ func TestNoRegression_AllPreviousTests(t *testing.T) {
 	}{
 		{
 			name: "Single condition",
-			content: `type Person(id: string, age:number)
+			content: `type Person(#id: string, age:number)
 action print(message: string)
 rule adult : {p: Person} / p.age >= 18 ==> print("Adult")`,
 			factCount:   2,
@@ -164,7 +164,7 @@ rule adult : {p: Person} / p.age >= 18 ==> print("Adult")`,
 		},
 		{
 			name: "Multiple conditions AND",
-			content: `type Person(id: string, age: number, name:string)
+			content: `type Person(#id: string, age: number, name:string)
 action print(message: string)
 rule specific : {p: Person} / p.age > 18 AND p.name == 'Alice' ==> print("Found")`,
 			factCount:   2,
@@ -172,7 +172,7 @@ rule specific : {p: Person} / p.age > 18 AND p.name == 'Alice' ==> print("Found"
 		},
 		{
 			name: "Multiple conditions OR",
-			content: `type Person(id: string, age:number)
+			content: `type Person(#id: string, age:number)
 action print(message: string)
 rule young_or_old : {p: Person} / p.age < 18 OR p.age > 65 ==> print("Young or old")`,
 			factCount:   3,
@@ -180,7 +180,7 @@ rule young_or_old : {p: Person} / p.age < 18 OR p.age > 65 ==> print("Young or o
 		},
 		{
 			name: "Numeric comparisons",
-			content: `type Product(id: string, price:number)
+			content: `type Product(#id: string, price:number)
 action print(message: string)
 rule expensive : {p: Product} / p.price > 100 ==> print("Expensive")
 rule cheap : {p: Product} / p.price <= 50 ==> print("Cheap")`,
@@ -189,7 +189,7 @@ rule cheap : {p: Product} / p.price <= 50 ==> print("Cheap")`,
 		},
 		{
 			name: "String equality",
-			content: `type User(id: string, role:string)
+			content: `type User(#id: string, role:string)
 action print(message: string)
 rule admin : {u: User} / u.role == 'admin' ==> print("Admin user")`,
 			factCount:   2,
@@ -197,7 +197,7 @@ rule admin : {u: User} / u.role == 'admin' ==> print("Admin user")`,
 		},
 		{
 			name: "Boolean conditions",
-			content: `type Account(id: string, active:number)
+			content: `type Account(#id: string, active:number)
 action print(message: string)
 rule active_account : {a: Account} / a.active == 1 ==> print("Active")`,
 			factCount:   2,
@@ -265,7 +265,7 @@ func TestBackwardCompatibility_TypeNodeSharing(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "sharing.tsd")
 	// Plusieurs règles sur le même type
-	content := `type Person(id: string, age: number, name:string)
+	content := `type Person(#id: string, age: number, name:string)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 ==> print("R1")
 rule r2 : {p: Person} / p.age > 30 ==> print("R2")
@@ -365,7 +365,7 @@ func TestBackwardCompatibility_LifecycleManagement(t *testing.T) {
 func TestBackwardCompatibility_RuleRemoval(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "removal.tsd")
-	content := `type Person(id: string, age:number)
+	content := `type Person(#id: string, age:number)
 action print(message: string)
 action print(message: string)
 rule adult : {p: Person} / p.age >= 18 ==> print("Adult")
@@ -420,7 +420,7 @@ func TestBackwardCompatibility_PerformanceCharacteristics(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "perf.tsd")
 	// Créer un ensemble de règles avec beaucoup de conditions partagées
-	content := `type Person(id: string, age: number, name: string, country:string)
+	content := `type Person(#id: string, age: number, name: string, country:string)
 action print(message: string)
 rule r1 : {p: Person} / p.age > 18 ==> print("R1")
 rule r2 : {p: Person} / p.age > 18 AND p.country == 'USA' ==> print("R2")

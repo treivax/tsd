@@ -29,6 +29,11 @@ func ValidateFieldAccess(program Program, fieldAccess FieldAccess, expressionInd
 		return fmt.Errorf("in expression %d: %v", expressionIndex+1, err)
 	}
 
+	// Le champ 'id' est un champ spécial généré automatiquement, toujours disponible
+	if fieldAccess.Field == FieldNameID {
+		return nil
+	}
+
 	// Vérifier que le champ existe dans le type
 	fields, err := GetTypeFields(program, objectType)
 	if err != nil {
@@ -133,6 +138,11 @@ func GetFieldType(program Program, object string, field string, expressionIndex 
 	objectType, err := findVariableType(expr, object)
 	if err != nil {
 		return "", err
+	}
+
+	// Le champ 'id' est un champ spécial généré automatiquement, toujours de type string
+	if field == FieldNameID {
+		return "string", nil
 	}
 
 	// Trouver le type du champ dans la définition du type

@@ -15,7 +15,7 @@ func TestIncrementalFactsParsing_SingleType(t *testing.T) {
 	ps := NewProgramState()
 
 	// Step 1: Define type
-	typeContent := `type Person(id: string, name: string, age:number)`
+	typeContent := `type Person(#id: string, name: string, age:number)`
 	err := ps.ParseAndMergeContent(typeContent, "types.tsd")
 	if err != nil {
 		t.Fatalf("Failed to parse type: %v", err)
@@ -97,9 +97,9 @@ func TestIncrementalFactsParsing_MultipleTypes(t *testing.T) {
 
 	// Step 1: Define multiple types
 	typesContent := `
-type Person(id: string, name: string, age:number)
-type Product(id: string, name: string, price:number)
-type Order(id: string, customer_id: string, product_id: string, quantity:number)
+type Person(#id: string, name: string, age:number)
+type Product(#id: string, name: string, price:number)
+type Order(#id: string, customer_id: string, product_id: string, quantity:number)
 `
 	err := ps.ParseAndMergeContent(typesContent, "types.tsd")
 	if err != nil {
@@ -202,7 +202,7 @@ func TestIncrementalFactsParsing_WithFiles(t *testing.T) {
 
 	// Create and parse types file
 	typesFile := filepath.Join(tempDir, "types.tsd")
-	typesContent := `type Person(id: string, name: string, age:number)`
+	typesContent := `type Person(#id: string, name: string, age:number)`
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write types file: %v", err)
@@ -290,7 +290,7 @@ func TestIncrementalFactsParsing_WithInvalidFacts(t *testing.T) {
 	ps := NewProgramState()
 
 	// Define type
-	typeContent := `type Person(id: string, name: string, age:number)`
+	typeContent := `type Person(#id: string, name: string, age:number)`
 	err := ps.ParseAndMergeContent(typeContent, "types.tsd")
 	if err != nil {
 		t.Fatalf("Failed to parse type: %v", err)
@@ -363,7 +363,7 @@ func TestIncrementalFactsParsing_WithReset(t *testing.T) {
 
 	// Define type and add facts
 	content1 := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
@@ -394,7 +394,7 @@ Person(id: "P003", name: "Charlie", age: 35)
 	content3 := `
 reset
 
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 Person(id: "P100", name: "Xavier", age: 40)
 Person(id: "P101", name: "Yolanda", age: 45)
@@ -431,7 +431,7 @@ func TestIncrementalFactsParsing_LargeScale(t *testing.T) {
 	ps := NewProgramState()
 
 	// Define type
-	typeContent := `type Person(id: string, name: string, age:number)`
+	typeContent := `type Person(#id: string, name: string, age:number)`
 	err := ps.ParseAndMergeContent(typeContent, "types.tsd")
 	if err != nil {
 		t.Fatalf("Failed to parse type: %v", err)
@@ -476,7 +476,7 @@ func TestIncrementalFactsParsing_MixedWithRules(t *testing.T) {
 
 	// Define type and rules
 	typeAndRules := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id)
 rule senior_check : {p: Person} / p.age >= 60 ==> senior(p.id)

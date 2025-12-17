@@ -12,7 +12,7 @@ import (
 func TestParseRemoveFact(t *testing.T) {
 	// Test du parsing d'une commande remove simple
 	input := `
-type Person(id:string, name:string)
+type Person(#id:string, name:string)
 
 Person(id:P1, name:Alice)
 remove fact Person P1
@@ -61,8 +61,8 @@ remove fact Person P1
 func TestParseMultipleRemoveFacts(t *testing.T) {
 	// Test du parsing de plusieurs commandes remove
 	input := `
-type Person(id:string, name:string)
-type Order(id:string, customer_id:string)
+type Person(#id:string, name:string)
+type Order(#id:string, customer_id:string)
 
 Person(id:P1, name:Alice)
 Person(id:P2, name:Bob)
@@ -156,7 +156,7 @@ func TestParseRemoveFactFromFile(t *testing.T) {
 func TestRemoveFactWithComplexID(t *testing.T) {
 	// Test avec des IDs contenant des caractères spéciaux
 	input := `
-type Product(id:string, name:string)
+type Product(#id:string, name:string)
 
 Product(id:PROD-123-ABC, name:Widget)
 remove fact Product PROD-123-ABC

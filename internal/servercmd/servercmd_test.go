@@ -450,7 +450,7 @@ func TestHandleExecute_NoAuth(t *testing.T) {
 
 	// Programme TSD simple avec commentaire
 	program := `// Type definition
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 `
 
 	reqBody := tsdio.ExecuteRequest{
@@ -503,7 +503,7 @@ func TestHandleExecute_WithAuth(t *testing.T) {
 	}
 
 	program := `// Person type
-type Person(id: string)
+type Person(#id: string)
 `
 
 	reqBody := tsdio.ExecuteRequest{
@@ -975,7 +975,7 @@ func TestExecuteTSDProgram_Simple(t *testing.T) {
 
 	// Programme simple qui définit un type avec commentaire
 	program := `// Person type
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 `
 
 	req := &tsdio.ExecuteRequest{
@@ -1053,7 +1053,7 @@ func TestCollectActivations_WithRealNetwork(t *testing.T) {
 
 	// Programme TSD avec une règle et des faits pour générer des activations
 	program := `// Test program with rule and facts
-type Person(id: string, name: string, age: number)
+type Person(#id: string, name: string, age: number)
 
 action notify_adult(name: string, age: number)
 
@@ -1372,7 +1372,7 @@ func TestExecuteTSDProgram_WithFacts(t *testing.T) {
 
 	// Programme avec des faits
 	program := `// Test with facts
-type Order(id: string, amount: number, status: string)
+type Order(#id: string, amount: number, status: string)
 
 Order(id:o1, amount:100.50, status:pending)
 Order(id:o2, amount:250.00, status:completed)
@@ -1417,7 +1417,7 @@ func TestExecuteTSDProgram_WithRule(t *testing.T) {
 
 	// Programme avec une règle qui devrait se déclencher
 	program := `// Test with rule and facts
-type Product(id: string, price: number, quantity: number)
+type Product(#id: string, price: number, quantity: number)
 
 action alert_expensive(id: string, price: number)
 
@@ -1478,7 +1478,7 @@ func TestHandleExecute_ComplexProgram(t *testing.T) {
 
 	// Programme complexe avec plusieurs types, règles et faits
 	program := `// Complex program
-type Customer(id: string, name: string, points: number)
+type Customer(#id: string, name: string, points: number)
 type Order(customerId: string, amount: number, discount: number)
 
 action apply_vip_discount(customerId: string, amount: number)

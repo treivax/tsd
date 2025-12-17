@@ -12,8 +12,8 @@ import (
 func TestAggregationThreshold_GreaterThan(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "threshold_gt.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id AND avg_sal > 50000 ==> print("High average salary")
 `
@@ -79,8 +79,8 @@ rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 func TestAggregationThreshold_GreaterThanOrEqual(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "threshold_gte.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule decent_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id AND avg_sal >= 50000 ==> print("Decent average")
 `
@@ -127,8 +127,8 @@ rule decent_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee}
 func TestAggregationThreshold_LessThan(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "threshold_lt.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule low_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id AND avg_sal < 40000 ==> print("Low average salary")
 `
@@ -175,8 +175,8 @@ rule low_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 func TestAggregationThreshold_MultipleConditions(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "threshold_multi.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id AND avg_sal > 40000 AND avg_sal < 60000 ==> print("Mid-range average")
 `
@@ -241,8 +241,8 @@ rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e
 func TestAggregationThreshold_COUNT(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "threshold_count.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.deptId == d.id AND emp_count >= 3 ==> print("Large department")
 `
@@ -309,8 +309,8 @@ rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.de
 func TestAggregationThreshold_NoThreshold(t *testing.T) {
 	tempDir := t.TempDir()
 	tsdFile := filepath.Join(tempDir, "no_threshold.tsd")
-	content := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	content := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 action print(message: string)
 rule any_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Any average")
 `

@@ -35,7 +35,7 @@ func TestNewTypeSyntax(t *testing.T) {
 		},
 		{
 			name:     "Type pour un produit",
-			input:    "type Product(id: number, title: string, price: number, inStock: bool)",
+			input:    "type Product(#id: number, title: string, price: number, inStock: bool)",
 			wantErr:  false,
 			typeName: "Product",
 			fields:   []string{"id", "title", "price", "inStock"},
@@ -394,7 +394,7 @@ func TestActionWithComplexParameters(t *testing.T) {
 		{
 			name: "Action avec type personnalisé",
 			input: `
-type User(id: number, name: string, role: string)
+type User(#id: number, name: string, role: string)
 action createUser(user: User)
 `,
 			wantErr: false,
@@ -402,7 +402,7 @@ action createUser(user: User)
 		{
 			name: "Action avec plusieurs types personnalisés",
 			input: `
-type User(id: number, name: string)
+type User(#id: number, name: string)
 type Role(name: string, permissions: string)
 action assignRole(user: User, role: Role)
 `,
@@ -411,7 +411,7 @@ action assignRole(user: User, role: Role)
 		{
 			name: "Action avec mix de types primitifs et personnalisés",
 			input: `
-type Product(id: number, name: string, price: number)
+type Product(#id: number, name: string, price: number)
 action updatePrice(product: Product, newPrice: number, reason: string = "price_change")
 `,
 			wantErr: false,
@@ -419,7 +419,7 @@ action updatePrice(product: Product, newPrice: number, reason: string = "price_c
 		{
 			name: "Action avec tous optionnels après requis",
 			input: `
-type Order(id: number, total: number)
+type Order(#id: number, total: number)
 action processPayment(order: Order, method: string, fee: number?, sendReceipt: bool = true)
 `,
 			wantErr: false,

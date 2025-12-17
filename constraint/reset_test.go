@@ -73,7 +73,7 @@ type User(name:string)
 
 reset
 
-type Order(id:number)
+type Order(#id:number)
 
 reset
 `)
@@ -273,7 +273,7 @@ type User(name: string, age:number)
 
 		parser.Reset()
 
-		content2 := `type Order(id:number)`
+		content2 := `type Order(#id:number)`
 		err = parser.ParseContent(content2, "test2.tsd")
 		if err != nil {
 			t.Fatalf("❌ Erreur de parsing après reset: %v", err)

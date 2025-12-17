@@ -16,7 +16,7 @@ type Program struct {
 }
 
 // TypeDefinition represents a user-defined type with its fields.
-// Example: type Person(id: string, name: string, age: number)
+// Example: type Person(#id: string, name: string, age: number)
 type TypeDefinition struct {
 	Type   string  `json:"type"`   // Always "typeDefinition"
 	Name   string  `json:"name"`   // The type name (e.g., "Person")
@@ -24,10 +24,11 @@ type TypeDefinition struct {
 }
 
 // Field represents a single field within a type definition.
-// It contains the field name and its type.
+// It contains the field name, its type, and whether it's part of the primary key.
 type Field struct {
-	Name string `json:"name"` // Field name (e.g., "id", "name")
-	Type string `json:"type"` // Field type (e.g., "string", "number", "bool")
+	Name         string `json:"name"`                   // Field name (e.g., "id", "name")
+	Type         string `json:"type"`                   // Field type (e.g., "string", "number", "bool")
+	IsPrimaryKey bool   `json:"isPrimaryKey,omitempty"` // True if field is part of primary key (marked with #)
 }
 
 // ActionDefinition represents a user-defined action with its signature.
@@ -226,6 +227,16 @@ type Fact struct {
 	Fields   []FactField `json:"fields"`   // List of field assignments
 }
 
+// BuildFieldMap creates a map of field values indexed by field name.
+// This is useful for efficient field lookup when validating or processing facts.
+func (f Fact) BuildFieldMap() map[string]FactValue {
+	fieldMap := make(map[string]FactValue, len(f.Fields))
+	for _, field := range f.Fields {
+		fieldMap[field.Name] = field.Value
+	}
+	return fieldMap
+}
+
 // FactField represents a field assignment within a fact.
 // It pairs a field name with its assigned value.
 type FactField struct {
@@ -240,6 +251,19 @@ type FactValue struct {
 	Value interface{} `json:"value"` // Actual value
 }
 
+// Unwrap extracts the underlying value from a FactValue.
+// Handles nested map structures from parser output where the value
+// might be wrapped in a map with a "value" key.
+// Returns the unwrapped value ready for use in the RETE network.
+func (fv FactValue) Unwrap() interface{} {
+	if valMap, ok := fv.Value.(map[string]interface{}); ok {
+		if val, exists := valMap["value"]; exists {
+			return val
+		}
+	}
+	return fv.Value
+}
+
 // Reset represents a reset instruction that clears the entire system.
 // When executed, it removes all facts, rules, types, and the RETE network.
 // Example: reset
@@ -252,4 +276,52 @@ type Reset struct {
 type RuleRemoval struct {
 	Type   string `json:"type"`   // Always "ruleRemoval"
 	RuleID string `json:"ruleID"` // ID of the rule to remove
+}
+
+// GetPrimaryKeyFields returns the list of fields that are part of the primary key.
+// Fields are returned in the order they appear in the type definition.
+func (td TypeDefinition) GetPrimaryKeyFields() []Field {
+	var pkFields []Field
+	for _, field := range td.Fields {
+		if field.IsPrimaryKey {
+			pkFields = append(pkFields, field)
+		}
+	}
+	return pkFields
+}
+
+// HasPrimaryKey returns true if the type has at least one primary key field.
+func (td TypeDefinition) HasPrimaryKey() bool {
+	for _, field := range td.Fields {
+		if field.IsPrimaryKey {
+			return true
+		}
+	}
+	return false
+}
+
+// GetPrimaryKeyFieldNames returns the names of primary key fields in definition order.
+func (td TypeDefinition) GetPrimaryKeyFieldNames() []string {
+	var names []string
+	for _, field := range td.Fields {
+		if field.IsPrimaryKey {
+			names = append(names, field.Name)
+		}
+	}
+	return names
+}
+
+// Clone creates a deep copy of the TypeDefinition.
+// All fields including IsPrimaryKey are copied.
+func (td TypeDefinition) Clone() TypeDefinition {
+	clone := TypeDefinition{
+		Type:   td.Type,
+		Name:   td.Name,
+		Fields: make([]Field, len(td.Fields)),
+	}
+
+	// Copy all fields (copy() copies all struct fields including IsPrimaryKey)
+	copy(clone.Fields, td.Fields)
+
+	return clone
 }

@@ -23,35 +23,35 @@ func TestProgramState_MergeTypes_EdgeCases(t *testing.T) {
 	}{
 		{
 			name:       "Identical types from different files",
-			types1:     "type Person(id: string, name: string)",
-			types2:     "type Person(id: string, name: string)",
+			types1:     "type Person(#id: string, name: string)",
+			types2:     "type Person(#id: string, name: string)",
 			wantErr:    false,
 			checkCount: 1,
 		},
 		{
 			name:       "Compatible types - one with more fields",
-			types1:     "type Person(id: string, name: string)",
-			types2:     "type Person(id: string, name: string, age: number)",
+			types1:     "type Person(#id: string, name: string)",
+			types2:     "type Person(#id: string, name: string, age: number)",
 			wantErr:    false,
 			checkCount: 1,
 		},
 		{
 			name:        "Incompatible types - different field types",
-			types1:      "type Person(id: string, age: string)",
-			types2:      "type Person(id: string, age: number)",
+			types1:      "type Person(#id: string, age: string)",
+			types2:      "type Person(#id: string, age: number)",
 			wantErr:     true,
 			errContains: "redefined incompatibly",
 		},
 		{
 			name:       "Multiple distinct types",
-			types1:     "type Person(id: string)\ntype Company(id: string)",
-			types2:     "type Order(id: string)\ntype Product(id: string)",
+			types1:     "type Person(#id: string)\ntype Company(#id: string)",
+			types2:     "type Order(#id: string)\ntype Product(#id: string)",
 			wantErr:    false,
 			checkCount: 4,
 		},
 		{
 			name:       "Empty types list",
-			types1:     "type Person(id: string)",
+			types1:     "type Person(#id: string)",
 			types2:     "",
 			wantErr:    false,
 			checkCount: 1,
@@ -209,7 +209,7 @@ func TestProgramState_MergeFacts_EdgeCases(t *testing.T) {
 	}{
 		{
 			name:  "Valid facts",
-			types: "type Person(id: string, age: number)",
+			types: "type Person(#id: string, age: number)",
 			facts: `Person(id: "p1", age: 30)
 Person(id: "p2", age: 25)`,
 			wantFacts:  2,
@@ -217,28 +217,28 @@ Person(id: "p2", age: 25)`,
 		},
 		{
 			name:       "Fact with undefined type",
-			types:      "type Person(id: string, age: number)",
+			types:      "type Person(#id: string, age: number)",
 			facts:      `Unknown(id: "u1", value: 10)`,
 			wantFacts:  0,
 			wantErrors: 1,
 		},
 		{
 			name:       "Fact with undefined field",
-			types:      "type Person(id: string, age: number)",
+			types:      "type Person(#id: string, age: number)",
 			facts:      `Person(id: "p1", name: "Alice")`,
 			wantFacts:  0,
 			wantErrors: 1,
 		},
 		{
 			name:       "Fact with wrong field type",
-			types:      "type Person(id: string, age: number)",
+			types:      "type Person(#id: string, age: number)",
 			facts:      `Person(id: "p1", age: "thirty")`,
 			wantFacts:  0,
 			wantErrors: 1,
 		},
 		{
 			name:  "Mixed valid and invalid facts",
-			types: "type Person(id: string, age: number)",
+			types: "type Person(#id: string, age: number)",
 			facts: `Person(id: "p1", age: 30)
 Person(id: "p2", name: "Invalid")
 Person(id: "p3", age: 25)`,
@@ -320,19 +320,19 @@ func TestProgramState_ParseAndMergeContent_EdgeCases(t *testing.T) {
 		},
 		{
 			name:     "Valid content",
-			content:  "type Person(id: string, name: string)",
+			content:  "type Person(#id: string, name: string)",
 			filename: "test.tsd",
 			wantErr:  false,
 		},
 		{
 			name:     "Content with comments",
-			content:  "// This is a comment\ntype Person(id: string, name: string)\n// Another comment",
+			content:  "// This is a comment\ntype Person(#id: string, name: string)\n// Another comment",
 			filename: "test.tsd",
 			wantErr:  false,
 		},
 		{
 			name:     "Content with reset",
-			content:  "reset\ntype Person(id: string)",
+			content:  "reset\ntype Person(#id: string)",
 			filename: "test.tsd",
 			wantErr:  false,
 		},
@@ -373,7 +373,7 @@ func TestProgramState_Reset_EdgeCases(t *testing.T) {
 
 	// Create initial files
 	typesFile := filepath.Join(tempDir, "types.tsd")
-	typesContent := "type Person(id: string, name: string)"
+	typesContent := "type Person(#id: string, name: string)"
 	if err := os.WriteFile(typesFile, []byte(typesContent), 0644); err != nil {
 		t.Fatal(err)
 	}

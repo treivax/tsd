@@ -96,10 +96,17 @@ func (tb *TypeBuilder) CreateTypeDefinition(typeName string, typeMap map[string]
 		fieldType := GetStringField(fieldMap, "type", "")
 
 		if fieldName != "" && fieldType != "" {
-			typeDef.Fields = append(typeDef.Fields, Field{
+			field := Field{
 				Name: fieldName,
 				Type: fieldType,
-			})
+			}
+
+			// Extract isPrimaryKey if present
+			if isPK, ok := fieldMap["isPrimaryKey"].(bool); ok {
+				field.IsPrimaryKey = isPK
+			}
+
+			typeDef.Fields = append(typeDef.Fields, field)
 		}
 	}
 

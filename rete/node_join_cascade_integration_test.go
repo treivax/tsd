@@ -15,8 +15,8 @@ func TestJoinNodeCascade_TwoVariablesIntegration(t *testing.T) {
 	t.Log("=====================================================================")
 
 	constraintContent := `// Test 2-variable cascade
-type User(id: string, name:string)
-type Order(id: string, user_id: string, amount:number)
+type User(#id: string, name:string)
+type Order(#id: string, user_id: string, amount:number)
 action process_order(userId: string, orderId: string)
 rule r1 : {u: User, o: Order} / u.id == "U1" AND o.user_id == u.id ==> process_order(u.id, o.id)
 `
@@ -149,8 +149,8 @@ func TestJoinNodeCascade_OrderIndependence(t *testing.T) {
 	t.Log("==============================================")
 
 	constraintContent := `// Order independence test
-type User(id:string)
-type Order(id: string, user_id:string)
+type User(#id:string)
+type Order(#id: string, user_id:string)
 action test_action(userId: string, orderId: string)
 rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `
@@ -215,8 +215,8 @@ func TestJoinNodeCascade_MultipleMatchingFacts(t *testing.T) {
 	t.Log("====================================================")
 
 	constraintContent := `// Multiple matching facts test
-type User(id:string)
-type Order(id: string, user_id:string)
+type User(#id:string)
+type Order(#id: string, user_id:string)
 action test_action(userId: string, orderId: string)
 rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `
@@ -278,8 +278,8 @@ func TestJoinNodeCascade_Retraction(t *testing.T) {
 	t.Log("============================================")
 
 	constraintContent := `// Retraction test
-type User(id:string)
-type Order(id: string, user_id:string)
+type User(#id:string)
+type Order(#id: string, user_id:string)
 action test_action(userId: string, orderId: string)
 rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 `

@@ -14,7 +14,7 @@ func TestParseRemoveFactNewSyntax(t *testing.T) {
 	t.Log("===============================================")
 
 	input := `
-type Person(id: string, name:string)
+type Person(#id: string, name:string)
 
 Person(id: "P1", name: "Alice")
 
@@ -60,7 +60,7 @@ func TestParseRemoveRule(t *testing.T) {
 	t.Log("===========================")
 
 	input := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 
@@ -103,8 +103,8 @@ func TestParseMultipleRemoveCommandsMixed(t *testing.T) {
 	t.Log("=================================================")
 
 	input := `
-type Person(id: string, name: string, age:number)
-type Order(id: string, customer:string)
+type Person(#id: string, name: string, age:number)
+type Order(#id: string, customer:string)
 
 rule adult_check : {p: Person} / p.age >= 18 ==> notify(p.id)
 rule order_check : {o: Order} / o.customer == "VIP" ==> process(o.id)
@@ -184,7 +184,7 @@ func TestParseRemoveRuleWithComplexID(t *testing.T) {
 	t.Log("===========================================")
 
 	input := `
-type Person(id: string, name:string)
+type Person(#id: string, name:string)
 
 rule my_complex_rule_123 : {p: Person} / p.name == "Test" ==> action(p.id)
 
@@ -218,7 +218,7 @@ func TestParseRemoveRuleFromFile(t *testing.T) {
 
 	// Créer un fichier temporaire
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 rule rule1 : {p: Person} / p.age > 18 ==> action1(p.id)
 rule rule2 : {p: Person} / p.age < 65 ==> action2(p.id)
@@ -261,7 +261,7 @@ func TestOldRemoveSyntaxShouldFail(t *testing.T) {
 
 	// L'ancienne syntaxe "remove TypeName ID" ne devrait plus fonctionner
 	input := `
-type Person(id: string, name:string)
+type Person(#id: string, name:string)
 
 Person(id: "P1", name: "Alice")
 

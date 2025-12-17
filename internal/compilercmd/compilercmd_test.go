@@ -17,14 +17,14 @@ import (
 
 // Test constants
 const (
-	TestTSDProgram = `type Person(id: string, name: string)
+	TestTSDProgram = `type Person(#id: string, name: string)
 action match(id: string)
 Person("p1", "Alice")
 rule r1: {p: Person} / p.name == "Alice" ==> match(p.id)`
 
 	TestInvalidProgram = `type Person : invalid syntax here`
 
-	TestSimpleType = `type Person(id: string, name: string)`
+	TestSimpleType = `type Person(#id: string, name: string)`
 
 	TestTimeout = 30
 )
@@ -742,7 +742,7 @@ func TestRunWithFacts_FactsFileNotFound(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	programFile := filepath.Join(tmpDir, "program.tsd")
-	programContent := `type Person(id: string, name: string)`
+	programContent := `type Person(#id: string, name: string)`
 	err := os.WriteFile(programFile, []byte(programContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create program file: %v", err)
@@ -826,7 +826,7 @@ func TestExecutePipeline_InvalidFacts(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	constraintFile := filepath.Join(tmpDir, "constraint.tsd")
-	constraintContent := `type Person(id: string, name: string)`
+	constraintContent := `type Person(#id: string, name: string)`
 	err := os.WriteFile(constraintFile, []byte(constraintContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create constraint file: %v", err)
@@ -866,7 +866,7 @@ func TestRun_WithFactsAndError(t *testing.T) {
 
 	// Create program file
 	programFile := filepath.Join(tmpDir, "program.tsd")
-	programContent := `type Person(id: string, name: string)`
+	programContent := `type Person(#id: string, name: string)`
 	err := os.WriteFile(programFile, []byte(programContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create program file: %v", err)

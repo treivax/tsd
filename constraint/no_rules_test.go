@@ -15,8 +15,8 @@ func TestParseTypesAndFactsWithoutRules(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person(id: string, name: string, age:number)
-type Product(id: string, name: string, price:number)
+type Person(#id: string, name: string, age:number)
+type Product(#id: string, name: string, price:number)
 
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
@@ -69,8 +69,8 @@ func TestParseTypesAndFactsWithoutRules_File(t *testing.T) {
 	// Create file with types and facts only
 	tsdFile := filepath.Join(tempDir, "data.tsd")
 	content := `
-type Customer(id: string, name: string, email: string, status:string)
-type Order(id: string, customer_id: string, amount: number, date:string)
+type Customer(#id: string, name: string, email: string, status:string)
+type Order(#id: string, customer_id: string, amount: number, date:string)
 
 Customer(id: "C001", name: "Alice Smith", email: "alice@example.com", status: "active")
 Customer(id: "C002", name: "Bob Jones", email: "bob@example.com", status: "active")
@@ -149,8 +149,8 @@ func TestParseOnlyTypes(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person(id: string, name: string, age:number)
-type Company(id: string, name: string, employees:number)
+type Person(#id: string, name: string, age:number)
+type Company(#id: string, name: string, employees:number)
 type Address(street: string, city: string, zipcode:string)
 `
 
@@ -207,8 +207,8 @@ func TestParseTypesAndFactsIncremental_NoRules(t *testing.T) {
 
 	// Step 1: Parse types
 	typesContent := `
-type Person(id: string, name: string, age:number)
-type Product(id: string, name: string, price:number)
+type Person(#id: string, name: string, age:number)
+type Product(#id: string, name: string, price:number)
 `
 	err := ps.ParseAndMergeContent(typesContent, "types.tsd")
 	if err != nil {
@@ -264,7 +264,7 @@ func TestConvertToProgram_NoRules(t *testing.T) {
 	ps := NewProgramState()
 
 	content := `
-type Person(id: string, name: string, age:number)
+type Person(#id: string, name: string, age:number)
 
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
@@ -319,8 +319,8 @@ func TestRETENetworkCreation_TypesAndFactsOnly(t *testing.T) {
 	// Create file with types and facts only (no rules)
 	tsdFile := filepath.Join(tempDir, "data.tsd")
 	content := `
-type Person(id: string, name: string, age:number)
-type Product(id: string, name: string, price:number)
+type Person(#id: string, name: string, age:number)
+type Product(#id: string, name: string, price:number)
 
 Person(id: "P001", name: "Alice", age: 30)
 Person(id: "P002", name: "Bob", age: 25)
@@ -396,8 +396,8 @@ func TestMultipleFilesWithoutRules(t *testing.T) {
 	// File 1: Types
 	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `
-type Customer(id: string, name: string, email:string)
-type Order(id: string, customer_id: string, total:number)
+type Customer(#id: string, name: string, email:string)
+type Order(#id: string, customer_id: string, total:number)
 `
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {

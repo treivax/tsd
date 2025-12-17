@@ -13,7 +13,7 @@ func TestMultipleActionsBasic(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - CAS DE BASE")
 	t.Log("========================================")
 
-	input := `type Person(id: string, name: string, age:number)
+	input := `type Person(#id: string, name: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id), log("Adult detected")
 `
@@ -61,8 +61,8 @@ func TestMultipleActionsThreeJobs(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - TROIS ACTIONS")
 	t.Log("==========================================")
 
-	input := `type Person(id: string, name: string, age:number)
-type Order(id: string, customer_id: string, amount:number)
+	input := `type Person(#id: string, name: string, age:number)
+type Order(#id: string, customer_id: string, amount:number)
 
 rule r1 : {p: Person, o: Order} / p.id == o.customer_id ==> customer_order(p.id, o.id), update_stats(o.amount), notify("admin")
 `
@@ -103,8 +103,8 @@ func TestMultipleActionsWithAggregation(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - AVEC AGRÉGATION")
 	t.Log("============================================")
 
-	input := `type Department(id: string, name:string)
-type Employee(id: string, deptId: string, salary:number)
+	input := `type Department(#id: string, name:string)
+type Employee(#id: string, deptId: string, salary:number)
 
 rule dept_stats : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e.deptId == d.id ==> print("Stats"), update_dashboard(d.id, avg_sal), alert_hr(d.id)
 `
@@ -145,7 +145,7 @@ func TestBackwardCompatibilitySingleAction(t *testing.T) {
 	t.Log("🧪 TEST RÉTROCOMPATIBILITÉ - ACTION UNIQUE")
 	t.Log("==========================================")
 
-	input := `type Person(id: string, age:number)
+	input := `type Person(#id: string, age:number)
 
 rule adults : {p: Person} / p.age >= 18 ==> print("Adult")
 `
@@ -183,7 +183,7 @@ func TestMultipleActionsWithComplexArguments(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - ARGUMENTS COMPLEXES")
 	t.Log("================================================")
 
-	input := `type Person(id: string, name: string, age:number)
+	input := `type Person(#id: string, name: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id), log(p.name, p.age), notify("admin", p.id)
 `
@@ -221,7 +221,7 @@ func TestMultipleActionsWithArithmeticExpressions(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - EXPRESSIONS ARITHMÉTIQUES")
 	t.Log("======================================================")
 
-	input := `type Person(id: string, age: number, salary:number)
+	input := `type Person(#id: string, age: number, salary:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> update_bonus(p.id, p.salary * 1.1), log("Bonus calculated"), notify_payroll(p.id)
 `
@@ -264,17 +264,17 @@ func TestMultipleActionsParseError(t *testing.T) {
 	}{
 		{
 			name: "Virgule manquante entre actions",
-			input: `type Person(id:string)
+			input: `type Person(#id:string)
 rule r1 : {p: Person} / p.id == "1" ==> action1(p.id) action2(p.id)`,
 		},
 		{
 			name: "Parenthèse fermante manquante",
-			input: `type Person(id:string)
+			input: `type Person(#id:string)
 rule r1 : {p: Person} / p.id == "1" ==> action1(p.id, action2(p.id)`,
 		},
 		{
 			name: "Virgule en trop à la fin",
-			input: `type Person(id:string)
+			input: `type Person(#id:string)
 rule r1 : {p: Person} / p.id == "1" ==> action1(p.id), action2(p.id),`,
 		},
 	}
@@ -298,7 +298,7 @@ func TestMultipleActionsStructure(t *testing.T) {
 	t.Log("🧪 TEST ACTIONS MULTIPLES - STRUCTURE")
 	t.Log("======================================")
 
-	input := `type Person(id: string, age:number)
+	input := `type Person(#id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id), log("Adult")
 `

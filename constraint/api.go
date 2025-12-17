@@ -92,7 +92,10 @@ func ExtractFactsFromProgram(result interface{}) ([]map[string]interface{}, erro
 	}
 
 	// Convert facts to RETE format
-	reteFacts := ConvertFactsToReteFormat(program)
+	reteFacts, err := ConvertFactsToReteFormat(program)
+	if err != nil {
+		return nil, fmt.Errorf("conversion to RETE format failed: %v", err)
+	}
 	return reteFacts, nil
 }
 

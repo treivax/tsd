@@ -13,8 +13,8 @@ import (
 func TestPipeline_AVG(t *testing.T) {
 	// Créer fichier constraint temporaire
 	constraintFile := filepath.Join(t.TempDir(), "avg_test.tsd")
-	constraintContent := `type Employee(id: string, name:string)
-type Performance(id: string, employee_id: string, score:number)
+	constraintContent := `type Employee(#id: string, name:string)
+type Performance(#id: string, employee_id: string, score:number)
 action PRINT(arg1: string, arg2: string, arg3: string)
 rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) >= 8.5
 ==> PRINT("Employee ", e.name, " has avg >= 8.5")
@@ -45,8 +45,8 @@ rule r1 : {e: Employee} / AVG(p: Performance / p.employee_id == e.id ; p.score) 
 // TestPipeline_SUM teste le calcul de somme via le pipeline complet
 func TestPipeline_SUM(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "sum_test.tsd")
-	constraintContent := `type Employee(id: string, name:string)
-type Order(id: string, employee_id: string, amount:number)
+	constraintContent := `type Employee(#id: string, name:string)
+type Order(#id: string, employee_id: string, amount:number)
 action PRINT(arg1: string, arg2: string, arg3: string)
 rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 1000
 ==> PRINT("Employee ", e.name, " has sum >= 1000")
@@ -73,8 +73,8 @@ rule r1 : {e: Employee} / SUM(o: Order / o.employee_id == e.id ; o.amount) >= 10
 // TestPipeline_COUNT teste le comptage via le pipeline complet
 func TestPipeline_COUNT(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "count_test.tsd")
-	constraintContent := `type Department(id: string, name:string)
-type Employee(id: string, department:string)
+	constraintContent := `type Department(#id: string, name:string)
+type Employee(#id: string, department:string)
 action PRINT(arg1: string, arg2: string, arg3: string)
 rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 ==> PRINT("Department ", d.name, " has >= 3 employees")
@@ -103,8 +103,8 @@ rule r1 : {d: Department} / COUNT(e: Employee / e.department == d.name) >= 3
 // TestPipeline_MIN teste le minimum via le pipeline complet
 func TestPipeline_MIN(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "min_test.tsd")
-	constraintContent := `type Department(id: string, name:string)
-type Employee(id: string, department: string, salary:number)
+	constraintContent := `type Department(#id: string, name:string)
+type Employee(#id: string, department: string, salary:number)
 action PRINT(arg1: string, arg2: string, arg3: string)
 rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary) >= 50000
 ==> PRINT("Department ", d.name, " has min salary >= 50000")
@@ -131,8 +131,8 @@ rule r1 : {d: Department} / MIN(e: Employee / e.department == d.name ; e.salary)
 // TestPipeline_MAX teste le maximum via le pipeline complet
 func TestPipeline_MAX(t *testing.T) {
 	constraintFile := filepath.Join(t.TempDir(), "max_test.tsd")
-	constraintContent := `type Department(id: string, name:string)
-type Employee(id: string, department: string, salary:number)
+	constraintContent := `type Department(#id: string, name:string)
+type Employee(#id: string, department: string, salary:number)
 action PRINT(arg1: string, arg2: string, arg3: string)
 rule r1 : {d: Department} / MAX(e: Employee / e.department == d.name ; e.salary) >= 80000
 ==> PRINT("Department ", d.name, " has max salary >= 80000")

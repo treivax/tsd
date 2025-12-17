@@ -20,7 +20,7 @@ func TestRuleIdUniquenessIntegration(t *testing.T) {
 		tempDir := t.TempDir()
 		file := filepath.Join(tempDir, "duplicate.tsd")
 
-		content := `type Person(id: string, age:number)
+		content := `type Person(#id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)
@@ -55,7 +55,7 @@ rule r1 : {p: Person} / p.age == 18 ==> exactly_eighteen(p.id)`
 		tempDir := t.TempDir()
 
 		file1 := filepath.Join(tempDir, "file1.tsd")
-		content1 := `type Person(id: string, age:number)
+		content1 := `type Person(#id: string, age:number)
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)`
 
 		file2 := filepath.Join(tempDir, "file2.tsd")
@@ -121,14 +121,14 @@ rule r3 : {p: Person} / p.age > 65 ==> senior(p.id)`
 		tempDir := t.TempDir()
 
 		file1 := filepath.Join(tempDir, "before_reset.tsd")
-		content1 := `type Person(id: string, age:number)
+		content1 := `type Person(#id: string, age:number)
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)`
 
 		file2 := filepath.Join(tempDir, "after_reset.tsd")
 		content2 := `reset
 
-type Product(id: string, price:number)
+type Product(#id: string, price:number)
 rule r1 : {prod: Product} / prod.price > 100 ==> expensive(prod.id)
 rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 
@@ -190,7 +190,7 @@ rule r2 : {prod: Product} / prod.price < 50 ==> cheap(prod.id)`
 		tempDir := t.TempDir()
 		file := filepath.Join(tempDir, "multi_dup.tsd")
 
-		content := `type Person(id: string, age:number)
+		content := `type Person(#id: string, age:number)
 
 rule r1 : {p: Person} / p.age > 18 ==> adult(p.id)
 rule r2 : {p: Person} / p.age < 18 ==> minor(p.id)

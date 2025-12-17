@@ -23,8 +23,8 @@ func TestProgramStateIterativeParsing(t *testing.T) {
 	// 1. Type definitions file
 	typesFile := filepath.Join(tempDir, "types.tsd")
 	typesContent := `// Type definitions
-type Person(id: string, name: string, age:number)
-type Company(id: string, name: string, employees:number)`
+type Person(#id: string, name: string, age:number)
+type Company(#id: string, name: string, employees:number)`
 
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
@@ -130,7 +130,7 @@ func TestProgramStateTypeValidation(t *testing.T) {
 
 	// Create types file
 	typesFile := filepath.Join(tempDir, "types.tsd")
-	typesContent := `type Person(id: string, name:string)`
+	typesContent := `type Person(#id: string, name:string)`
 	err = os.WriteFile(typesFile, []byte(typesContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write types file: %v", err)
@@ -178,7 +178,7 @@ func TestProgramState_ParseAndMergeContent(t *testing.T) {
 	}{
 		{
 			name:     "parse type from content",
-			content:  `type Person(id: string, name: string, age: number)`,
+			content:  `type Person(#id: string, name: string, age: number)`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
 				if ps.GetTypesCount() != 1 {
@@ -191,7 +191,7 @@ func TestProgramState_ParseAndMergeContent(t *testing.T) {
 		},
 		{
 			name: "parse rule from content",
-			content: `type Person(id: string, age: number)
+			content: `type Person(#id: string, age: number)
 rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
@@ -202,7 +202,7 @@ rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)`,
 		},
 		{
 			name: "parse fact from content",
-			content: `type Person(id: string)
+			content: `type Person(#id: string)
 Person(id: "P001")`,
 			filename: "test.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
@@ -225,8 +225,8 @@ Person(id: "P001")`,
 		},
 		{
 			name: "multiple types in content",
-			content: `type Person(id: string)
-type Company(id: string, name: string)`,
+			content: `type Person(#id: string)
+type Company(#id: string, name: string)`,
 			filename: "multi.tsd",
 			checkFunc: func(t *testing.T, ps *ProgramState) {
 				if ps.GetTypesCount() != 2 {
@@ -303,7 +303,7 @@ func TestProgramState_Reset(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add some data
-	ps.ParseAndMergeContent(`type Person(id: string)`, "test.tsd")
+	ps.ParseAndMergeContent(`type Person(#id: string)`, "test.tsd")
 	ps.ParseAndMergeContent(`Person(id: "P001")`, "test.tsd")
 	ps.AddError(ValidationError{Message: "test error", File: "test.tsd", Type: "test"})
 
@@ -334,14 +334,14 @@ func TestProgramState_MergeConflicts(t *testing.T) {
 	ps := NewProgramState()
 
 	// Parse first type definition
-	content1 := `type Person(id: string, name: string)`
+	content1 := `type Person(#id: string, name: string)`
 	err := ps.ParseAndMergeContent(content1, "file1.tsd")
 	if err != nil {
 		t.Fatalf("Failed to parse first content: %v", err)
 	}
 
 	// Try to parse conflicting type definition with same name
-	content2 := `type Person(id: string, age: number)`
+	content2 := `type Person(#id: string, age: number)`
 	err = ps.ParseAndMergeContent(content2, "file2.tsd")
 	// This might succeed or fail depending on merge logic
 	// Just verify no crash occurs
@@ -359,7 +359,7 @@ func TestProgramState_ToProgram(t *testing.T) {
 	ps := NewProgramState()
 
 	// Add types and rules
-	content := `type Person(id: string, age: number)
+	content := `type Person(#id: string, age: number)
 rule r1 : {p: Person} / p.age > 18 ==> Approve(p.id)
 Person(id: "P001", age: 25)`
 

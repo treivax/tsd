@@ -16,7 +16,7 @@ func TestIngestFile(t *testing.T) {
 		tmpDir := t.TempDir()
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		content := `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 action log(msg: string)
 rule simple : {p: Person} / p.id == "1" ==> log(p.name)
 Person(id: "1", name: "Alice")
@@ -59,7 +59,7 @@ Person(id: "1", name: "Alice")
 		tmpDir := t.TempDir()
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		content := `
-type Item(id: string)
+type Item(#id: string)
 action process(id: string)
 rule r1 : {i: Item} / i.id == "test" ==> process(i.id)
 `
@@ -89,7 +89,7 @@ rule r1 : {i: Item} / i.id == "test" ==> process(i.id)
 		// First file
 		file1 := filepath.Join(tmpDir, "file1.tsd")
 		content1 := `
-type Person(id: string)
+type Person(#id: string)
 action log1(id: string)
 rule r1 : {p: Person} / p.id == "1" ==> log1(p.id)
 `
@@ -99,7 +99,7 @@ rule r1 : {p: Person} / p.id == "1" ==> log1(p.id)
 		// Second file
 		file2 := filepath.Join(tmpDir, "file2.tsd")
 		content2 := `
-type Order(id: string)
+type Order(#id: string)
 action log2(id: string)
 rule r2 : {o: Order} / o.id == "2" ==> log2(o.id)
 `
@@ -1097,7 +1097,7 @@ func TestIngestFile_ErrorPaths(t *testing.T) {
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		// First create a network with some data
 		content1 := `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 action log(msg: string)
 rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
 Person(id: "1", name: "Alice")
@@ -1114,7 +1114,7 @@ Person(id: "1", name: "Alice")
 		// Now ingest a file with reset command
 		content2 := `
 reset
-type Order(id: string)
+type Order(#id: string)
 action process(id: string)
 rule r2 : {o: Order} / o.id == "100" ==> process(o.id)
 `
@@ -1148,7 +1148,7 @@ rule r2 : {o: Order} / o.id == "100" ==> process(o.id)
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		// Create invalid content (undefined type reference)
 		content := `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 action log(msg: string)
 rule bad : {o: Order} / o.id == "1" ==> log("test")
 `
@@ -1168,7 +1168,7 @@ rule bad : {o: Order} / o.id == "1" ==> log("test")
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		// First file with base type
 		content1 := `
-type Person(id: string, name: string)
+type Person(#id: string, name: string)
 action log(msg: string)
 rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
 `
@@ -1183,7 +1183,7 @@ rule r1 : {p: Person} / p.id == "1" ==> log(p.name)
 		}
 		// Second file that references existing type (incremental validation)
 		content2 := `
-type Order(id: string, person_id: string)
+type Order(#id: string, person_id: string)
 action process(id: string)
 rule r2 : {o: Order, p: Person} / o.person_id == p.id ==> process(o.id)
 `
@@ -1215,7 +1215,7 @@ rule r2 : {o: Order, p: Person} / o.person_id == p.id ==> process(o.id)
 		tmpDir := t.TempDir()
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		content := `
-type Product(id: string, name: string, price: number)
+type Product(#id: string, name: string, price: number)
 action notify(msg: string)
 rule expensive : {p: Product} / p.price > 100 ==> notify(p.name)
 Product(id: "p1", name: "Laptop", price: 1500)
@@ -1246,7 +1246,7 @@ Product(id: "p2", name: "Mouse", price: 25)
 		testFile := filepath.Join(tmpDir, "test.tsd")
 		// First file with facts
 		content1 := `
-type Item(id: string, category: string)
+type Item(#id: string, category: string)
 action log(msg: string)
 Item(id: "i1", category: "books")
 Item(id: "i2", category: "electronics")
