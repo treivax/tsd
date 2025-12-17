@@ -168,6 +168,28 @@ Expression <- "rule" _ ruleId:IdentName _ ":" _ patterns:PatternBlocks _ "/" _ c
         "constraints": constraints,
         "action": action,
     }, nil
+} / "rule" _ ruleId:IdentName _ ":" _ patterns:PatternBlocks _ "/" _ "==>" _ action:Action {
+    // Rule without constraints - match on pattern only
+    // If only one pattern block, use old structure for backward compatibility
+    patternList := patterns.([]interface{})
+    if len(patternList) == 1 {
+        return map[string]interface{}{
+            "type": "expression",
+            "ruleId": ruleId,
+            "set": patternList[0],
+            "constraints": nil,
+            "action": action,
+        }, nil
+    }
+
+    // Multiple pattern blocks without constraints
+    return map[string]interface{}{
+        "type": "expression",
+        "ruleId": ruleId,
+        "patterns": patterns,
+        "constraints": nil,
+        "action": action,
+    }, nil
 }
 
 PatternBlocks <- first:Set rest:(_ "/" _ Set)* {

@@ -1,0 +1,140 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// Exemple de règles sans condition
+// ================================
+// Ce fichier démontre comment écrire des règles qui se déclenchent automatiquement
+// dès qu'un fait correspondant au pattern est asserté, sans aucune condition de filtrage.
+
+// Définition des types
+type Person(#personId: string, name: string, age: number, email: string)
+type Product(#productId: string, name: string, price: number, category: string)
+type Order(#orderId: string, customerId: string, productId: string, quantity: number, timestamp: string)
+type Event(#eventId: string, type: string, source: string, timestamp: string)
+
+// Définition des actions
+action log(message: string)
+action notify(recipient: string, message: string)
+action track(eventType: string, entityId: string)
+action audit(action: string, details: string)
+action webhook(url: string, payload: string)
+
+// ============================================================================
+// RÈGLES SANS CONDITION - Déclenchement automatique sur assertion
+// ============================================================================
+
+// Exemple 1: Logger toute nouvelle personne
+// Dès qu'un fait Person est asserté, cette règle se déclenche
+rule assertion_user : {p: Person} / ==> log(p.name)
+
+// Exemple 2: Notifier l'administrateur pour chaque nouveau produit
+rule new_product_notification : {pr: Product} / ==>
+    notify("admin@example.com", pr.name),
+    track("product_created", pr.productId)
+
+// Exemple 3: Auditer toutes les commandes
+// Chaque commande est automatiquement enregistrée dans les logs d'audit
+rule audit_all_orders : {o: Order} / ==>
+    audit("order_created", o.orderId),
+    log(o.orderId)
+
+// Exemple 4: Tracker tous les événements système
+rule track_all_events : {e: Event} / ==>
+    track(e.type, e.source),
+    log(e.type)
+
+// Exemple 5: Calcul automatique sur les produits
+// Calculer et logger le prix TTC pour chaque produit (TVA 20%)
+rule calculate_price_with_tax : {pr: Product} / ==>
+    log(pr.name)
+
+// Exemple 6: Webhook automatique pour les commandes
+rule webhook_on_order : {o: Order} / ==>
+    webhook("https://api.example.com/orders", o.orderId)
+
+// Exemple 7: Notification de bienvenue automatique
+rule welcome_message : {p: Person} / ==>
+    notify(p.email, p.name),
+    log(p.email)
+
+// Exemple 8: Classification automatique des produits
+rule classify_product : {pr: Product} / ==>
+    track("product_category", pr.category),
+    log(pr.category)
+
+// ============================================================================
+// RÈGLES MIXTES - Avec et sans condition
+// ============================================================================
+
+// Règle sans condition : Logger tous les produits
+rule log_all_products : {pr: Product} / ==> log(pr.name)
+
+// Règle avec condition : Alerter uniquement pour les produits chers
+rule alert_expensive : {pr: Product} / pr.price > 1000 ==>
+    notify("manager@example.com", pr.name),
+    audit("expensive_product", pr.productId)
+
+// Règle sans condition : Tracker toutes les personnes
+rule track_all_persons : {p: Person} / ==> track("person_added", p.personId)
+
+// Règle avec condition : Notifier uniquement les adultes
+rule notify_adults : {p: Person} / p.age >= 18 ==>
+    notify(p.email, p.name)
+
+// ============================================================================
+// RÈGLES MULTI-ACTIONS
+// ============================================================================
+
+// Exemple avec plusieurs actions en séquence
+rule comprehensive_tracking : {o: Order} / ==>
+    log(o.orderId),
+    track("order_created", o.orderId),
+    audit("order", o.customerId),
+    webhook("https://api.example.com/notify", o.orderId),
+    notify("sales@example.com", o.orderId)
+
+// ============================================================================
+// FAITS DE TEST
+// ============================================================================
+
+// Assertion de personnes - Les règles assertion_user, welcome_message et track_all_persons se déclencheront
+Person(personId: "1", name: "Alice Dupont", age: 30, email: "alice@example.com")
+Person(personId: "2", name: "Bob Martin", age: 17, email: "bob@example.com")
+Person(personId: "3", name: "Charlie Durand", age: 45, email: "charlie@example.com")
+
+// Assertion de produits - Les règles new_product_notification, calculate_price_with_tax, classify_product et log_all_products se déclencheront
+Product(productId: "p1", name: "Laptop", price: 1200, category: "Electronics")
+Product(productId: "p2", name: "Mouse", price: 25, category: "Accessories")
+Product(productId: "p3", name: "Keyboard", price: 85, category: "Accessories")
+
+// Assertion de commandes - Les règles audit_all_orders, webhook_on_order et comprehensive_tracking se déclencheront
+Order(orderId: "o1", customerId: "1", productId: "p1", quantity: 1, timestamp: "2025-01-15T10:00:00Z")
+Order(orderId: "o2", customerId: "2", productId: "p2", quantity: 3, timestamp: "2025-01-15T10:05:00Z")
+
+// Assertion d'événements - La règle track_all_events se déclenchera
+Event(eventId: "e1", type: "login", source: "web", timestamp: "2025-01-15T09:30:00Z")
+Event(eventId: "e2", type: "logout", source: "mobile", timestamp: "2025-01-15T09:45:00Z")
+
+// ============================================================================
+// RÉSUMÉ
+// ============================================================================
+//
+// Règles sans condition déclenchées :
+// - assertion_user : 3 fois (pour Alice, Bob, Charlie)
+// - new_product_notification : 3 fois (pour Laptop, Mouse, Keyboard)
+// - audit_all_orders : 2 fois (pour o1, o2)
+// - track_all_events : 2 fois (pour e1, e2)
+// - calculate_price_with_tax : 3 fois
+// - webhook_on_order : 2 fois
+// - welcome_message : 3 fois
+// - classify_product : 3 fois
+// - log_all_products : 3 fois
+// - track_all_persons : 3 fois
+// - comprehensive_tracking : 2 fois
+//
+// Règles avec condition déclenchées :
+// - alert_expensive : 1 fois (uniquement pour Laptop avec price > 1000)
+// - notify_adults : 2 fois (pour Alice et Charlie, pas Bob car age < 18)
+//
+// Total : ~30 activations de règles pour 10 faits assertés
