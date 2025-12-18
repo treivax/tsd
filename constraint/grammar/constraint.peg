@@ -14,9 +14,10 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types, actions, expressions, faits, retractions, ruleRemovals et reset
+    // Séparer types, actions, xupleSpaces, expressions, faits, retractions, ruleRemovals et reset
     types := []interface{}{}
     actions := []interface{}{}
+    xupleSpaces := []interface{}{}
     expressions := []interface{}{}
     facts := []interface{}{}
     retractions := []interface{}{}
@@ -30,6 +31,8 @@ Start <- _ statements:StatementList _ EOF {
                     types = append(types, stmt)
                 } else if stmtMap["type"] == "actionDefinition" {
                     actions = append(actions, stmt)
+                } else if stmtMap["type"] == "xupleSpaceDeclaration" {
+                    xupleSpaces = append(xupleSpaces, stmt)
                 } else if stmtMap["type"] == "expression" {
                     expressions = append(expressions, stmt)
                 } else if stmtMap["type"] == "fact" {
@@ -48,6 +51,7 @@ Start <- _ statements:StatementList _ EOF {
     return map[string]interface{}{
         "types": types,
         "actions": actions,
+        "xupleSpaces": xupleSpaces,
         "expressions": expressions,
         "facts": facts,
         "retractions": retractions,
@@ -66,7 +70,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / ActionDefinition / Expression / RemoveRule / RemoveFact / Fact / Reset
+Statement <- TypeDefinition / ActionDefinition / XupleSpaceDeclaration / Expression / RemoveRule / RemoveFact / Fact / Reset
 
 Reset <- "reset" {
     return map[string]interface{}{
@@ -120,6 +124,151 @@ ActionDefinition <- "action" _ name:IdentName _ "(" _ params:ParameterList? _ ")
         "parameters": params,
     }, nil
 }
+
+XupleSpaceDeclaration <- "xuple-space" _ name:IdentName _ "{" _ props:XupleSpaceProperties? _ "}" {
+    // Valeurs par défaut
+    selection := "fifo"
+    consumption := map[string]interface{}{
+        "type": "once",
+        "limit": 0,
+    }
+    retention := map[string]interface{}{
+        "type": "unlimited",
+        "duration": 0,
+    }
+
+    // Appliquer les propriétés parsées
+    if props != nil {
+        propMap := props.(map[string]interface{})
+        if sel, ok := propMap["selection"]; ok {
+            selection = sel.(string)
+        }
+        if cons, ok := propMap["consumption"]; ok {
+            consumption = cons.(map[string]interface{})
+        }
+        if ret, ok := propMap["retention"]; ok {
+            retention = ret.(map[string]interface{})
+        }
+    }
+
+    return map[string]interface{}{
+        "type": "xupleSpaceDeclaration",
+        "name": name,
+        "selectionPolicy": selection,
+        "consumptionPolicy": consumption,
+        "retentionPolicy": retention,
+    }, nil
+}
+
+XupleSpaceProperties <- first:XupleSpaceProperty rest:(_ XupleSpaceProperty)* {
+    result := make(map[string]interface{})
+    
+    // Ajouter première propriété
+    if firstMap, ok := first.(map[string]interface{}); ok {
+        for k, v := range firstMap {
+            result[k] = v
+        }
+    }
+    
+    // Ajouter propriétés suivantes
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            propMap := item.([]interface{})[1].(map[string]interface{})
+            for k, v := range propMap {
+                result[k] = v
+            }
+        }
+    }
+    
+    return result, nil
+}
+
+XupleSpaceProperty <- SelectionProperty / ConsumptionProperty / RetentionProperty
+
+SelectionProperty <- "selection" _ ":" _ value:SelectionValue {
+    return map[string]interface{}{
+        "selection": value,
+    }, nil
+}
+
+SelectionValue <- "random" { return "random", nil } /
+                  "fifo"   { return "fifo", nil } /
+                  "lifo"   { return "lifo", nil }
+
+ConsumptionProperty <- "consumption" _ ":" _ value:ConsumptionValue {
+    return map[string]interface{}{
+        "consumption": value,
+    }, nil
+}
+
+ConsumptionValue <- "once" {
+    return map[string]interface{}{
+        "type": "once",
+        "limit": 0,
+    }, nil
+} / "per-agent" {
+    return map[string]interface{}{
+        "type": "per-agent",
+        "limit": 0,
+    }, nil
+} / "limited" _ "(" _ limit:Integer _ ")" {
+    limitVal := limit.(int)
+    if limitVal <= 0 {
+        return nil, fmt.Errorf("consumption limit must be greater than zero, got %d", limitVal)
+    }
+    return map[string]interface{}{
+        "type": "limited",
+        "limit": limitVal,
+    }, nil
+}
+
+RetentionProperty <- "retention" _ ":" _ value:RetentionValue {
+    return map[string]interface{}{
+        "retention": value,
+    }, nil
+}
+
+RetentionValue <- "unlimited" {
+    return map[string]interface{}{
+        "type": "unlimited",
+        "duration": 0,
+    }, nil
+} / "duration" _ "(" _ dur:Duration _ ")" {
+    return map[string]interface{}{
+        "type": "duration",
+        "duration": dur,
+    }, nil
+}
+
+Duration <- value:Integer unit:TimeUnit {
+    val := value.(int)
+    unitStr := unit.(string)
+    
+    if val <= 0 {
+        return nil, fmt.Errorf("duration must be positive, got %d", val)
+    }
+    
+    var seconds int
+    switch unitStr {
+    case "s":
+        seconds = val
+    case "m":
+        seconds = val * 60
+    case "h":
+        seconds = val * 3600
+    case "d":
+        seconds = val * 86400
+    default:
+        return nil, fmt.Errorf("invalid time unit '%s', expected s, m, h or d", unitStr)
+    }
+    
+    return seconds, nil
+}
+
+TimeUnit <- "s" { return "s", nil } /
+            "m" { return "m", nil } /
+            "h" { return "h", nil } /
+            "d" { return "d", nil }
 
 ParameterList <- first:Parameter rest:(_ "," _ Parameter)* {
     parameters := []interface{}{first}
@@ -499,6 +648,14 @@ BooleanLiteral <- "true" {
             "value": false,
         }, nil
     }
+
+Integer <- digits:[0-9]+ {
+    val, err := strconv.Atoi(string(c.text))
+    if err != nil {
+        return nil, err
+    }
+    return val, nil
+}
 
 Number <- sign:"-"? digits:[0-9]+ decimal:("." [0-9]+)? {
     val, err := strconv.ParseFloat(string(c.text), 64)
