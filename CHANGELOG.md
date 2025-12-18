@@ -2,6 +2,55 @@
 
 ## [Unreleased]
 
+### Added
+- ✨ **Actions CRUD Dynamiques** - Implémentation complète des actions Update, Insert, Retract
+  - **3 nouvelles méthodes RETE** :
+    - `ReteNetwork.InsertFact(fact *Fact)` : Insertion dynamique de faits
+    - `ReteNetwork.UpdateFact(fact *Fact)` : Mise à jour de faits existants
+    - `ReteNetwork.RetractFact(factID string)` : Suppression de faits
+  - **3 actions builtin débloguées** :
+    - `Update(fact: any)` : Modifie un fait et propage les changements
+    - `Insert(fact: any)` : Crée un nouveau fait dynamiquement
+    - `Retract(id: string)` : Supprime un fait du réseau RETE
+  - **Fonctionnalités** :
+    - ✅ Validation complète des arguments (type, ID, unicité)
+    - ✅ Propagation automatique dans le réseau RETE
+    - ✅ Stratégie Retract+Insert pour UpdateFact (garantit cohérence)
+    - ✅ Support des transactions
+    - ✅ Thread-safety garantie
+    - ✅ Gestion d'erreurs robuste
+  - **Tests** :
+    - ✅ 91.5% de couverture (module rete/actions)
+    - ✅ Tests unitaires complets (InsertFact, UpdateFact, RetractFact)
+    - ✅ Tests d'intégration RETE
+    - ✅ Tests end-to-end avec scénarios réels
+    - ✅ Gestion des erreurs validée
+  - **Documentation** :
+    - `rete/actions/README.md` : Statuts mis à jour (⚠️ Stub → ✅ Implémenté)
+    - `docs/ACTIONS_PAR_DEFAUT_SYNTHESE.md` : Documentation complète actualisée
+    - `docs/IMPLEMENTATION_ACTIONS_CRUD.md` : Guide d'implémentation détaillé
+  - **Impact** :
+    - ✅ Toutes les 6 actions par défaut maintenant fonctionnelles
+    - ✅ Manipulation complète des faits depuis les règles TSD
+    - ✅ Règles peuvent modifier dynamiquement le réseau RETE
+  - **Exemple d'utilisation** :
+    ```tsd
+    rule promote_user : {u: User} / u.performance > 90
+        ==> Update(User(id: u.id, name: u.name, role: "senior"))
+    
+    rule create_admin : {u: User} / u.role == "manager"
+        ==> Insert(Admin(id: u.id + "_admin", level: "high"))
+    
+    rule cleanup : {u: User} / u.active == false
+        ==> Retract("User_" + u.id)
+    ```
+  - **Fichiers modifiés** :
+    - `rete/network_manager.go` : Ajout InsertFact, UpdateFact, amélioration RetractFact
+    - `rete/actions/builtin.go` : Implémentation executeUpdate, executeInsert, executeRetract
+    - `rete/network_test.go` : Tests unitaires RETE
+    - `rete/actions/builtin_test.go` : Tests actions builtin
+    - `rete/actions/builtin_integration_test.go` : Tests end-to-end (nouveau)
+
 ### Tests
 - 🧪 **Amélioration Couverture Tests authcmd/compilercmd** - Renforcement des tests pour atteindre > 85% de couverture
   - **Couverture authcmd** : 85.5% → **85.8%** (+0.3%)
