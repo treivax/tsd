@@ -26,7 +26,9 @@ import (
 	"github.com/treivax/tsd/constraint"
 	"github.com/treivax/tsd/internal/tlsconfig"
 	"github.com/treivax/tsd/rete"
+	"github.com/treivax/tsd/rete/actions"
 	"github.com/treivax/tsd/tsdio"
+	"github.com/treivax/tsd/xuples"
 )
 
 const (
@@ -581,16 +583,30 @@ func (s *Server) handleExecute(w http.ResponseWriter, r *http.Request) {
 // executeTSDProgram exécute un programme TSD et retourne la réponse
 func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Time) *tsdio.ExecuteResponse {
 	// Parser le programme TSD
-	result, err := constraint.ParseConstraint(req.SourceName, []byte(req.Source))
+	resultRaw, err := constraint.ParseConstraint(req.SourceName, []byte(req.Source))
 	if err != nil {
 		executionTimeMs := time.Since(startTime).Milliseconds()
 		return tsdio.NewErrorResponse(tsdio.ErrorTypeParsingError, fmt.Sprintf("Erreur de parsing: %v", err), executionTimeMs)
 	}
 
 	// Valider le programme
-	if err := constraint.ValidateConstraintProgram(result); err != nil {
+	if err := constraint.ValidateConstraintProgram(resultRaw); err != nil {
 		executionTimeMs := time.Since(startTime).Milliseconds()
 		return tsdio.NewErrorResponse(tsdio.ErrorTypeValidationError, fmt.Sprintf("Erreur de validation: %v", err), executionTimeMs)
+	}
+
+	// Convertir le résultat en Program pour accéder aux XupleSpaces
+	result, err := constraint.ConvertResultToProgram(resultRaw)
+	if err != nil {
+		executionTimeMs := time.Since(startTime).Milliseconds()
+		return tsdio.NewErrorResponse(tsdio.ErrorTypeParsingError, fmt.Sprintf("Erreur conversion: %v", err), executionTimeMs)
+	}
+
+	// Créer le XupleManager et instancier les xuple-spaces déclarés
+	xupleManager := xuples.NewXupleManager()
+	if err := instantiateXupleSpaces(xupleManager, result.XupleSpaces); err != nil {
+		executionTimeMs := time.Since(startTime).Milliseconds()
+		return tsdio.NewErrorResponse(tsdio.ErrorTypeValidationError, fmt.Sprintf("Erreur création xuple-spaces: %v", err), executionTimeMs)
 	}
 
 	// Créer le pipeline RETE
@@ -613,6 +629,9 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	}
 	tmpFile.Close()
 
+	// Créer un collecteur d'exécutions (observer pattern)
+	statsCollector := NewExecutionStatsCollector()
+
 	// Ingérer le fichier
 	network, _, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
 	if err != nil {
@@ -620,9 +639,27 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 		return tsdio.NewErrorResponse(tsdio.ErrorTypeExecutionError, fmt.Sprintf("Erreur ingestion: %v", err), executionTimeMs)
 	}
 
+	// Configurer le BuiltinActionExecutor avec le XupleManager
+	builtinExecutor := actions.NewBuiltinActionExecutor(network, xupleManager, os.Stdout, s.logger)
+
+	// TODO: Configurer le network avec le builtinExecutor
+	// Note: Cette intégration nécessite que le réseau RETE expose une méthode
+	// pour configurer l'exécuteur d'actions intégrées. Pour l'instant,
+	// l'action Xuple ne sera pas fonctionnelle tant que cette liaison n'est pas faite.
+	//
+	// Prochaine étape: Ajouter network.SetBuiltinActionExecutor(builtinExecutor)
+	// ou équivalent dans le réseau RETE.
+	_ = builtinExecutor // Éviter warning unused
+
+	// Configurer l'observer pour capturer les exécutions
+	network.SetActionObserver(statsCollector)
+
+	// Les activations sont maintenant capturées automatiquement via l'observer
+	// pendant l'exécution des règles (pas besoin de collectActivations)
+
 	// Collecter les résultats
 	facts := storage.GetAllFacts()
-	activations := s.collectActivations(network)
+	activations := statsCollector.GetActivations()
 
 	executionTimeMs := time.Since(startTime).Milliseconds()
 
@@ -635,7 +672,129 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	return tsdio.NewSuccessResponse(results, executionTimeMs)
 }
 
+// instantiateXupleSpaces crée les xuple-spaces déclarés dans le programme.
+//
+// Cette fonction convertit les déclarations AST en configurations xuples
+// et les instancie dans le XupleManager.
+//
+// Paramètres:
+//   - xupleManager: gestionnaire de xuple-spaces
+//   - declarations: déclarations de xuple-spaces depuis le parser
+//
+// Retourne:
+//   - error: erreur si la création échoue
+func instantiateXupleSpaces(xupleManager xuples.XupleManager, declarations []constraint.XupleSpaceDeclaration) error {
+	for _, decl := range declarations {
+		// Construire la configuration depuis la déclaration AST
+		config, err := buildXupleSpaceConfig(decl)
+		if err != nil {
+			return fmt.Errorf("failed to build config for xuple-space '%s': %w", decl.Name, err)
+		}
+
+		// Créer le xuple-space
+		if err := xupleManager.CreateXupleSpace(decl.Name, config); err != nil {
+			return fmt.Errorf("failed to create xuple-space '%s': %w", decl.Name, err)
+		}
+
+		log.Printf("✅ Created xuple-space '%s' with policies: selection=%s, consumption=%s, retention=%s",
+			decl.Name,
+			config.SelectionPolicy.Name(),
+			config.ConsumptionPolicy.Name(),
+			config.RetentionPolicy.Name())
+	}
+
+	return nil
+}
+
+// buildXupleSpaceConfig construit une configuration xuples depuis une déclaration AST.
+//
+// Convertit les politiques définies dans le langage TSD en politiques concrètes
+// du module xuples.
+//
+// Paramètres:
+//   - decl: déclaration xuple-space depuis le parser
+//
+// Retourne:
+//   - xuples.XupleSpaceConfig: configuration construite
+//   - error: erreur si la conversion échoue
+func buildXupleSpaceConfig(decl constraint.XupleSpaceDeclaration) (xuples.XupleSpaceConfig, error) {
+	// Construire la politique de sélection
+	selectionPolicy, err := buildSelectionPolicy(decl.SelectionPolicy)
+	if err != nil {
+		return xuples.XupleSpaceConfig{}, err
+	}
+
+	// Construire la politique de consommation
+	consumptionPolicy, err := buildConsumptionPolicy(decl.ConsumptionPolicy)
+	if err != nil {
+		return xuples.XupleSpaceConfig{}, err
+	}
+
+	// Construire la politique de rétention
+	retentionPolicy, err := buildRetentionPolicy(decl.RetentionPolicy)
+	if err != nil {
+		return xuples.XupleSpaceConfig{}, err
+	}
+
+	return xuples.XupleSpaceConfig{
+		Name:              decl.Name,
+		SelectionPolicy:   selectionPolicy,
+		ConsumptionPolicy: consumptionPolicy,
+		RetentionPolicy:   retentionPolicy,
+	}, nil
+}
+
+// buildSelectionPolicy construit une politique de sélection.
+func buildSelectionPolicy(policyName string) (xuples.SelectionPolicy, error) {
+	switch policyName {
+	case "random":
+		return xuples.NewRandomSelectionPolicy(), nil
+	case "fifo":
+		return xuples.NewFIFOSelectionPolicy(), nil
+	case "lifo":
+		return xuples.NewLIFOSelectionPolicy(), nil
+	default:
+		return nil, fmt.Errorf("unknown selection policy: %s", policyName)
+	}
+}
+
+// buildConsumptionPolicy construit une politique de consommation.
+func buildConsumptionPolicy(conf constraint.XupleConsumptionPolicyConf) (xuples.ConsumptionPolicy, error) {
+	switch conf.Type {
+	case "once":
+		return xuples.NewOnceConsumptionPolicy(), nil
+	case "per-agent":
+		return xuples.NewPerAgentConsumptionPolicy(), nil
+	case "limited":
+		if conf.Limit <= 0 {
+			return nil, fmt.Errorf("limited consumption policy requires limit > 0, got %d", conf.Limit)
+		}
+		return xuples.NewLimitedConsumptionPolicy(conf.Limit), nil
+	default:
+		return nil, fmt.Errorf("unknown consumption policy: %s", conf.Type)
+	}
+}
+
+// buildRetentionPolicy construit une politique de rétention.
+func buildRetentionPolicy(conf constraint.XupleRetentionPolicyConf) (xuples.RetentionPolicy, error) {
+	switch conf.Type {
+	case "unlimited":
+		return xuples.NewUnlimitedRetentionPolicy(), nil
+	case "duration":
+		if conf.Duration <= 0 {
+			return nil, fmt.Errorf("duration retention policy requires duration > 0, got %d", conf.Duration)
+		}
+		return xuples.NewDurationRetentionPolicy(time.Duration(conf.Duration) * time.Second), nil
+	default:
+		return nil, fmt.Errorf("unknown retention policy: %s", conf.Type)
+	}
+}
+
 // collectActivations collecte toutes les activations du réseau
+// DEPRECATED: Utiliser ExecutionStatsCollector avec observer pattern à la place.
+// Cette méthode est conservée temporairement pour compatibilité avec les tests existants.
+//
+// TODO(xuples): Supprimer cette méthode une fois tous les tests migrés vers observer pattern.
 func (s *Server) collectActivations(network *rete.ReteNetwork) []tsdio.Activation {
 	if network == nil {
 		return []tsdio.Activation{}
@@ -644,21 +803,29 @@ func (s *Server) collectActivations(network *rete.ReteNetwork) []tsdio.Activatio
 	activations := []tsdio.Activation{}
 
 	for _, terminal := range network.TerminalNodes {
-		if terminal.Memory == nil || terminal.Memory.Tokens == nil {
+		// Utiliser les statistiques d'exécution au lieu de Memory.Tokens
+		count := terminal.GetExecutionCount()
+		if count == 0 {
 			continue
 		}
 
 		actionName := "unknown"
-		if terminal.Action != nil && terminal.Action.Job != nil {
-			actionName = terminal.Action.Job.Name
+		if terminal.Action != nil {
+			jobs := terminal.Action.GetJobs()
+			if len(jobs) > 0 {
+				actionName = jobs[0].Name
+			}
 		}
 
-		for _, token := range terminal.Memory.Tokens {
+		// Pour compatibilité, créer une activation par exécution
+		// Note: Les détails du token ne sont plus disponibles via cette méthode
+		lastResult := terminal.GetLastExecutionResult()
+		if lastResult != nil {
 			activation := tsdio.Activation{
 				ActionName:      actionName,
-				Arguments:       s.extractArguments(terminal, token),
-				TriggeringFacts: s.extractFacts(token),
-				BindingsCount:   len(token.Facts),
+				Arguments:       formatArguments(lastResult.Arguments),
+				TriggeringFacts: extractFacts(lastResult.Context.Token),
+				BindingsCount:   len(lastResult.Context.Token.Facts),
 			}
 			activations = append(activations, activation)
 		}
