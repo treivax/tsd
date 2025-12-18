@@ -49,6 +49,81 @@ func (rn *ReteNetwork) RemoveFact(factID string) error {
 	return rn.Storage.RemoveFact(factID)
 }
 
+// InsertFact insère dynamiquement un nouveau fait dans le réseau RETE.
+// Cette méthode valide le fait, l'ajoute au storage et le propage dans le réseau.
+//
+// Paramètres:
+//   - fact: le fait à insérer
+//
+// Retourne:
+//   - error: erreur si le fait est invalide ou s'il existe déjà
+func (rn *ReteNetwork) InsertFact(fact *Fact) error {
+	// Validation du fait
+	if fact == nil {
+		return fmt.Errorf("fact cannot be nil")
+	}
+	if fact.Type == "" {
+		return fmt.Errorf("fact type cannot be empty")
+	}
+	if fact.ID == "" {
+		return fmt.Errorf("fact ID cannot be empty")
+	}
+
+	// Vérifier si le fait existe déjà
+	internalID := fact.GetInternalID()
+	if existingFact := rn.Storage.GetFact(internalID); existingFact != nil {
+		return fmt.Errorf("fact with ID '%s' and type '%s' already exists", fact.ID, fact.Type)
+	}
+
+	// Utiliser SubmitFact qui gère déjà le storage et la propagation
+	return rn.SubmitFact(fact)
+}
+
+// UpdateFact met à jour dynamiquement un fait existant dans le réseau RETE.
+// Cette méthode remplace les champs du fait existant et propage les changements.
+//
+// Paramètres:
+//   - fact: le fait avec les nouvelles valeurs
+//
+// Retourne:
+//   - error: erreur si le fait est invalide ou n'existe pas
+func (rn *ReteNetwork) UpdateFact(fact *Fact) error {
+	// Validation du fait
+	if fact == nil {
+		return fmt.Errorf("fact cannot be nil")
+	}
+	if fact.Type == "" {
+		return fmt.Errorf("fact type cannot be empty")
+	}
+	if fact.ID == "" {
+		return fmt.Errorf("fact ID cannot be empty")
+	}
+
+	// Vérifier que le fait existe
+	internalID := fact.GetInternalID()
+	existingFact := rn.Storage.GetFact(internalID)
+	if existingFact == nil {
+		return fmt.Errorf("fact with ID '%s' and type '%s' not found", fact.ID, fact.Type)
+	}
+
+	rn.logger.Debug("🔄 Mise à jour du fait: %s", internalID)
+
+	// Stratégie: Retract puis Insert pour garantir la cohérence
+	// Cela propage correctement la suppression puis l'ajout dans le réseau
+
+	// 1. Rétracter l'ancien fait (propage la suppression)
+	if err := rn.RetractFact(internalID); err != nil {
+		return fmt.Errorf("failed to retract old fact: %w", err)
+	}
+
+	// 2. Insérer le nouveau fait avec les valeurs mises à jour (propage l'ajout)
+	if err := rn.SubmitFact(fact); err != nil {
+		return fmt.Errorf("failed to submit updated fact: %w", err)
+	}
+
+	return nil
+}
+
 // RepropagateExistingFact propage un fait déjà existant dans le réseau vers les nouveaux nœuds
 // Cette fonction est utilisée en mode incrémental pour propager les faits existants
 // vers les nouvelles règles qui viennent d'être ajoutées au réseau
@@ -247,18 +322,34 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 	return nil
 }
 
-// RetractFact retire un fait du réseau et propage la rétractation
-// factID doit être l'identifiant interne (Type_ID)
+// RetractFact supprime dynamiquement un fait du réseau RETE.
+// Cette méthode retire le fait du storage et propage la suppression.
+//
+// Paramètres:
+//   - factID: l'identifiant interne du fait (format: Type_ID)
+//
+// Retourne:
+//   - error: erreur si l'ID est vide ou si le fait n'existe pas
 func (rn *ReteNetwork) RetractFact(factID string) error {
-	rn.logger.Info("🗑️ Rétractation du fait: %s", factID)
-
-	// Vérifier que le fait existe dans le réseau
-	memory := rn.RootNode.GetMemory()
-	if _, exists := memory.GetFact(factID); !exists {
-		return fmt.Errorf("fait %s introuvable dans le réseau", factID)
+	// Validation de l'ID
+	if factID == "" {
+		return fmt.Errorf("fact ID cannot be empty")
 	}
 
-	// Propager la rétractation depuis le nœud racine
+	rn.logger.Info("🗑️ Rétractation du fait: %s", factID)
+
+	// Vérifier que le fait existe
+	existingFact := rn.Storage.GetFact(factID)
+	if existingFact == nil {
+		return fmt.Errorf("fact with ID '%s' not found", factID)
+	}
+
+	// Utiliser RemoveFact qui gère le storage et les transactions
+	if err := rn.RemoveFact(factID); err != nil {
+		return fmt.Errorf("failed to remove fact from storage: %w", err)
+	}
+
+	// Propager la rétractation dans le réseau
 	return rn.RootNode.ActivateRetract(factID)
 }
 

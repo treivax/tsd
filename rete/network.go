@@ -30,6 +30,7 @@ type ReteNetwork struct {
 	ChainMetrics          *ChainBuildMetrics       `json:"-"`       // Métriques de performance pour la construction des chaînes
 	Config                *ChainPerformanceConfig  `json:"-"`       // Configuration de performance
 	ActionExecutor        *ActionExecutor          `json:"-"`       // Exécuteur d'actions
+	actionObserver        ActionObserver           `json:"-"`       // Observateur d'actions (nouveau)
 	ArithmeticResultCache *ArithmeticResultCache   `json:"-"`       // Cache global des résultats arithmétiques intermédiaires
 	currentTx             *Transaction             `json:"-"`       // Transaction courante (si en cours)
 	txMutex               sync.RWMutex             `json:"-"`       // Mutex pour accès concurrent à la transaction
@@ -105,6 +106,39 @@ func (rn *ReteNetwork) GetLogger() *Logger {
 		rn.logger = NewLogger(LogLevelInfo, nil)
 	}
 	return rn.logger
+}
+
+// SetActionObserver configure l'observateur pour tous les terminal nodes.
+//
+// Cette méthode configure l'observer pour tous les terminal nodes
+// existants ET futurs (via les méthodes qui ajoutent des terminal nodes).
+//
+// Thread-Safety :
+//   - Méthode thread-safe si appelée avant démarrage du réseau
+//   - Si appelée pendant l'exécution, risque de race condition
+//   - Recommandé : appeler pendant la phase d'initialisation
+//
+// Paramètres :
+//   - observer : observateur à configurer (peut être nil pour désactiver)
+func (rn *ReteNetwork) SetActionObserver(observer ActionObserver) {
+	if observer == nil {
+		observer = &NoOpObserver{}
+	}
+
+	rn.actionObserver = observer
+
+	// Configurer tous les terminal nodes existants
+	for _, terminal := range rn.TerminalNodes {
+		terminal.SetObserver(observer)
+	}
+}
+
+// GetActionObserver retourne l'observateur configuré.
+func (rn *ReteNetwork) GetActionObserver() ActionObserver {
+	if rn.actionObserver == nil {
+		return &NoOpObserver{}
+	}
+	return rn.actionObserver
 }
 
 // SetTransaction active une transaction pour toutes les opérations suivantes

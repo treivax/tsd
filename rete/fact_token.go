@@ -6,6 +6,7 @@ package rete
 
 import (
 	"fmt"
+	"sync/atomic"
 )
 
 // FieldNameID est le nom du champ spécial pour l'identifiant du fait.
@@ -326,15 +327,14 @@ func (t *Token) GetVariables() []string {
 
 // generateTokenID génère un ID unique pour un token.
 //
-// Format: "token_<timestamp>_<counter>"
-// Cette fonction utilise un compteur atomique pour garantir l'unicité.
+// Format: "token_<counter>"
+// Cette fonction utilise un compteur atomique pour garantir l'unicité et la thread-safety.
 var tokenCounter uint64
 
 func generateTokenID() string {
-	// Utiliser un compteur atomique simple pour l'unicité
-	// Dans une implémentation production, utiliser atomic.AddUint64
-	tokenCounter++
-	return fmt.Sprintf("token_%d", tokenCounter)
+	// Utiliser atomic.AddUint64 pour garantir thread-safety
+	count := atomic.AddUint64(&tokenCounter, 1)
+	return fmt.Sprintf("token_%d", count)
 }
 
 // NewTokenWithFact crée un nouveau token avec un seul binding.
