@@ -1,0 +1,59 @@
+// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+// ============================================================================
+// ACTIONS PAR DÉFAUT DU SYSTÈME TSD
+// ============================================================================
+//
+// Ces actions sont automatiquement disponibles dans tous les programmes TSD.
+// Elles ne nécessitent pas de déclaration explicite via la commande 'action'.
+//
+// Toute tentative de redéfinition de ces actions provoquera une erreur de
+// compilation, exactement comme pour toute action déclarée deux fois.
+//
+// ============================================================================
+
+// Print affiche une chaîne de caractères sur la sortie standard
+// Paramètres:
+//   - message: la chaîne à afficher
+action Print(message: string)
+
+// Log génère une trace dans le système de logging
+// Paramètres:
+//   - message: la chaîne à tracer
+action Log(message: string)
+
+// Update modifie un fait existant et met à jour les tokens liés dans RETE
+// Paramètres:
+//   - fact: le fait à modifier (doit exister dans le réseau)
+// Notes:
+//   - Déclenche la propagation des mises à jour dans le réseau RETE
+//   - Le fait doit avoir le même type qu'un fait existant
+action Update(fact: any)
+
+// Insert crée un nouveau fait et l'insère dans le réseau RETE
+// Paramètres:
+//   - fact: le nouveau fait à créer
+// Notes:
+//   - Le fait est propagé dans le réseau RETE
+//   - Peut déclencher l'activation de nouvelles règles
+action Insert(fact: any)
+
+// Retract supprime un fait du réseau RETE ainsi que tous les tokens liés
+// Paramètres:
+//   - id: l'identifiant du fait à supprimer
+// Notes:
+//   - Tous les tokens dépendant de ce fait sont invalidés
+//   - La suppression se propage dans tout le réseau
+action Retract(id: string)
+
+// Xuple crée un xuple dans le xuple-space spécifié
+// Paramètres:
+//   - xuplespace: nom du xuple-space cible
+//   - fact: le fait principal du xuple
+// Notes:
+//   - Les faits déclencheurs sont automatiquement extraits du token
+//   - Le xuple-space doit avoir été déclaré via 'xuple-space'
+//   - Le xuple est soumis aux politiques du xuple-space
+action Xuple(xuplespace: string, fact: any)
