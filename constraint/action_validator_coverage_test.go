@@ -707,3 +707,229 @@ func TestInferDefaultValueType_Coverage(t *testing.T) {
 		})
 	}
 }
+
+func TestAddAction_DefaultActionRedefinition(t *testing.T) {
+	// Test qu'on ne peut pas redéfinir une action par défaut
+	defaultAction := &ActionDefinition{
+		Name:      "Print",
+		IsDefault: true,
+		Parameters: []Parameter{
+			{Name: "message", Type: "string"},
+		},
+	}
+
+	customAction := ActionDefinition{
+		Name:      "Print",
+		IsDefault: false,
+		Parameters: []Parameter{
+			{Name: "customMessage", Type: "string"},
+		},
+	}
+
+	av := &ActionValidator{
+		actions: map[string]*ActionDefinition{
+			"Print": defaultAction,
+		},
+	}
+
+	err := av.AddAction(customAction)
+	if err == nil {
+		t.Error("Expected error when redefining default action, got nil")
+	}
+	if err != nil && !contains(err.Error(), "cannot redefine default action") {
+		t.Errorf("Expected 'cannot redefine default action' error, got: %v", err)
+	}
+}
+
+func TestAddAction_NonDefaultActionRedefinition(t *testing.T) {
+	// Test qu'on ne peut pas redéfinir une action non-default
+	existingAction := &ActionDefinition{
+		Name:      "customAction",
+		IsDefault: false,
+		Parameters: []Parameter{
+			{Name: "param1", Type: "string"},
+		},
+	}
+
+	newAction := ActionDefinition{
+		Name:      "customAction",
+		IsDefault: false,
+		Parameters: []Parameter{
+			{Name: "param2", Type: "number"},
+		},
+	}
+
+	av := &ActionValidator{
+		actions: map[string]*ActionDefinition{
+			"customAction": existingAction,
+		},
+	}
+
+	err := av.AddAction(newAction)
+	if err == nil {
+		t.Error("Expected error when redefining action, got nil")
+	}
+	if err != nil && !contains(err.Error(), "is already defined") {
+		t.Errorf("Expected 'is already defined' error, got: %v", err)
+	}
+}
+
+func TestAddAction_NewAction(t *testing.T) {
+	// Test qu'on peut ajouter une nouvelle action
+	newAction := ActionDefinition{
+		Name:      "newAction",
+		IsDefault: false,
+		Parameters: []Parameter{
+			{Name: "param1", Type: "string"},
+		},
+	}
+
+	av := &ActionValidator{
+		actions: map[string]*ActionDefinition{},
+	}
+
+	err := av.AddAction(newAction)
+	if err != nil {
+		t.Errorf("Unexpected error when adding new action: %v", err)
+	}
+
+	// Vérifier que l'action a été ajoutée
+	if _, exists := av.actions["newAction"]; !exists {
+		t.Error("Action should have been added to validator")
+	}
+}
+
+func TestValidateNonRedefinition_DefaultActions(t *testing.T) {
+	// Test avec des actions par défaut déjà présentes
+	defaultActions := map[string]*ActionDefinition{
+		"Print": {
+			Name:      "Print",
+			IsDefault: true,
+			Parameters: []Parameter{
+				{Name: "message", Type: "string"},
+			},
+		},
+		"Log": {
+			Name:      "Log",
+			IsDefault: true,
+			Parameters: []Parameter{
+				{Name: "message", Type: "string"},
+			},
+		},
+	}
+
+	av := &ActionValidator{
+		actions: defaultActions,
+	}
+
+	tests := []struct {
+		name        string
+		newActions  []ActionDefinition
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "tentative de redéfinir Print",
+			newActions: []ActionDefinition{
+				{Name: "Print", Parameters: []Parameter{{Name: "msg", Type: "string"}}},
+			},
+			expectError: true,
+			errorMsg:    "cannot redefine default action 'Print'",
+		},
+		{
+			name: "tentative de redéfinir Log",
+			newActions: []ActionDefinition{
+				{Name: "Log", Parameters: []Parameter{{Name: "msg", Type: "string"}}},
+			},
+			expectError: true,
+			errorMsg:    "cannot redefine default action 'Log'",
+		},
+		{
+			name: "nouvelle action valide",
+			newActions: []ActionDefinition{
+				{Name: "CustomAction", Parameters: []Parameter{{Name: "data", Type: "string"}}},
+			},
+			expectError: false,
+		},
+		{
+			name: "plusieurs nouvelles actions valides",
+			newActions: []ActionDefinition{
+				{Name: "Action1", Parameters: []Parameter{{Name: "p1", Type: "string"}}},
+				{Name: "Action2", Parameters: []Parameter{{Name: "p2", Type: "number"}}},
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := av.ValidateNonRedefinition(tt.newActions)
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got nil")
+				} else if tt.errorMsg != "" && !contains(err.Error(), tt.errorMsg) {
+					t.Errorf("Expected error containing %q, got: %v", tt.errorMsg, err)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestDefaultActionsIntegration(t *testing.T) {
+	// Test d'intégration : vérifier que les actions par défaut sont chargées correctement
+	input := `
+type Person(name: string, age: number)
+
+rule r1 : {p: Person} / p.age > 18 ==> Print(p.name)
+rule r2 : {p: Person} / p.age < 18 ==> Log(p.name)
+`
+
+	result, err := ParseConstraint("test.tsd", []byte(input))
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+
+	program, err := ConvertResultToProgram(result)
+	if err != nil {
+		t.Fatalf("Conversion error: %v", err)
+	}
+
+	// Valider les appels d'actions
+	err = ValidateActionCalls(program)
+	if err != nil {
+		t.Errorf("Validation should succeed with default actions: %v", err)
+	}
+}
+
+func TestDefaultActionRedefinitionError(t *testing.T) {
+	// Test qu'une tentative de redéfinition d'action par défaut échoue
+	input := `
+type Person(name: string, age: number)
+
+action Print(customMessage: string, extraParam: number)
+
+rule r1 : {p: Person} / p.age > 18 ==> Print(p.name, 1)
+`
+
+	result, err := ParseConstraint("test.tsd", []byte(input))
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+
+	program, err := ConvertResultToProgram(result)
+	if err != nil {
+		t.Fatalf("Conversion error: %v", err)
+	}
+
+	// Valider les appels d'actions - devrait échouer
+	err = ValidateActionCalls(program)
+	if err == nil {
+		t.Error("Expected validation to fail when redefining default action Print")
+	} else if !contains(err.Error(), "cannot redefine default action") {
+		t.Errorf("Expected 'cannot redefine default action' error, got: %v", err)
+	}
+}

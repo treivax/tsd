@@ -101,8 +101,29 @@ func ExtractFactsFromProgram(result interface{}) ([]map[string]interface{}, erro
 
 // ValidateActionCalls validates all action calls in a program against their definitions.
 func ValidateActionCalls(program *Program) error {
-	// Create validator with action and type definitions
-	validator := NewActionValidator(program.Actions, program.Types)
+	// Charger les actions par défaut
+	defaultActions, err := loadDefaultActionsInternal()
+	if err != nil {
+		// Si le chargement échoue, continuer sans les actions par défaut
+		// (permet de fonctionner même si defaults.tsd manque)
+		defaultActions = []ActionDefinition{}
+	}
+
+	// Vérifier qu'aucune action du programme ne redéfinit une action par défaut
+	for _, programAction := range program.Actions {
+		for _, defaultAction := range defaultActions {
+			if programAction.Name == defaultAction.Name {
+				return fmt.Errorf("cannot redefine default action '%s' (default actions cannot be overridden)",
+					sanitizeForLog(programAction.Name, 100))
+			}
+		}
+	}
+
+	// Fusionner les actions par défaut avec les actions du programme
+	allActions := append(defaultActions, program.Actions...)
+
+	// Create validator with action and type definitions (including defaults)
+	validator := NewActionValidator(allActions, program.Types)
 
 	// First, validate action definitions themselves
 	if errs := validator.ValidateActionDefinitions(); len(errs) > 0 {
@@ -126,6 +147,41 @@ func ValidateActionCalls(program *Program) error {
 	}
 
 	return nil
+}
+
+// loadDefaultActionsInternal charge les actions par défaut.
+// Cette fonction interne évite une dépendance circulaire avec internal/defaultactions.
+func loadDefaultActionsInternal() ([]ActionDefinition, error) {
+	// Parser le fichier defaults.tsd embarqué
+	// Note: Cette duplication est nécessaire pour éviter l'import circulaire
+	defaultActionsTSD := `// Copyright (c) 2025 TSD Contributors
+// Licensed under the MIT License
+// See LICENSE file in the project root for full license text
+
+action Print(message: string)
+action Log(message: string)
+action Update(fact: any)
+action Insert(fact: any)
+action Retract(id: string)
+action Xuple(xuplespace: string, fact: any)
+`
+
+	result, err := ParseConstraint("defaults.tsd", []byte(defaultActionsTSD))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse default actions: %w", err)
+	}
+
+	program, err := ConvertResultToProgram(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert default actions: %w", err)
+	}
+
+	// Marquer chaque action comme "par défaut"
+	for i := range program.Actions {
+		program.Actions[i].IsDefault = true
+	}
+
+	return program.Actions, nil
 }
 
 // extractRuleVariablesFromExpression extracts all variables and their types from an expression

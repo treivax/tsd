@@ -229,6 +229,11 @@ func (av *ActionValidator) inferFunctionReturnType(funcName string) string {
 
 // isTypeCompatible checks if an argument type is compatible with a parameter type.
 func (av *ActionValidator) isTypeCompatible(argType, paramType string) bool {
+	// Special case: 'any' parameter type accepts any argument type
+	if paramType == "any" {
+		return true
+	}
+
 	// Exact match
 	if argType == paramType {
 		return true
@@ -288,8 +293,8 @@ func (av *ActionValidator) ValidateActionDefinitions() []error {
 
 // isValidParameterType checks if a parameter type is valid.
 func (av *ActionValidator) isValidParameterType(paramType string) bool {
-	// Check primitive types
-	if paramType == "string" || paramType == "number" || paramType == "bool" {
+	// Check primitive types (including special type 'any')
+	if paramType == "string" || paramType == "number" || paramType == "bool" || paramType == "any" {
 		return true
 	}
 
@@ -337,4 +342,39 @@ func (av *ActionValidator) GetActionDefinition(name string) (*ActionDefinition, 
 func (av *ActionValidator) GetTypeDefinition(name string) (*TypeDefinition, bool) {
 	typeDef, exists := av.types[name]
 	return typeDef, exists
+}
+
+// AddAction ajoute une nouvelle action au validator.
+// Retourne une erreur si l'action existe déjà, avec un message spécifique
+// si c'est une action par défaut qui ne peut pas être redéfinie.
+func (av *ActionValidator) AddAction(action ActionDefinition) error {
+	// Vérifier si l'action existe déjà
+	if existing, exists := av.actions[action.Name]; exists {
+		if existing.IsDefault {
+			return fmt.Errorf("cannot redefine default action '%s' (default actions cannot be overridden)",
+				sanitizeForLog(action.Name, 100))
+		}
+		return fmt.Errorf("action '%s' is already defined",
+			sanitizeForLog(action.Name, 100))
+	}
+
+	// Ajouter l'action
+	av.actions[action.Name] = &action
+	return nil
+}
+
+// ValidateNonRedefinition vérifie qu'aucune action par défaut n'est redéfinie.
+// Cette fonction est utile pour valider un lot d'actions avant de les ajouter.
+func (av *ActionValidator) ValidateNonRedefinition(newActions []ActionDefinition) error {
+	for _, newAction := range newActions {
+		if existing, exists := av.actions[newAction.Name]; exists {
+			if existing.IsDefault {
+				return fmt.Errorf("cannot redefine default action '%s' (default actions cannot be overridden)",
+					sanitizeForLog(newAction.Name, 100))
+			}
+			return fmt.Errorf("action '%s' is already defined",
+				sanitizeForLog(newAction.Name, 100))
+		}
+	}
+	return nil
 }

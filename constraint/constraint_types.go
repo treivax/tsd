@@ -7,12 +7,13 @@ package constraint
 // Program represents the complete AST of a constraint program including types, actions, expressions, facts and resets.
 // It serves as the root structure for parsed constraint files.
 type Program struct {
-	Types        []TypeDefinition   `json:"types"`        // Type definitions declared in the program
-	Actions      []ActionDefinition `json:"actions"`      // Action definitions with their signatures
-	Expressions  []Expression       `json:"expressions"`  // Constraint expressions/rules
-	Facts        []Fact             `json:"facts"`        // Facts parsed from the program
-	Resets       []Reset            `json:"resets"`       // Reset instructions to clear the system
-	RuleRemovals []RuleRemoval      `json:"ruleRemovals"` // Rule removal commands
+	Types        []TypeDefinition        `json:"types"`        // Type definitions declared in the program
+	Actions      []ActionDefinition      `json:"actions"`      // Action definitions with their signatures
+	XupleSpaces  []XupleSpaceDeclaration `json:"xupleSpaces"`  // Xuple-space declarations with their policies
+	Expressions  []Expression            `json:"expressions"`  // Constraint expressions/rules
+	Facts        []Fact                  `json:"facts"`        // Facts parsed from the program
+	Resets       []Reset                 `json:"resets"`       // Reset instructions to clear the system
+	RuleRemovals []RuleRemoval           `json:"ruleRemovals"` // Rule removal commands
 }
 
 // TypeDefinition represents a user-defined type with its fields.
@@ -34,9 +35,10 @@ type Field struct {
 // ActionDefinition represents a user-defined action with its signature.
 // Example: action notify(recipient: string, message: string, priority: number = 1)
 type ActionDefinition struct {
-	Type       string      `json:"type"`       // Always "actionDefinition"
-	Name       string      `json:"name"`       // The action name (e.g., "notify")
-	Parameters []Parameter `json:"parameters"` // List of parameters for the action
+	Type       string      `json:"type"`                // Always "actionDefinition"
+	Name       string      `json:"name"`                // The action name (e.g., "notify")
+	Parameters []Parameter `json:"parameters"`          // List of parameters for the action
+	IsDefault  bool        `json:"isDefault,omitempty"` // true if action is a system default action
 }
 
 // Parameter represents a single parameter within an action definition.
@@ -324,4 +326,47 @@ func (td TypeDefinition) Clone() TypeDefinition {
 	copy(clone.Fields, td.Fields)
 
 	return clone
+}
+
+// XupleSpaceDeclaration represents a xuple-space declaration with its policies.
+// Example: xuple-space agents-commands { selection: fifo, consumption: once, retention: unlimited }
+type XupleSpaceDeclaration struct {
+	Type              string                     `json:"type"`              // Always "xupleSpaceDeclaration"
+	Name              string                     `json:"name"`              // Xuple-space name (e.g., "agents-commands")
+	SelectionPolicy   string                     `json:"selectionPolicy"`   // Selection policy: "random", "fifo", "lifo"
+	ConsumptionPolicy XupleConsumptionPolicyConf `json:"consumptionPolicy"` // Consumption policy configuration
+	RetentionPolicy   XupleRetentionPolicyConf   `json:"retentionPolicy"`   // Retention policy configuration
+}
+
+// XupleConsumptionPolicyConf configures the consumption policy for a xuple-space.
+// It specifies how many times a xuple can be consumed.
+type XupleConsumptionPolicyConf struct {
+	Type  string `json:"type"`            // Policy type: "once", "per-agent", "limited"
+	Limit int    `json:"limit,omitempty"` // Consumption limit for "limited" policy (must be > 0)
+}
+
+// XupleRetentionPolicyConf configures the retention policy for a xuple-space.
+// It specifies how long xuples are retained before expiration.
+type XupleRetentionPolicyConf struct {
+	Type     string `json:"type"`               // Policy type: "unlimited", "duration"
+	Duration int    `json:"duration,omitempty"` // Duration in seconds for "duration" policy (must be > 0)
+}
+
+// DefaultSelectionPolicy is the default selection policy if not specified.
+const DefaultSelectionPolicy = "fifo"
+
+// DefaultConsumptionPolicyConf returns the default consumption policy configuration.
+func DefaultConsumptionPolicyConf() XupleConsumptionPolicyConf {
+	return XupleConsumptionPolicyConf{
+		Type:  "once",
+		Limit: 0,
+	}
+}
+
+// DefaultRetentionPolicyConf returns the default retention policy configuration.
+func DefaultRetentionPolicyConf() XupleRetentionPolicyConf {
+	return XupleRetentionPolicyConf{
+		Type:     "unlimited",
+		Duration: 0,
+	}
 }
