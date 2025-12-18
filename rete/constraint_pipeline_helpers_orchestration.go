@@ -320,6 +320,11 @@ func (ctx *alphaNodeCreationContext) createAndAttachTerminal() error {
 	ctx.chain.FinalNode.AddChild(ctx.terminalNode)
 	ctx.network.TerminalNodes[ctx.terminalNode.ID] = ctx.terminalNode
 
+	// Configure observer if network has one
+	if ctx.network.actionObserver != nil {
+		ctx.terminalNode.SetObserver(ctx.network.actionObserver)
+	}
+
 	// Register terminal node with lifecycle manager
 	if ctx.network.LifecycleManager != nil {
 		ctx.network.LifecycleManager.RegisterNode(ctx.terminalNode.ID, "terminal")

@@ -185,6 +185,11 @@ func (bu *BuilderUtils) CreateTerminalNode(
 	terminalNode.SetNetwork(network)
 	network.TerminalNodes[terminalNode.ID] = terminalNode
 
+	// Configure observer if network has one
+	if network.actionObserver != nil {
+		terminalNode.SetObserver(network.actionObserver)
+	}
+
 	// Register terminal node with lifecycle manager
 	if network.LifecycleManager != nil {
 		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
