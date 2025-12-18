@@ -2,6 +2,36 @@
 
 ---
 
+## ⚠️ CONTRAINTE ARCHITECTURALE STRICTE
+
+**RÈGLE ABSOLUE**: Il est **STRICTEMENT INTERDIT** de créer des xuples directement dans les tests ou en batch (appel direct à `XupleManager.Create()`, `space.Add()`, etc.).
+
+**Les xuples DOIVENT IMPÉRATIVEMENT être générés à partir de faits soumis au réseau RETE via des règles.**
+
+✅ **CORRECT**:
+```go
+// Soumettre un fait au réseau RETE
+network.Assert(ctx, fact)
+// Le réseau évalue les règles, exécute l'action Xuple() qui crée le xuple
+```
+
+❌ **INTERDIT**:
+```go
+// NE JAMAIS faire ça dans les tests ou le code métier
+xupleManager.Create(ctx, "space", fact)
+space.Add(fact)
+```
+
+**Justification**:
+- Garantit que tous les xuples passent par le réseau RETE
+- Assure l'évaluation complète des règles et conditions
+- Préserve la traçabilité et l'auditabilité
+- Évite les contournements du pipeline qui introduisent des incohérences
+
+Cette règle s'applique à **tous les tests, benchmarks, exemples et code de production**.
+
+---
+
 ## 🎯 Objectif
 
 **Finaliser le projet avec une suite de tests exhaustive, une documentation complète et de haute qualité, et préparer la release finale** après l'implémentation complète de l'automatisation des xuples.
