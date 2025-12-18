@@ -1,0 +1,26 @@
+// Basic xuple-space example
+// Demonstrates simple xuple-space declaration with default policies
+
+// Define a simple type for tasks
+type Task(#id: string, title: string, priority: number)
+
+// Define action for task processing
+action processTask(taskId: string, title: string)
+
+// Declare a basic xuple-space for task queue
+// Uses FIFO selection (process tasks in order)
+// One-time consumption (each task processed once)
+// Unlimited retention (tasks kept until consumed)
+xuple-space task-queue {
+    selection: fifo
+    consumption: once
+    retention: unlimited
+}
+
+// Rule to trigger task processing
+rule process_high_priority: {t: Task} / t.priority > 5 ==> processTask(t.id, t.title)
+
+// Example facts
+Task(id: "T001", title: "Urgent task", priority: 10)
+Task(id: "T002", title: "Normal task", priority: 3)
+Task(id: "T003", title: "Important task", priority: 8)

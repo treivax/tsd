@@ -1,0 +1,49 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// EXEMPLE E2E SIMPLE : SYSTÈME DE MONITORING AVEC XUPLE-SPACES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────────
+// TYPES
+// ───────────────────────────────────────────────────────────────────────────
+
+type Sensor(#id: string, location: string, temperature: number)
+
+// ───────────────────────────────────────────────────────────────────────────
+// XUPLE-SPACES
+// ───────────────────────────────────────────────────────────────────────────
+
+xuple-space alerts {
+selection: fifo
+consumption: once
+retention: unlimited
+}
+
+xuple-space commands {
+selection: lifo
+consumption: once
+retention: duration(1h)
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// ACTIONS
+// ───────────────────────────────────────────────────────────────────────────
+
+action notifyCritical(sensorId: string, temp: number)
+action notifyWarning(sensorId: string, temp: number)
+
+// ───────────────────────────────────────────────────────────────────────────
+// RÈGLES
+// ───────────────────────────────────────────────────────────────────────────
+
+rule critical_temp: {s: Sensor} / s.temperature > 40 ==> notifyCritical(s.id, s.temperature)
+rule high_temp: {s: Sensor} / s.temperature > 30 AND s.temperature <= 40 ==> notifyWarning(s.id, s.temperature)
+
+// ───────────────────────────────────────────────────────────────────────────
+// FAITS
+// ───────────────────────────────────────────────────────────────────────────
+
+Sensor(id: "S001", location: "RoomA", temperature: 22.0)
+Sensor(id: "S002", location: "RoomB", temperature: 35.0)
+Sensor(id: "S003", location: "RoomC", temperature: 45.0)
+Sensor(id: "S004", location: "RoomD", temperature: 25.0)
+Sensor(id: "S005", location: "ServerRoom", temperature: 42.0)

@@ -1,0 +1,199 @@
+// Comprehensive xuple-space examples
+// Demonstrates all available policies and their combinations
+
+// ===================================================================
+// Type Definitions
+// ===================================================================
+
+type Alert(#id: string, message: string, severity: number, timestamp: number)
+type Command(#id: string, action: string, target: string)
+type Notification(#id: string, recipient: string, content: string)
+type CacheEntry(#key: string, value: string, hits: number)
+
+// ===================================================================
+// Action Definitions
+// ===================================================================
+
+action sendAlert(alertId: string, message: string)
+action executeCommand(cmdId: string, action: string)
+action notifyUser(recipient: string, content: string)
+action logCacheAccess(key: string, value: string)
+
+// ===================================================================
+// FIFO Selection Policy
+// ===================================================================
+// First-In-First-Out: Process items in order of arrival
+
+xuple-space command-queue {
+    selection: fifo
+    consumption: once
+    retention: duration(1h)
+}
+
+// ===================================================================
+// LIFO Selection Policy
+// ===================================================================
+// Last-In-First-Out: Process most recent items first
+
+xuple-space alert-stack {
+    selection: lifo
+    consumption: once
+    retention: duration(5m)
+}
+
+// ===================================================================
+// Random Selection Policy
+// ===================================================================
+// Random selection for load balancing
+
+xuple-space load-balanced-tasks {
+    selection: random
+    consumption: once
+    retention: unlimited
+}
+
+// ===================================================================
+// Once Consumption Policy
+// ===================================================================
+// Each item consumed exactly once
+
+xuple-space single-use-commands {
+    selection: fifo
+    consumption: once
+    retention: duration(30m)
+}
+
+// ===================================================================
+// Per-Agent Consumption Policy
+// ===================================================================
+// Each agent can consume each item once (broadcast pattern)
+
+xuple-space broadcast-notifications {
+    selection: random
+    consumption: per-agent
+    retention: duration(10m)
+}
+
+// ===================================================================
+// Limited Consumption Policy
+// ===================================================================
+// Item can be consumed up to N times
+
+xuple-space limited-cache {
+    selection: fifo
+    consumption: limited(3)
+    retention: duration(5m)
+}
+
+// ===================================================================
+// Unlimited Retention Policy
+// ===================================================================
+// Items never expire automatically
+
+xuple-space permanent-archive {
+    selection: fifo
+    consumption: once
+    retention: unlimited
+}
+
+// ===================================================================
+// Duration Retention Policy - Seconds
+// ===================================================================
+// Items expire after 30 seconds
+
+xuple-space short-lived-cache {
+    selection: random
+    consumption: limited(10)
+    retention: duration(30s)
+}
+
+// ===================================================================
+// Duration Retention Policy - Minutes
+// ===================================================================
+// Items expire after 5 minutes
+
+xuple-space medium-cache {
+    selection: fifo
+    consumption: per-agent
+    retention: duration(5m)
+}
+
+// ===================================================================
+// Duration Retention Policy - Hours
+// ===================================================================
+// Items expire after 2 hours
+
+xuple-space long-cache {
+    selection: lifo
+    consumption: limited(5)
+    retention: duration(2h)
+}
+
+// ===================================================================
+// Duration Retention Policy - Days
+// ===================================================================
+// Items expire after 7 days
+
+xuple-space weekly-archive {
+    selection: fifo
+    consumption: once
+    retention: duration(7d)
+}
+
+// ===================================================================
+// Complex Use Cases
+// ===================================================================
+
+// Publish-Subscribe Pattern
+xuple-space pubsub-events {
+    selection: random
+    consumption: per-agent
+    retention: duration(15m)
+}
+
+// Distributed Cache
+xuple-space distributed-cache {
+    selection: fifo
+    consumption: limited(100)
+    retention: duration(1h)
+}
+
+// Job Queue with Timeout
+xuple-space job-queue-timeout {
+    selection: fifo
+    consumption: once
+    retention: duration(24h)
+}
+
+// Emergency Alert System (LIFO + Short TTL)
+xuple-space emergency-alerts {
+    selection: lifo
+    consumption: per-agent
+    retention: duration(2m)
+}
+
+// ===================================================================
+// Rules for Testing
+// ===================================================================
+
+rule high_priority_alert: {a: Alert} / a.severity >= 8 ==> sendAlert(a.id, a.message)
+rule execute_cmd: {c: Command} / ==> executeCommand(c.id, c.action)
+rule notify: {n: Notification} / ==> notifyUser(n.recipient, n.content)
+rule cache_hit: {e: CacheEntry} / e.hits > 0 ==> logCacheAccess(e.key, e.value)
+
+// ===================================================================
+// Example Facts
+// ===================================================================
+
+Alert(id: "A001", message: "Critical system error", severity: 10, timestamp: 1234567890)
+Alert(id: "A002", message: "Warning: high CPU usage", severity: 6, timestamp: 1234567891)
+Alert(id: "A003", message: "Info: backup completed", severity: 2, timestamp: 1234567892)
+
+Command(id: "C001", action: "restart", target: "server-1")
+Command(id: "C002", action: "backup", target: "database-1")
+
+Notification(id: "N001", recipient: "admin", content: "System update required")
+Notification(id: "N002", recipient: "user", content: "Your report is ready")
+
+CacheEntry(key: "user:123", value: "John Doe", hits: 5)
+CacheEntry(key: "config:app", value: "production", hits: 0)

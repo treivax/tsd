@@ -1,0 +1,16 @@
+// Exemple minimal de xuple-space pour test
+
+type Sensor(#id: string, temp: number)
+
+xuple-space alerts {
+selection: fifo
+consumption: once
+retention: unlimited
+}
+
+action notify(id: string)
+
+rule high_temp: {s: Sensor} / s.temp > 30 ==> notify(s.id)
+
+Sensor(id: S001, temp: 25.0)
+Sensor(id: S002, temp: 35.0)

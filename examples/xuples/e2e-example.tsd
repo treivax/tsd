@@ -1,0 +1,160 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// EXEMPLE E2E COMPLET : SYSTÈME DE MONITORING AVEC XUPLE-SPACES
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Ce fichier illustre un système complet de monitoring de capteurs avec :
+// - 3 types de données (Sensor, Alert, Command)
+// - 3 xuple-spaces avec différentes politiques
+// - 4 règles de traitement
+// - 5 scénarios de test
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────────
+// SECTION 1 : DÉFINITION DES TYPES
+// ───────────────────────────────────────────────────────────────────────────
+
+// Type Sensor : Représente un capteur de température et d'humidité
+// Clé primaire : #id (identifiant unique du capteur)
+type Sensor(#id: string, location: string, temperature: number, humidity: number)
+
+// Type Alert : Représente une alerte générée par le système
+// Pas de clé primaire explicite - ID généré automatiquement
+type Alert(level: string, message: string, sensorId: string)
+
+// Type Command : Représente une commande à exécuter
+// Pas de clé primaire explicite - ID généré automatiquement
+type Command(action: string, target: string, priority: number)
+
+// ───────────────────────────────────────────────────────────────────────────
+// SECTION 2 : DÉCLARATION DES XUPLE-SPACES
+// ───────────────────────────────────────────────────────────────────────────
+
+// Xuple-space 1 : Alertes critiques
+// - Selection : LIFO (Last In First Out) → traite les alertes les plus récentes d'abord
+// - Consumption : per-agent → chaque agent peut consommer les xuples
+// - Retention : 10 minutes → les xuples expirent après 10 minutes
+xuple-space critical_alerts {
+selection: lifo
+consumption: per-agent
+retention: duration(10m)
+}
+
+// Xuple-space 2 : File de commandes
+// - Selection : FIFO (First In First Out) → traite les commandes dans l'ordre d'arrivée
+// - Consumption : once → chaque xuple ne peut être consommé qu'une seule fois
+// - Retention : 1 heure → les xuples expirent après 1 heure
+xuple-space command_queue {
+selection: fifo
+consumption: once
+retention: duration(1h)
+}
+
+// Xuple-space 3 : Alertes normales
+// - Selection : random → sélection aléatoire pour load balancing
+// - Consumption : once → chaque xuple ne peut être consommé qu'une seule fois
+// - Retention : 30 minutes → les xuples expirent après 30 minutes
+xuple-space normal_alerts {
+selection: random
+consumption: once
+retention: duration(30m)
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// SECTION 3 : DÉCLARATION DES ACTIONS
+// ───────────────────────────────────────────────────────────────────────────
+
+action notifyCritical(sensorId: string, temp: number)
+action notifyHigh(sensorId: string, temp: number)
+action ventilate(location: string)
+action emergencyShutdown(location: string)
+
+// ───────────────────────────────────────────────────────────────────────────
+// SECTION 4 : DÉFINITION DES RÈGLES
+// ───────────────────────────────────────────────────────────────────────────
+
+// Règle 1 : Température critique
+// Condition : température > 40°C
+// Actions :
+//   1. Appel de l'action notifyCritical
+//   2. Création d'un xuple Alert dans critical_alerts
+rule critical_temperature: {s: Sensor} / s.temperature > 40 ==> notifyCritical(s.id, s.temperature), Xuple("critical_alerts", Alert(level: "CRITICAL", message: "TemperatureCritical", sensorId: s.id))
+
+// Règle 2 : Température élevée
+// Condition : 30°C < température <= 40°C
+// Actions :
+//   1. Appel de l'action notifyHigh
+//   2. Création d'un xuple Alert dans normal_alerts
+rule high_temperature: {s: Sensor} / s.temperature > 30 AND s.temperature <= 40 ==> notifyHigh(s.id, s.temperature), Xuple("normal_alerts", Alert(level: "WARNING", message: "TemperatureHigh", sensorId: s.id))
+
+// Règle 3 : Humidité excessive
+// Condition : humidité > 80%
+// Actions :
+//   1. Appel de l'action ventilate
+//   2. Création d'un xuple Command dans command_queue
+rule high_humidity: {s: Sensor} / s.humidity > 80 ==> ventilate(s.location), Xuple("command_queue", Command(action: "ventilate", target: s.location, priority: 5))
+
+// Règle 4 : Conditions extrêmes
+// Condition : température > 40°C ET humidité > 80%
+// Actions :
+//   1. Appel de l'action emergencyShutdown
+//   2. Création d'un xuple Command prioritaire dans command_queue
+rule extreme_conditions: {s: Sensor} / s.temperature > 40 AND s.humidity > 80 ==> emergencyShutdown(s.location), Xuple("command_queue", Command(action: "emergency", target: s.location, priority: 10))
+
+// ───────────────────────────────────────────────────────────────────────────
+// SECTION 5 : SCÉNARIOS DE TEST (FACTS)
+// ───────────────────────────────────────────────────────────────────────────
+
+// Scénario 1 : Capteur S001 - Conditions normales
+// Température : 22°C, Humidité : 45%
+// Résultat attendu : Aucune règle déclenchée, aucun xuple créé
+Sensor(id: "S001", location: "RoomA", temperature: 22.0, humidity: 45.0)
+
+// Scénario 2 : Capteur S002 - Température élevée
+// Température : 35°C, Humidité : 50%
+// Résultat attendu :
+//   - Règle high_temperature déclenchée
+//   - 1 xuple Alert créé dans normal_alerts (WARNING)
+Sensor(id: "S002", location: "RoomB", temperature: 35.0, humidity: 50.0)
+
+// Scénario 3 : Capteur S003 - Température critique
+// Température : 45°C, Humidité : 60%
+// Résultat attendu :
+//   - Règle critical_temperature déclenchée
+//   - 1 xuple Alert créé dans critical_alerts (CRITICAL)
+Sensor(id: "S003", location: "RoomC", temperature: 45.0, humidity: 60.0)
+
+// Scénario 4 : Capteur S004 - Humidité excessive
+// Température : 25°C, Humidité : 85%
+// Résultat attendu :
+//   - Règle high_humidity déclenchée
+//   - 1 xuple Command créé dans command_queue (ventilate, priority: 5)
+Sensor(id: "S004", location: "RoomD", temperature: 25.0, humidity: 85.0)
+
+// Scénario 5 : Capteur S005 - Conditions extrêmes
+// Température : 42°C, Humidité : 85%
+// Résultat attendu :
+//   - Règle critical_temperature déclenchée → 1 xuple Alert dans critical_alerts
+//   - Règle high_humidity déclenchée → 1 xuple Command dans command_queue (ventilate)
+//   - Règle extreme_conditions déclenchée → 1 xuple Command dans command_queue (emergency)
+//   - Total : 1 xuple Alert + 2 xuples Command
+Sensor(id: "S005", location: "ServerRoom", temperature: 42.0, humidity: 85.0)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RÉSUMÉ DES RÉSULTATS ATTENDUS
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// XUPLE-SPACE : critical_alerts (LIFO, per-agent, 10m)
+//   ├─ Alert(level: "CRITICAL", message: "TemperatureCritical", sensorId: "S003")
+//   └─ Alert(level: "CRITICAL", message: "TemperatureCritical", sensorId: "S005")
+//
+// XUPLE-SPACE : normal_alerts (random, once, 30m)
+//   └─ Alert(level: "WARNING", message: "TemperatureHigh", sensorId: "S002")
+//
+// XUPLE-SPACE : command_queue (FIFO, once, 1h)
+//   ├─ Command(action: "ventilate", target: "RoomD", priority: 5)
+//   ├─ Command(action: "ventilate", target: "ServerRoom", priority: 5)
+//   └─ Command(action: "emergency", target: "ServerRoom", priority: 10)
+//
+// TOTAL XUPLES CRÉÉS : 6
+// ═══════════════════════════════════════════════════════════════════════════
