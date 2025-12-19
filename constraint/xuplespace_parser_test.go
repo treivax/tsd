@@ -397,3 +397,128 @@ func TestParseXupleSpace_DefaultValues(t *testing.T) {
 
 	t.Log("✅ Default values correctly applied")
 }
+
+func TestParseXupleSpace_WithMaxSize(t *testing.T) {
+	t.Log("🧪 TEST: Parser - Xuple-Space avec max-size")
+
+	input := `
+xuple-space notifications {
+selection: random
+max-size: 1000
+}
+`
+
+	result, err := Parse("test", []byte(input))
+	if err != nil {
+		t.Fatalf("❌ Parsing failed: %v", err)
+	}
+
+	program, err := convertResultToProgram(result)
+	if err != nil {
+		t.Fatalf("❌ Program conversion failed: %v", err)
+	}
+
+	if len(program.XupleSpaces) != 1 {
+		t.Fatalf("❌ Expected 1 xuple-space, got %d", len(program.XupleSpaces))
+	}
+
+	xs := program.XupleSpaces[0]
+	if xs.Name != "notifications" {
+		t.Errorf("❌ Expected name 'notifications', got '%s'", xs.Name)
+	}
+	if xs.MaxSize != 1000 {
+		t.Errorf("❌ Expected max-size 1000, got %d", xs.MaxSize)
+	}
+
+	t.Log("✅ Test réussi - max-size parsé correctement")
+}
+
+func TestParseXupleSpace_MaxSizeZero(t *testing.T) {
+	t.Log("🧪 TEST: Parser - Xuple-Space avec max-size: 0 (illimité)")
+
+	input := `
+xuple-space unlimited {
+max-size: 0
+}
+`
+
+	result, err := Parse("test", []byte(input))
+	if err != nil {
+		t.Fatalf("❌ Parsing failed: %v", err)
+	}
+
+	program, err := convertResultToProgram(result)
+	if err != nil {
+		t.Fatalf("❌ Program conversion failed: %v", err)
+	}
+
+	xs := program.XupleSpaces[0]
+	if xs.MaxSize != 0 {
+		t.Errorf("❌ Expected max-size 0 (unlimited), got %d", xs.MaxSize)
+	}
+
+	t.Log("✅ Test réussi - max-size: 0 accepté")
+}
+
+func TestParseXupleSpace_NegativeMaxSize(t *testing.T) {
+	t.Log("🧪 TEST: Parser - Xuple-Space avec max-size négatif (erreur attendue)")
+
+	input := `
+xuple-space bad {
+max-size: -100
+}
+`
+
+	_, err := Parse("test", []byte(input))
+	if err == nil {
+		t.Fatal("❌ Expected error for negative max-size")
+	}
+
+	t.Logf("✅ Erreur attendue reçue: %v", err)
+}
+
+func TestParseXupleSpace_AllPropertiesIncludingMaxSize(t *testing.T) {
+	t.Log("🧪 TEST: Parser - Xuple-Space avec toutes les propriétés (incluant max-size)")
+
+	input := `
+xuple-space complete {
+selection: lifo
+consumption: per-agent
+retention: duration(24h)
+max-size: 500
+}
+`
+
+	result, err := Parse("test", []byte(input))
+	if err != nil {
+		t.Fatalf("❌ Parsing failed: %v", err)
+	}
+
+	program, err := convertResultToProgram(result)
+	if err != nil {
+		t.Fatalf("❌ Program conversion failed: %v", err)
+	}
+
+	xs := program.XupleSpaces[0]
+
+	// Vérifier toutes les propriétés
+	if xs.SelectionPolicy != "lifo" {
+		t.Errorf("❌ Expected selection 'lifo', got '%s'", xs.SelectionPolicy)
+	}
+	if xs.ConsumptionPolicy.Type != "per-agent" {
+		t.Errorf("❌ Expected consumption 'per-agent', got '%s'", xs.ConsumptionPolicy.Type)
+	}
+	if xs.RetentionPolicy.Type != "duration" {
+		t.Errorf("❌ Expected retention type 'duration', got '%s'", xs.RetentionPolicy.Type)
+	}
+	expectedDuration := 24 * SecondsPerHour
+	if xs.RetentionPolicy.Duration != expectedDuration {
+		t.Errorf("❌ Expected retention duration %d seconds (24h), got %d",
+			expectedDuration, xs.RetentionPolicy.Duration)
+	}
+	if xs.MaxSize != 500 {
+		t.Errorf("❌ Expected max-size 500, got %d", xs.MaxSize)
+	}
+
+	t.Log("✅ Test réussi - toutes les propriétés parsées correctement")
+}

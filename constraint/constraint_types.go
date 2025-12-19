@@ -329,13 +329,14 @@ func (td TypeDefinition) Clone() TypeDefinition {
 }
 
 // XupleSpaceDeclaration represents a xuple-space declaration with its policies.
-// Example: xuple-space agents-commands { selection: fifo, consumption: once, retention: unlimited }
+// Example: xuple-space agents-commands { selection: fifo, consumption: once, retention: unlimited, max-size: 1000 }
 type XupleSpaceDeclaration struct {
 	Type              string                     `json:"type"`              // Always "xupleSpaceDeclaration"
 	Name              string                     `json:"name"`              // Xuple-space name (e.g., "agents-commands")
 	SelectionPolicy   string                     `json:"selectionPolicy"`   // Selection policy: "random", "fifo", "lifo"
 	ConsumptionPolicy XupleConsumptionPolicyConf `json:"consumptionPolicy"` // Consumption policy configuration
 	RetentionPolicy   XupleRetentionPolicyConf   `json:"retentionPolicy"`   // Retention policy configuration
+	MaxSize           int                        `json:"maxSize,omitempty"` // Maximum size (0 = unlimited)
 }
 
 // XupleConsumptionPolicyConf configures the consumption policy for a xuple-space.
@@ -352,13 +353,10 @@ type XupleRetentionPolicyConf struct {
 	Duration int    `json:"duration,omitempty"` // Duration in seconds for "duration" policy (must be > 0)
 }
 
-// DefaultSelectionPolicy is the default selection policy if not specified.
-const DefaultSelectionPolicy = "fifo"
-
 // DefaultConsumptionPolicyConf returns the default consumption policy configuration.
 func DefaultConsumptionPolicyConf() XupleConsumptionPolicyConf {
 	return XupleConsumptionPolicyConf{
-		Type:  "once",
+		Type:  ConsumptionOnce,
 		Limit: 0,
 	}
 }
@@ -366,7 +364,7 @@ func DefaultConsumptionPolicyConf() XupleConsumptionPolicyConf {
 // DefaultRetentionPolicyConf returns the default retention policy configuration.
 func DefaultRetentionPolicyConf() XupleRetentionPolicyConf {
 	return XupleRetentionPolicyConf{
-		Type:     "unlimited",
+		Type:     RetentionUnlimited,
 		Duration: 0,
 	}
 }

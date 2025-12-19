@@ -138,6 +138,8 @@ func (av *ActionValidator) inferComplexType(argType string, argMap map[string]in
 		return av.inferBinaryOpType(argMap)
 	case ArgTypeFunctionCall:
 		return av.inferFunctionCallType(argMap)
+	case "inlineFact":
+		return av.inferInlineFactType(argMap)
 	default:
 		return "", fmt.Errorf("unknown argument type: %s", sanitizeForLog(argType, 50))
 	}
@@ -219,6 +221,24 @@ func (av *ActionValidator) inferFunctionCallType(argMap map[string]interface{}) 
 		return "", fmt.Errorf("functionCall missing name")
 	}
 	return av.functionRegistry.GetReturnType(funcName, ValueTypeString), nil
+}
+
+// inferInlineFactType infers the type of an inline fact creation.
+// An inline fact has the format: TypeName(field: value, ...)
+// The type returned is the TypeName, which should be a user-defined type.
+func (av *ActionValidator) inferInlineFactType(argMap map[string]interface{}) (string, error) {
+	typeName, ok := argMap["typeName"].(string)
+	if !ok {
+		return "", fmt.Errorf("inlineFact missing typeName")
+	}
+
+	// Vérifier que le type existe
+	if _, exists := av.types[typeName]; !exists {
+		return "", fmt.Errorf("type '%s' not defined", sanitizeForLog(typeName, 50))
+	}
+
+	// Le type d'un fait inline est le nom du type du fait
+	return typeName, nil
 }
 
 // inferFunctionReturnType returns the return type of a function using the function registry.

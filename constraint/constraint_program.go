@@ -29,6 +29,11 @@ func ValidateProgram(result interface{}) error {
 		return fmt.Errorf("erreur validation faits: %v", err)
 	}
 
+	// Validation des xuple-spaces
+	if err := validateXupleSpaces(program); err != nil {
+		return fmt.Errorf("erreur validation xuple-spaces: %v", err)
+	}
+
 	// Validation des contraintes dans les expressions
 	if err := validateExpressionConstraints(program); err != nil {
 		return err
@@ -39,7 +44,8 @@ func ValidateProgram(result interface{}) error {
 		return err
 	}
 
-	tsdio.Printf("✓ Programme valide avec %d type(s), %d expression(s) et %d fait(s)\n", len(program.Types), len(program.Expressions), len(program.Facts))
+	tsdio.Printf("✓ Programme valide avec %d type(s), %d expression(s), %d fait(s) et %d xuple-space(s)\n",
+		len(program.Types), len(program.Expressions), len(program.Facts), len(program.XupleSpaces))
 	return nil
 }
 
@@ -88,6 +94,16 @@ func validateExpressionActions(program Program) error {
 		} else {
 			// Avec la nouvelle grammaire, cette condition ne devrait plus arriver
 			return fmt.Errorf("action manquante dans l'expression %d: chaque règle doit avoir une action définie", i+1)
+		}
+	}
+	return nil
+}
+
+// validateXupleSpaces valide les déclarations de xuple-spaces
+func validateXupleSpaces(program Program) error {
+	for _, xs := range program.XupleSpaces {
+		if err := ValidateXupleSpaceDeclaration(&xs); err != nil {
+			return err
 		}
 	}
 	return nil
