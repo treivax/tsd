@@ -612,6 +612,17 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	// Créer le pipeline RETE
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
+	
+	// Créer le réseau RETE et configurer le XupleHandler AVANT l'ingestion
+	network := rete.NewReteNetwork(storage)
+	network.SetXupleManager(xupleManager)
+	network.SetXupleHandler(func(xuplespace string, fact *rete.Fact, triggeringFacts []*rete.Fact) error {
+		return xupleManager.CreateXuple(xuplespace, fact, triggeringFacts)
+	})
+	
+	// Créer un collecteur d'exécutions (observer pattern) et le configurer AVANT l'ingestion
+	statsCollector := NewExecutionStatsCollector()
+	network.SetActionObserver(statsCollector)
 
 	// Créer un fichier temporaire pour le source
 	tmpFile, err := os.CreateTemp("", "tsd-*.tsd")
@@ -629,11 +640,8 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	}
 	tmpFile.Close()
 
-	// Créer un collecteur d'exécutions (observer pattern)
-	statsCollector := NewExecutionStatsCollector()
-
-	// Ingérer le fichier
-	network, _, err := pipeline.IngestFile(tmpFile.Name(), nil, storage)
+	// Ingérer le fichier avec le réseau pré-configuré
+	network, _, err = pipeline.IngestFile(tmpFile.Name(), network, storage)
 	if err != nil {
 		executionTimeMs := time.Since(startTime).Milliseconds()
 		return tsdio.NewErrorResponse(tsdio.ErrorTypeExecutionError, fmt.Sprintf("Erreur ingestion: %v", err), executionTimeMs)
@@ -641,21 +649,10 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 
 	// Configurer le BuiltinActionExecutor avec le XupleManager
 	builtinExecutor := actions.NewBuiltinActionExecutor(network, xupleManager, os.Stdout, s.logger)
-
-	// TODO: Configurer le network avec le builtinExecutor
-	// Note: Cette intégration nécessite que le réseau RETE expose une méthode
-	// pour configurer l'exécuteur d'actions intégrées. Pour l'instant,
-	// l'action Xuple ne sera pas fonctionnelle tant que cette liaison n'est pas faite.
-	//
-	// Prochaine étape: Ajouter network.SetBuiltinActionExecutor(builtinExecutor)
-	// ou équivalent dans le réseau RETE.
-	_ = builtinExecutor // Éviter warning unused
-
-	// Configurer l'observer pour capturer les exécutions
-	network.SetActionObserver(statsCollector)
+	_ = builtinExecutor // Éviter warning unused - sera utilisé dans une version future pour d'autres actions
 
 	// Les activations sont maintenant capturées automatiquement via l'observer
-	// pendant l'exécution des règles (pas besoin de collectActivations)
+	// pendant l'exécution des règles (observer configuré avant l'ingestion)
 
 	// Collecter les résultats
 	facts := storage.GetAllFacts()
