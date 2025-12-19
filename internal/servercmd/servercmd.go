@@ -612,14 +612,14 @@ func (s *Server) executeTSDProgram(req *tsdio.ExecuteRequest, startTime time.Tim
 	// Créer le pipeline RETE
 	pipeline := rete.NewConstraintPipeline()
 	storage := rete.NewMemoryStorage()
-	
+
 	// Créer le réseau RETE et configurer le XupleHandler AVANT l'ingestion
 	network := rete.NewReteNetwork(storage)
 	network.SetXupleManager(xupleManager)
 	network.SetXupleHandler(func(xuplespace string, fact *rete.Fact, triggeringFacts []*rete.Fact) error {
 		return xupleManager.CreateXuple(xuplespace, fact, triggeringFacts)
 	})
-	
+
 	// Créer un collecteur d'exécutions (observer pattern) et le configurer AVANT l'ingestion
 	statsCollector := NewExecutionStatsCollector()
 	network.SetActionObserver(statsCollector)
@@ -889,10 +889,10 @@ func (s *Server) extractFacts(token *rete.Token) []tsdio.Fact {
 		}
 
 		f := tsdio.Fact{
-			ID:     fact.ID,
 			Type:   fact.Type,
 			Fields: s.extractAttributes(fact),
 		}
+		f.SetInternalID(fact.ID)
 		facts = append(facts, f)
 	}
 

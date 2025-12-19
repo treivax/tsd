@@ -1,5 +1,8 @@
 # Analyse des Structures Token et Fact - TSD
 
+> ⚠️ **ATTENTION** : Cette documentation décrit l'ancienne architecture (v1.x) avant la migration vers `_id_`.  
+> Pour la version actuelle (v2.0+), voir [docs/internal-ids.md](../../internal-ids.md).
+
 ## 📋 Vue d'Ensemble
 
 Ce document analyse en détail les structures `Token` et `Fact` qui portent les données dans le réseau RETE et comment elles sont liées.
@@ -96,27 +99,48 @@ func (f *Fact) GetInternalID() string {
 - **Évite collisions** : Deux types différents peuvent avoir le même ID simple
 - **Rétractation** : Identification précise du fait à retirer
 
-### 1.4 Champ Spécial "id"
+### 1.4 Champ Spécial "id" (Obsolète v1.x)
 
-**Constante** : `FieldNameID = "id"`
+> ⚠️ **OBSOLÈTE** : Dans la version v2.0+, le champ `id` a été remplacé par `_id_` (interne et caché).  
+> Voir [docs/internal-ids.md](../../internal-ids.md) pour la nouvelle architecture.
 
-**Emplacement** : `rete/fact_token.go` lignes 11-13
+**Constante (v1.x)** : `FieldNameID = "id"`  
+**Constante (v2.0+)** : `FieldNameInternalID = "_id_"`
+
+**Emplacement** : `rete/fact_token.go` lignes 11-13 (v1.x)
 
 ```go
+// V1.X - OBSOLÈTE
 // FieldNameID est le nom du champ spécial pour l'identifiant du fait.
 // Ce champ est accessible dans les expressions mais stocké dans Fact.ID, pas dans Fact.Fields.
 const FieldNameID = "id"
+
+// V2.0+ - ACTUEL
+// FieldNameInternalID est le nom du champ interne pour l'identifiant du fait.
+// Ce champ est CACHÉ et NON accessible dans les expressions TSD.
+const FieldNameInternalID = "_id_"
 ```
 
-**Particularité** :
-- L'ID est stocké dans `Fact.ID`, **PAS** dans `Fact.Fields["id"]`
-- Accessible dans les expressions TSD via le champ virtuel `id`
-- Permet de référencer l'ID même si le type n'a pas de champ nommé "id"
+**Changements v2.0** :
+- L'ID est **caché** et inaccessible dans les expressions TSD
+- Génération **automatique** obligatoire (pas d'affectation manuelle)
+- Format : `"TypeName~value1_value2..."` ou `"TypeName~<hash>"`
+- Utilisation de clés primaires (`#field`) pour identification
+- Support des types de faits dans les champs
 
-**Exemple d'utilisation** :
+**Exemple d'utilisation (v1.x - OBSOLÈTE)** :
 ```tsd
 rule check_user: {u: User} / u.id == "U001" ==> print(u.id)
                                  ↑ accès au champ spécial
+```
+
+**Exemple d'utilisation (v2.0+ - ACTUEL)** :
+```tsd
+type User(#email: string, name: string)
+alice = User("alice@example.com", "Alice")
+
+rule check_user: {u: User} / u.email == "alice@example.com" ==> print(u.name)
+                                 ↑ utiliser les clés primaires, pas _id_
 ```
 
 ### 1.5 Méthodes Utiles

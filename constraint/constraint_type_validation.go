@@ -15,6 +15,17 @@ func ValidateTypes(program Program) error {
 	for _, typeDef := range program.Types {
 		definedTypes[typeDef.Name] = true
 
+		// Valider que _id_ n'est pas utilisé comme nom de champ
+		for _, field := range typeDef.Fields {
+			if field.Name == FieldNameInternalID {
+				return fmt.Errorf(
+					"type '%s': le champ '%s' est réservé au système et ne peut pas être utilisé",
+					typeDef.Name,
+					FieldNameInternalID,
+				)
+			}
+		}
+
 		// Valider la clé primaire du type
 		if err := ValidateTypePrimaryKey(typeDef); err != nil {
 			return err

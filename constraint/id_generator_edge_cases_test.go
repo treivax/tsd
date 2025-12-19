@@ -261,7 +261,7 @@ func TestGenerateFactID_EdgeCases(t *testing.T) {
 							{Name: "timestamp", Type: "number", IsPrimaryKey: false},
 							{Name: "message", Type: "string", IsPrimaryKey: false},
 						},
-					})
+					}, nil)
 					if err != nil {
 						t.Errorf("❌ Erreur lors de la génération %d: %v", i+1, err)
 					}
@@ -277,7 +277,7 @@ func TestGenerateFactID_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := GenerateFactID(tt.fact, tt.typeDef)
+			id, err := GenerateFactID(tt.fact, tt.typeDef, nil)
 
 			if tt.wantErr {
 				if err == nil {

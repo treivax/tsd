@@ -30,9 +30,30 @@ check_copilot() {
 }
 
 # Lister les fichiers *.md par ordre lexicographique dans le sous-répertoire
+# Ne garde que les fichiers dont le nom commence par un nombre (sauf 00)
+# Si start_prompt est fourni, ne garde que les fichiers >= start_prompt
 get_session_files() {
     local subdir="$1"
-    find "$SCRIPT_DIR/$subdir" -maxdepth 1 -name "*.md" -type f | sort
+    local start_prompt="$2"
+    
+    local all_files=$(find "$SCRIPT_DIR/$subdir" -maxdepth 1 -name "*.md" -type f | sort | grep "^.*/[0-9].*\.md$" | grep -v "^.*/00.*\.md$" || true)
+    
+    if [ -z "$start_prompt" ]; then
+        echo "$all_files"
+    else
+        # Filtrer pour ne garder que les fichiers >= start_prompt
+        echo "$all_files" | while read -r file; do
+            local basename=$(basename "$file")
+            # Extraire le numéro au début du nom de fichier
+            if [[ $basename =~ ^([0-9]+) ]]; then
+                local file_num="${BASH_REMATCH[1]}"
+                # Comparer avec start_prompt (comparaison lexicographique)
+                if [[ "$file_num" == "$start_prompt" ]] || [[ "$file_num" > "$start_prompt" ]]; then
+                    echo "$file"
+                fi
+            fi
+        done
+    fi
 }
 
 # Exécuter review pour une session
@@ -70,6 +91,7 @@ run_session_review() {
 # Fonction principale
 main() {
     local subdir="$1"
+    local start_prompt="$2"
 
     if [ -z "$subdir" ]; then
         echo -e "${RED}❌ Erreur : vous devez spécifier un sous-répertoire${NC}"
@@ -95,10 +117,13 @@ main() {
     echo -e "${BLUE}📂 Projet : $PROJECT_ROOT${NC}"
     echo -e "${BLUE}📁 Scripts : $SCRIPT_DIR${NC}"
     echo -e "${BLUE}📁 Sous-répertoire : $subdir${NC}"
+    if [ -n "$start_prompt" ]; then
+        echo -e "${BLUE}🎯 Prompt de départ : $start_prompt${NC}"
+    fi
     echo ""
 
     # Récupérer les fichiers session
-    local session_files=($(get_session_files "$subdir"))
+    local session_files=($(get_session_files "$subdir" "$start_prompt"))
     local total_sessions=${#session_files[@]}
 
     if [ $total_sessions -eq 0 ]; then
@@ -193,10 +218,11 @@ main() {
 
 # Afficher aide
 show_help() {
-    echo "Usage: $0 <sous-répertoire> [OPTIONS]"
+    echo "Usage: $0 <sous-répertoire> [numéro_prompt] [OPTIONS]"
     echo ""
     echo "Arguments:"
     echo "  sous-répertoire         Sous-répertoire contenant les fichiers *.md à traiter"
+    echo "  numéro_prompt           (Optionnel) Numéro du prompt à partir duquel commencer (ex: 05)"
     echo ""
     echo "Options:"
     echo "  -h, --help              Afficher cette aide"
@@ -211,7 +237,10 @@ show_help() {
     echo ""
     echo "Exemples:"
     echo "  $0 mon_dossier          Mode interactif"
+    echo "  $0 mon_dossier 05       Commence à partir du prompt 05"
+    echo "  $0 new_ids 05           Commence à partir du prompt 05 dans new_ids"
     echo "  $0 mon_dossier -y       Automatique sans confirmation"
+    echo "  $0 mon_dossier 05 -y    Commence au prompt 05, sans confirmation"
     echo "  $0 mon_dossier -y -c    Automatique + continue sur erreur"
     echo "  $0 mon_dossier -p 30    Pause 30s entre sessions"
     echo ""
@@ -221,6 +250,7 @@ show_help() {
 # Parser les arguments
 parse_args() {
     local subdir=""
+    local start_prompt=""
 
     # Premier argument doit être le sous-répertoire
     if [[ $# -eq 0 ]] || [[ "$1" == -* ]]; then
@@ -232,6 +262,12 @@ parse_args() {
 
     subdir="$1"
     shift
+
+    # Vérifier si le deuxième argument est un numéro de prompt (pas une option)
+    if [[ $# -gt 0 ]] && [[ "$1" =~ ^[0-9]+$ ]]; then
+        start_prompt="$1"
+        shift
+    fi
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -260,7 +296,7 @@ parse_args() {
         esac
     done
 
-    echo "$subdir"
+    echo "$subdir|$start_prompt"
 }
 
 # Point d'entrée
@@ -269,5 +305,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-SUBDIR=$(parse_args "$@")
-main "$SUBDIR"
+RESULT=$(parse_args "$@")
+SUBDIR="${RESULT%%|*}"
+START_PROMPT="${RESULT##*|}"
+main "$SUBDIR" "$START_PROMPT"

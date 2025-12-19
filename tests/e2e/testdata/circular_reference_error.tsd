@@ -1,0 +1,7 @@
+// Scénario de test: Erreur de référence circulaire
+// Ce programme DOIT échouer à la validation
+
+type Node(value: string, next: Node)
+
+// Ceci devrait être rejeté à la validation
+// car Node référence Node (cycle)

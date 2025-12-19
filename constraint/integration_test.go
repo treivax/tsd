@@ -45,7 +45,7 @@ Person(nom: "Bob", age: 25)
 				}
 
 				for _, fact := range reteFacts {
-					factID, ok := fact["id"].(string)
+					factID, ok := fact[FieldNameInternalID].(string)
 					if !ok {
 						t.Errorf("❌ Fact missing id field or wrong type")
 						continue
@@ -91,7 +91,7 @@ Person(prenom: "Bob", nom: "Martin", age: 25)
 				}
 
 				for i, fact := range reteFacts {
-					factID, ok := fact["id"].(string)
+					factID, ok := fact[FieldNameInternalID].(string)
 					if !ok {
 						t.Errorf("❌ Fact %d missing id field or wrong type", i)
 						continue
@@ -127,7 +127,7 @@ Event(timestamp: 1234567891, message: "test2")
 				// Vérifier le format hash
 				seenIDs := make(map[string]bool)
 				for i, fact := range reteFacts {
-					factID, ok := fact["id"].(string)
+					factID, ok := fact[FieldNameInternalID].(string)
 					if !ok {
 						t.Errorf("❌ Fact %d missing id field or wrong type", i)
 						continue
@@ -180,7 +180,7 @@ Resource(path: "/home/user~test_file")
 					t.Fatalf("❌ Expected 1 fact, got %d", len(reteFacts))
 				}
 
-				factID, ok := reteFacts[0]["id"].(string)
+				factID, ok := reteFacts[0][FieldNameInternalID].(string)
 				if !ok {
 					t.Fatalf("❌ Fact missing id field or wrong type")
 				}
@@ -219,7 +219,7 @@ Event(timestamp: 1234567890, message: "User logged in")
 				}
 
 				for _, fact := range reteFacts {
-					factID, ok := fact["id"].(string)
+					factID, ok := fact[FieldNameInternalID].(string)
 					if !ok {
 						t.Errorf("❌ Fact missing id field")
 						continue
@@ -272,7 +272,7 @@ Location(country: "France", city: "Paris", street: "Rue de Rivoli", population: 
 					t.Fatalf("❌ Expected 1 fact, got %d", len(reteFacts))
 				}
 
-				factID, ok := reteFacts[0]["id"].(string)
+				factID, ok := reteFacts[0][FieldNameInternalID].(string)
 				if !ok {
 					t.Fatalf("❌ Fact missing id field")
 				}
@@ -303,7 +303,7 @@ Product(code: 12345, name: "Widget")
 					t.Fatalf("❌ Expected 1 fact, got %d", len(reteFacts))
 				}
 
-				factID, ok := reteFacts[0]["id"].(string)
+				factID, ok := reteFacts[0][FieldNameInternalID].(string)
 				if !ok {
 					t.Fatalf("❌ Fact missing id field")
 				}
@@ -398,7 +398,7 @@ Event(timestamp: 1234567890, message: "test")
 
 		ids := make([]string, len(reteFacts))
 		for j, fact := range reteFacts {
-			factID, ok := fact["id"].(string)
+			factID, ok := fact[FieldNameInternalID].(string)
 			if !ok {
 				t.Fatalf("❌ Fact %d missing id field in iteration %d", j, i)
 			}
@@ -471,7 +471,7 @@ Person(nom: "Bob", age: 25)
 
 	// Vérifier que les IDs sont générés avec hash (pas de PK)
 	for i, fact := range reteFacts {
-		factID, ok := fact["id"].(string)
+		factID, ok := fact[FieldNameInternalID].(string)
 		if !ok {
 			t.Errorf("❌ Fact %d missing id field", i)
 			continue

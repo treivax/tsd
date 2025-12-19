@@ -869,24 +869,20 @@ func TestEvaluator_AccessIDField(t *testing.T) {
 		}
 	})
 
-	t.Run("utilisation de la constante FieldNameID", func(t *testing.T) {
-		// Vérifier que la constante FieldNameID est bien définie
-		if FieldNameID != "id" {
-			t.Errorf("❌ FieldNameID = %v, attendu 'id'", FieldNameID)
+	t.Run("accès à _id_ interdit", func(t *testing.T) {
+		// Vérifier que la constante FieldNameID est bien mise à jour
+		if FieldNameID != "_id_" {
+			t.Errorf("❌ FieldNameID = %v, attendu '_id_'", FieldNameID)
 		} else {
 			t.Logf("✅ Constante FieldNameID = %v", FieldNameID)
 		}
 
-		// Utiliser la constante dans l'évaluation
-		idValue, err := evaluator.evaluateFieldAccessByName("p", FieldNameID)
-		if err != nil {
-			t.Fatalf("❌ Accès avec FieldNameID erreur = %v", err)
-		}
-
-		if idValue != "Person~Alice" {
-			t.Errorf("❌ Accès avec FieldNameID = %v, attendu %v", idValue, "Person~Alice")
+		// Tenter d'utiliser la constante dans l'évaluation - devrait échouer
+		_, err := evaluator.evaluateFieldAccessByName("p", FieldNameID)
+		if err == nil {
+			t.Errorf("❌ Attendu une erreur pour accès à _id_, reçu nil")
 		} else {
-			t.Logf("✅ Utilisation de FieldNameID réussie")
+			t.Logf("✅ Accès à _id_ correctement interdit: %v", err)
 		}
 	})
 

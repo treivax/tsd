@@ -13,16 +13,26 @@ package rete
 //   - evaluator_operators.go: Opérateurs arithmétiques, chaînes et listes
 //   - evaluator_functions.go: Fonctions intégrées (LENGTH, UPPER, ABS, etc.)
 type AlphaConditionEvaluator struct {
-	variableBindings map[string]*Fact
-	partialEvalMode  bool // Mode d'évaluation partielle pour les jointures en cascade
+	variableBindings    map[string]*Fact
+	partialEvalMode     bool // Mode d'évaluation partielle pour les jointures en cascade
+	fieldResolver       *FieldResolver
+	comparisonEvaluator *ComparisonEvaluator
 }
 
 // NewAlphaConditionEvaluator crée un nouvel évaluateur de conditions
 func NewAlphaConditionEvaluator() *AlphaConditionEvaluator {
 	return &AlphaConditionEvaluator{
-		variableBindings: make(map[string]*Fact),
-		partialEvalMode:  false,
+		variableBindings:    make(map[string]*Fact),
+		partialEvalMode:     false,
+		fieldResolver:       nil,
+		comparisonEvaluator: nil,
 	}
+}
+
+// SetTypeContext configure le contexte de types pour les comparaisons avancées
+func (e *AlphaConditionEvaluator) SetTypeContext(resolver *FieldResolver, compEvaluator *ComparisonEvaluator) {
+	e.fieldResolver = resolver
+	e.comparisonEvaluator = compEvaluator
 }
 
 // EvaluateCondition évalue une condition sur un fait.

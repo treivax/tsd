@@ -765,6 +765,15 @@ func TestPrintResults_Text_Error(t *testing.T) {
 func TestPrintResults_Text_WithActivations(t *testing.T) {
 	config := &Config{Format: "text", Verbose: true}
 
+	// Créer le fait avec SetInternalID
+	testFact := tsdio.Fact{
+		Type: "Person",
+		Fields: map[string]interface{}{
+			"name": "Alice",
+		},
+	}
+	testFact.SetInternalID("f1")
+
 	response := &tsdio.ExecuteResponse{
 		Success:         true,
 		ExecutionTimeMs: 75,
@@ -777,15 +786,7 @@ func TestPrintResults_Text_WithActivations(t *testing.T) {
 					Arguments: []tsdio.ArgumentValue{
 						{Position: 0, Value: "Alice", Type: "string"},
 					},
-					TriggeringFacts: []tsdio.Fact{
-						{
-							ID:   "f1",
-							Type: "Person",
-							Fields: map[string]interface{}{
-								"name": "Alice",
-							},
-						},
-					},
+					TriggeringFacts: []tsdio.Fact{testFact},
 				},
 			},
 		},

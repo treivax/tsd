@@ -1,0 +1,38 @@
+// Scénario de test: Utilisateurs et logins
+// Démontre les affectations de variables et comparaisons de faits
+
+type User(#username: string, email: string, age: number, active: bool)
+type Login(user: User, #sessionId: string, timestamp: number, ipAddress: string)
+type AuditLog(login: Login, action: string, timestamp: number)
+
+// Créer des utilisateurs
+alice = User("alice", "alice@example.com", 30, true)
+bob = User("bob", "bob@example.com", 25, true)
+charlie = User("charlie", "charlie@example.com", 35, false)
+
+// Créer des sessions
+session1 = Login(alice, "SES-001", 1704067200, "192.168.1.10")
+session2 = Login(bob, "SES-002", 1704067260, "192.168.1.11")
+session3 = Login(charlie, "SES-003", 1704067320, "192.168.1.12")
+
+// Créer des logs d'audit
+AuditLog(session1, "login_success", 1704067200)
+AuditLog(session2, "login_success", 1704067260)
+AuditLog(session3, "login_failed", 1704067320)
+
+// Règle 1: Identifier les logins d'utilisateurs actifs
+{u: User, l: Login} / l.user == u && u.active == true ==> 
+    Log("Active user login: " + u.username + " from " + l.ipAddress)
+
+// Règle 2: Auditer les sessions avec utilisateur et log
+{u: User, l: Login, a: AuditLog} / 
+    l.user == u && a.login == l && a.action == "login_success" ==> 
+    Log("Audit: " + u.username + " logged in successfully")
+
+// Règle 3: Alerter pour utilisateurs inactifs
+{u: User, l: Login} / l.user == u && u.active == false ==> 
+    Log("ALERT: Inactive user attempted login: " + u.username)
+
+// Règle 4: Utilisateurs seniors (>= 30 ans)
+{u: User, l: Login} / l.user == u && u.age >= 30 ==> 
+    Log("Senior user login: " + u.username + " (age: " + u.age + ")")

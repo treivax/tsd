@@ -1,0 +1,10 @@
+// Scénario de test: Erreur de variable non définie
+// Ce programme DOIT échouer à la validation
+
+type User(#name: string, age: number)
+type Login(user: User, #email: string)
+
+// alice n'est pas définie
+Login(alice, "test@example.com")
+
+// Ceci devrait être rejeté à la validation

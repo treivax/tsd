@@ -174,9 +174,12 @@ func (av *ActionValidator) inferFieldAccessType(argMap map[string]interface{}, r
 		return "", fmt.Errorf("object '%s' not found in rule", sanitizeForLog(objName, 50))
 	}
 
-	// Le champ 'id' est un champ spécial généré automatiquement, toujours de type string
-	if fieldName == FieldNameID {
-		return "string", nil
+	// Le champ '_id_' est INTERDIT dans les expressions TSD
+	if fieldName == FieldNameInternalID {
+		return "", fmt.Errorf(
+			"le champ '%s' est interne et ne peut pas être accédé dans les expressions",
+			FieldNameInternalID,
+		)
 	}
 
 	typeDef, exists := av.types[objType]

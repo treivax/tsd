@@ -18,19 +18,29 @@ const (
 // Value type constants define the different types of values
 // that can be used in constraints and facts.
 const (
-	ValueTypeString     = "string"
-	ValueTypeNumber     = "number"
-	ValueTypeBoolean    = "boolean" // Primary format
-	ValueTypeBool       = "bool"    // Alias for backward compatibility
-	ValueTypeIdentifier = "identifier"
-	ValueTypeVariable   = "variable"
-	ValueTypeUnknown    = "unknown"
+	ValueTypeString            = "string"
+	ValueTypeNumber            = "number"
+	ValueTypeBoolean           = "boolean" // Primary format
+	ValueTypeBool              = "bool"    // Alias for backward compatibility
+	ValueTypeIdentifier        = "identifier"
+	ValueTypeVariable          = "variable"
+	ValueTypeVariableReference = "variableReference" // Reference to a fact variable
+	ValueTypeUnknown           = "unknown"
 )
 
 // Special field name constants are reserved field names used internally
 // by the RETE network for identification and typing.
 const (
-	FieldNameID       = "id"
+	// FieldNameInternalID is the internal identifier field name.
+	// This field is automatically generated and NEVER accessible in TSD expressions.
+	// It is hidden from users and used only internally by the RETE engine.
+	FieldNameInternalID = "_id_"
+
+	// FieldNameIDLegacy is the old identifier field name.
+	// Deprecated: Use FieldNameInternalID instead.
+	// Kept temporarily for migration purposes only.
+	FieldNameIDLegacy = "id"
+
 	FieldNameReteType = "reteType"
 )
 
@@ -198,3 +208,28 @@ var ValidOperators = getValidOperators()
 // ValidPrimitiveTypes is deprecated: use IsValidPrimitiveType instead
 // Kept for backward compatibility
 var ValidPrimitiveTypes = getValidPrimitiveTypes()
+
+// IsPrimitiveType checks if a type name is a primitive type
+func IsPrimitiveType(typeName string) bool {
+	return ValidPrimitiveTypes[typeName]
+}
+
+// NormalizeTypeName normalizes type names to their canonical form
+// Example: "boolean" -> "bool" (although we actually use "boolean" as primary)
+func NormalizeTypeName(typeName string) string {
+	// In TSD, "boolean" is the primary format and "bool" is the alias
+	// But for consistency with Go, we could normalize bool -> boolean if needed
+	// For now, keep both as valid
+	return typeName
+}
+
+// GetPrimitiveTypesSet returns a new map of primitive types
+// Use this function instead of recreating the map in each function
+func GetPrimitiveTypesSet() map[string]bool {
+	return map[string]bool{
+		ValueTypeString:  true,
+		ValueTypeNumber:  true,
+		ValueTypeBoolean: true,
+		ValueTypeBool:    true,
+	}
+}

@@ -59,6 +59,11 @@ func ValidateFacts(program Program) error {
 
 // ValidateFactFieldType vérifie que la valeur d'un champ de fait correspond au type attendu
 func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName string) error {
+	return validateFactFieldTypeValue(value, expectedType, typeName, fieldName)
+}
+
+// validateFactFieldTypeValue performs the actual validation of a fact field type
+func validateFactFieldTypeValue(value FactValue, expectedType, typeName, fieldName string) error {
 	switch expectedType {
 	case ValueTypeString:
 		if value.Type != ValueTypeString && value.Type != ValueTypeIdentifier {
@@ -73,11 +78,12 @@ func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName st
 			return fmt.Errorf("champ '%s' du type %s attend une valeur boolean, reçu %s", fieldName, typeName, value.Type)
 		}
 	default:
-		// Type non primitif : vérifier si c'est un type valide défini
-		// Les types personnalisés et futurs types primitifs doivent être validés explicitement
-		if !ValidPrimitiveTypes[expectedType] {
-			// Type personnalisé ou non standard accepté pour extensibilité
-			// TODO: Valider que le type personnalisé existe dans le programme
+		// Type non primitif : accepter les types personnalisés
+		// La validation complète des types personnalisés est faite par FactValidator
+		// qui a accès au TypeSystem
+		if !IsPrimitiveType(expectedType) {
+			// Accepter les variableReference et les types personnalisés
+			// La résolution et validation complète se fait plus tard
 			return nil
 		}
 		// Type primitif non géré dans le switch - erreur de validation
@@ -86,23 +92,54 @@ func ValidateFactFieldType(value FactValue, expectedType, typeName, fieldName st
 	return nil
 }
 
-// ConvertFactsToReteFormat convertit les faits parsés par la grammaire vers le format attendu par le réseau RETE
+// ConvertFactsToReteFormat convertit les faits parsés par la grammaire vers le format attendu par le réseau RETE.
+// Gère les affectations de variables et les références entre faits.
 func ConvertFactsToReteFormat(program Program) ([]map[string]interface{}, error) {
-	reteFacts := make([]map[string]interface{}, 0, len(program.Facts))
-	typeMap := buildTypeMap(program.Types)
+	// Normaliser les types de valeurs de faits
+	normalizeFactValueTypes(&program)
 
+	// Créer le contexte avec les types
+	ctx := NewFactContext(program.Types)
+
+	typeMap := buildTypeMap(program.Types)
+	var reteFacts []map[string]interface{}
+
+	// 1. Traiter d'abord les affectations de variables
+	for i, assignment := range program.FactAssignments {
+		typeDef, exists := typeMap[assignment.Fact.TypeName]
+		if !exists {
+			return nil, fmt.Errorf("affectation %d: type '%s' non défini", i+1, assignment.Fact.TypeName)
+		}
+
+		reteFact := createReteFact(assignment.Fact, typeDef, ctx)
+		factID, err := ensureFactID(reteFact, assignment.Fact, typeDef, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("affectation %d: %v", i+1, err)
+		}
+
+		reteFact[FieldNameInternalID] = factID
+		reteFact[FieldNameReteType] = assignment.Fact.TypeName
+
+		// Enregistrer la variable dans le contexte
+		ctx.RegisterVariable(assignment.Variable, factID)
+
+		reteFacts = append(reteFacts, reteFact)
+	}
+
+	// 2. Traiter les faits normaux (peuvent référencer les variables)
 	for i, fact := range program.Facts {
 		typeDef, exists := typeMap[fact.TypeName]
 		if !exists {
 			return nil, fmt.Errorf("fait %d: type '%s' non défini", i+1, fact.TypeName)
 		}
 
-		reteFact := createReteFact(fact, typeDef)
-		factID, err := ensureFactID(reteFact, fact, typeDef)
+		reteFact := createReteFact(fact, typeDef, ctx)
+		factID, err := ensureFactID(reteFact, fact, typeDef, ctx)
 		if err != nil {
 			return nil, fmt.Errorf("fait %d: %v", i+1, err)
 		}
-		reteFact[FieldNameID] = factID
+
+		reteFact[FieldNameInternalID] = factID
 		reteFact[FieldNameReteType] = fact.TypeName
 
 		reteFacts = append(reteFacts, reteFact)
@@ -121,34 +158,46 @@ func buildTypeMap(types []TypeDefinition) map[string]TypeDefinition {
 }
 
 // createReteFact crée un fait RETE avec les champs convertis.
-func createReteFact(fact Fact, typeDef TypeDefinition) map[string]interface{} {
+// Résout les références de variables vers leurs IDs.
+func createReteFact(fact Fact, typeDef TypeDefinition, ctx *FactContext) map[string]interface{} {
 	reteFact := map[string]interface{}{
 		FieldNameReteType: fact.TypeName,
 	}
-	convertFactFieldsToMap(fact.Fields, reteFact)
+	convertFactFieldsToMap(fact.Fields, reteFact, ctx)
 	return reteFact
 }
 
-// convertFactFieldsToMap converts fact fields to a map, handling value conversion.
-func convertFactFieldsToMap(fields []FactField, targetMap map[string]interface{}) {
+// convertFactFieldsToMap converts fact fields to a map, handling value conversion and variable resolution.
+func convertFactFieldsToMap(fields []FactField, targetMap map[string]interface{}, ctx *FactContext) {
 	for _, field := range fields {
+		// Si c'est une référence de variable, résoudre vers l'ID
+		if field.Value.Type == ValueTypeVariableReference {
+			if varName, ok := field.Value.Value.(string); ok && ctx != nil {
+				if id, err := ctx.ResolveVariable(varName); err == nil {
+					targetMap[field.Name] = id
+					continue
+				}
+			}
+		}
+		// Sinon, utiliser la valeur unwrapped
 		targetMap[field.Name] = field.Value.Unwrap()
 	}
 }
 
-// ensureFactID ensures a fact has an ID, generating one if necessary using primary keys or hash.
-func ensureFactID(reteFact map[string]interface{}, fact Fact, typeDef TypeDefinition) (string, error) {
-	// Check if ID was explicitly provided (should be prevented by validation)
-	if id, exists := reteFact[FieldNameID]; exists {
-		if idStr, ok := id.(string); ok && idStr != "" {
-			// ID was provided, this should have been caught by validation
-			// but we allow it for backward compatibility in some cases
-			return idStr, nil
-		}
+// ensureFactID generates an internal ID for a fact with support for variable resolution.
+// The ID is ALWAYS generated, never provided manually.
+func ensureFactID(reteFact map[string]interface{}, fact Fact, typeDef TypeDefinition, ctx *FactContext) (string, error) {
+	// Vérifier que _id_ n'a PAS été fourni manuellement
+	if _, exists := reteFact[FieldNameInternalID]; exists {
+		return "", fmt.Errorf(
+			"le champ '%s' ne peut pas être défini manuellement pour le type '%s'",
+			FieldNameInternalID,
+			fact.TypeName,
+		)
 	}
 
-	// Generate ID based on primary key or hash
-	id, err := GenerateFactID(fact, typeDef)
+	// TOUJOURS générer l'ID avec le contexte
+	id, err := GenerateFactID(fact, typeDef, ctx)
 	if err != nil {
 		return "", fmt.Errorf("génération d'ID pour le fait de type '%s': %v", fact.TypeName, err)
 	}

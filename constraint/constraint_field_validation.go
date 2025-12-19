@@ -29,9 +29,12 @@ func ValidateFieldAccess(program Program, fieldAccess FieldAccess, expressionInd
 		return fmt.Errorf("in expression %d: %v", expressionIndex+1, err)
 	}
 
-	// Le champ 'id' est un champ spécial généré automatiquement, toujours disponible
-	if fieldAccess.Field == FieldNameID {
-		return nil
+	// Le champ '_id_' est INTERDIT dans les expressions TSD
+	if fieldAccess.Field == FieldNameInternalID {
+		return fmt.Errorf(
+			"le champ '%s' est interne et ne peut pas être accédé dans les expressions",
+			FieldNameInternalID,
+		)
 	}
 
 	// Vérifier que le champ existe dans le type
@@ -140,9 +143,12 @@ func GetFieldType(program Program, object string, field string, expressionIndex 
 		return "", err
 	}
 
-	// Le champ 'id' est un champ spécial généré automatiquement, toujours de type string
-	if field == FieldNameID {
-		return "string", nil
+	// Le champ '_id_' est INTERDIT dans les expressions TSD
+	if field == FieldNameInternalID {
+		return "", fmt.Errorf(
+			"le champ '%s' est interne et ne peut pas être accédé dans les expressions",
+			FieldNameInternalID,
+		)
 	}
 
 	// Trouver le type du champ dans la définition du type

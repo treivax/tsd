@@ -1,0 +1,34 @@
+// Démonstration de la nouvelle syntaxe TSD
+// Affectations de variables et comparaisons de faits
+
+// Définition des types
+type User(#username: string, email: string, role: string)
+type Post(author: User, #postId: string, title: string, content: string, likes: number)
+type Comment(post: Post, author: User, #commentId: string, text: string)
+
+// Créer des utilisateurs avec affectation
+alice = User("alice", "alice@example.com", "admin")
+bob = User("bob", "bob@example.com", "user")
+charlie = User("charlie", "charlie@example.com", "moderator")
+
+// Créer des posts
+post1 = Post(alice, "POST-001", "Welcome to TSD", "This is the new syntax!", 42)
+post2 = Post(bob, "POST-002", "Question about types", "How do fact types work?", 15)
+
+// Créer des commentaires
+Comment(post1, bob, "COM-001", "Great feature!")
+Comment(post1, charlie, "COM-002", "Very useful!")
+Comment(post2, alice, "COM-003", "Check the documentation")
+
+// Règle 1: Posts d'admin
+{u: User, p: Post} / p.author == u && u.role == "admin" ==> 
+    Log("Admin post: " + p.title + " by " + u.username)
+
+// Règle 2: Commentaires sur posts populaires
+{p: Post, c: Comment, u: User} / 
+    c.post == p && c.author == u && p.likes > 20 ==> 
+    Log(u.username + " commented on popular post: " + p.title)
+
+// Règle 3: Auto-commentaires
+{p: Post, c: Comment} / c.post == p && c.author == p.author ==> 
+    Log("Self-comment detected on post: " + p.title)

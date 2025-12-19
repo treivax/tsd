@@ -116,10 +116,10 @@ func extractFacts(token *rete.Token) []tsdio.Fact {
 		}
 
 		f := tsdio.Fact{
-			ID:     fact.ID,
 			Type:   fact.Type,
 			Fields: fields,
 		}
+		f.SetInternalID(fact.ID)
 		facts = append(facts, f)
 	}
 

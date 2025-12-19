@@ -46,25 +46,17 @@ func ValidateTypePrimaryKey(typeDef TypeDefinition) error {
 }
 
 // ValidateFactPrimaryKey valide qu'un fait respecte les contraintes de clé primaire.
-// - Le fait ne doit PAS définir le champ 'id' manuellement SAUF si 'id' est déclaré comme clé primaire
+// - Le fait ne doit JAMAIS définir le champ '_id_' manuellement
 // - Tous les champs de clé primaire doivent être fournis
 func ValidateFactPrimaryKey(fact Fact, typeDef TypeDefinition) error {
-	// Vérifier si 'id' est un champ de clé primaire dans le type
-	pkFieldNames := typeDef.GetPrimaryKeyFieldNames()
-	idIsPrimaryKey := false
-	for _, name := range pkFieldNames {
-		if name == FieldNameID {
-			idIsPrimaryKey = true
-			break
-		}
-	}
-
-	// Vérifier que le fait ne définit pas 'id' manuellement (sauf si c'est une clé primaire)
+	// Vérifier que _id_ n'est JAMAIS défini manuellement
 	for _, factField := range fact.Fields {
-		if factField.Name == FieldNameID && !idIsPrimaryKey {
+		if factField.Name == FieldNameInternalID {
 			return fmt.Errorf(
-				"fait de type '%s': le champ 'id' ne peut pas être défini manuellement (il est généré automatiquement). Si vous souhaitez utiliser 'id' comme identifiant, déclarez-le comme clé primaire (#id: type)",
-				fact.TypeName)
+				"fait de type '%s': le champ '%s' est réservé au système et ne peut pas être défini manuellement",
+				fact.TypeName,
+				FieldNameInternalID,
+			)
 		}
 	}
 

@@ -40,14 +40,16 @@ rule young : {p: Person} / p.age < 18 ==> print("Young person")
 		t.Errorf("Attendu 3 TerminalNodes, obtenu %d", stats["terminal_nodes"].(int))
 	}
 	// Soumettre des faits et vérifier le comportement
+	// Les IDs sont fournis directement car c'est le test du réseau RETE
+	// En production, les IDs seraient générés automatiquement par le pipeline d'ingestion
 	facts := []Fact{
-		{ID: "P1", Type: "Person", Fields: map[string]interface{}{"age": 25, "name": "Alice"}},
-		{ID: "P2", Type: "Person", Fields: map[string]interface{}{"age": 70, "name": "Bob"}},
-		{ID: "P3", Type: "Person", Fields: map[string]interface{}{"age": 15, "name": "Charlie"}},
+		{ID: "Alice", Type: "Person", Fields: map[string]interface{}{"age": 25.0, "name": "Alice"}},
+		{ID: "Bob", Type: "Person", Fields: map[string]interface{}{"age": 70.0, "name": "Bob"}},
+		{ID: "Charlie", Type: "Person", Fields: map[string]interface{}{"age": 15.0, "name": "Charlie"}},
 	}
-	for _, fact := range facts {
+	for i, fact := range facts {
 		if err := network.SubmitFact(&fact); err != nil {
-			t.Errorf("Erreur ajout fait %s: %v", fact.ID, err)
+			t.Errorf("Erreur ajout fait %d: %v", i, err)
 		}
 	}
 	// Vérifier les activations
@@ -56,9 +58,9 @@ rule young : {p: Person} / p.age < 18 ==> print("Young person")
 		memory := terminalNode.GetMemory()
 		activatedCount += len(memory.Tokens)
 	}
-	// P1 (25 ans) devrait activer 'adult'
-	// P2 (70 ans) devrait activer 'adult' et 'senior'
-	// P3 (15 ans) devrait activer 'young'
+	// Alice (25 ans) devrait activer 'adult'
+	// Bob (70 ans) devrait activer 'adult' et 'senior'
+	// Charlie (15 ans) devrait activer 'young'
 	// Total: 4 activations
 	if activatedCount != 4 {
 		t.Errorf("Attendu 4 activations, obtenu %d", activatedCount)
@@ -94,18 +96,18 @@ rule vip_customer : {c: Customer} / c.vip == 1 ==> print("VIP customer")
 	}
 	// Test 2: Ajout de faits
 	customer := Fact{
-		ID:   "C1",
+		ID:   "Alice",
 		Type: "Customer",
 		Fields: map[string]interface{}{
 			"name": "Alice",
-			"vip":  1,
+			"vip":  1.0,
 		},
 	}
 	order := Fact{
-		ID:   "O1",
+		ID:   "order1",
 		Type: "Order",
 		Fields: map[string]interface{}{
-			"amount": 1500,
+			"amount": 1500.0,
 		},
 	}
 	if err := network.SubmitFact(&customer); err != nil {
@@ -131,7 +133,8 @@ rule vip_customer : {c: Customer} / c.vip == 1 ==> print("VIP customer")
 		}
 	}
 	// Test 4: Suppression de fait
-	if err := network.RetractFact("Order_O1"); err != nil {
+	// L'identifiant interne est: Type_ID
+	if err := network.RetractFact("Order_order1"); err != nil {
 		t.Fatalf("Erreur suppression fait: %v", err)
 	}
 	activatedCount = 0
@@ -223,27 +226,28 @@ rule active_account : {a: Account} / a.active == 1 ==> print("Active")`,
 				t.Errorf("Aucun TerminalNode créé")
 			}
 			// Ajouter des faits de test appropriés
+			// Les IDs sont fournis directement pour les tests unitaires
 			switch tt.name {
 			case "Single condition":
-				network.SubmitFact(&Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"age": 25}})
-				network.SubmitFact(&Fact{ID: "P2", Type: "Person", Fields: map[string]interface{}{"age": 15}})
+				network.SubmitFact(&Fact{ID: "p1", Type: "Person", Fields: map[string]interface{}{"age": 25.0}})
+				network.SubmitFact(&Fact{ID: "p2", Type: "Person", Fields: map[string]interface{}{"age": 15.0}})
 			case "Multiple conditions AND":
-				network.SubmitFact(&Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"age": 25, "name": "Alice"}})
-				network.SubmitFact(&Fact{ID: "P2", Type: "Person", Fields: map[string]interface{}{"age": 25, "name": "Bob"}})
+				network.SubmitFact(&Fact{ID: "p1", Type: "Person", Fields: map[string]interface{}{"age": 25.0, "name": "Alice"}})
+				network.SubmitFact(&Fact{ID: "p2", Type: "Person", Fields: map[string]interface{}{"age": 25.0, "name": "Bob"}})
 			case "Multiple conditions OR":
-				network.SubmitFact(&Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"age": 15}})
-				network.SubmitFact(&Fact{ID: "P2", Type: "Person", Fields: map[string]interface{}{"age": 70}})
-				network.SubmitFact(&Fact{ID: "P3", Type: "Person", Fields: map[string]interface{}{"age": 30}})
+				network.SubmitFact(&Fact{ID: "p1", Type: "Person", Fields: map[string]interface{}{"age": 15.0}})
+				network.SubmitFact(&Fact{ID: "p2", Type: "Person", Fields: map[string]interface{}{"age": 70.0}})
+				network.SubmitFact(&Fact{ID: "p3", Type: "Person", Fields: map[string]interface{}{"age": 30.0}})
 			case "Numeric comparisons":
-				network.SubmitFact(&Fact{ID: "P1", Type: "Product", Fields: map[string]interface{}{"price": 150}})
-				network.SubmitFact(&Fact{ID: "P2", Type: "Product", Fields: map[string]interface{}{"price": 30}})
-				network.SubmitFact(&Fact{ID: "P3", Type: "Product", Fields: map[string]interface{}{"price": 75}})
+				network.SubmitFact(&Fact{ID: "prod1", Type: "Product", Fields: map[string]interface{}{"price": 150.0}})
+				network.SubmitFact(&Fact{ID: "prod2", Type: "Product", Fields: map[string]interface{}{"price": 30.0}})
+				network.SubmitFact(&Fact{ID: "prod3", Type: "Product", Fields: map[string]interface{}{"price": 75.0}})
 			case "String equality":
-				network.SubmitFact(&Fact{ID: "U1", Type: "User", Fields: map[string]interface{}{"role": "admin"}})
-				network.SubmitFact(&Fact{ID: "U2", Type: "User", Fields: map[string]interface{}{"role": "user"}})
+				network.SubmitFact(&Fact{ID: "u1", Type: "User", Fields: map[string]interface{}{"role": "admin"}})
+				network.SubmitFact(&Fact{ID: "u2", Type: "User", Fields: map[string]interface{}{"role": "user"}})
 			case "Boolean conditions":
-				network.SubmitFact(&Fact{ID: "A1", Type: "Account", Fields: map[string]interface{}{"active": 1}})
-				network.SubmitFact(&Fact{ID: "A2", Type: "Account", Fields: map[string]interface{}{"active": 0}})
+				network.SubmitFact(&Fact{ID: "a1", Type: "Account", Fields: map[string]interface{}{"active": 1.0}})
+				network.SubmitFact(&Fact{ID: "a2", Type: "Account", Fields: map[string]interface{}{"active": 0.0}})
 			}
 			// Vérifier le nombre d'activations
 			activatedCount := 0
@@ -292,10 +296,10 @@ rule r4 : {p: Person} / p.name == 'Alice' ==> print("R4")
 	}
 	// Soumettre un fait et vérifier qu'il est propagé à toutes les règles
 	fact := Fact{
-		ID:   "P1",
+		ID:   "Alice",
 		Type: "Person",
 		Fields: map[string]interface{}{
-			"age":  55,
+			"age":  55.0,
 			"name": "Alice",
 		},
 	}
@@ -398,8 +402,8 @@ rule teenager : {p: Person} / p.age >= 13 AND p.age < 18 ==> print("Teen")
 		t.Errorf("Attendu 2 TerminalNodes après suppression, obtenu %d", afterTerminalCount)
 	}
 	// Vérifier que les règles restantes fonctionnent toujours
-	fact1 := Fact{ID: "P1", Type: "Person", Fields: map[string]interface{}{"age": 70}}
-	fact2 := Fact{ID: "P2", Type: "Person", Fields: map[string]interface{}{"age": 15}}
+	fact1 := Fact{ID: "senior1", Type: "Person", Fields: map[string]interface{}{"age": 70.0}}
+	fact2 := Fact{ID: "teen1", Type: "Person", Fields: map[string]interface{}{"age": 15.0}}
 	network.SubmitFact(&fact1)
 	network.SubmitFact(&fact2)
 	activatedCount := 0
@@ -407,7 +411,7 @@ rule teenager : {p: Person} / p.age >= 13 AND p.age < 18 ==> print("Teen")
 		memory := terminalNode.GetMemory()
 		activatedCount += len(memory.Tokens)
 	}
-	// P1 devrait activer 'senior', P2 devrait activer 'teenager'
+	// senior1 devrait activer 'senior', teen1 devrait activer 'teenager'
 	if activatedCount != 2 {
 		t.Errorf("Attendu 2 activations, obtenu %d", activatedCount)
 	}
@@ -451,10 +455,10 @@ rule r5 : {p: Person} / p.age > 30 AND p.name == 'Alice' ==> print("R5")
 	}
 	// Ajouter un fait et vérifier que le traitement est efficace
 	fact := Fact{
-		ID:   "P1",
+		ID:   "person1",
 		Type: "Person",
 		Fields: map[string]interface{}{
-			"age":     35,
+			"age":     35.0,
 			"name":    "Alice",
 			"country": "USA",
 		},
