@@ -2,6 +2,58 @@
 
 ## [Unreleased]
 
+### Removed
+- 🧹 **Pattern Factory Obsolète** - Suppression du pattern factory pour xuple-spaces
+  - **Types supprimés** :
+    - `rete.XupleSpaceFactoryFunc` : Type de factory obsolète
+  - **Méthodes supprimées** :
+    - `network.SetXupleSpaceFactory()` : Configuration manuelle obsolète
+    - `network.GetXupleSpaceFactory()` : Récupération de factory obsolète
+  - **Fonctions supprimées** :
+    - `api.createXupleSpaceFactory()` : Création de factory obsolète
+  - **Outil supprimé** :
+    - `cmd/xuple-report/` : Outil de démonstration utilisant ancienne API
+  - **Impact** :
+    - ⚠️ **BREAKING CHANGE** : Les utilisateurs utilisant directement `SetXupleSpaceFactory()` doivent migrer vers l'API publique du package `api`
+    - ✅ Architecture simplifiée sans dépendances circulaires
+    - ✅ ~320 lignes de code supprimées
+
+### Changed
+- 🔄 **Architecture Xuples** - Refactoring complet du flow de création des xuple-spaces
+  - **Callback Pattern** :
+    - Ajout de `ConstraintPipeline.SetOnXupleSpacesDetected()` pour configuration interne
+    - Les xuple-spaces sont créés automatiquement AU BON MOMENT (avant soumission des faits inline)
+    - Plus de configuration manuelle requise
+  - **Avantages** :
+    - ✅ Timing garanti : xuple-spaces existent quand l'action Xuple s'exécute
+    - ✅ Plus simple : pas de factory à configurer
+    - ✅ Plus propre : pas de dépendances circulaires rete ↔ xuples
+  - **Migration** :
+    ```go
+    // AVANT (v1.x) - OBSOLETE
+    network.SetXupleSpaceFactory(func(...) { ... })
+    pipeline := rete.NewConstraintPipeline(network, storage)
+    
+    // APRÈS (v2.0) - AUTOMATIQUE
+    pipeline := api.NewPipeline()
+    result, err := pipeline.IngestFile("rules.tsd")
+    // Les xuple-spaces sont créés automatiquement !
+    ```
+  - **Fichiers modifiés** :
+    - `rete/network.go` : Suppression factory, simplification
+    - `rete/constraint_pipeline.go` : Callback pattern
+    - `rete/constraint_pipeline_orchestration.go` : Support callback dans contexte
+    - `api/pipeline.go` : Refactoring pour callback
+  - **Tests** :
+    - ✅ Tous les tests du package `api` passent (30/30)
+    - ✅ Tous les tests du package `xuples` passent (47/47)
+    - ✅ Aucune régression identifiée
+
+### Fixed
+- 🐛 **Timing de Création Xuples** - Les xuple-spaces sont maintenant créés AVANT la soumission des faits inline
+  - **Problème résolu** : Erreur "xuple-space not found" quand un fait inline utilisait l'action Xuple
+  - **Solution** : Callback appelé immédiatement après détection des xuple-spaces, avant soumission des faits
+
 ### Added
 - ✨ **Actions CRUD Dynamiques** - Implémentation complète des actions Update, Insert, Retract
   - **3 nouvelles méthodes RETE** :
