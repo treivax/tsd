@@ -31,20 +31,26 @@ const (
 	// Valeurs attendues pour le programme de test
 	ExpectedFactsCount       = 2
 	ExpectedActivationsCount = 1
-	ExpectedAdultActionName  = "adult"
-	ExpectedAdultArgument    = "p1"
+	ExpectedXupleSpaceName   = "adults"
+	ExpectedXuplesCount      = 1
+	ExpectedPersonId         = "p1"
 )
 
 const (
 	// SimpleTSDProgram est un programme TSD simple pour les tests E2E
-	SimpleTSDProgram = `type Person(#id: string, age: number)
+	// Utilise l'action Xuple pour créer des xuples (respecte la contrainte architecturale)
+	SimpleTSDProgram = `xuple-space adults {
+	selection: fifo
+	consumption: once
+}
 
-action adult(id: string)
+type Person(personId: string, age: number)
+type AdultRecord(personId: string, age: number)
 
-rule adult_check : {p: Person} / p.age >= 18 ==> adult(p.id)
+rule adult_check : {p: Person} / p.age >= 18 ==> Xuple("adults", AdultRecord(personId: p.personId, age: p.age))
 
-Person(id:p1, age:25)
-Person(id:p2, age:15)`
+Person(personId:p1, age:25)
+Person(personId:p2, age:15)`
 
 	// InvalidTSDProgram est un programme invalide pour tester la gestion d'erreurs
 	InvalidTSDProgram = `rule broken_rule : {x: Unknown} / x > 0 ==> action()`

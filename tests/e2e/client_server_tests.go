@@ -106,10 +106,18 @@ func testCompleteRoundtrip(ctx *testContext) {
 
 	// Vérifier action déclenchée
 	activation := response.Results.Activations[0]
-	if activation.ActionName != ExpectedAdultActionName {
-		ctx.t.Errorf("❌ Action = '%s', attendu '%s'", activation.ActionName, ExpectedAdultActionName)
+	expectedActionName := "Xuple"
+	if activation.ActionName != expectedActionName {
+		ctx.t.Errorf("❌ Action = '%s', attendu '%s'", activation.ActionName, expectedActionName)
 	} else {
 		ctx.t.Logf("✅ Activation correcte: %s avec %d arguments", activation.ActionName, len(activation.Arguments))
+		
+		// Vérifier que c'est bien le xuple-space "adults"
+		if len(activation.Arguments) > 0 {
+			if xuplespace, ok := activation.Arguments[0].Value.(string); ok && xuplespace == ExpectedXupleSpaceName {
+				ctx.t.Logf("✅ Xuple créé dans l'espace '%s'", xuplespace)
+			}
+		}
 	}
 
 	ctx.t.Log("✅ TEST ROUNDTRIP COMPLET RÉUSSI")
