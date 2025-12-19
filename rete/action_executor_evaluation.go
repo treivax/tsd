@@ -119,6 +119,10 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 		// Cas 5: Modification de fait
 		return ae.evaluateFactModification(argMap, ctx)
 
+	case "inlineFact":
+		// Cas 6: Fait inline (dans action)
+		return ae.evaluateInlineFact(argMap, ctx)
+
 	case "arithmetic":
 		// Expression arithmétique (format legacy)
 		return ae.evaluateArithmetic(argMap, ctx)

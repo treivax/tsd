@@ -88,3 +88,21 @@ func (ctx *ExecutionContext) GetVariable(name string) *Fact {
 	}
 	return ctx.bindings.Get(name)
 }
+
+// GetToken retourne le token du contexte d'exécution.
+//
+// Le token contient les faits déclencheurs et les bindings.
+//
+// Retourne:
+//   - *Token: token du contexte (peut être nil)
+func (ctx *ExecutionContext) GetToken() *Token {
+	return ctx.token
+}
+
+// GetBindings retourne la chaîne de bindings du contexte.
+//
+// Retourne:
+//   - *BindingChain: chaîne de bindings (peut être nil)
+func (ctx *ExecutionContext) GetBindings() *BindingChain {
+	return ctx.bindings
+}

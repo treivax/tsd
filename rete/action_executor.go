@@ -72,13 +72,26 @@ func NewActionExecutor(network *ReteNetwork, logger *log.Logger) *ActionExecutor
 //
 // Actions enregistrées :
 //   - print : affichage de valeurs
+//   - Xuple : création de xuples (si XupleHandler configuré dans le network)
 //
 // Cette méthode est appelée automatiquement par NewActionExecutor.
+// L'action Xuple est enregistrée automatiquement si un handler Xuple est
+// configuré dans le réseau RETE via SetXupleHandler().
 func (ae *ActionExecutor) RegisterDefaultActions() {
 	// Enregistrer l'action print
 	printAction := NewPrintAction(nil)
 	if err := ae.registry.Register(printAction); err != nil {
 		ae.logger.Printf("⚠️  Erreur enregistrement action print: %v", err)
+	}
+
+	// Enregistrer l'action Xuple si un handler est configuré
+	if ae.network != nil && ae.network.GetXupleHandler() != nil {
+		xupleAction := NewXupleAction(ae.network)
+		if err := ae.registry.Register(xupleAction); err != nil {
+			ae.logger.Printf("⚠️  Erreur enregistrement action Xuple: %v", err)
+		} else {
+			ae.logger.Printf("✅ Action Xuple enregistrée automatiquement")
+		}
 	}
 }
 
@@ -90,6 +103,35 @@ func (ae *ActionExecutor) GetRegistry() *ActionRegistry {
 // RegisterAction enregistre une action personnalisée.
 func (ae *ActionExecutor) RegisterAction(handler ActionHandler) error {
 	return ae.registry.Register(handler)
+}
+
+// RegisterXupleActionIfNeeded enregistre l'action Xuple si un handler est configuré
+// et que l'action n'est pas déjà enregistrée.
+//
+// Cette méthode est utile lorsque le XupleHandler est configuré après la création
+// de l'ActionExecutor (par exemple, lors de l'ingestion d'un fichier TSD).
+//
+// Retourne :
+//   - error : erreur si l'enregistrement échoue (nil si déjà enregistrée ou pas de handler)
+func (ae *ActionExecutor) RegisterXupleActionIfNeeded() error {
+	// Vérifier si le handler Xuple est configuré
+	if ae.network == nil || ae.network.GetXupleHandler() == nil {
+		return nil
+	}
+
+	// Vérifier si l'action est déjà enregistrée
+	if ae.registry.Has("Xuple") {
+		return nil
+	}
+
+	// Enregistrer l'action Xuple
+	xupleAction := NewXupleAction(ae.network)
+	if err := ae.registry.Register(xupleAction); err != nil {
+		return fmt.Errorf("erreur enregistrement action Xuple: %w", err)
+	}
+
+	ae.logger.Printf("✅ Action Xuple enregistrée automatiquement")
+	return nil
 }
 
 // SetLogging active ou désactive le logging des actions

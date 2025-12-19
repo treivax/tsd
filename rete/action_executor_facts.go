@@ -161,3 +161,96 @@ func (ae *ActionExecutor) evaluateFactModification(argMap map[string]interface{}
 
 	return modifiedFact, nil
 }
+
+// evaluateInlineFact évalue un fait inline créé dans une action.
+//
+// Les faits inline utilisent le format du parser PEG avec une liste de champs
+// contenant des maps avec "name" et "value".
+//
+// Validation :
+//   - Vérifie que le contexte contient un network valide
+//   - Vérifie que le type existe dans le network
+//   - Valide tous les champs selon la définition de type
+//   - Évalue récursivement toutes les expressions dans les valeurs de champs
+//
+// Paramètres :
+//   - argMap : map contenant "typeName" et "fields" (liste de {name, value})
+//   - ctx : contexte d'exécution avec bindings des variables
+//
+// Retourne :
+//   - interface{} : nouveau fait créé avec valeurs évaluées
+//   - error : erreur si validation ou évaluation échoue
+//
+// Exemple d'utilisation dans une règle TSD :
+//
+//	rule alert: {s: Sensor} / s.temp > 40.0 ==>
+//	    Xuple("alerts", Alert(
+//	        level: "HIGH",
+//	        sensorId: s.id,
+//	        temperature: s.temp
+//	    ))
+func (ae *ActionExecutor) evaluateInlineFact(argMap map[string]interface{}, ctx *ExecutionContext) (interface{}, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("contexte d'exécution nil")
+	}
+	if ctx.network == nil {
+		return nil, fmt.Errorf("network non disponible dans le contexte")
+	}
+
+	typeName, ok := argMap["typeName"].(string)
+	if !ok {
+		return nil, fmt.Errorf("typeName manquant dans inlineFact")
+	}
+
+	// Vérifier que le type existe
+	typeDef := ctx.network.GetTypeDefinition(typeName)
+	if typeDef == nil {
+		return nil, fmt.Errorf("type '%s' non défini", typeName)
+	}
+
+	// Extraire la liste de champs (format du parser PEG)
+	fieldsArray, ok := argMap["fields"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("champs manquants ou format invalide dans inlineFact")
+	}
+
+	// Convertir le format liste en map et évaluer les valeurs
+	evaluatedFields := make(map[string]interface{})
+	for _, fieldItem := range fieldsArray {
+		fieldMap, ok := fieldItem.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("format de champ invalide dans inlineFact")
+		}
+
+		fieldName, ok := fieldMap["name"].(string)
+		if !ok {
+			return nil, fmt.Errorf("nom de champ manquant dans inlineFact")
+		}
+
+		fieldValue, ok := fieldMap["value"]
+		if !ok {
+			return nil, fmt.Errorf("valeur de champ manquante pour '%s' dans inlineFact", fieldName)
+		}
+
+		// Évaluer la valeur du champ (peut être une expression, référence, etc.)
+		evaluated, err := ae.evaluateArgument(fieldValue, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("erreur évaluation champ '%s': %w", fieldName, err)
+		}
+		evaluatedFields[fieldName] = evaluated
+	}
+
+	// Valider la cohérence avec la définition de type
+	if err := ae.validateFactFields(typeDef, evaluatedFields); err != nil {
+		return nil, fmt.Errorf("validation inline fact: %w", err)
+	}
+
+	// Créer le nouveau fait avec un ID unique
+	newFact := &Fact{
+		ID:     ae.generateFactID(typeName),
+		Type:   typeName,
+		Fields: evaluatedFields,
+	}
+
+	return newFact, nil
+}

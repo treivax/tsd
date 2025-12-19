@@ -37,6 +37,9 @@ type ReteNetwork struct {
 	logger                *Logger                  `json:"-"`       // Logger structuré pour instrumentation
 	factIDCounter         int64                    `json:"-"`       // Compteur thread-safe pour génération d'IDs de faits
 	factIDMutex           sync.Mutex               `json:"-"`       // Mutex pour génération d'IDs de faits
+	XupleManager          interface{}              `json:"-"`       // Gestionnaire de xuples (xuples.XupleManager)
+	xupleHandlerFunc      XupleHandlerFunc         `json:"-"`       // Fonction handler pour l'action Xuple
+	xupleSpaceDefinitions []interface{}            `json:"-"`       // Définitions des xuple-spaces parsées depuis TSD
 
 	// Phase 2: Configuration de synchronisation pour garanties de cohérence
 	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
@@ -50,6 +53,10 @@ const (
 	DefaultVerifyRetryDelay  = 10 * time.Millisecond
 	DefaultMaxVerifyRetries  = 10
 )
+
+// XupleHandlerFunc est une fonction qui gère la création d'un xuple.
+// Elle est appelée par l'action Xuple() dans les règles TSD.
+type XupleHandlerFunc func(xuplespace string, fact *Fact, triggeringFacts []*Fact) error
 
 // GetChainMetrics retourne les métriques de performance pour la construction des chaînes alpha
 func (rn *ReteNetwork) GetChainMetrics() *ChainBuildMetrics {
@@ -98,6 +105,38 @@ func (rn *ReteNetwork) SetLogger(logger *Logger) {
 	if logger != nil {
 		rn.logger = logger
 	}
+}
+
+// GetXupleManager retourne le gestionnaire de xuples
+func (rn *ReteNetwork) GetXupleManager() interface{} {
+	return rn.XupleManager
+}
+
+// SetXupleManager configure le gestionnaire de xuples
+func (rn *ReteNetwork) SetXupleManager(xupleManager interface{}) {
+	rn.XupleManager = xupleManager
+}
+
+// SetXupleHandler configure la fonction handler pour l'action Xuple
+func (rn *ReteNetwork) SetXupleHandler(handler XupleHandlerFunc) {
+	rn.xupleHandlerFunc = handler
+}
+
+// GetXupleHandler retourne la fonction handler pour l'action Xuple
+func (rn *ReteNetwork) GetXupleHandler() XupleHandlerFunc {
+	return rn.xupleHandlerFunc
+}
+
+// SetXupleSpaceDefinitions stocke les définitions de xuple-spaces parsées
+func (rn *ReteNetwork) SetXupleSpaceDefinitions(definitions []interface{}) {
+	rn.xupleSpaceDefinitions = definitions
+}
+
+// GetXupleSpaceDefinitions retourne les définitions de xuple-spaces stockées.
+// Ces définitions sont utilisées par le package api pour créer automatiquement
+// les xuple-spaces lors de l'ingestion.
+func (rn *ReteNetwork) GetXupleSpaceDefinitions() []interface{} {
+	return rn.xupleSpaceDefinitions
 }
 
 // GetLogger retourne le logger actuel du réseau

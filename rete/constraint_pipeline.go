@@ -15,7 +15,8 @@ import (
 // ConstraintPipeline implémente le pipeline complet :
 // fichier .constraint → parseur PEG → conversion AST → réseau RETE
 type ConstraintPipeline struct {
-	logger *Logger // Logger structuré pour instrumentation
+	logger                *Logger                                                     // Logger structuré pour instrumentation
+	onXupleSpacesDetected func(network *ReteNetwork, definitions []interface{}) error // Callback appelé après détection des xuple-spaces
 }
 
 // GetLogger retourne le logger, en l'initialisant si nécessaire
@@ -40,6 +41,12 @@ func (cp *ConstraintPipeline) SetLogger(logger *Logger) {
 	}
 }
 
+// SetOnXupleSpacesDetected configure le callback appelé après détection des xuple-spaces.
+// Ce callback permet au package api de créer les xuple-spaces avant la soumission des faits inline.
+func (cp *ConstraintPipeline) SetOnXupleSpacesDetected(callback func(network *ReteNetwork, definitions []interface{}) error) {
+	cp.onXupleSpacesDetected = callback
+}
+
 // IngestFile est la fonction unique et incrémentale pour étendre le réseau RETE.
 // Elle peut être appelée plusieurs fois avec des fichiers différents pour :
 // - Parser le fichier (types, règles, faits)
@@ -61,10 +68,12 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 
 	// Initialiser le contexte d'ingestion
 	ctx := &ingestionContext{
-		filename: filename,
-		network:  network,
-		storage:  storage,
-		metrics:  NewMetricsCollector(),
+		filename:              filename,
+		network:               network,
+		storage:               storage,
+		metrics:               NewMetricsCollector(),
+		xupleManager:          nil, // Sera créé si nécessaire lors de la détection de xuple-spaces
+		onXupleSpacesDetected: cp.onXupleSpacesDetected,
 	}
 
 	// Exécuter le pipeline complet
@@ -123,6 +132,19 @@ func (cp *ConstraintPipeline) prepareIngestion(ctx *ingestionContext) error {
 // buildNetworkFromContext construit ou étend le réseau RETE à partir du contexte
 func (cp *ConstraintPipeline) buildNetworkFromContext(ctx *ingestionContext) error {
 	if err := cp.convertAndExtractComponents(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.extractXupleSpaces(ctx); err != nil {
+		return err
+	}
+
+	if err := cp.createXupleSpaces(ctx); err != nil {
+		return err
+	}
+
+	// Enregistrer l'action Xuple si un handler est configuré
+	if err := cp.registerXupleActionIfNeeded(ctx); err != nil {
 		return err
 	}
 
@@ -395,6 +417,84 @@ func (cp *ConstraintPipeline) validateNetworkAndState(ctx *ingestionContext) err
 	cp.logger.Info("🎯 INGESTION INCRÉMENTALE TERMINÉE")
 	cp.logger.Info("   - Total TypeNodes: %d", len(ctx.network.TypeNodes))
 	cp.logger.Info("   - Total TerminalNodes: %d", len(ctx.network.TerminalNodes))
+
+	return nil
+}
+
+// extractXupleSpaces extrait les xuple-spaces depuis l'AST parsé
+func (cp *ConstraintPipeline) extractXupleSpaces(ctx *ingestionContext) error {
+	resultMap, ok := ctx.parsedAST.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("format AST invalide pour extraction xuple-spaces")
+	}
+
+	xupleSpacesData, exists := resultMap["xupleSpaces"]
+	if !exists {
+		// Pas de xuple-spaces dans ce fichier, ce n'est pas une erreur
+		return nil
+	}
+
+	xupleSpacesList, ok := xupleSpacesData.([]interface{})
+	if !ok {
+		return fmt.Errorf("format xupleSpaces invalide: %T", xupleSpacesData)
+	}
+
+	ctx.xupleSpaces = xupleSpacesList
+	cp.logger.Info("✅ Trouvé %d xuple-space(s) à créer", len(xupleSpacesList))
+
+	return nil
+}
+
+// createXupleSpaces stocke les définitions de xuple-spaces détectées lors du parsing.
+// Les définitions sont stockées dans le réseau et un callback optionnel est appelé
+// pour permettre au package api de créer les xuple-spaces avant la soumission des faits inline.
+//
+// Note: La création effective des xuple-spaces est gérée par le callback (package api),
+// pas par ce pipeline. Le pipeline se contente de parser et stocker les définitions.
+func (cp *ConstraintPipeline) createXupleSpaces(ctx *ingestionContext) error {
+	if len(ctx.xupleSpaces) == 0 {
+		return nil
+	}
+
+	cp.logger.Info("───────────────────────────────────────────────────────────────")
+	cp.logger.Info("📦 DÉTECTION DES XUPLE-SPACES")
+	cp.logger.Info("───────────────────────────────────────────────────────────────")
+
+	// Stocker les définitions dans le réseau pour utilisation par le package api
+	ctx.network.SetXupleSpaceDefinitions(ctx.xupleSpaces)
+	cp.logger.Info("   %d xuple-space(s) détecté(s) et stocké(s)", len(ctx.xupleSpaces))
+
+	// Appeler le callback si configuré (permet au package api de créer les xuple-spaces immédiatement)
+	if ctx.onXupleSpacesDetected != nil {
+		cp.logger.Info("   Création des xuple-spaces via callback...")
+		if err := ctx.onXupleSpacesDetected(ctx.network, ctx.xupleSpaces); err != nil {
+			return fmt.Errorf("erreur callback création xuple-spaces: %w", err)
+		}
+		cp.logger.Info("   ✅ Xuple-spaces créés via callback")
+	} else {
+		cp.logger.Info("   Les xuple-spaces seront créés automatiquement par le package api")
+	}
+
+	cp.logger.Info("")
+	return nil
+}
+
+// registerXupleActionIfNeeded enregistre l'action Xuple si un handler est configuré.
+// Cette méthode est appelée après createXupleSpaces pour s'assurer que l'action
+// est disponible même si aucun xuple-space n'est déclaré dans le fichier TSD.
+//
+// L'enregistrement est désormais délégué à ActionExecutor.RegisterXupleActionIfNeeded()
+// qui gère automatiquement la vérification et l'enregistrement.
+func (cp *ConstraintPipeline) registerXupleActionIfNeeded(ctx *ingestionContext) error {
+	// Vérifier si un ActionExecutor est disponible
+	if ctx.network == nil || ctx.network.ActionExecutor == nil {
+		return nil
+	}
+
+	// Déléguer l'enregistrement à l'ActionExecutor
+	if err := ctx.network.ActionExecutor.RegisterXupleActionIfNeeded(); err != nil {
+		return fmt.Errorf("erreur enregistrement action Xuple: %w", err)
+	}
 
 	return nil
 }

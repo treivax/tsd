@@ -13,22 +13,25 @@ import (
 
 // ingestionContext encapsule l'état d'une ingestion de fichier
 type ingestionContext struct {
-	filename          string
-	network           *ReteNetwork
-	storage           Storage
-	metrics           *MetricsCollector
-	parsedAST         interface{}
-	program           *constraint.Program
-	reteProgram       interface{}
-	types             []interface{}
-	expressions       []interface{}
-	factsForRete      []map[string]interface{}
-	existingFacts     []*Fact
-	factsByType       map[string][]*Fact
-	existingTerminals map[string]bool
-	newTerminals      []*TerminalNode
-	hasResets         bool
-	tx                *Transaction
+	filename              string
+	network               *ReteNetwork
+	storage               Storage
+	metrics               *MetricsCollector
+	parsedAST             interface{}
+	program               *constraint.Program
+	reteProgram           interface{}
+	types                 []interface{}
+	expressions           []interface{}
+	factsForRete          []map[string]interface{}
+	existingFacts         []*Fact
+	factsByType           map[string][]*Fact
+	existingTerminals     map[string]bool
+	newTerminals          []*TerminalNode
+	hasResets             bool
+	tx                    *Transaction
+	xupleManager          interface{}                                                 // Gestionnaire de xuples (créé si des xuple-spaces sont déclarés)
+	xupleSpaces           []interface{}                                               // Liste des xuple-spaces parsés depuis l'AST
+	onXupleSpacesDetected func(network *ReteNetwork, definitions []interface{}) error // Callback appelé après détection des xuple-spaces
 }
 
 // beginIngestionTransaction démarre une transaction pour l'ingestion
