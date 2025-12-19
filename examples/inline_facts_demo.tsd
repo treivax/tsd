@@ -1,0 +1,123 @@
+// Exemple d'utilisation des faits inline dans les actions TSD
+// Ce fichier démontre toutes les capacités de la nouvelle fonctionnalité
+
+// ============================================================================
+// DÉFINITION DES TYPES
+// ============================================================================
+
+type Sensor(#sensorId: string, location: string, temperature: number, humidity: number)
+type Alert(level: string, message: string, sensorId: string, temperature: number, location: string)
+type Command(action: string, target: string, priority: number, reason: string)
+type Notification(recipient: string, subject: string, body: string)
+
+// ============================================================================
+// EXEMPLE 1: FAIT INLINE SIMPLE
+// ============================================================================
+
+rule simple_alert: {s: Sensor} / s.temperature > 30.0 ==>
+    Xuple("alerts", Alert(level: "WARNING", message: "High temperature", sensorId: s.sensorId, temperature: s.temperature, location: s.location))
+
+// ============================================================================
+// EXEMPLE 2: FAIT INLINE MULTI-LIGNE (FORMATAGE LISIBLE)
+// ============================================================================
+
+rule critical_alert: {s: Sensor} / s.temperature > 40.0 ==>
+    Xuple("critical_alerts", Alert(
+        level: "CRITICAL",
+        message: "Temperature exceeds safe threshold",
+        sensorId: s.sensorId,
+        temperature: s.temperature,
+        location: s.location
+    ))
+
+// ============================================================================
+// EXEMPLE 3: ACTIONS MULTIPLES AVEC FAITS INLINE
+// ============================================================================
+
+rule emergency_shutdown: {s: Sensor} / s.temperature > 50.0 ==>
+    Xuple("critical_alerts", Alert(
+        level: "EMERGENCY",
+        message: "CRITICAL - Immediate action required",
+        sensorId: s.sensorId,
+        temperature: s.temperature,
+        location: s.location
+    )),
+    Xuple("commands", Command(
+        action: "shutdown",
+        target: s.location,
+        priority: 999,
+        reason: "Emergency temperature level"
+    )),
+    Xuple("notifications", Notification(
+        recipient: "admin@example.com",
+        subject: "URGENT: System shutdown initiated",
+        body: "Emergency shutdown for location " + s.location
+    ))
+
+// ============================================================================
+// EXEMPLE 4: EXPRESSIONS DANS LES CHAMPS (CONVERSIONS, CALCULS)
+// ============================================================================
+
+type TemperatureReport(sensorId: string, celsius: number, fahrenheit: number, kelvin: number)
+
+rule temperature_report: {s: Sensor} / s.temperature > 0.0 ==>
+    Xuple("reports", TemperatureReport(
+        sensorId: s.sensorId,
+        celsius: s.temperature,
+        fahrenheit: s.temperature * 1.8 + 32.0,
+        kelvin: s.temperature + 273.15
+    ))
+
+// ============================================================================
+// EXEMPLE 5: RÉFÉRENCES À PLUSIEURS VARIABLES
+// ============================================================================
+
+type Threshold(sensorType: string, maxTemp: number, maxHumidity: number)
+type ComplianceAlert(sensorId: string, temp: number, humidity: number, maxTemp: number, maxHumidity: number, tempExcess: number, humidityExcess: number)
+
+rule compliance_check: {s: Sensor, th: Threshold} / s.temperature > th.maxTemp OR s.humidity > th.maxHumidity ==>
+    Xuple("compliance", ComplianceAlert(
+        sensorId: s.sensorId,
+        temp: s.temperature,
+        humidity: s.humidity,
+        maxTemp: th.maxTemp,
+        maxHumidity: th.maxHumidity,
+        tempExcess: s.temperature - th.maxTemp,
+        humidityExcess: s.humidity - th.maxHumidity
+    ))
+
+// ============================================================================
+// EXEMPLE 6: CONDITIONS COMPLEXES AVEC FAITS INLINE
+// ============================================================================
+
+rule combined_conditions: {s: Sensor} / s.temperature > 40.0 AND s.humidity > 80.0 ==>
+    Xuple("emergencies", Alert(
+        level: "CRITICAL",
+        message: "Combined critical conditions: high temperature AND high humidity",
+        sensorId: s.sensorId,
+        temperature: s.temperature,
+        location: s.location
+    )),
+    Xuple("commands", Command(
+        action: "activate_cooling",
+        target: s.location,
+        priority: 100,
+        reason: "High temperature and humidity"
+    )),
+    Xuple("commands", Command(
+        action: "activate_dehumidifier",
+        target: s.location,
+        priority: 90,
+        reason: "High humidity detected"
+    ))
+
+// ============================================================================
+// DONNÉES DE TEST
+// ============================================================================
+
+Sensor(sensorId: "S001", location: "ServerRoom", temperature: 25.0, humidity: 50.0)
+Sensor(sensorId: "S002", location: "DataCenter", temperature: 35.0, humidity: 60.0)
+Sensor(sensorId: "S003", location: "Office", temperature: 45.0, humidity: 85.0)
+Sensor(sensorId: "S004", location: "Warehouse", temperature: 55.0, humidity: 90.0)
+
+Threshold(sensorType: "standard", maxTemp: 40.0, maxHumidity: 80.0)

@@ -126,7 +126,7 @@ ActionDefinition <- "action" _ name:IdentName _ "(" _ params:ParameterList? _ ")
 }
 
 XupleSpaceDeclaration <- "xuple-space" _ name:IdentName _ "{" _ props:XupleSpaceProperties? _ "}" {
-    // Valeurs par défaut
+    // Valeurs par défaut (constantes définies dans constraint/xuplespace_constants.go)
     selection := "fifo"
     consumption := map[string]interface{}{
         "type": "once",
@@ -136,6 +136,7 @@ XupleSpaceDeclaration <- "xuple-space" _ name:IdentName _ "{" _ props:XupleSpace
         "type": "unlimited",
         "duration": 0,
     }
+    maxSize := 0 // 0 = illimité
 
     // Appliquer les propriétés parsées
     if props != nil {
@@ -149,15 +150,22 @@ XupleSpaceDeclaration <- "xuple-space" _ name:IdentName _ "{" _ props:XupleSpace
         if ret, ok := propMap["retention"]; ok {
             retention = ret.(map[string]interface{})
         }
+        if ms, ok := propMap["maxSize"]; ok {
+            maxSize = ms.(int)
+        }
     }
 
-    return map[string]interface{}{
+    result := map[string]interface{}{
         "type": "xupleSpaceDeclaration",
         "name": name,
         "selectionPolicy": selection,
         "consumptionPolicy": consumption,
         "retentionPolicy": retention,
-    }, nil
+        "maxSize": maxSize,
+    }
+
+    // Note: Validation sera faite après parsing via ValidateProgram
+    return result, nil
 }
 
 XupleSpaceProperties <- first:XupleSpaceProperty rest:(_ XupleSpaceProperty)* {
@@ -183,7 +191,7 @@ XupleSpaceProperties <- first:XupleSpaceProperty rest:(_ XupleSpaceProperty)* {
     return result, nil
 }
 
-XupleSpaceProperty <- SelectionProperty / ConsumptionProperty / RetentionProperty
+XupleSpaceProperty <- SelectionProperty / ConsumptionProperty / RetentionProperty / MaxSizeProperty
 
 SelectionProperty <- "selection" _ ":" _ value:SelectionValue {
     return map[string]interface{}{
@@ -248,16 +256,22 @@ Duration <- value:Integer unit:TimeUnit {
         return nil, fmt.Errorf("duration must be positive, got %d", val)
     }
     
+    const (
+        SecondsPerMinute = 60
+        SecondsPerHour   = 3600
+        SecondsPerDay    = 86400
+    )
+    
     var seconds int
     switch unitStr {
     case "s":
         seconds = val
     case "m":
-        seconds = val * 60
+        seconds = val * SecondsPerMinute
     case "h":
-        seconds = val * 3600
+        seconds = val * SecondsPerHour
     case "d":
-        seconds = val * 86400
+        seconds = val * SecondsPerDay
     default:
         return nil, fmt.Errorf("invalid time unit '%s', expected s, m, h or d", unitStr)
     }
@@ -269,6 +283,17 @@ TimeUnit <- "s" { return "s", nil } /
             "m" { return "m", nil } /
             "h" { return "h", nil } /
             "d" { return "d", nil }
+
+MaxSizeProperty <- "max-size" _ ":" _ value:Integer {
+    val := value.(int)
+    if val < 0 {
+        return nil, fmt.Errorf("max-size must be >= 0, got %d", val)
+    }
+    return map[string]interface{}{
+        "maxSize": val,
+    }, nil
+}
+
 
 ParameterList <- first:Parameter rest:(_ "," _ Parameter)* {
     parameters := []interface{}{first}
@@ -502,6 +527,7 @@ Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
 
 Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
           CastExpression /
+          InlineFact /
           FunctionCall /
           FieldAccess /
           Number /
@@ -527,6 +553,31 @@ FieldAccess <- object:IdentName "." field:IdentName {
         "type": "fieldAccess",
         "object": object,
         "field": field,
+    }, nil
+}
+
+InlineFact <- typeName:IdentName "(" _ fields:InlineFactFieldList _ ")" {
+    return map[string]interface{}{
+        "type": "inlineFact",
+        "typeName": typeName,
+        "fields": fields,
+    }, nil
+}
+
+InlineFactFieldList <- first:InlineFactField rest:(_ "," _ InlineFactField)* {
+    fields := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            fields = append(fields, item.([]interface{})[3])
+        }
+    }
+    return fields, nil
+}
+
+InlineFactField <- name:IdentName _ ":" _ value:ArithmeticExpr {
+    return map[string]interface{}{
+        "name": name,
+        "value": value,
     }, nil
 }
 
