@@ -1,0 +1,115 @@
+{
+  "timestamp": "2025-12-18T11:57:35+01:00",
+  "project_root": "/home/resinsec/dev/tsd",
+  "go_version": "go version go1.24.4 linux/amd64",
+  "tests": {
+    "e2e_xuples": {
+      "status": "failed",
+      "exit_code": 
+    },
+    "e2e_batch": {
+      "status": "failed",
+      "exit_code": 
+    }
+  },
+  "types": [
+    {
+      "name": "Sensor",
+      "fields": ["sensorId: string", "location: string", "temperature: number", "humidity: number"]
+    },
+    {
+      "name": "Alert",
+      "fields": ["level: string", "message: string", "sensorId: string"]
+    },
+    {
+      "name": "Command",
+      "fields": ["action: string", "target: string", "priority: number"]
+    }
+  ],
+  "xuplespaces": [
+    {
+      "name": "critical_alerts",
+      "selection": "lifo",
+      "consumption": "per-agent",
+      "retention": "duration(10m)"
+    },
+    {
+      "name": "normal_alerts",
+      "selection": "random",
+      "consumption": "once",
+      "retention": "duration(30m)"
+    },
+    {
+      "name": "command_queue",
+      "selection": "fifo",
+      "consumption": "once",
+      "retention": "duration(1h)"
+    }
+  ],
+  "rules": [
+    {
+      "name": "critical_temperature",
+      "condition": "s.temperature > 40",
+      "action": "notifyCritical(s.sensorId, s.temperature)"
+    },
+    {
+      "name": "high_temperature",
+      "condition": "s.temperature > 30 AND s.temperature <= 40",
+      "action": "notifyHigh(s.sensorId, s.temperature)"
+    },
+    {
+      "name": "high_humidity",
+      "condition": "s.humidity > 80",
+      "action": "ventilate(s.location)"
+    }
+  ],
+  "facts": [
+    {
+      "type": "Sensor",
+      "id": "S001",
+      "location": "RoomA",
+      "temperature": 22.0,
+      "humidity": 45.0,
+      "triggers": []
+    },
+    {
+      "type": "Sensor",
+      "id": "S002",
+      "location": "RoomB",
+      "temperature": 35.0,
+      "humidity": 50.0,
+      "triggers": ["high_temperature"]
+    },
+    {
+      "type": "Sensor",
+      "id": "S003",
+      "location": "RoomC",
+      "temperature": 45.0,
+      "humidity": 60.0,
+      "triggers": ["critical_temperature"]
+    },
+    {
+      "type": "Sensor",
+      "id": "S004",
+      "location": "RoomD",
+      "temperature": 25.0,
+      "humidity": 85.0,
+      "triggers": ["high_humidity"]
+    },
+    {
+      "type": "Sensor",
+      "id": "S005",
+      "location": "ServerRoom",
+      "temperature": 42.0,
+      "humidity": 85.0,
+      "triggers": ["critical_temperature", "high_humidity"]
+    }
+  ],
+  "summary": {
+    "total_tests": ,
+    "passed": ,
+    "failed": ,
+    "success": false
+  },
+  "report_file": "/home/resinsec/dev/tsd/test-reports/xuples_e2e_report_20251218_115735.txt"
+}
