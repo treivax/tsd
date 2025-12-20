@@ -108,6 +108,11 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string
 		)
 	}
 
+	// Cas spécial : le champ 'id' retourne l'ID interne du fait
+	if field == "id" {
+		return fact.ID, nil
+	}
+
 	value, exists := fact.Fields[field]
 	if !exists {
 		return nil, fmt.Errorf("champ inexistant: %s.%s", object, field)

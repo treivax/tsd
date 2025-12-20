@@ -34,7 +34,7 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 
 	t.Log("📝 Étape 1 : Insertion d'un nouvel utilisateur")
 	newUser := &rete.Fact{
-		ID:   "user001",
+		ID:   "User~user001",
 		Type: "User",
 		Fields: map[string]interface{}{
 			"name":   "Alice",
@@ -49,7 +49,7 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 	}
 
 	// Vérifier l'insertion
-	storedUser := storage.GetFact("User_user001")
+	storedUser := storage.GetFact("User~user001")
 	if storedUser == nil {
 		t.Fatal("❌ User not found after insert")
 	}
@@ -60,7 +60,7 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 
 	t.Log("📝 Étape 2 : Promotion de l'utilisateur (Update)")
 	promotedUser := &rete.Fact{
-		ID:   "user001",
+		ID:   "User~user001",
 		Type: "User",
 		Fields: map[string]interface{}{
 			"name":   "Alice",
@@ -75,7 +75,7 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 	}
 
 	// Vérifier la mise à jour
-	storedUser = storage.GetFact("User_user001")
+	storedUser = storage.GetFact("User~user001")
 	if storedUser == nil {
 		t.Fatal("❌ User not found after update")
 	}
@@ -113,13 +113,13 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 	t.Log("✅ Opération loggée avec succès")
 
 	t.Log("📝 Étape 5 : Suppression de l'utilisateur (Retract)")
-	err = executor.Execute("Retract", []interface{}{"User_user001"}, &rete.Token{})
+	err = executor.Execute("Retract", []interface{}{"User~user001"}, &rete.Token{})
 	if err != nil {
 		t.Fatalf("❌ Retract failed: %v", err)
 	}
 
 	// Vérifier la suppression
-	storedUser = storage.GetFact("User_user001")
+	storedUser = storage.GetFact("User~user001")
 	if storedUser != nil {
 		t.Error("❌ User should have been removed")
 	}
@@ -148,7 +148,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 
 	t.Log("📝 Étape 1 : Création d'une commande")
 	order := &rete.Fact{
-		ID:   "order001",
+		ID:   "Order~order001",
 		Type: "Order",
 		Fields: map[string]interface{}{
 			"customerId": "cust123",
@@ -165,7 +165,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 
 	t.Log("📝 Étape 2 : Ajout d'items à la commande")
 	item1 := &rete.Fact{
-		ID:   "item001",
+		ID:   "OrderItem~item001",
 		Type: "OrderItem",
 		Fields: map[string]interface{}{
 			"orderId": "order001",
@@ -174,7 +174,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 		},
 	}
 	item2 := &rete.Fact{
-		ID:   "item002",
+		ID:   "OrderItem~item002",
 		Type: "OrderItem",
 		Fields: map[string]interface{}{
 			"orderId": "order001",
@@ -202,7 +202,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 
 	t.Log("📝 Étape 3 : Mise à jour du statut et total de la commande")
 	updatedOrder := &rete.Fact{
-		ID:   "order001",
+		ID:   "Order~order001",
 		Type: "Order",
 		Fields: map[string]interface{}{
 			"customerId": "cust123",
@@ -217,7 +217,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 	}
 
 	// Vérifier la mise à jour
-	storedOrder := storage.GetFact("Order_order001")
+	storedOrder := storage.GetFact("Order~order001")
 	if storedOrder == nil {
 		t.Fatal("❌ Order not found after update")
 	}
@@ -237,20 +237,20 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 	t.Log("✅ Confirmation affichée")
 
 	t.Log("📝 Étape 5 : Annulation d'un item")
-	err = executor.Execute("Retract", []interface{}{"OrderItem_item002"}, &rete.Token{})
+	err = executor.Execute("Retract", []interface{}{"OrderItem~item002"}, &rete.Token{})
 	if err != nil {
 		t.Fatalf("❌ Retract item failed: %v", err)
 	}
 
 	// Vérifier la suppression
-	if storage.GetFact("OrderItem_item002") != nil {
+	if storage.GetFact("OrderItem~item002") != nil {
 		t.Error("❌ Item should have been removed")
 	}
 	t.Log("✅ Item annulé")
 
 	t.Log("📝 Étape 6 : Recalcul du total")
 	recalculatedOrder := &rete.Fact{
-		ID:   "order001",
+		ID:   "Order~order001",
 		Type: "Order",
 		Fields: map[string]interface{}{
 			"customerId": "cust123",
@@ -265,7 +265,7 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 	}
 
 	// Vérification finale
-	finalOrder := storage.GetFact("Order_order001")
+	finalOrder := storage.GetFact("Order~order001")
 	if finalOrder == nil {
 		t.Fatal("❌ Order not found")
 	}
@@ -309,7 +309,7 @@ func TestBuiltinActions_ErrorHandling(t *testing.T) {
 
 	t.Log("📝 Test 2 : Insert d'un fait déjà existant")
 	existingFact := &rete.Fact{
-		ID:   "user001",
+		ID:   "User~user001",
 		Type: "User",
 		Fields: map[string]interface{}{
 			"name": "Alice",
@@ -546,13 +546,14 @@ func TestBuiltinActions_EndToEnd_XupleAction(t *testing.T) {
 		}
 	}
 
-	// Marquer comme consommée
+	// Note: Retrieve() marque automatiquement le xuple comme consommé
+	// Pas besoin d'appeler MarkConsumed() manuellement
 	if retrievedAlert != nil {
-		err = criticalSpace.MarkConsumed(retrievedAlert.ID, "agent1")
-		if err != nil {
-			t.Errorf("❌ Failed to mark consumed: %v", err)
-		} else {
-			t.Log("✅ Alerte marquée comme consommée par agent1")
+		t.Log("✅ Alerte automatiquement marquée comme consommée par agent1 (via Retrieve)")
+
+		// Vérifier que le xuple a bien été marqué comme consommé par agent1
+		if _, consumed := retrievedAlert.Metadata.ConsumedBy["agent1"]; !consumed {
+			t.Errorf("❌ agent1 devrait être dans ConsumedBy après Retrieve")
 		}
 
 		// Per-agent policy: un autre agent devrait pouvoir récupérer le même xuple
@@ -561,6 +562,26 @@ func TestBuiltinActions_EndToEnd_XupleAction(t *testing.T) {
 			t.Errorf("❌ Failed to retrieve for agent2: %v", err)
 		} else {
 			t.Logf("✅ Agent2 a récupéré alerte: %s (per-agent policy fonctionne)", retrievedAlert2.Fact.ID)
+
+			// Vérifier que c'est bien le même xuple (per-agent permet ça)
+			if retrievedAlert2.ID != retrievedAlert.ID {
+				t.Errorf("❌ Agent2 devrait obtenir le même xuple que agent1, got %s vs %s",
+					retrievedAlert2.ID, retrievedAlert.ID)
+			}
+		}
+
+		// Agent1 peut récupérer UN AUTRE xuple (A001) car il y en a 2 dans l'espace
+		// mais ne peut pas récupérer A002 à nouveau (déjà consommé par agent1)
+		retrievedAlert3, err := criticalSpace.Retrieve("agent1")
+		if err != nil {
+			t.Errorf("❌ agent1 devrait pouvoir récupérer l'autre xuple disponible: %v", err)
+		} else {
+			t.Logf("✅ agent1 a récupéré un autre xuple: %s", retrievedAlert3.Fact.ID)
+
+			// Devrait être un xuple différent (l'autre alerte)
+			if retrievedAlert3.ID == retrievedAlert.ID {
+				t.Errorf("❌ agent1 a récupéré le même xuple deux fois (violation per-agent policy)")
+			}
 		}
 	}
 

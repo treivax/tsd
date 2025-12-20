@@ -251,7 +251,7 @@ func benchmarkMultiSourceAggregation(b *testing.B, config BenchmarkConfig) {
 	// Count activations
 	activationCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activationCount += len(terminalNode.GetMemory().Tokens)
+		activationCount += int(terminalNode.GetExecutionCount())
 	}
 	b.ReportMetric(float64(activationCount), "activations")
 }
@@ -296,7 +296,7 @@ func benchmarkMultiSourceAggregationWithThresholds(b *testing.B, config Benchmar
 	// Count activations (should be fewer due to thresholds)
 	activationCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activationCount += len(terminalNode.GetMemory().Tokens)
+		activationCount += int(terminalNode.GetExecutionCount())
 	}
 	b.ReportMetric(float64(activationCount), "activations")
 }

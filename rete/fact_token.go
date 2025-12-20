@@ -33,9 +33,10 @@ func (f *Fact) String() string {
 	return fmt.Sprintf("Fact{ID:%s, Type:%s, Fields:%v}", f.ID, f.Type, f.Fields)
 }
 
-// GetInternalID retourne l'identifiant interne unique (Type_ID)
+// GetInternalID retourne l'identifiant interne unique.
+// L'ID est déjà au format "Type~Value" donc on le retourne tel quel.
 func (f *Fact) GetInternalID() string {
-	return fmt.Sprintf("%s_%s", f.Type, f.ID)
+	return f.ID
 }
 
 // GetField retourne la valeur d'un champ

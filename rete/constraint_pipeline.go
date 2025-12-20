@@ -510,21 +510,28 @@ func (cp *ConstraintPipeline) verifyAndCommit(ctx *ingestionContext) error {
 		missingFacts := make([]string, 0)
 
 		for i, factMap := range ctx.factsForRete {
-			var factID string
-			if id, ok := factMap["id"].(string); ok {
-				factID = id
+			// Utiliser _id_ qui contient déjà le format Type~Value
+			var internalID string
+			if id, ok := factMap["_id_"].(string); ok {
+				internalID = id
 			} else {
-				factID = fmt.Sprintf("fact_%d", i)
-			}
+				// Fallback: construire l'ID si _id_ n'existe pas
+				var factID string
+				if id, ok := factMap["id"].(string); ok {
+					factID = id
+				} else {
+					factID = fmt.Sprintf("fact_%d", i)
+				}
 
-			factType := "unknown"
-			if typ, ok := factMap["type"].(string); ok {
-				factType = typ
-			} else if typ, ok := factMap["reteType"].(string); ok {
-				factType = typ
-			}
+				factType := "unknown"
+				if typ, ok := factMap["type"].(string); ok {
+					factType = typ
+				} else if typ, ok := factMap["reteType"].(string); ok {
+					factType = typ
+				}
 
-			internalID := fmt.Sprintf("%s_%s", factType, factID)
+				internalID = fmt.Sprintf("%s~%s", factType, factID)
+			}
 
 			if ctx.storage.GetFact(internalID) != nil {
 				actualFactCount++

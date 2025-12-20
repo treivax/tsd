@@ -99,18 +99,18 @@ rule very_large_orders : {p: Person, o: Order} / p.id == o.personId AND o.amount
 	network.SubmitFact(order1)
 	network.SubmitFact(order2)
 	// Check activations
-	largeTokens := network.TerminalNodes["large_orders_terminal"].GetMemory().Tokens
-	veryLargeTokens := network.TerminalNodes["very_large_orders_terminal"].GetMemory().Tokens
-	t.Logf("\nlarge_orders activations: %d", len(largeTokens))
-	t.Logf("very_large_orders activations: %d", len(veryLargeTokens))
+	largeExecCount := network.TerminalNodes["large_orders_terminal"].GetExecutionCount()
+	veryLargeExecCount := network.TerminalNodes["very_large_orders_terminal"].GetExecutionCount()
+	t.Logf("\nlarge_orders activations: %d", largeExecCount)
+	t.Logf("very_large_orders activations: %d", veryLargeExecCount)
 	// Expected:
 	// - large_orders: 2 activations (order1 and order2 both > 100)
 	// - very_large_orders: 1 activation (only order2 > 500)
-	if len(largeTokens) != 2 {
-		t.Errorf("Expected 2 activations for large_orders, got %d", len(largeTokens))
+	if largeExecCount != 2 {
+		t.Errorf("Expected 2 activations for large_orders, got %d", largeExecCount)
 	}
-	if len(veryLargeTokens) != 1 {
-		t.Errorf("Expected 1 activation for very_large_orders, got %d", len(veryLargeTokens))
+	if veryLargeExecCount != 1 {
+		t.Errorf("Expected 1 activation for very_large_orders, got %d", veryLargeExecCount)
 	}
 }
 

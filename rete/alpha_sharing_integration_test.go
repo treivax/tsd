@@ -152,11 +152,10 @@ rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
 		t.Fatalf("Erreur soumission fait: %v", err)
 	}
 	// Vérifier que les deux TerminalNodes ont reçu le fait
+	// Count activated terminals
 	terminalCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		tokens := memory.Tokens
-		if len(tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			terminalCount++
 		}
 	}
@@ -177,11 +176,11 @@ rule voting_check : {p: Person} / p.age > 18 ==> print("Can vote")
 		t.Fatalf("Erreur soumission fait2: %v", err)
 	}
 	// Vérifier que les TerminalNodes n'ont toujours qu'un seul token chacun
+	// Verify all terminals have exactly 1 execution
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		tokens := memory.Tokens
-		if len(tokens) != 1 {
-			t.Errorf("Chaque TerminalNode devrait avoir exactement 1 token, got %d", len(tokens))
+		execCount := terminalNode.GetExecutionCount()
+		if execCount != 1 {
+			t.Errorf("Chaque TerminalNode devrait avoir exactement 1 activation, got %d", execCount)
 		}
 	}
 }
@@ -381,11 +380,10 @@ rule mid_earner : {p: Person} / p.salary > 50000 ==> print("Mid earner")
 		t.Fatalf("Erreur soumission fait: %v", err)
 	}
 	// Vérifier que les 3 règles sont activées
+	// Count activated rules
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		tokens := memory.Tokens
-		if len(tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}

@@ -611,10 +611,11 @@ func TestArithmeticExpressionsE2E(t *testing.T) {
 	totalTokens := 0
 	tokensPerRule := make(map[string]int)
 	for _, terminal := range network.TerminalNodes {
-		tokens := terminal.Memory.GetTokens()
-		tokenCount := len(tokens)
-		totalTokens += tokenCount
-		tokensPerRule[strings.TrimSuffix(terminal.ID, "_terminal")] = tokenCount
+		// TerminalNodes exécutent immédiatement sans stocker les tokens
+		// Utiliser GetExecutionCount() au lieu de compter les tokens en mémoire
+		executionCount := int(terminal.GetExecutionCount())
+		totalTokens += executionCount
+		tokensPerRule[strings.TrimSuffix(terminal.ID, "_terminal")] = executionCount
 	}
 	fmt.Println("📊 Résultats par règle:")
 	fmt.Println()

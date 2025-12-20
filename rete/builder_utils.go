@@ -190,11 +190,9 @@ func (bu *BuilderUtils) CreateTerminalNode(
 		terminalNode.SetObserver(network.actionObserver)
 	}
 
-	// Register terminal node with lifecycle manager
-	if network.LifecycleManager != nil {
-		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
-		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
-	}
+	// Register terminal node with lifecycle manager (always initialized)
+	network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+	network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 
 	return terminalNode
 }

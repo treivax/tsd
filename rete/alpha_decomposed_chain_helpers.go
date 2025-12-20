@@ -37,14 +37,6 @@ func validateBuildDecomposedInputs(
 		return fmt.Errorf("le nœud parent ne peut pas être nil")
 	}
 
-	if network.AlphaSharingManager == nil {
-		return fmt.Errorf("AlphaSharingManager non initialisé dans le réseau")
-	}
-
-	if network.LifecycleManager == nil {
-		return fmt.Errorf("LifecycleManager non initialisé dans le réseau")
-	}
-
 	return nil
 }
 

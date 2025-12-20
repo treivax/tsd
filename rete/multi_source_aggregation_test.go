@@ -85,7 +85,7 @@ rule dept_combined_metric : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	// Expected: avg_sal = 65000, avg_score = 87.5
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += int(terminalNode.GetExecutionCount())
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for multi-source aggregation, got %d", activatedCount)
@@ -161,7 +161,7 @@ rule dept_full_metrics : {d: Department, avg_sal: AVG(e.salary), avg_score: AVG(
 	// Expected: avg_sal = 60000, avg_score = 85, total_hours = 40
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += int(terminalNode.GetExecutionCount())
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for three-source aggregation, got %d", activatedCount)
@@ -225,7 +225,7 @@ rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	network.SubmitFact(&perf1)
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += int(terminalNode.GetExecutionCount())
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected activation when thresholds are satisfied, got %d", activatedCount)
@@ -263,7 +263,7 @@ rule high_performing_dept : {d: Department, avg_sal: AVG(e.salary), avg_score: A
 	network.SubmitFact(&perf2)
 	newActivatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		newActivatedCount += len(terminalNode.GetMemory().Tokens)
+		newActivatedCount += int(terminalNode.GetExecutionCount())
 	}
 	if newActivatedCount > previousCount {
 		t.Errorf("Expected no new activation when threshold not satisfied, but got %d (was %d)", newActivatedCount, previousCount)
@@ -348,7 +348,7 @@ rule dept_comprehensive_stats : {d: Department, avg_sal: AVG(e.salary), total_sa
 	// Expected: avg_sal=65000, total_sal=130000, emp_count=2, min_score=75, max_score=95
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += int(terminalNode.GetExecutionCount())
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for comprehensive stats, got %d", activatedCount)

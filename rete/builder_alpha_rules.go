@@ -203,11 +203,9 @@ func (arb *AlphaRuleBuilder) createAlphaChainWithTerminal(
 	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)
 	chain.FinalNode.AddChild(terminalNode)
 
-	// Register terminal node with lifecycle manager
-	if network.LifecycleManager != nil {
-		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
-		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
-	}
+	// Register terminal node with lifecycle manager (always initialized)
+	network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+	network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 
 	fmt.Printf("   ✓ TerminalNode %s attaché au nœud final %s de la chaîne", terminalNode.ID, chain.FinalNode.ID)
 	fmt.Printf("   ✓ Règle alpha avec chaîne créée pour: %s\n", ruleID)
@@ -257,11 +255,9 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 		network.AlphaNodes[alphaNode.ID] = alphaNode
 	}
 
-	// Register or update the AlphaNode in LifecycleManager
-	if network.LifecycleManager != nil {
-		lifecycle := network.LifecycleManager.RegisterNode(alphaNode.ID, "alpha")
-		lifecycle.AddRuleReference(ruleID, ruleID)
-	}
+	// Register or update the AlphaNode in LifecycleManager (always initialized)
+	lifecycle := network.LifecycleManager.RegisterNode(alphaNode.ID, "alpha")
+	lifecycle.AddRuleReference(ruleID, ruleID)
 
 	// Create the terminal node (always rule-specific)
 	terminalNode := arb.utils.CreateTerminalNode(network, ruleID, action)
@@ -269,11 +265,9 @@ func (arb *AlphaRuleBuilder) createAlphaNodeWithTerminal(
 	// Connect AlphaNode -> TerminalNode
 	alphaNode.AddChild(terminalNode)
 
-	// Register terminal node with lifecycle manager
-	if network.LifecycleManager != nil {
-		network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
-		network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
-	}
+	// Register terminal node with lifecycle manager (always initialized)
+	network.LifecycleManager.RegisterNode(terminalNode.ID, "terminal")
+	network.LifecycleManager.AddRuleToNode(terminalNode.ID, ruleID, ruleID)
 
 	fmt.Printf("   ✓ Règle alpha simple créée pour: %s\n", ruleID)
 	fmt.Printf("   ✓ %s -> AlphaNode[%s] -> TerminalNode[%s]\n",

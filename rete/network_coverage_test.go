@@ -236,7 +236,7 @@ func TestSubmitFactsFromGrammar_Single(t *testing.T) {
 	if err != nil {
 		t.Errorf("SubmitFactsFromGrammar() failed: %v", err)
 	}
-	storedFact := storage.GetFact("Person_fact1")
+	storedFact := storage.GetFact("Person~fact1")
 	if storedFact == nil {
 		t.Error("Fact not found in storage")
 	}

@@ -21,7 +21,7 @@ func TestCoherence_StorageSync_WithTestEnv(t *testing.T) {
 	env.RequireIngestFileContent(content)
 	// Add a fact
 	fact := Fact{
-		ID:   "F1",
+		ID:   "TestType~F1",
 		Type: "TestType",
 		Fields: map[string]interface{}{
 			"value": float64(42),
@@ -32,9 +32,9 @@ func TestCoherence_StorageSync_WithTestEnv(t *testing.T) {
 	err := env.Storage.Sync()
 	assert.NoError(t, err, "Storage.Sync() should not fail")
 	// Verify fact is still present
-	retrievedFact := env.Storage.GetFact("TestType_F1")
+	retrievedFact := env.Storage.GetFact("TestType~F1")
 	assert.NotNil(t, retrievedFact, "Fact should still be present after Sync()")
-	assert.Equal(t, "F1", retrievedFact.ID)
+	assert.Equal(t, "TestType~F1", retrievedFact.ID)
 	assert.Equal(t, "TestType", retrievedFact.Type)
 	// Verify we can query by count
 	assert.Equal(t, 1, env.GetFactCount(), "Should have exactly 1 fact")
@@ -48,7 +48,7 @@ func TestCoherence_InternalIDCorrectness_WithTestEnv(t *testing.T) {
 	env.RequireIngestFileContent(content)
 	// Create a fact
 	fact := Fact{
-		ID:   "TEST123",
+		ID:   "MyType~TEST123",
 		Type: "MyType",
 		Fields: map[string]interface{}{
 			"value": float64(42),
@@ -56,13 +56,13 @@ func TestCoherence_InternalIDCorrectness_WithTestEnv(t *testing.T) {
 	}
 	// Verify internal ID
 	internalID := fact.GetInternalID()
-	assert.Equal(t, "MyType_TEST123", internalID, "Internal ID should be Type_ID")
+	assert.Equal(t, "MyType~TEST123", internalID, "Internal ID should be Type_ID")
 	// Submit fact
 	env.RequireSubmitFact(fact)
 	// Retrieve with internal ID
 	retrievedFact := env.Storage.GetFact(internalID)
 	require.NotNil(t, retrievedFact, "Fact should be retrievable by internal ID")
-	assert.Equal(t, "TEST123", retrievedFact.ID)
+	assert.Equal(t, "MyType~TEST123", retrievedFact.ID)
 	assert.Equal(t, "MyType", retrievedFact.Type)
 }
 func TestCoherence_MultipleFactSubmission_WithTestEnv(t *testing.T) {
@@ -76,9 +76,9 @@ rule ExpensiveProducts : {p: Product} / p.price > 1000 ==> print(p.name)`
 	env.RequireIngestFileContent(content)
 	// Submit multiple facts
 	products := []Fact{
-		{ID: "P1", Type: "Product", Fields: map[string]interface{}{"id": float64(1), "name": "Laptop", "price": float64(1500)}},
-		{ID: "P2", Type: "Product", Fields: map[string]interface{}{"id": float64(2), "name": "Mouse", "price": float64(50)}},
-		{ID: "P3", Type: "Product", Fields: map[string]interface{}{"id": float64(3), "name": "Monitor", "price": float64(2000)}},
+		{ID: "Product~P1", Type: "Product", Fields: map[string]interface{}{"id": float64(1), "name": "Laptop", "price": float64(1500)}},
+		{ID: "Product~P2", Type: "Product", Fields: map[string]interface{}{"id": float64(2), "name": "Mouse", "price": float64(50)}},
+		{ID: "Product~P3", Type: "Product", Fields: map[string]interface{}{"id": float64(3), "name": "Monitor", "price": float64(2000)}},
 	}
 	for _, p := range products {
 		env.RequireSubmitFact(p)
@@ -105,7 +105,7 @@ func TestCoherence_TransactionPattern_WithTestEnv(t *testing.T) {
 	env.Network.SetTransaction(tx)
 	// Add facts via transaction
 	fact1 := Fact{
-		ID:   "O1",
+		ID:   "Order~O1",
 		Type: "Order",
 		Fields: map[string]interface{}{
 			"id":    float64(1),
@@ -116,12 +116,12 @@ func TestCoherence_TransactionPattern_WithTestEnv(t *testing.T) {
 	err := tx.RecordAndExecute(cmd1)
 	require.NoError(t, err, "First fact should be added successfully")
 	// Verify fact is accessible before commit
-	assert.NotNil(t, env.Storage.GetFact("Order_O1"), "Fact should be accessible before commit")
+	assert.NotNil(t, env.Storage.GetFact("Order~O1"), "Fact should be accessible before commit")
 	// Commit transaction
 	err = tx.Commit()
 	require.NoError(t, err, "Transaction commit should succeed")
 	// Verify fact persists after commit
-	assert.NotNil(t, env.Storage.GetFact("Order_O1"), "Fact should persist after commit")
+	assert.NotNil(t, env.Storage.GetFact("Order~O1"), "Fact should persist after commit")
 	assert.Equal(t, 1, env.GetFactCount())
 }
 func TestCoherence_SubEnvironmentSharing_WithTestEnv(t *testing.T) {
@@ -133,7 +133,7 @@ func TestCoherence_SubEnvironmentSharing_WithTestEnv(t *testing.T) {
 	content := `type SharedData(#id: number, value: string)`
 	mainEnv.RequireIngestFileContent(content)
 	sharedFact := Fact{
-		ID:   "S1",
+		ID:   "SharedData~S1",
 		Type: "SharedData",
 		Fields: map[string]interface{}{
 			"id":    float64(1),
@@ -145,10 +145,10 @@ func TestCoherence_SubEnvironmentSharing_WithTestEnv(t *testing.T) {
 	subEnv := mainEnv.NewSubEnvironment(WithLogPrefix("[SUB]"))
 	// Sub-environment can see main environment's facts
 	assert.Equal(t, 1, subEnv.GetFactCount(), "Sub-env should see main env facts")
-	assert.NotNil(t, subEnv.Storage.GetFact("SharedData_S1"), "Sub-env can access shared fact")
+	assert.NotNil(t, subEnv.Storage.GetFact("SharedData~S1"), "Sub-env can access shared fact")
 	// Add fact in sub-environment
 	subFact := Fact{
-		ID:   "S2",
+		ID:   "SharedData~S2",
 		Type: "SharedData",
 		Fields: map[string]interface{}{
 			"id":    float64(2),
@@ -179,7 +179,7 @@ func TestCoherence_ConcurrentAccess_WithTestEnv(t *testing.T) {
 	env.RequireIngestFileContent(content)
 	// Submit fact via helper (which handles transactions)
 	fact := Fact{
-		ID:   "C1",
+		ID:   "Counter~C1",
 		Type: "Counter",
 		Fields: map[string]interface{}{
 			"id":    float64(1),
@@ -191,7 +191,7 @@ func TestCoherence_ConcurrentAccess_WithTestEnv(t *testing.T) {
 	// Verify fact is stored
 	assert.Equal(t, 1, env.GetFactCount(), "Should have 1 fact")
 	// Verify we can retrieve it
-	retrieved := env.Storage.GetFact("Counter_C1")
+	retrieved := env.Storage.GetFact("Counter~C1")
 	require.NotNil(t, retrieved, "Fact should be retrievable")
-	assert.Equal(t, "C1", retrieved.ID)
+	assert.Equal(t, "Counter~C1", retrieved.ID)
 }

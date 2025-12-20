@@ -334,10 +334,7 @@ func (bcb *BetaChainBuilder) updatePrefixCache(key string, node *JoinNode) {
 //	ratio := float64(sharedCount) / float64(totalNodes)
 //	fmt.Printf("Partage: %.1f%% (%d/%d)\n", ratio*100, sharedCount, totalNodes)
 func (bcb *BetaChainBuilder) CountSharedNodes(chain *BetaChain) int {
-	if bcb.network.LifecycleManager == nil {
-		return 0
-	}
-
+	// LifecycleManager is always initialized
 	sharedCount := 0
 	for _, node := range chain.Nodes {
 		lifecycle, _ := bcb.network.LifecycleManager.GetNodeLifecycle(node.ID)
@@ -392,18 +389,16 @@ func (bcb *BetaChainBuilder) GetChainStats(chain *BetaChain) map[string]interfac
 		stats["sharing_ratio"] = 0.0
 	}
 
-	// Calculer le refcount moyen
-	if bcb.network.LifecycleManager != nil {
-		totalRefCount := 0
-		for _, node := range chain.Nodes {
-			lifecycle, _ := bcb.network.LifecycleManager.GetNodeLifecycle(node.ID)
-			if lifecycle != nil {
-				totalRefCount += lifecycle.GetRefCount()
-			}
+	// Calculer le refcount moyen (LifecycleManager always initialized)
+	totalRefCount := 0
+	for _, node := range chain.Nodes {
+		lifecycle, _ := bcb.network.LifecycleManager.GetNodeLifecycle(node.ID)
+		if lifecycle != nil {
+			totalRefCount += lifecycle.GetRefCount()
 		}
-		if totalNodes > 0 {
-			stats["average_refcount"] = float64(totalRefCount) / float64(totalNodes)
-		}
+	}
+	if totalNodes > 0 {
+		stats["average_refcount"] = float64(totalRefCount) / float64(totalNodes)
 	}
 
 	return stats

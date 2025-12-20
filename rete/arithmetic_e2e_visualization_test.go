@@ -294,7 +294,7 @@ func printNodeConnections(t *testing.T, network *ReteNetwork) {
 	t.Log("\n🎯 TERMINAL NODES:")
 	for nodeID, terminal := range network.TerminalNodes {
 		t.Logf("   %s:", nodeID)
-		t.Logf("      Activations: %d", len(terminal.GetMemory().Tokens))
+		t.Logf("      Activations: %d", terminal.GetExecutionCount())
 	}
 }
 
@@ -358,20 +358,11 @@ func testNetworkBehavior(t *testing.T, network *ReteNetwork) {
 	t.Log("\n🎯 RULE ACTIVATIONS:")
 	totalActivations := 0
 	for ruleName, terminal := range network.TerminalNodes {
-		tokens := terminal.GetMemory().Tokens
-		activationCount := len(tokens)
+		activationCount := int(terminal.GetExecutionCount())
 		totalActivations += activationCount
 		if activationCount > 0 {
 			t.Logf("   ✅ %s: %d activation(s)",
 				strings.TrimSuffix(ruleName, "_terminal"), activationCount)
-			// Show which facts triggered the rule
-			for _, token := range tokens {
-				factIDs := make([]string, 0, len(token.Facts))
-				for _, fact := range token.Facts {
-					factIDs = append(factIDs, fact.ID)
-				}
-				t.Logf("      Facts: %v", factIDs)
-			}
 		} else {
 			t.Logf("   ⭕ %s: no activations",
 				strings.TrimSuffix(ruleName, "_terminal"))
@@ -391,7 +382,7 @@ func testNetworkBehavior(t *testing.T, network *ReteNetwork) {
 	allCorrect := true
 	for terminalID, expected := range expectedActivations {
 		if terminal, exists := network.TerminalNodes[terminalID]; exists {
-			actual := len(terminal.GetMemory().Tokens)
+			actual := int(terminal.GetExecutionCount())
 			if actual != expected {
 				t.Errorf("   ❌ %s: expected %d, got %d",
 					strings.TrimSuffix(terminalID, "_terminal"), expected, actual)

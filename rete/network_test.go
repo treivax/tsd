@@ -55,15 +55,15 @@ func TestReteNetwork_RetractFact(t *testing.T) {
 	typeNode := NewTypeNode("Person", typeDef, storage)
 	network.TypeNodes["Person"] = typeNode
 	network.RootNode.AddChild(typeNode)
-	// Soumettre un fait
+	// Soumettre un fait avec le nouveau format d'ID
 	fact := &Fact{
-		ID:     "p1",
+		ID:     "Person~p1",
 		Type:   "Person",
 		Fields: map[string]interface{}{"name": "Alice"},
 	}
 	network.SubmitFact(fact)
 	// Rétracter le fait
-	err := network.RetractFact("Person_p1")
+	err := network.RetractFact("Person~p1")
 	if err != nil {
 		t.Errorf("RetractFact failed: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestReteNetwork_RetractFact_NotFound(t *testing.T) {
 	storage := NewMemoryStorage()
 	network := NewReteNetwork(storage)
 	// Essayer de rétracter un fait qui n'existe pas
-	err := network.RetractFact("Person_non_existent")
+	err := network.RetractFact("Person~non_existent")
 	if err == nil {
 		t.Error("RetractFact should error when fact not found")
 	}
@@ -97,11 +97,11 @@ func TestScenario_AddAndRetractMultipleFacts(t *testing.T) {
 	typeNode := NewTypeNode("Person", typeDef, storage)
 	network.TypeNodes["Person"] = typeNode
 	network.RootNode.AddChild(typeNode)
-	// Ajouter plusieurs faits
+	// Ajouter plusieurs faits avec le nouveau format d'ID
 	facts := []*Fact{
-		{ID: "p1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}},
-		{ID: "p2", Type: "Person", Fields: map[string]interface{}{"name": "Bob"}},
-		{ID: "p3", Type: "Person", Fields: map[string]interface{}{"name": "Charlie"}},
+		{ID: "Person~p1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}},
+		{ID: "Person~p2", Type: "Person", Fields: map[string]interface{}{"name": "Bob"}},
+		{ID: "Person~p3", Type: "Person", Fields: map[string]interface{}{"name": "Charlie"}},
 	}
 	for _, fact := range facts {
 		if err := network.SubmitFact(fact); err != nil {
@@ -114,7 +114,7 @@ func TestScenario_AddAndRetractMultipleFacts(t *testing.T) {
 		t.Errorf("Expected 3 facts in root, got %d", len(rootMemory.Facts))
 	}
 	// Rétracter le fait du milieu
-	if err := network.RetractFact("Person_p2"); err != nil {
+	if err := network.RetractFact("Person~p2"); err != nil {
 		t.Errorf("RetractFact failed: %v", err)
 	}
 	// Vérifier qu'il reste 2 faits
@@ -123,13 +123,13 @@ func TestScenario_AddAndRetractMultipleFacts(t *testing.T) {
 		t.Errorf("Expected 2 facts in root after retract, got %d", len(rootMemory.Facts))
 	}
 	// Vérifier que p1 et p3 sont toujours là
-	if _, exists := rootMemory.GetFact("Person_p1"); !exists {
+	if _, exists := rootMemory.GetFact("Person~p1"); !exists {
 		t.Error("p1 should still exist")
 	}
-	if _, exists := rootMemory.GetFact("Person_p3"); !exists {
+	if _, exists := rootMemory.GetFact("Person~p3"); !exists {
 		t.Error("p3 should still exist")
 	}
-	if _, exists := rootMemory.GetFact("Person_p2"); exists {
+	if _, exists := rootMemory.GetFact("Person~p2"); exists {
 		t.Error("p2 should be removed")
 	}
 }
@@ -142,7 +142,7 @@ func TestReteNetwork_InsertFact(t *testing.T) {
 
 	// Test 1: Insertion simple
 	fact1 := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Alice",
@@ -156,14 +156,14 @@ func TestReteNetwork_InsertFact(t *testing.T) {
 	}
 
 	// Vérifier que le fait est dans le storage
-	storedFact := storage.GetFact("Person_p1")
+	storedFact := storage.GetFact("Person~p1")
 	if storedFact == nil {
 		t.Error("❌ Fact not found in storage")
 	}
 
 	// Test 2: Insertion avec ID déjà existant (doit échouer)
 	fact2 := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Bob",
@@ -218,7 +218,7 @@ func TestReteNetwork_UpdateFact(t *testing.T) {
 
 	// Setup: Ajouter un fait initial
 	initialFact := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Alice",
@@ -233,7 +233,7 @@ func TestReteNetwork_UpdateFact(t *testing.T) {
 
 	// Test 1: Mise à jour simple
 	updatedFact := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Alice Smith",
@@ -247,7 +247,7 @@ func TestReteNetwork_UpdateFact(t *testing.T) {
 	}
 
 	// Vérifier la mise à jour
-	storedFact := storage.GetFact("Person_p1")
+	storedFact := storage.GetFact("Person~p1")
 	if storedFact == nil {
 		t.Fatal("❌ Fact not found after update")
 	}
@@ -262,7 +262,7 @@ func TestReteNetwork_UpdateFact(t *testing.T) {
 
 	// Test 2: Mise à jour fait inexistant
 	nonExistentFact := &Fact{
-		ID:   "p999",
+		ID:   "Person~p999",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Ghost",
@@ -282,7 +282,7 @@ func TestReteNetwork_UpdateFact(t *testing.T) {
 
 	// Test 4: Mise à jour sans type
 	invalidFact := &Fact{
-		ID: "p1",
+		ID: "Person~p1",
 		Fields: map[string]interface{}{
 			"name": "Invalid",
 		},
@@ -319,7 +319,7 @@ func TestReteNetwork_FactOperationsIntegration(t *testing.T) {
 
 	// 1. Insert
 	fact1 := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Alice",
@@ -334,7 +334,7 @@ func TestReteNetwork_FactOperationsIntegration(t *testing.T) {
 	t.Log("✅ Step 1: Fact inserted")
 
 	// Vérifier insertion
-	storedFact := storage.GetFact("Person_p1")
+	storedFact := storage.GetFact("Person~p1")
 	if storedFact == nil {
 		t.Fatal("❌ Fact not found after insert")
 	}
@@ -344,7 +344,7 @@ func TestReteNetwork_FactOperationsIntegration(t *testing.T) {
 
 	// 2. Update
 	fact2 := &Fact{
-		ID:   "p1",
+		ID:   "Person~p1",
 		Type: "Person",
 		Fields: map[string]interface{}{
 			"name": "Alice Smith",
@@ -359,7 +359,7 @@ func TestReteNetwork_FactOperationsIntegration(t *testing.T) {
 	t.Log("✅ Step 2: Fact updated")
 
 	// Vérifier mise à jour
-	storedFact = storage.GetFact("Person_p1")
+	storedFact = storage.GetFact("Person~p1")
 	if storedFact == nil {
 		t.Fatal("❌ Fact not found after update")
 	}
@@ -371,14 +371,14 @@ func TestReteNetwork_FactOperationsIntegration(t *testing.T) {
 	}
 
 	// 3. Retract
-	err = network.RetractFact("Person_p1")
+	err = network.RetractFact("Person~p1")
 	if err != nil {
 		t.Fatalf("❌ RetractFact failed: %v", err)
 	}
 	t.Log("✅ Step 3: Fact retracted")
 
 	// Vérifier suppression
-	storedFact = storage.GetFact("Person_p1")
+	storedFact = storage.GetFact("Person~p1")
 	if storedFact != nil {
 		t.Error("❌ Fact should have been removed")
 	}

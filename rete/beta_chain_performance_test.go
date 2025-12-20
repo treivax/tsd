@@ -402,7 +402,7 @@ func BenchmarkHashCompute_Simple(b *testing.B) {
 		Enabled:       true,
 		HashCacheSize: 0, // Disable caching
 	}
-	registry := NewBetaSharingRegistry(config, nil)
+	registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 	condition := map[string]interface{}{
 		"type":     "comparison",
 		"operator": "==",
@@ -430,7 +430,7 @@ func BenchmarkHashCompute_Complex(b *testing.B) {
 		Enabled:       true,
 		HashCacheSize: 0, // Disable caching
 	}
-	registry := NewBetaSharingRegistry(config, nil)
+	registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 	condition := map[string]interface{}{
 		"type":     "and",
 		"operator": "&&",
@@ -468,7 +468,7 @@ func BenchmarkHashCompute_WithCache(b *testing.B) {
 		Enabled:       true,
 		HashCacheSize: 1000,
 	}
-	registry := NewBetaSharingRegistry(config, nil)
+	registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 	condition := map[string]interface{}{
 		"type":     "comparison",
 		"operator": "==",

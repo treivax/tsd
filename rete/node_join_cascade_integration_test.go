@@ -327,10 +327,12 @@ rule r1 : {u: User, o: Order} / o.user_id == u.id ==> test_action(u.id, o.id)
 }
 
 // countAllTerminalTokens compte tous les tokens dans les nœuds terminaux
+// Note: Avec la nouvelle architecture, TerminalNode ne stocke plus de tokens
+// On utilise GetExecutionCount() pour compter les activations
 func countAllTerminalTokens(network *ReteNetwork) int {
 	total := 0
 	for _, terminal := range network.TerminalNodes {
-		total += len(terminal.Memory.GetTokens())
+		total += int(terminal.GetExecutionCount())
 	}
 	return total
 }

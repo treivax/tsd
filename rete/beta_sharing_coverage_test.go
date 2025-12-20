@@ -12,7 +12,8 @@ func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 	t.Run("add rule when sharing enabled", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		lifecycle := NewLifecycleManager()
+		registry := NewBetaSharingRegistry(config, lifecycle)
 		err := registry.AddRuleToJoinNode("node1", "rule1")
 		if err != nil {
 			t.Errorf("AddRuleToJoinNode() unexpected error: %v", err)
@@ -29,7 +30,8 @@ func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 	t.Run("add multiple rules to same node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		lifecycle := NewLifecycleManager()
+		registry := NewBetaSharingRegistry(config, lifecycle)
 		err := registry.AddRuleToJoinNode("node1", "rule1")
 		if err != nil {
 			t.Errorf("AddRuleToJoinNode() error: %v", err)
@@ -50,7 +52,8 @@ func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 	t.Run("add rule when sharing disabled", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = false
-		registry := NewBetaSharingRegistry(config, nil)
+		lifecycle := NewLifecycleManager()
+		registry := NewBetaSharingRegistry(config, lifecycle)
 		err := registry.AddRuleToJoinNode("node1", "rule1")
 		if err != nil {
 			t.Errorf("AddRuleToJoinNode() unexpected error: %v", err)
@@ -64,7 +67,8 @@ func TestBetaSharingRegistry_AddRuleToJoinNode(t *testing.T) {
 	t.Run("add same rule twice to same node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		lifecycle := NewLifecycleManager()
+		registry := NewBetaSharingRegistry(config, lifecycle)
 		err := registry.AddRuleToJoinNode("node1", "rule1")
 		if err != nil {
 			t.Errorf("AddRuleToJoinNode() error: %v", err)
@@ -86,7 +90,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove rule from node with multiple rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.AddRuleToJoinNode("node1", "rule2")
 		registry.AddRuleToJoinNode("node1", "rule3")
@@ -105,7 +109,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove last rule from node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		canDelete, err := registry.RemoveRuleFromJoinNode("node1", "rule1")
 		if err != nil {
@@ -122,7 +126,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove rule from non-existent node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		canDelete, err := registry.RemoveRuleFromJoinNode("nonexistent", "rule1")
 		if err == nil {
 			t.Error("Expected error when removing from non-existent node")
@@ -134,7 +138,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove non-existent rule from node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		_, err := registry.RemoveRuleFromJoinNode("node1", "rule2")
 		if err != nil {
@@ -149,7 +153,7 @@ func TestBetaSharingRegistry_RemoveRuleFromJoinNode(t *testing.T) {
 	t.Run("remove rule when sharing disabled", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = false
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		canDelete, err := registry.RemoveRuleFromJoinNode("node1", "rule1")
 		if err != nil {
 			t.Errorf("RemoveRuleFromJoinNode() unexpected error: %v", err)
@@ -165,7 +169,7 @@ func TestBetaSharingRegistry_GetJoinNodeRules(t *testing.T) {
 	t.Run("get rules for node with rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.AddRuleToJoinNode("node1", "rule2")
 		registry.AddRuleToJoinNode("node1", "rule3")
@@ -185,7 +189,7 @@ func TestBetaSharingRegistry_GetJoinNodeRules(t *testing.T) {
 	t.Run("get rules for non-existent node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		rules := registry.GetJoinNodeRules("nonexistent")
 		if len(rules) != 0 {
 			t.Errorf("Expected empty slice for non-existent node, got %d rules", len(rules))
@@ -194,7 +198,7 @@ func TestBetaSharingRegistry_GetJoinNodeRules(t *testing.T) {
 	t.Run("get rules for node with no rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		// Add then remove all rules
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.RemoveRuleFromJoinNode("node1", "rule1")
@@ -210,7 +214,7 @@ func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 	t.Run("refcount for node with multiple rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.AddRuleToJoinNode("node1", "rule2")
 		registry.AddRuleToJoinNode("node1", "rule3")
@@ -222,7 +226,7 @@ func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 	t.Run("refcount for non-existent node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		count := registry.GetJoinNodeRefCount("nonexistent")
 		if count != 0 {
 			t.Errorf("Expected refcount 0 for non-existent node, got %d", count)
@@ -231,7 +235,7 @@ func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 	t.Run("refcount after removing rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.AddRuleToJoinNode("node1", "rule2")
 		registry.AddRuleToJoinNode("node1", "rule3")
@@ -244,7 +248,7 @@ func TestBetaSharingRegistry_GetJoinNodeRefCount(t *testing.T) {
 	t.Run("refcount zero after removing all rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.RemoveRuleFromJoinNode("node1", "rule1")
 		count := registry.GetJoinNodeRefCount("node1")
@@ -259,7 +263,7 @@ func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 	t.Run("unregister node with no rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.RemoveRuleFromJoinNode("node1", "rule1")
 		err := registry.UnregisterJoinNode("node1")
@@ -275,7 +279,7 @@ func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 	t.Run("unregister non-existent node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		err := registry.UnregisterJoinNode("nonexistent")
 		if err != nil {
 			t.Errorf("UnregisterJoinNode() should not error for non-existent node: %v", err)
@@ -284,7 +288,7 @@ func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 	t.Run("unregister when sharing disabled", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = false
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		err := registry.UnregisterJoinNode("node1")
 		if err != nil {
 			t.Errorf("UnregisterJoinNode() error: %v", err)
@@ -293,7 +297,7 @@ func TestBetaSharingRegistry_UnregisterJoinNode(t *testing.T) {
 	t.Run("unregister node then try to get rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		registry.AddRuleToJoinNode("node1", "rule1")
 		registry.RemoveRuleFromJoinNode("node1", "rule1")
 		registry.UnregisterJoinNode("node1")
@@ -309,7 +313,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 	t.Run("release node with no rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		storage := NewMemoryStorage()
 		varTypes := map[string]string{"p": "Person", "o": "Order"}
 		condition := map[string]interface{}{
@@ -343,7 +347,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 	t.Run("release node with active rules", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		storage := NewMemoryStorage()
 		condition := map[string]interface{}{
 			"type":     "comparison",
@@ -377,7 +381,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 	t.Run("release non-existent node", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = true
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		released, err := registry.ReleaseJoinNodeByID("nonexistent")
 		if err != nil {
 			t.Errorf("ReleaseJoinNodeByID() should not error for non-existent node: %v", err)
@@ -389,7 +393,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 	t.Run("release when sharing disabled", func(t *testing.T) {
 		config := DefaultBetaSharingConfig()
 		config.Enabled = false
-		registry := NewBetaSharingRegistry(config, nil)
+		registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 		released, err := registry.ReleaseJoinNodeByID("node1")
 		if err != nil {
 			t.Errorf("ReleaseJoinNodeByID() error: %v", err)
@@ -404,7 +408,7 @@ func TestBetaSharingRegistry_ReleaseJoinNodeByID(t *testing.T) {
 func TestBetaSharingRegistry_RuleLifecycle(t *testing.T) {
 	config := DefaultBetaSharingConfig()
 	config.Enabled = true
-	registry := NewBetaSharingRegistry(config, nil)
+	registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 	// Add multiple rules to a node
 	registry.AddRuleToJoinNode("node1", "rule1")
 	registry.AddRuleToJoinNode("node1", "rule2")
@@ -456,7 +460,7 @@ func TestBetaSharingRegistry_RuleLifecycle(t *testing.T) {
 func TestBetaSharingRegistry_ConcurrentRuleManagement(t *testing.T) {
 	config := DefaultBetaSharingConfig()
 	config.Enabled = true
-	registry := NewBetaSharingRegistry(config, nil)
+	registry := NewBetaSharingRegistry(config, NewLifecycleManager())
 	done := make(chan bool)
 	numGoroutines := 10
 	rulesPerGoroutine := 5

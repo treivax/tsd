@@ -374,10 +374,10 @@ rule r3 : {p: Person} / p.age > 30 AND p.age < 50 ==> middle_aged(p.id)
 	// VÉRIFICATION 5: Les TerminalNodes ont été activés
 	activatedTerminals := 0
 	for _, terminal := range network.TerminalNodes {
-		terminalMemory := terminal.GetMemory()
-		if len(terminalMemory.Tokens) > 0 {
+		execCount := terminal.GetExecutionCount()
+		if execCount > 0 {
 			activatedTerminals++
-			t.Logf("✅ TerminalNode %s activé avec %d token(s)", terminal.GetID(), len(terminalMemory.Tokens))
+			t.Logf("✅ TerminalNode %s activé avec %d activation(s)", terminal.GetID(), execCount)
 		}
 	}
 	t.Logf("\n📊 Résumé:")

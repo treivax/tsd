@@ -617,9 +617,29 @@ func (jn *JoinNode) getJoinFacts(bindings *BindingChain, cond JoinCondition, ind
 
 // getFieldValues extrait les valeurs des champs depuis les faits.
 // Retourne (leftValue, rightValue, true) si succès, (nil, nil, false) si échec.
+// Gère le champ spécial "_id_" pour accéder à l'ID du fait.
 func (jn *JoinNode) getFieldValues(leftFact, rightFact *Fact, cond JoinCondition, index int, logger *DebugLogger) (interface{}, interface{}, bool) {
-	leftValue, leftExists := leftFact.Fields[cond.LeftField]
-	rightValue, rightExists := rightFact.Fields[cond.RightField]
+	// Récupérer la valeur gauche (avec support du champ spécial _id_)
+	var leftValue interface{}
+	var leftExists bool
+	if cond.LeftField == "_id_" {
+		// Utiliser l'ID interne complet (Type~ID) pour la comparaison
+		leftValue = leftFact.GetInternalID()
+		leftExists = true
+	} else {
+		leftValue, leftExists = leftFact.Fields[cond.LeftField]
+	}
+
+	// Récupérer la valeur droite (avec support du champ spécial _id_)
+	var rightValue interface{}
+	var rightExists bool
+	if cond.RightField == "_id_" {
+		// Utiliser l'ID interne complet (Type~ID) pour la comparaison
+		rightValue = rightFact.GetInternalID()
+		rightExists = true
+	} else {
+		rightValue, rightExists = rightFact.Fields[cond.RightField]
+	}
 
 	if !leftExists || !rightExists {
 		logger.Log("[JOIN_%s] Condition[%d] FAIL: field not found - %s.%s (exists=%v), %s.%s (exists=%v)",
@@ -778,16 +798,26 @@ func extractComparisonJoinConditions(condition map[string]interface{}) []JoinCon
 
 	fmt.Printf("  ✅ Left et Right extraits\n")
 
-	// Vérifier si c'est une jointure field-to-field
+	// Vérifier si c'est une jointure field-to-field ou field-to-variable
 	leftType, _ := left["type"].(string)
 	rightType, _ := right["type"].(string)
 
-	if leftType != "fieldAccess" || rightType != "fieldAccess" {
-		return []JoinCondition{}
+	// Cas 1: fieldAccess == fieldAccess (ex: c.produit_id == p.id)
+	if leftType == "fieldAccess" && rightType == "fieldAccess" {
+		return extractFieldAccessJoinCondition(left, right, condition)
 	}
 
-	// Extraire les détails de la condition de jointure
-	return extractFieldAccessJoinCondition(left, right, condition)
+	// Cas 2: fieldAccess == variable (ex: c.produit == p)
+	if leftType == "fieldAccess" && rightType == "variable" {
+		return extractFieldToVariableJoinCondition(left, right, condition)
+	}
+
+	// Cas 3: variable == fieldAccess (ex: p == c.produit)
+	if leftType == "variable" && rightType == "fieldAccess" {
+		return extractVariableToFieldJoinCondition(left, right, condition)
+	}
+
+	return []JoinCondition{}
 }
 
 // extractFieldAccessJoinCondition crée une JoinCondition depuis des fieldAccess.
@@ -806,6 +836,51 @@ func extractFieldAccessJoinCondition(left, right, condition map[string]interface
 		LeftField:  leftField,
 		RightField: rightField,
 		LeftVar:    leftObj,
+		RightVar:   rightObj,
+		Operator:   operator,
+	}}
+}
+
+// extractFieldToVariableJoinCondition crée une JoinCondition pour fieldAccess == variable.
+// Ex: c.produit == p signifie comparer c.produit (ID stocké) avec p (ID du fait)
+func extractFieldToVariableJoinCondition(left, right, condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("  ✅ Condition de jointure fieldAccess == variable détectée\n")
+
+	leftObj, _ := left["object"].(string)
+	leftField, _ := left["field"].(string)
+	rightName, _ := right["name"].(string)
+	operator, _ := condition["operator"].(string)
+
+	fmt.Printf("    📌 %s.%s %s %s (variable)\n", leftObj, leftField, operator, rightName)
+
+	// Pour comparer c.produit == p, on doit comparer:
+	// - le champ "produit" de c (qui contient l'ID du Produit)
+	// - avec l'ID du fait p (stocké dans p.ID, accessible via un champ spécial)
+	return []JoinCondition{{
+		LeftField:  leftField,
+		RightField: "_id_", // Champ spécial pour accéder à l'ID du fait
+		LeftVar:    leftObj,
+		RightVar:   rightName,
+		Operator:   operator,
+	}}
+}
+
+// extractVariableToFieldJoinCondition crée une JoinCondition pour variable == fieldAccess.
+// Ex: p == c.produit (symétrique du cas précédent)
+func extractVariableToFieldJoinCondition(left, right, condition map[string]interface{}) []JoinCondition {
+	fmt.Printf("  ✅ Condition de jointure variable == fieldAccess détectée\n")
+
+	leftName, _ := left["name"].(string)
+	rightObj, _ := right["object"].(string)
+	rightField, _ := right["field"].(string)
+	operator, _ := condition["operator"].(string)
+
+	fmt.Printf("    📌 %s (variable) %s %s.%s\n", leftName, operator, rightObj, rightField)
+
+	return []JoinCondition{{
+		LeftField:  "_id_", // Champ spécial pour accéder à l'ID du fait
+		RightField: rightField,
+		LeftVar:    leftName,
 		RightVar:   rightObj,
 		Operator:   operator,
 	}}

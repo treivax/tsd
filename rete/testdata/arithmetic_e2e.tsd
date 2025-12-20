@@ -3,7 +3,7 @@
 
 // Definition des types
 type Produit(#id: string, prix: number, quantite: number, poids: number)
-type Commande(#id: string, produit_id: string, qte: number, remise: number)
+type Commande(#id: string, produit: Produit, qte: number, remise: number)
 type Client(#id: string, niveau: string, reduction_supplementaire: number)
 
 // Definition des actions
@@ -19,10 +19,10 @@ action facture_calculee(
 action facture_speciale(commande_id: string, message: string, montant: number)
 
 // Regle 1: Condition de base (devrait declencher l'action pour toutes les commandes)
-// c.produit_id == p.id : condition de jointure
+// c.produit == p : condition de jointure par référence de fait
 // c.qte * 23 - 10 > 0 : condition alpha arithmetique (toujours vraie pour nos donnees)
 rule calcul_facture_base : {p: Produit, c: Commande} /
-    c.produit_id == p.id AND (c.qte * 23 - 10 + c.remise * 43) > 0
+    c.produit == p AND (c.qte * 23 - 10 + c.remise * 43) > 0
     ==> facture_calculee(
         c.id,
         p.prix * c.qte,
@@ -35,32 +35,34 @@ rule calcul_facture_base : {p: Produit, c: Commande} /
 // Regle 2: Condition inversée par rapport à la règle 1
 // Les deux regles ne doivent pas partager le MEME JoinNode car conditions alpha différentes
 rule calcul_facture_speciale : {p: Produit, c: Commande} /
-    c.produit_id == p.id AND (c.qte * 23 - 10 + c.remise * 43) < 0
+    c.produit == p AND (c.qte * 23 - 10 + c.remise * 43) < 0
     ==> facture_speciale(
         c.id,
         "Commande speciale",
         p.prix * c.qte * 1.1
     )
 
-// Regle 3: MEME condition de jointure ET meme condition alpha que Regle 1
-// Les deux regles ont des conditions identiques mais des actions différentes
-// Seule difference: action differente
+// Regle 3: MEME condition de jointure ET meme condition alpha que la règle 1
+// Doit REUTILISER le même JoinNode que la règle 1
 rule calcul_facture_premium : {p: Produit, c: Commande} /
-    c.produit_id == p.id AND (c.qte * 23 - 10 + c.remise * 43) > 0
-    ==> facture_speciale(
+    c.produit == p AND (c.qte * 23 - 10 + c.remise * 43) > 0
+    ==> facture_calculee(
         c.id,
-        "Commande premium",
-        p.prix * c.qte * 1.2
+        p.prix * c.qte * 1.2,
+        (p.prix * c.qte * 1.2) * (c.remise / 100),
+        (p.prix * c.qte * 1.2) - ((p.prix * c.qte * 1.2) * (c.remise / 100)),
+        p.prix * 1.2,
+        (p.poids * c.qte) + 20
     )
 
-// Faits de test
-Produit(id: "PROD001", prix: 100, quantite: 50, poids: 2)
-Produit(id: "PROD002", prix: 250, quantite: 20, poids: 5)
-Produit(id: "PROD003", prix: 50, quantite: 100, poids: 1)
+// Données de test avec affectations de variables
+p1 = Produit(id: "PROD001", prix: 100.0, quantite: 10, poids: 2.5)
+p2 = Produit(id: "PROD002", prix: 50.0, quantite: 20, poids: 1.0)
+p3 = Produit(id: "PROD003", prix: 200.0, quantite: 5, poids: 5.0)
 
-Commande(id: "CMD001", produit_id: "PROD001", qte: 5, remise: 10)
-Commande(id: "CMD002", produit_id: "PROD002", qte: 2, remise: 15)
-Commande(id: "CMD003", produit_id: "PROD003", qte: 10, remise: 5)
+Commande(id: "CMD001", produit: p1, qte: 2, remise: 10.0)
+Commande(id: "CMD002", produit: p2, qte: 5, remise: 5.0)
+Commande(id: "CMD003", produit: p3, qte: 1, remise: 15.0)
 
-Client(id: "CLIENT001", niveau: "premium", reduction_supplementaire: 5)
-Client(id: "CLIENT002", niveau: "standard", reduction_supplementaire: 0)
+Client(id: "CLI001", niveau: "gold", reduction_supplementaire: 5.0)
+Client(id: "CLI002", niveau: "silver", reduction_supplementaire: 3.0)

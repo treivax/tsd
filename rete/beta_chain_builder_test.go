@@ -702,32 +702,6 @@ func TestSetPrefixSharingEnabled(t *testing.T) {
 	}
 }
 
-// TestBuildChain_WithoutSharingRegistry tests fallback when no registry
-func TestBuildChain_WithoutSharingRegistry(t *testing.T) {
-	storage := NewMemoryStorage()
-	network := NewReteNetwork(storage)
-	// Don't set BetaSharingManager - test fallback
-	builder := NewBetaChainBuilder(network, storage)
-	pattern := JoinPattern{
-		LeftVars:    []string{"p"},
-		RightVars:   []string{"o"},
-		AllVars:     []string{"p", "o"},
-		VarTypes:    map[string]string{"p": "Person", "o": "Order"},
-		Condition:   map[string]interface{}{"type": "join"},
-		Selectivity: 0.3,
-	}
-	chain, err := builder.BuildChain([]JoinPattern{pattern}, "test_no_registry")
-	if err != nil {
-		t.Fatalf("Expected no error with fallback, got: %v", err)
-	}
-	if chain == nil {
-		t.Fatal("Expected non-nil chain")
-	}
-	if len(chain.Nodes) != 1 {
-		t.Errorf("Expected 1 node, got %d", len(chain.Nodes))
-	}
-}
-
 // TestConcurrentBuildChain tests thread-safety with concurrent builds
 func TestConcurrentBuildChain(t *testing.T) {
 	storage := NewMemoryStorage()

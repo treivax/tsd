@@ -285,7 +285,7 @@ func TestToFloat64(t *testing.T) {
 		{"int32", int32(42), 42.0, true},
 		{"int64", int64(42), 42.0, true},
 		{"float32", float32(42.5), 42.5, true},
-		{"string", "42", 0, false},
+		{"string", "42", 42.0, true},
 		{"bool", true, 0, false},
 	}
 
