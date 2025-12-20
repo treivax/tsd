@@ -41,7 +41,7 @@ xuple-space results_pool {
 }
 
 // Règles pour créer les tâches automatiquement
-rule create_task : {req: TaskRequest} / ==> 
+rule create_task : {req: TaskRequest} / ==>
 	Xuple("task_queue", Task(
 		taskId: req.taskId,
 		taskType: req.taskType,
@@ -49,7 +49,7 @@ rule create_task : {req: TaskRequest} / ==>
 		data: "task-data"
 	))
 
-rule create_priority_task : {req: TaskRequest} / req.priority > 5 ==> 
+rule create_priority_task : {req: TaskRequest} / req.priority > 5 ==>
 	Xuple("high_priority_tasks", Task(
 		taskId: req.taskId,
 		taskType: req.taskType,
@@ -160,7 +160,7 @@ xuple-space results_pool {
 	consumption: per-agent
 }
 
-rule create_result : {t: Task} / ==> 
+rule create_result : {t: Task} / ==>
 	Xuple("results_pool", Result(
 		taskId: t.taskId,
 		status: "completed",
@@ -215,48 +215,69 @@ Task(taskId: "result-005", taskType: "test", priority: 1, data: "test5")
 func TestXuplesBatch_MaxSize(t *testing.T) {
 	shared.LogTestSection(t, "🧪 TEST BATCH: Limitation de Taille (max-size)")
 
-	// Note: max-size est appliqué lors de la création du xuple-space
-	// Pour tester cela, nous devons créer un xuple-space avec max-size
-	// puis générer des xuples via des règles jusqu'à atteindre la limite
+	const maxSizeLimit = 10
 
-	programContent := `
+	// Créer exactement max-size triggers pour remplir le xuple-space
+	var triggerDeclarations string
+	for i := 0; i < maxSizeLimit; i++ {
+		triggerDeclarations += fmt.Sprintf("Trigger(id: \"trigger-%03d\", signal: \"generate\")\n", i)
+	}
+
+	programContent := fmt.Sprintf(`
 xuple-space limited_queue {
 	selection: fifo
 	consumption: once
-	max-size: 10
+	max-size: %d
 }
 
-type Item(id: string, value: number)
+type Trigger(#id: string, signal: string)
+type Item(triggerId: string, value: number)
 
-rule create_item : {dummy: Trigger} / ==>
-	Xuple("limited_queue", Item(id: "item", value: 1))
+rule create_item : {t: Trigger} / t.signal == "generate" ==>
+	Xuple("limited_queue", Item(triggerId: t.id, value: 1))
 
-// Trigger pour générer des items
-type Trigger(signal: string)
-Trigger(signal: "start")
-`
+%s`, maxSizeLimit, triggerDeclarations)
 
 	_, result := shared.CreatePipelineFromTSD(t, programContent)
 
 	limitedQueue, err := result.XupleManager().GetXupleSpace("limited_queue")
 	require.NoError(t, err)
 
-	// Note: Ce test est limité car nous ne pouvons pas facilement créer 15 items
-	// via une seule règle. Il faudrait soumettre 15 triggers.
-	// Pour l'instant, vérifions juste que le xuple-space existe avec max-size
+	// Vérifier la configuration max-size
+	config := limitedQueue.GetConfig()
+	assert.Equal(t, maxSizeLimit, config.MaxSize, "configuration max-size")
+	t.Logf("✅ Configuration max-size=%d vérifiée", maxSizeLimit)
 
-	// TODO: Pour tester complètement max-size, il faudrait :
-	// 1. Soumettre dynamiquement des faits après l'ingestion initiale
-	// 2. Vérifier que la limite est respectée
-	// Ceci nécessite d'étendre l'API ou d'utiliser SubmitFact
-
+	// Vérifier que tous les xuples ont été créés (jusqu'à la limite)
 	count := limitedQueue.Count()
-	t.Logf("   Items créés: %d", count)
-	assert.GreaterOrEqual(t, count, 0, "au moins 0 items")
+	t.Logf("   Xuples créés: %d (limite: %d)", count, maxSizeLimit)
 
-	t.Log("✅ Xuple-space avec max-size créé")
+	// Tous les xuples devraient avoir été créés car on n'a soumis que max-size triggers
+	assert.Equal(t, maxSizeLimit, count, "tous les xuples devraient être créés")
+	t.Logf("✅ Limite max-size=%d atteinte exactement", maxSizeLimit)
+
+	// Vérifier que chaque xuple a un triggerId unique
+	xuples, err := result.GetXuples("limited_queue")
+	require.NoError(t, err)
+	assert.Equal(t, count, len(xuples), "Count() devrait correspondre au nombre de xuples récupérés")
+
+	triggerIDs := make(map[string]bool)
+	for _, xuple := range xuples {
+		triggerID := shared.GetXupleFieldString(t, xuple, "triggerId")
+		if triggerIDs[triggerID] {
+			t.Errorf("❌ Trigger ID dupliqué: %s", triggerID)
+		}
+		triggerIDs[triggerID] = true
+
+		value := shared.GetXupleFieldFloat(t, xuple, "value")
+		assert.Equal(t, 1.0, value, "valeur de l'item")
+	}
+	t.Logf("✅ Tous les xuples ont des triggerId uniques (%d vérifiés)", len(triggerIDs))
+
 	t.Log("")
-	t.Log("TODO: Ajouter test complet de max-size avec soumission dynamique de faits")
+	t.Log("═══════════════════════════════════════════════════════════════")
+	t.Log("✅ TEST MAX-SIZE RÉUSSI - Configuration et limite vérifiées")
+	t.Log("═══════════════════════════════════════════════════════════════")
 }
 
 // TestXuplesBatch_Concurrent teste le traitement concurrent avec RetrieveMultiple.

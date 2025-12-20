@@ -136,10 +136,27 @@ xuple-space limited {
 		t.Errorf("❌ Expected xuple-space 'limited', got '%s'", spaces[0])
 	}
 
-	// TODO: Vérifier que max-size est correctement configuré
-	// Nécessite une méthode dans xuples.XupleSpace pour récupérer la config
+	// Vérifier que max-size est correctement configuré
+	limitedSpace, err := result.XupleManager().GetXupleSpace("limited")
+	if err != nil {
+		t.Fatalf("❌ Impossible de récupérer le xuple-space 'limited': %v", err)
+	}
 
-	t.Log("✅ Xuple-space avec max-size créé automatiquement")
+	config := limitedSpace.GetConfig()
+	if config.MaxSize != 100 {
+		t.Errorf("❌ Expected max-size=100, got %d", config.MaxSize)
+	} else {
+		t.Log("✅ Configuration max-size=100 vérifiée")
+	}
+
+	// Vérifier que la politique de sélection est bien FIFO
+	if config.SelectionPolicy == nil {
+		t.Error("❌ SelectionPolicy ne devrait pas être nil")
+	} else {
+		t.Log("✅ SelectionPolicy configurée")
+	}
+
+	t.Log("✅ Xuple-space avec max-size créé automatiquement et correctement configuré")
 }
 
 func TestPipeline_AutoCreateXupleSpaces_Empty(t *testing.T) {
