@@ -15,6 +15,38 @@ Avant de commencer, consulter [common.md](./common.md) :
 - [⚠️ Tests Fonctionnels RÉELS](./common.md#tests-fonctionnels-réels) - Aucun mock, résultats réels
 - [📋 Checklist](./common.md#checklist-tests) - Points de validation
 
+### 🚨 RÈGLE ABSOLUE - Ne JAMAIS contourner une fonctionnalité
+
+**INTERDIT** : Modifier un test pour qu'il passe en contournant, désactivant ou mockant une fonctionnalité qui devrait être effective.
+
+**OBLIGATOIRE** : Si un test échoue parce qu'une fonctionnalité n'est pas implémentée ou est défectueuse :
+1. ✅ **Implémenter ou corriger la fonctionnalité** pour que le test passe
+2. ✅ **Adapter le test** uniquement si la sémantique a changé (et documenter pourquoi)
+3. ❌ **Ne JAMAIS bypasser** la vérification en retirant l'assertion ou en mockant le résultat
+
+**Exemple INTERDIT** :
+```go
+// ❌ MAUVAIS : contourner une fonctionnalité manquante
+func TestFeature(t *testing.T) {
+    // result := Feature(input)  // Commenté car non implémenté
+    // if result != expected { ... }
+    t.Skip("Feature pas encore implémentée") // ❌ INTERDIT
+}
+```
+
+**Exemple CORRECT** :
+```go
+// ✅ BON : implémenter la fonctionnalité d'abord
+func TestFeature(t *testing.T) {
+    result := Feature(input) // Fonctionnalité implémentée
+    if result != expected {
+        t.Errorf("❌ Attendu %v, reçu %v", expected, result)
+    }
+}
+```
+
+Cette règle garantit que les tests reflètent toujours la réalité du code et que chaque test qui passe valide une fonctionnalité réellement opérationnelle.
+
 ---
 
 ## 📋 Instructions
@@ -62,6 +94,7 @@ func TestFeature(t *testing.T) {
 
 #### Principes Tests
 
+- ✅ **Aucun contournement** : Ne JAMAIS bypasser une fonctionnalité pour faire passer un test
 - ✅ **Tests déterministes** : Mêmes entrées = mêmes sorties
 - ✅ **Tests isolés** : Aucune dépendance entre tests
 - ✅ **Résultats réels** : Pas de mocks (sauf explicitement nécessaire)
@@ -138,6 +171,12 @@ make validate
    - Le test est-il correct ?
    - Le code a-t-il régressé ?
    - L'environnement a-t-il changé ?
+
+6. **Corriger la cause, pas le symptôme**
+   - ✅ Si fonctionnalité manquante → **implémenter la fonctionnalité**
+   - ✅ Si code buggé → **corriger le bug**
+   - ✅ Si sémantique changée → **adapter le test ET documenter**
+   - ❌ Ne JAMAIS contourner l'assertion pour faire passer le test
 
 #### Si test flaky (non-déterministe)
 
@@ -247,6 +286,7 @@ Voir [common.md#checklist-tests](./common.md#checklist-tests) :
 
 ## 🚫 Anti-Patterns
 
+- ❌ **Contourner une fonctionnalité** pour faire passer un test (RÈGLE ABSOLUE)
 - ❌ Tests qui passent toujours (faux positifs)
 - ❌ Tests sans assertions
 - ❌ Tests non-déterministes (flaky)
@@ -255,6 +295,7 @@ Voir [common.md#checklist-tests](./common.md#checklist-tests) :
 - ❌ Tests trop complexes
 - ❌ Hardcoding de valeurs
 - ❌ Coverage pour coverage (privilégier qualité)
+- ❌ Skip/disable de tests sans implémenter la fonctionnalité
 
 ---
 

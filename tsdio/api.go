@@ -79,14 +79,18 @@ type ArgumentValue struct {
 }
 
 // Fact représente un fait dans le système
+// L'ID interne (_id_) n'est jamais exposé via l'API publique JSON
 type Fact struct {
-	// ID est l'identifiant unique du fait
-	ID string `json:"id"`
+	// internalID est l'identifiant interne unique du fait
+	// Il n'est PAS sérialisé en JSON (pas de tag json)
+	// Il est maintenu en interne pour la cohérence du système
+	internalID string
 
 	// Type est le type du fait (ex: "Person", "Order")
 	Type string `json:"type"`
 
-	// Fields contient les champs du fait (renommé de Attributes pour cohérence avec domain.Fact)
+	// Fields contient les champs du fait
+	// Le champ _id_ ne doit JAMAIS être présent ici
 	Fields map[string]interface{} `json:"fields"`
 }
 
@@ -127,6 +131,18 @@ const (
 	ErrorTypeExecutionError  = "execution_error"
 	ErrorTypeServerError     = "server_error"
 )
+
+// GetInternalID retourne l'ID interne du fait
+// Cette méthode est pour usage interne uniquement
+func (f *Fact) GetInternalID() string {
+	return f.internalID
+}
+
+// SetInternalID définit l'ID interne du fait
+// Cette méthode est pour usage interne uniquement
+func (f *Fact) SetInternalID(id string) {
+	f.internalID = id
+}
 
 // NewExecuteRequest crée une nouvelle requête d'exécution
 func NewExecuteRequest(source string) *ExecuteRequest {

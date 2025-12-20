@@ -1180,8 +1180,8 @@ func TestExtractFacts(t *testing.T) {
 		t.Fatalf("len(facts) = %d, want 2", len(facts))
 	}
 
-	if facts[0].ID != "f1" {
-		t.Errorf("facts[0].ID = %q, want 'f1'", facts[0].ID)
+	if facts[0].GetInternalID() != "f1" {
+		t.Errorf("facts[0].GetInternalID() = %q, want 'f1'", facts[0].GetInternalID())
 	}
 	if facts[0].Type != "Person" {
 		t.Errorf("facts[0].Type = %q, want 'Person'", facts[0].Type)
@@ -1190,8 +1190,8 @@ func TestExtractFacts(t *testing.T) {
 		t.Errorf("facts[0].Fields[name] = %v, want 'Alice'", facts[0].Fields["name"])
 	}
 
-	if facts[1].ID != "f2" {
-		t.Errorf("facts[1].ID = %q, want 'f2'", facts[1].ID)
+	if facts[1].GetInternalID() != "f2" {
+		t.Errorf("facts[1].GetInternalID() = %q, want 'f2'", facts[1].GetInternalID())
 	}
 }
 

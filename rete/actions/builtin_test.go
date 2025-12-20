@@ -202,7 +202,7 @@ func TestExecuteUpdate_Implemented(t *testing.T) {
 
 	// Setup: Ajouter un fait initial
 	initialFact := &rete.Fact{
-		ID:   "test",
+		ID:   "TestType~test",
 		Type: "TestType",
 		Fields: map[string]interface{}{
 			"value": 42,
@@ -212,7 +212,7 @@ func TestExecuteUpdate_Implemented(t *testing.T) {
 
 	// Test: mise à jour réussie
 	updatedFact := &rete.Fact{
-		ID:   "test",
+		ID:   "TestType~test",
 		Type: "TestType",
 		Fields: map[string]interface{}{
 			"value": 100,
@@ -224,7 +224,7 @@ func TestExecuteUpdate_Implemented(t *testing.T) {
 	}
 
 	// Vérifier la mise à jour
-	storedFact := storage.GetFact("TestType_test")
+	storedFact := storage.GetFact("TestType~test")
 	if storedFact == nil || storedFact.Fields["value"] != 100 {
 		t.Error("❌ Fact should be updated")
 	}
@@ -254,7 +254,7 @@ func TestExecuteInsert_Implemented(t *testing.T) {
 
 	// Test: insertion réussie
 	newFact := &rete.Fact{
-		ID:   "test",
+		ID:   "TestType~test",
 		Type: "TestType",
 		Fields: map[string]interface{}{
 			"value": 42,
@@ -266,7 +266,7 @@ func TestExecuteInsert_Implemented(t *testing.T) {
 	}
 
 	// Vérifier l'insertion
-	storedFact := storage.GetFact("TestType_test")
+	storedFact := storage.GetFact("TestType~test")
 	if storedFact == nil {
 		t.Error("❌ Fact should be inserted")
 	}
@@ -296,7 +296,7 @@ func TestExecuteRetract_Implemented(t *testing.T) {
 
 	// Setup: Ajouter un fait
 	fact := &rete.Fact{
-		ID:   "test",
+		ID:   "TestType~test",
 		Type: "TestType",
 		Fields: map[string]interface{}{
 			"value": 42,
@@ -305,13 +305,13 @@ func TestExecuteRetract_Implemented(t *testing.T) {
 	storage.AddFact(fact)
 
 	// Test: rétractation réussie
-	err := executor.executeRetract([]interface{}{"TestType_test"})
+	err := executor.executeRetract([]interface{}{"TestType~test"})
 	if err != nil {
 		t.Errorf("❌ Retract should succeed, got error: %v", err)
 	}
 
 	// Vérifier la suppression
-	storedFact := storage.GetFact("TestType_test")
+	storedFact := storage.GetFact("TestType~test")
 	if storedFact != nil {
 		t.Error("❌ Fact should be removed")
 	}

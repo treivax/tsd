@@ -102,7 +102,7 @@ func TestGenerateFactIDWithPrimaryKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := GenerateFactID(tt.fact, tt.typeDef)
+			id, err := GenerateFactID(tt.fact, tt.typeDef, nil)
 
 			if tt.wantErr {
 				if err == nil {
@@ -143,7 +143,7 @@ func TestGenerateFactIDWithHash(t *testing.T) {
 		},
 	}
 
-	id, err := GenerateFactID(fact, typeDef)
+	id, err := GenerateFactID(fact, typeDef, nil)
 	if err != nil {
 		t.Fatalf("❌ Erreur inattendue: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestGenerateFactIDWithHash(t *testing.T) {
 	}
 
 	// Vérifier la reproductibilité (même fait = même hash)
-	id2, err := GenerateFactID(fact, typeDef)
+	id2, err := GenerateFactID(fact, typeDef, nil)
 	if err != nil {
 		t.Fatalf("❌ Erreur inattendue: %v", err)
 	}

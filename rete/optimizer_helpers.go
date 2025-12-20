@@ -213,11 +213,9 @@ func (h *OptimizerHelpers) RemoveJoinNodeFromNetwork(nodeID string) error {
 		}
 	}
 
-	// Step 5: Remove from beta sharing registry
-	if h.network.BetaSharingRegistry != nil {
-		if err := h.network.BetaSharingRegistry.UnregisterJoinNode(nodeID); err != nil {
-			h.network.logger.Warn("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v", nodeID, err)
-		}
+	// Step 5: Remove from beta sharing registry (always initialized)
+	if err := h.network.BetaSharingRegistry.UnregisterJoinNode(nodeID); err != nil {
+		h.network.logger.Warn("   ⚠️  Warning: failed to unregister join node %s from beta sharing: %v", nodeID, err)
 	}
 
 	h.network.logger.Info("   ✅ Join node %s successfully removed from network", nodeID)

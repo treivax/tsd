@@ -1,0 +1,48 @@
+// Scénario de test: Gestion de commandes
+// Démontre les chaînes de références entre types
+
+type Customer(#customerId: string, name: string, vipStatus: bool)
+type Product(#productId: string, name: string, price: number, stock: number)
+type Order(customer: Customer, #orderNumber: string, totalAmount: number, status: string)
+type OrderLine(order: Order, product: Product, quantity: number, subtotal: number)
+type Payment(order: Order, #paymentId: string, amount: number, method: string)
+
+// Créer des clients
+alice = Customer("CUST-001", "Alice Johnson", true)
+bob = Customer("CUST-002", "Bob Smith", false)
+
+// Créer des produits
+laptop = Product("PROD-001", "Laptop", 1200.00, 10)
+mouse = Product("PROD-002", "Mouse", 25.00, 50)
+keyboard = Product("PROD-003", "Keyboard", 75.00, 30)
+
+// Créer des commandes
+order1 = Order(alice, "ORD-001", 1300.00, "pending")
+order2 = Order(bob, "ORD-002", 100.00, "pending")
+
+// Créer des lignes de commande
+OrderLine(order1, laptop, 1, 1200.00)
+OrderLine(order1, mouse, 4, 100.00)
+OrderLine(order2, keyboard, 1, 75.00)
+OrderLine(order2, mouse, 1, 25.00)
+
+// Créer des paiements
+Payment(order1, "PAY-001", 1300.00, "credit_card")
+Payment(order2, "PAY-002", 100.00, "paypal")
+
+// Règle 1: Commandes VIP
+{c: Customer, o: Order} / o.customer == c && c.vipStatus == true ==> 
+    Log("VIP Order: " + o.orderNumber + " from " + c.name)
+
+// Règle 2: Commandes complètes (avec paiement)
+{o: Order, p: Payment} / p.order == o && p.amount == o.totalAmount ==> 
+    Log("Order " + o.orderNumber + " fully paid via " + p.method)
+
+// Règle 3: Vérification stock
+{o: Order, ol: OrderLine, prod: Product} / 
+    ol.order == o && ol.product == prod && prod.stock < ol.quantity ==> 
+    Log("ALERT: Insufficient stock for " + prod.name + " in order " + o.orderNumber)
+
+// Règle 4: Commandes importantes (> 1000)
+{c: Customer, o: Order} / o.customer == c && o.totalAmount > 1000.00 ==> 
+    Log("Large order: " + o.orderNumber + " (" + o.totalAmount + ") from " + c.name)

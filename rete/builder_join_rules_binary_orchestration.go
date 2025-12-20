@@ -197,10 +197,8 @@ func (ctx *binaryJoinRuleContext) createOrReuseJoinNode() error {
 		fmt.Printf("   ✨ Created new shared JoinNode %s (hash: %s)\n", ctx.joinNode.ID, hash)
 	}
 
-	// Register with lifecycle manager
-	if ctx.network.LifecycleManager != nil {
-		ctx.network.LifecycleManager.RegisterNode(hash, "JoinNode")
-	}
+	// Register with lifecycle manager (always initialized)
+	ctx.network.LifecycleManager.RegisterNode(hash, "JoinNode")
 
 	return nil
 }

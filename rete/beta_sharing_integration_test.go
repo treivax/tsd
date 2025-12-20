@@ -15,11 +15,12 @@ func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
 	t.Run("DefaultConfig", func(t *testing.T) {
 		config := DefaultChainPerformanceConfig()
 		network := NewReteNetworkWithConfig(storage, config)
+		// BetaSharingRegistry and BetaChainBuilder are always initialized
 		if network.BetaSharingRegistry == nil {
-			t.Fatal("BetaSharingRegistry should always be initialized")
+			t.Error("BetaSharingRegistry should always be initialized")
 		}
 		if network.BetaChainBuilder == nil {
-			t.Fatal("BetaChainBuilder should always be initialized")
+			t.Error("BetaChainBuilder should always be initialized")
 		}
 	})
 	// Test 2: High performance preset
@@ -37,7 +38,7 @@ func TestBetaSharingIntegration_BasicConfiguration(t *testing.T) {
 	t.Run("LowMemoryPreset", func(t *testing.T) {
 		config := LowMemoryConfig()
 		network := NewReteNetworkWithConfig(storage, config)
-		// Even in low memory mode, beta sharing is enabled (it saves memory!)
+		// Beta sharing is always enabled (it saves memory!)
 		if network.BetaSharingRegistry == nil {
 			t.Error("BetaSharingRegistry should be initialized even in LowMemoryConfig")
 		}
@@ -322,9 +323,7 @@ func TestBetaSharingIntegration_LifecycleIntegration(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
 	network := NewReteNetworkWithConfig(storage, config)
-	if network.LifecycleManager == nil {
-		t.Fatal("LifecycleManager should be initialized")
-	}
+	// LifecycleManager is always initialized
 	// Build a chain
 	patterns := []JoinPattern{
 		{

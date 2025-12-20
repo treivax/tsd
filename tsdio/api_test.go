@@ -5,6 +5,8 @@
 package tsdio
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -272,10 +274,10 @@ func TestExecutionResults(t *testing.T) {
 // TestActivation tests Activation structure
 func TestActivation(t *testing.T) {
 	fact := Fact{
-		ID:     TestFactID,
 		Type:   TestFactType,
 		Fields: map[string]interface{}{"name": "Alice"},
 	}
+	fact.SetInternalID(TestFactID)
 
 	arg := ArgumentValue{
 		Position: TestArgumentPos,
@@ -314,8 +316,8 @@ func TestActivation(t *testing.T) {
 		t.Errorf("len(TriggeringFacts) = %d, want 1", len(activation.TriggeringFacts))
 	}
 
-	if activation.TriggeringFacts[0].ID != TestFactID {
-		t.Errorf("TriggeringFacts[0].ID = %q, want %q", activation.TriggeringFacts[0].ID, TestFactID)
+	if activation.TriggeringFacts[0].GetInternalID() != TestFactID {
+		t.Errorf("TriggeringFacts[0].GetInternalID() = %q, want %q", activation.TriggeringFacts[0].GetInternalID(), TestFactID)
 	}
 
 	if activation.BindingsCount != TestBindingsCount {
@@ -378,13 +380,13 @@ func TestFact(t *testing.T) {
 	}
 
 	fact := Fact{
-		ID:     TestFactID,
 		Type:   TestFactType,
 		Fields: attrs,
 	}
+	fact.SetInternalID(TestFactID)
 
-	if fact.ID != TestFactID {
-		t.Errorf("ID = %q, want %q", fact.ID, TestFactID)
+	if fact.GetInternalID() != TestFactID {
+		t.Errorf("GetInternalID() = %q, want %q", fact.GetInternalID(), TestFactID)
 	}
 
 	if fact.Type != TestFactType {
@@ -392,15 +394,15 @@ func TestFact(t *testing.T) {
 	}
 
 	if len(fact.Fields) != 2 {
-		t.Errorf("len(Attributes) = %d, want 2", len(fact.Fields))
+		t.Errorf("len(Fields) = %d, want 2", len(fact.Fields))
 	}
 
 	if fact.Fields["name"] != "Alice" {
-		t.Errorf("Attributes[name] = %v, want Alice", fact.Fields["name"])
+		t.Errorf("Fields[name] = %v, want Alice", fact.Fields["name"])
 	}
 
 	if fact.Fields["age"] != 30 {
-		t.Errorf("Attributes[age] = %v, want 30", fact.Fields["age"])
+		t.Errorf("Fields[age] = %v, want 30", fact.Fields["age"])
 	}
 }
 
@@ -544,15 +546,15 @@ func TestExecutionResults_EmptyActivations(t *testing.T) {
 }
 
 // TestFact_EmptyAttributes tests Fact with empty attributes
-func TestFact_EmptyAttributes(t *testing.T) {
+func TestFact_EmptyFields(t *testing.T) {
 	fact := Fact{
-		ID:     TestFactID,
 		Type:   TestFactType,
 		Fields: map[string]interface{}{},
 	}
+	fact.SetInternalID(TestFactID)
 
-	if fact.ID != TestFactID {
-		t.Errorf("ID = %q, want %q", fact.ID, TestFactID)
+	if fact.GetInternalID() != TestFactID {
+		t.Errorf("GetInternalID() = %q, want %q", fact.GetInternalID(), TestFactID)
 	}
 
 	if fact.Type != TestFactType {
@@ -560,7 +562,7 @@ func TestFact_EmptyAttributes(t *testing.T) {
 	}
 
 	if len(fact.Fields) != 0 {
-		t.Errorf("len(Attributes) = %d, want 0", len(fact.Fields))
+		t.Errorf("len(Fields) = %d, want 0", len(fact.Fields))
 	}
 }
 
@@ -588,4 +590,83 @@ func TestActivation_EmptyArrays(t *testing.T) {
 	if activation.BindingsCount != 0 {
 		t.Errorf("BindingsCount = %d, want 0", activation.BindingsCount)
 	}
+}
+
+// TestFact_JSONSerialization tests that _id_ is hidden from JSON
+func TestFact_JSONSerialization(t *testing.T) {
+	t.Log("🧪 TEST FACT - SÉRIALISATION JSON")
+	t.Log("==================================")
+
+	fact := Fact{
+		Type: "User",
+		Fields: map[string]interface{}{
+			"name": "Alice",
+			"age":  30,
+		},
+	}
+	fact.SetInternalID("User~Alice")
+
+	// Marshaller en JSON
+	jsonData, err := json.Marshal(fact)
+	if err != nil {
+		t.Fatalf("❌ Erreur de sérialisation: %v", err)
+	}
+
+	jsonStr := string(jsonData)
+	t.Logf("JSON généré: %s", jsonStr)
+
+	// Vérifier que _id_ n'est PAS dans le JSON
+	if strings.Contains(jsonStr, "_id_") {
+		t.Errorf("❌ Le JSON contient '_id_' alors qu'il devrait être caché")
+	}
+
+	// Vérifier que internalID n'est PAS dans le JSON
+	if strings.Contains(jsonStr, "internalID") {
+		t.Errorf("❌ Le JSON contient 'internalID' alors qu'il devrait être caché")
+	}
+
+	// Vérifier que ID (l'ancien champ) n'est PAS dans le JSON
+	if strings.Contains(jsonStr, `"ID"`) {
+		t.Errorf("❌ Le JSON contient 'ID' alors qu'il devrait être caché")
+	}
+
+	// Vérifier que les champs attendus sont présents
+	if !strings.Contains(jsonStr, "User") {
+		t.Error("❌ Le type 'User' devrait être dans le JSON")
+	}
+
+	if !strings.Contains(jsonStr, "Alice") {
+		t.Error("❌ Le champ 'name' devrait être dans le JSON")
+	}
+
+	t.Log("✅ Sérialisation JSON correcte, _id_ caché")
+}
+
+// TestFact_InternalIDMethods tests internal ID getter and setter
+func TestFact_InternalIDMethods(t *testing.T) {
+	t.Log("🧪 TEST FACT - MÉTHODES ID INTERNE")
+	t.Log("===================================")
+
+	fact := Fact{
+		Type: "User",
+		Fields: map[string]interface{}{
+			"name": "Alice",
+		},
+	}
+
+	// ID initial vide
+	if fact.GetInternalID() != "" {
+		t.Errorf("❌ ID initial devrait être vide, reçu '%s'", fact.GetInternalID())
+	}
+
+	// Définir un ID
+	testID := "User~Alice"
+	fact.SetInternalID(testID)
+
+	// Vérifier que l'ID est défini
+	if fact.GetInternalID() != testID {
+		t.Errorf("❌ ID attendu '%s', reçu '%s'", testID, fact.GetInternalID())
+	}
+
+	t.Logf("✅ Méthodes d'ID interne fonctionnent correctement")
 }

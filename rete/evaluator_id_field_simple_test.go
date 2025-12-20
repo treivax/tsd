@@ -8,26 +8,48 @@ import (
 	"testing"
 )
 
-// TestEvaluator_IDFieldAccess_BasicComparisons teste l'accès basique au champ id
+// TestEvaluator_IDFieldAccess_BasicComparisons teste les comparaisons de faits
+// en utilisant des liaisons fact-to-fact (object binding) au lieu de l'ancien champ 'id'.
+//
+// Nouvelle sémantique:
+// - Le champ 'id' n'est plus accessible dans les expressions
+// - Les liaisons entre faits utilisent des affectations directes (ex: user: u)
+// - Les comparaisons utilisent l'égalité d'objets (ex: m.user == u)
 func TestEvaluator_IDFieldAccess_BasicComparisons(t *testing.T) {
-	t.Log("🧪 TEST: Evaluator - Comparaisons basiques sur champ id")
-	t.Log("=======================================================")
+	t.Log("🧪 TEST: Evaluator - Comparaisons avec liaisons fact-to-fact")
+	t.Log("=============================================================")
 
 	tests := []struct {
 		name       string
-		fact       *Fact
+		userFact   *Fact
+		mailFact   *Fact
 		expression map[string]interface{}
-		varName    string
 		wantResult bool
 		wantErr    bool
 	}{
 		{
-			name: "Égalité id PK simple",
-			fact: &Fact{
-				ID:   "Person~Alice",
-				Type: "Person",
+			name: "Égalité fact-to-fact: m.user == u (liaison directe)",
+			userFact: &Fact{
+				ID:   "User~Alice",
+				Type: "User",
 				Fields: map[string]interface{}{
-					"nom": "Alice",
+					"nom":    "Alice",
+					"prenom": "Dupont",
+				},
+			},
+			mailFact: &Fact{
+				ID:   "Mail~1",
+				Type: "Mail",
+				Fields: map[string]interface{}{
+					"adresse": "alice@example.com",
+					"user": &Fact{
+						ID:   "User~Alice",
+						Type: "User",
+						Fields: map[string]interface{}{
+							"nom":    "Alice",
+							"prenom": "Dupont",
+						},
+					},
 				},
 			},
 			expression: map[string]interface{}{
@@ -35,25 +57,40 @@ func TestEvaluator_IDFieldAccess_BasicComparisons(t *testing.T) {
 				"op":   "==",
 				"left": map[string]interface{}{
 					"type":   "field_access",
-					"object": "p",
-					"field":  "id",
+					"object": "m",
+					"field":  "user",
 				},
 				"right": map[string]interface{}{
-					"type":  "string",
-					"value": "Person~Alice",
+					"type": "variable",
+					"name": "u",
 				},
 			},
-			varName:    "p",
 			wantResult: true,
 			wantErr:    false,
 		},
 		{
-			name: "Inégalité id PK simple",
-			fact: &Fact{
-				ID:   "Person~Alice",
-				Type: "Person",
+			name: "Inégalité fact-to-fact: m.user != autre_user",
+			userFact: &Fact{
+				ID:   "User~Bob",
+				Type: "User",
 				Fields: map[string]interface{}{
-					"nom": "Alice",
+					"nom":    "Bob",
+					"prenom": "Martin",
+				},
+			},
+			mailFact: &Fact{
+				ID:   "Mail~1",
+				Type: "Mail",
+				Fields: map[string]interface{}{
+					"adresse": "alice@example.com",
+					"user": &Fact{
+						ID:   "User~Alice",
+						Type: "User",
+						Fields: map[string]interface{}{
+							"nom":    "Alice",
+							"prenom": "Dupont",
+						},
+					},
 				},
 			},
 			expression: map[string]interface{}{
@@ -61,95 +98,95 @@ func TestEvaluator_IDFieldAccess_BasicComparisons(t *testing.T) {
 				"op":   "!=",
 				"left": map[string]interface{}{
 					"type":   "field_access",
-					"object": "p",
-					"field":  "id",
+					"object": "m",
+					"field":  "user",
 				},
 				"right": map[string]interface{}{
-					"type":  "string",
-					"value": "Person~Bob",
+					"type": "variable",
+					"name": "u",
 				},
 			},
-			varName:    "p",
 			wantResult: true,
 			wantErr:    false,
 		},
 		{
-			name: "Égalité id PK composite",
-			fact: &Fact{
-				ID:   "Person~Alice_Dupont",
-				Type: "Person",
+			name: "Comparaison champ primaire: u.nom == 'Alice'",
+			userFact: &Fact{
+				ID:   "User~Alice",
+				Type: "User",
 				Fields: map[string]interface{}{
-					"prenom": "Alice",
-					"nom":    "Dupont",
+					"nom":    "Alice",
+					"prenom": "Dupont",
 				},
 			},
+			mailFact: nil, // Pas utilisé dans ce test
 			expression: map[string]interface{}{
 				"type": "binary_op",
 				"op":   "==",
 				"left": map[string]interface{}{
 					"type":   "field_access",
-					"object": "p",
-					"field":  "id",
-				},
-				"right": map[string]interface{}{
-					"type":  "string",
-					"value": "Person~Alice_Dupont",
-				},
-			},
-			varName:    "p",
-			wantResult: true,
-			wantErr:    false,
-		},
-		{
-			name: "Égalité id hash",
-			fact: &Fact{
-				ID:   "Event~a1b2c3d4e5f6g7h8",
-				Type: "Event",
-				Fields: map[string]interface{}{
-					"timestamp": 1234567890,
-				},
-			},
-			expression: map[string]interface{}{
-				"type": "binary_op",
-				"op":   "==",
-				"left": map[string]interface{}{
-					"type":   "field_access",
-					"object": "e",
-					"field":  "id",
-				},
-				"right": map[string]interface{}{
-					"type":  "string",
-					"value": "Event~a1b2c3d4e5f6g7h8",
-				},
-			},
-			varName:    "e",
-			wantResult: true,
-			wantErr:    false,
-		},
-		{
-			name: "CONTAINS sur id",
-			fact: &Fact{
-				ID:   "Person~Alice_Dupont",
-				Type: "Person",
-				Fields: map[string]interface{}{
-					"prenom": "Alice",
-					"nom":    "Dupont",
-				},
-			},
-			expression: map[string]interface{}{
-				"type": "binary_op",
-				"op":   "CONTAINS",
-				"left": map[string]interface{}{
-					"type":   "field_access",
-					"object": "p",
-					"field":  "id",
+					"object": "u",
+					"field":  "nom",
 				},
 				"right": map[string]interface{}{
 					"type":  "string",
 					"value": "Alice",
 				},
 			},
-			varName:    "p",
+			wantResult: true,
+			wantErr:    false,
+		},
+		{
+			name: "CONTAINS sur champ texte: u.nom CONTAINS 'Ali'",
+			userFact: &Fact{
+				ID:   "User~Alice",
+				Type: "User",
+				Fields: map[string]interface{}{
+					"nom":    "Alice",
+					"prenom": "Dupont",
+				},
+			},
+			mailFact: nil,
+			expression: map[string]interface{}{
+				"type": "binary_op",
+				"op":   "CONTAINS",
+				"left": map[string]interface{}{
+					"type":   "field_access",
+					"object": "u",
+					"field":  "nom",
+				},
+				"right": map[string]interface{}{
+					"type":  "string",
+					"value": "Ali",
+				},
+			},
+			wantResult: true,
+			wantErr:    false,
+		},
+		{
+			name: "Comparaison champ composite: u.prenom == 'Dupont'",
+			userFact: &Fact{
+				ID:   "User~Alice",
+				Type: "User",
+				Fields: map[string]interface{}{
+					"nom":    "Alice",
+					"prenom": "Dupont",
+				},
+			},
+			mailFact: nil,
+			expression: map[string]interface{}{
+				"type": "binary_op",
+				"op":   "==",
+				"left": map[string]interface{}{
+					"type":   "field_access",
+					"object": "u",
+					"field":  "prenom",
+				},
+				"right": map[string]interface{}{
+					"type":  "string",
+					"value": "Dupont",
+				},
+			},
 			wantResult: true,
 			wantErr:    false,
 		},
@@ -159,19 +196,32 @@ func TestEvaluator_IDFieldAccess_BasicComparisons(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			eval := NewAlphaConditionEvaluator()
 
-			result, err := eval.EvaluateCondition(tt.expression, tt.fact, tt.varName)
-
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("❌ EvaluateCondition() error = %v, wantErr %v", err, tt.wantErr)
+			// Lier la variable 'u' au fait utilisateur
+			if tt.userFact != nil {
+				eval.variableBindings["u"] = tt.userFact
 			}
 
-			if err == nil && result != tt.wantResult {
-				t.Errorf("❌ EvaluateCondition() = %v, attendu %v", result, tt.wantResult)
-			} else if err == nil {
-				t.Log("✅ Test réussi")
+			// Lier la variable 'm' au fait mail (si présent)
+			if tt.mailFact != nil {
+				eval.variableBindings["m"] = tt.mailFact
+			}
+
+			// Évaluer l'expression
+			result, err := eval.evaluateExpression(tt.expression)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("❌ evaluateExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err == nil {
+				if result != tt.wantResult {
+					t.Errorf("❌ evaluateExpression() = %v, attendu %v", result, tt.wantResult)
+				} else {
+					t.Logf("✅ Test réussi: résultat = %v", result)
+				}
 			}
 		})
 	}
 
-	t.Log("✅ Test complet: Comparaisons basiques sur champ id")
+	t.Log("✅ Test complet: Comparaisons avec liaisons fact-to-fact")
 }

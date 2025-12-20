@@ -1,53 +1,208 @@
 # Documentation TSD
 
-**Guide complet du moteur de règles TSD**
+Documentation centralisée du projet TSD - Moteur de règles RETE avec système de contraintes.
+
+**Version** : 2.0.0
 
 ---
 
-## 📚 Documentation Principale
+## 🎯 Par Où Commencer ?
+
+### Nouveaux Utilisateurs
+
+1. [Démarrage Rapide](../README.md#démarrage-rapide) - Installation et premier programme
+2. [Affectations de Faits](user-guide/fact-assignments.md) - Nommer et réutiliser des faits
+3. [Comparaisons de Faits](user-guide/fact-comparisons.md) - Relations entre faits
+4. [Exemples](../examples/) - Programmes d'exemple complets
+
+### Migration depuis v1.x
+
+⚠️ **Important** : La v2.0 introduit des breaking changes.
+
+1. **[Guide de Migration v1.x → v2.0](migration/from-v1.x.md)** - ⚠️ **OBLIGATOIRE**
+2. [Identifiants Internes](internal-ids.md) - Nouveau système `_id_`
+3. [Nouveautés v2.0](../README.md#nouveautés-v20) - Résumé des changements
+
+---
+
+## 📚 Documentation Utilisateur
+
+### Guides Essentiels
+
+| Guide | Description |
+|-------|-------------|
+| **[Affectations de Faits](user-guide/fact-assignments.md)** | Créer et nommer des faits avec `variable = Type(...)` |
+| **[Comparaisons de Faits](user-guide/fact-comparisons.md)** | Comparer des faits directement avec `==` |
+| **[Système de Types](user-guide/type-system.md)** | Types primitifs et types de faits dans les champs |
+| **[Clés Primaires](primary-keys.md)** | Génération automatique d'IDs avec `#` |
+
+### Référence Technique
+
+| Document | Contenu |
+|----------|---------|
+| **[Identifiants Internes](internal-ids.md)** | Système `_id_` : génération, format, règles |
+| **[Référence Syntaxe](reference.md)** | Grammaire complète du langage TSD |
+| **[API Publique](api.md)** | Interface Go pour intégration |
+| **[Architecture](architecture.md)** | Algorithme RETE et architecture interne |
+
+### Tutoriels
+
+| Tutoriel | Niveau | Sujets |
+|----------|--------|--------|
+| **[Clés Primaires](tutorials/primary-keys-tutorial.md)** | Débutant | Clés simples, composites, hash |
+| *Plus à venir* | | |
+
+---
+
+## 🔧 Documentation Technique
+
+### Architecture
 
 | Document | Description |
 |----------|-------------|
-| **[Installation](installation.md)** | Installation et démarrage rapide (5 min) |
-| **[Guides](guides.md)** | Tutoriels et guides utilisateur complets |
-| **[Clés Primaires](primary-keys.md)** | 🆔 Génération automatique d'IDs et clés primaires |
-| **[Architecture](architecture.md)** | Architecture interne et algorithme RETE |
-| **[Configuration](configuration.md)** | Configuration système complète |
-| **[API](api.md)** | API publique Go |
-| **[Référence](reference.md)** | API HTTP, grammaire, auth, logging, contribution |
+| **[Vue d'Ensemble](architecture.md)** | Architecture globale du système |
+| **[Génération d'IDs](architecture/id-generation.md)** | Algorithme de génération des identifiants |
+| **[Diagrammes](architecture/diagrams/)** | Diagrammes d'architecture |
+
+### API
+
+| Package | Documentation |
+|---------|---------------|
+| **[constraint](api/constraint.md)** | Parser et validation |
+| **[rete](api/rete.md)** | Moteur RETE |
+| **[tsdio](api/tsdio.md)** | Structures I/O |
 
 ---
 
-## 🚀 Démarrage Rapide
+## 📦 Migration et Mises à Jour
 
-### 1. Installation
+| Document | Description |
+|----------|-------------|
+| **[Guide de Migration v1.x → v2.0](migration/from-v1.x.md)** | ⚠️ **Breaking changes** et migration complète |
+| **[CHANGELOG](../CHANGELOG.md)** | Historique des versions |
 
-```bash
-git clone https://github.com/treivax/tsd.git
-cd tsd
-make build
-./bin/tsd --version
-```
+---
 
-### 2. Premier Programme
+## 💡 Exemples
 
-Créez `hello.tsd` :
+| Répertoire | Description |
+|------------|-------------|
+| **[examples/](../examples/)** | Programmes TSD complets |
+| **[tests/fixtures/](../tests/fixtures/)** | Fixtures de test (cas d'usage) |
 
-```tsd
-type Person(name: string, age: number)
-action greet(name: string)
+---
 
-rule welcome : {p: Person} / p.age >= 18 ==> greet(p.name)
+## 🤝 Contribution
 
-Person(name: "Alice", age: 25)
-Person(name: "Bob", age: 16)
-```
+| Document | Description |
+|----------|-------------|
+| **[CONTRIBUTING.md](../CONTRIBUTING.md)** | Guide de contribution |
+| **[.github/prompts/common.md](../.github/prompts/common.md)** | Standards de code |
+| **[.github/prompts/develop.md](../.github/prompts/develop.md)** | Standards de développement |
 
-Exécutez :
+---
 
-```bash
-tsd hello.tsd
-```
+## 🔍 Index par Fonctionnalité
+
+### Identifiants et Clés Primaires
+
+- [Identifiants Internes](internal-ids.md) - Système `_id_` complet
+- [Clés Primaires](primary-keys.md) - Syntaxe `#field`
+- [Guide de Migration](migration/from-v1.x.md) - Ancien système `id` → nouveau `_id_`
+
+### Affectations et Comparaisons
+
+- [Affectations](user-guide/fact-assignments.md) - `variable = Type(...)`
+- [Comparaisons](user-guide/fact-comparisons.md) - `fact1 == fact2`
+
+### Types
+
+- [Système de Types](user-guide/type-system.md) - Primitifs et types de faits
+- [Référence](reference.md) - Grammaire complète
+
+### Règles
+
+- [Guides](guides.md) - Syntaxe des règles
+- [Référence](reference.md) - Conditions, actions, opérateurs
+
+---
+
+## 📊 Index par Niveau
+
+### Débutant
+
+- [README Principal](../README.md) - Vue d'ensemble
+- [Installation](installation.md) - Démarrage
+- [Affectations](user-guide/fact-assignments.md) - Bases
+- [Tutoriels](tutorials/) - Apprentissage guidé
+
+### Intermédiaire
+
+- [Comparaisons](user-guide/fact-comparisons.md) - Relations
+- [Système de Types](user-guide/type-system.md) - Types avancés
+- [Clés Primaires](primary-keys.md) - IDs personnalisés
+- [Exemples](../examples/) - Cas d'usage réels
+
+### Avancé
+
+- [Architecture](architecture.md) - RETE et internals
+- [API](api.md) - Intégration Go
+- [Identifiants Internes](internal-ids.md) - Détails techniques
+
+---
+
+## 📞 Support
+
+| Ressource | Description |
+|-----------|-------------|
+| **[Issues GitHub](https://github.com/chrlesur/tsd/issues)** | Rapporter des bugs et demander de l'aide |
+| **[Guide de Migration](migration/from-v1.x.md)** | Aide pour migration v1.x → v2.0 |
+
+---
+
+## 📖 Documentation par Module
+
+### Modules Principaux
+
+| Module | README | Documentation |
+|--------|--------|---------------|
+| **constraint** | [constraint/README.md](../constraint/README.md) | Parser, validation, types |
+| **rete** | [rete/README.md](../rete/README.md) | Moteur RETE |
+| **tsdio** | [tsdio/README.md](../tsdio/README.md) | I/O et structures |
+| **xuples** | [xuples/README.md](../xuples/README.md) | Espace de tuples |
+
+### Archives
+
+Les anciennes documentations sont archivées dans :
+- [docs/archive/](archive/) - Documentation pré-v2.0
+- [docs/archive/constraint/](archive/constraint/) - Anciennes docs constraint
+- [docs/archive/rete/](archive/rete/) - Anciennes docs RETE
+
+---
+
+## 🎯 Résumé v2.0
+
+### Fonctionnalités Principales
+
+✅ **Affectations** : `alice = User("alice", "alice@example.com")`  
+✅ **Comparaisons** : `{u: User, o: Order} / o.customer == u`  
+✅ **Types de faits** : `Order(customer: Customer, ...)`  
+✅ **IDs cachés** : `_id_` interne, jamais accessible  
+✅ **Type-safety** : Validation complète au parsing  
+
+### Breaking Changes
+
+❌ `id` → `_id_` (caché, inaccessible)  
+❌ Pas d'affectation manuelle d'ID  
+❌ Pas d'accès à `_id_` dans expressions  
+
+**Voir** : [Guide de Migration](migration/from-v1.x.md)
+
+---
+
+**Version** : 2.0.0  
+**Dernière mise à jour** : 2025-12-19  
+**Mainteneur** : Équipe TSD
 
 ### 3. Suite
 

@@ -20,14 +20,14 @@ func TestCoherence_TransactionRollback(t *testing.T) {
 	// Créer une transaction
 	tx := env.Network.BeginTransaction()
 	env.Network.SetTransaction(tx)
-	// Ajouter quelques faits
+	// Ajouter quelques faits avec ID interne complet
 	fact1 := &Fact{
-		ID:     "F1",
+		ID:     "TestType~F1",
 		Type:   "TestType",
 		Fields: map[string]interface{}{"value": 42},
 	}
 	fact2 := &Fact{
-		ID:     "F2",
+		ID:     "TestType~F2",
 		Type:   "TestType",
 		Fields: map[string]interface{}{"value": 100},
 	}
@@ -36,14 +36,14 @@ func TestCoherence_TransactionRollback(t *testing.T) {
 	err = env.Network.SubmitFact(fact2)
 	require.NoError(t, err)
 	// Vérifier que les faits sont présents (avec ID interne)
-	assert.NotNil(t, env.Storage.GetFact("TestType_F1"))
-	assert.NotNil(t, env.Storage.GetFact("TestType_F2"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F1"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F2"))
 	// Rollback
 	err = tx.Rollback()
 	require.NoError(t, err)
 	// Vérifier que les faits ont été supprimés après rollback
-	assert.Nil(t, env.Storage.GetFact("TestType_F1"), "Le fait F1 doit être supprimé après rollback")
-	assert.Nil(t, env.Storage.GetFact("TestType_F2"), "Le fait F2 doit être supprimé après rollback")
+	assert.Nil(t, env.Storage.GetFact("TestType~F1"), "Le fait F1 doit être supprimé après rollback")
+	assert.Nil(t, env.Storage.GetFact("TestType~F2"), "Le fait F2 doit être supprimé après rollback")
 }
 
 // TestCoherence_StorageSync teste que Storage.Sync() fonctionne sans erreur
@@ -51,9 +51,9 @@ func TestCoherence_StorageSync(t *testing.T) {
 	t.Parallel()
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-	// Ajouter quelques faits
+	// Ajouter quelques faits avec ID interne complet
 	fact := &Fact{
-		ID:     "F1",
+		ID:     "TestType~F1",
 		Type:   "TestType",
 		Fields: map[string]interface{}{"value": 42},
 	}
@@ -63,9 +63,9 @@ func TestCoherence_StorageSync(t *testing.T) {
 	err = env.Storage.Sync()
 	assert.NoError(t, err, "Storage.Sync() ne doit pas échouer")
 	// Vérifier que le fait est toujours là (avec ID interne)
-	retrievedFact := env.Storage.GetFact("TestType_F1")
+	retrievedFact := env.Storage.GetFact("TestType~F1")
 	assert.NotNil(t, retrievedFact, "Le fait doit toujours être présent après Sync()")
-	assert.Equal(t, "F1", retrievedFact.ID)
+	assert.Equal(t, "TestType~F1", retrievedFact.ID)
 	assert.Equal(t, "TestType", retrievedFact.Type)
 }
 
@@ -74,15 +74,15 @@ func TestCoherence_InternalIDCorrectness(t *testing.T) {
 	t.Parallel()
 	env := NewTestEnvironment(t)
 	defer env.Cleanup()
-	// Créer un fait
+	// Créer un fait avec l'ID interne complet
 	fact := &Fact{
-		ID:     "TEST123",
+		ID:     "MyType~TEST123",
 		Type:   "MyType",
 		Fields: map[string]interface{}{"value": 42},
 	}
 	// Vérifier l'ID interne
 	internalID := fact.GetInternalID()
-	assert.Equal(t, "MyType_TEST123", internalID, "L'ID interne doit être Type_ID")
+	assert.Equal(t, "MyType~TEST123", internalID, "L'ID interne doit être Type~ID")
 	// Vérifier que le storage utilise bien l'ID interne
 	err := env.Storage.AddFact(fact)
 	require.NoError(t, err)
@@ -124,16 +124,16 @@ func TestCoherence_FactSubmissionConsistency(t *testing.T) {
 	err := env.Network.SubmitFactsFromGrammar(factsToSubmit)
 	require.NoError(t, err, "La soumission ne doit pas échouer si tous les faits sont persistés")
 	// Vérifier que tous les faits sont présents avec leur ID interne
-	assert.NotNil(t, env.Storage.GetFact("TestType_F1"))
-	assert.NotNil(t, env.Storage.GetFact("TestType_F2"))
-	assert.NotNil(t, env.Storage.GetFact("TestType_F3"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F1"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F2"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F3"))
 	// Commit
 	err = tx.Commit()
 	require.NoError(t, err)
 	// Vérifier que les faits sont toujours là après commit
-	assert.NotNil(t, env.Storage.GetFact("TestType_F1"))
-	assert.NotNil(t, env.Storage.GetFact("TestType_F2"))
-	assert.NotNil(t, env.Storage.GetFact("TestType_F3"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F1"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F2"))
+	assert.NotNil(t, env.Storage.GetFact("TestType~F3"))
 }
 
 // TestCoherence_ConcurrentFactAddition teste l'ajout concurrent de faits
@@ -157,7 +157,7 @@ func TestCoherence_ConcurrentFactAddition(t *testing.T) {
 			env.Network.SetTransaction(tx)
 			for j := 0; j < factsPerGoroutine; j++ {
 				fact := &Fact{
-					ID:     fmt.Sprintf("G%d_F%d", id, j),
+					ID:     fmt.Sprintf("ConcurrentTest~G%d_F%d", id, j),
 					Type:   "ConcurrentTest",
 					Fields: map[string]interface{}{"goroutine": id, "index": j},
 				}
@@ -200,7 +200,7 @@ func TestCoherence_SyncAfterMultipleAdditions(t *testing.T) {
 	// Ajouter plusieurs faits
 	for i := 0; i < 100; i++ {
 		fact := &Fact{
-			ID:     fmt.Sprintf("FACT_%d", i),
+			ID:     fmt.Sprintf("BulkTest~FACT_%d", i),
 			Type:   "BulkTest",
 			Fields: map[string]interface{}{"index": i},
 		}
@@ -214,9 +214,9 @@ func TestCoherence_SyncAfterMultipleAdditions(t *testing.T) {
 	allFacts := env.Storage.GetAllFacts()
 	assert.Equal(t, 100, len(allFacts), "Tous les 100 faits doivent être présents après Sync()")
 	// Vérifier quelques faits spécifiques
-	fact0 := env.Storage.GetFact("BulkTest_FACT_0")
-	fact50 := env.Storage.GetFact("BulkTest_FACT_50")
-	fact99 := env.Storage.GetFact("BulkTest_FACT_99")
+	fact0 := env.Storage.GetFact("BulkTest~FACT_0")
+	fact50 := env.Storage.GetFact("BulkTest~FACT_50")
+	fact99 := env.Storage.GetFact("BulkTest~FACT_99")
 	assert.NotNil(t, fact0)
 	assert.NotNil(t, fact50)
 	assert.NotNil(t, fact99)
@@ -231,18 +231,18 @@ func TestCoherence_ReadAfterWriteGuarantee(t *testing.T) {
 	env.Network.SetTransaction(tx)
 	// Écrire un fait
 	fact := &Fact{
-		ID:     "RW_TEST",
+		ID:     "ReadWriteTest~RW_TEST",
 		Type:   "ReadWriteTest",
 		Fields: map[string]interface{}{"data": "test_value"},
 	}
 	err := env.Network.SubmitFact(fact)
 	require.NoError(t, err)
 	// Lire immédiatement (read-after-write)
-	internalID := "ReadWriteTest_RW_TEST"
+	internalID := "ReadWriteTest~RW_TEST"
 	retrievedFact := env.Storage.GetFact(internalID)
 	// Le fait DOIT être visible immédiatement
 	assert.NotNil(t, retrievedFact, "Le fait doit être visible immédiatement après écriture (read-after-write)")
-	assert.Equal(t, "RW_TEST", retrievedFact.ID)
+	assert.Equal(t, "ReadWriteTest~RW_TEST", retrievedFact.ID)
 	assert.Equal(t, "ReadWriteTest", retrievedFact.Type)
 	assert.Equal(t, "test_value", retrievedFact.Fields["data"])
 	// Commit

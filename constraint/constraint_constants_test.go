@@ -309,7 +309,8 @@ func TestConstantValues(t *testing.T) {
 		{"ValueTypeUnknown", ValueTypeUnknown, "unknown"},
 
 		// Noms de champs spéciaux
-		{"FieldNameID", FieldNameID, "id"},
+		{"FieldNameInternalID", FieldNameInternalID, "_id_"},
+		{"FieldNameIDLegacy", FieldNameIDLegacy, "id"},
 		{"FieldNameReteType", FieldNameReteType, "reteType"},
 
 		// Clés JSON

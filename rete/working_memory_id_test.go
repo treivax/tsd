@@ -35,7 +35,7 @@ func TestWorkingMemory_AddFactWithPKSimple(t *testing.T) {
 	}
 
 	// Vérifier que le fait est indexé avec l'ID interne
-	internalID := "Person_Person~Alice"
+	internalID := "Person~Alice"
 	storedFact, exists := wm.GetFact(internalID)
 	if !exists {
 		t.Fatalf("❌ Fait non trouvé avec ID interne %s", internalID)
@@ -80,7 +80,7 @@ func TestWorkingMemory_AddFactWithPKComposite(t *testing.T) {
 	}
 
 	// Vérifier que le fait est indexé avec l'ID interne
-	internalID := "Person_Person~Alice_Dupont"
+	internalID := "Person~Alice_Dupont"
 	storedFact, exists := wm.GetFact(internalID)
 	if !exists {
 		t.Fatalf("❌ Fait non trouvé avec ID interne %s", internalID)
@@ -120,7 +120,7 @@ func TestWorkingMemory_AddFactWithHashID(t *testing.T) {
 	}
 
 	// Vérifier que le fait est indexé avec l'ID interne
-	internalID := "Event_Event~a1b2c3d4e5f6g7h8"
+	internalID := "Event~a1b2c3d4e5f6g7h8"
 	storedFact, exists := wm.GetFact(internalID)
 	if !exists {
 		t.Fatalf("❌ Fait non trouvé avec ID interne %s", internalID)
@@ -158,7 +158,7 @@ func TestWorkingMemory_RemoveFactWithNewIDFormat(t *testing.T) {
 		t.Fatalf("❌ Erreur lors de l'ajout du fait: %v", err)
 	}
 
-	internalID := "Person_Person~Alice"
+	internalID := "Person~Alice"
 
 	// Vérifier que le fait existe
 	if _, exists := wm.GetFact(internalID); !exists {
@@ -201,8 +201,8 @@ func TestWorkingMemory_GetFactByTypeAndID_NewIDFormats(t *testing.T) {
 		t.Fatalf("❌ Erreur lors de l'ajout du fait: %v", err)
 	}
 
-	// Récupérer par type et ID
-	retrievedFact, exists := wm.GetFactByTypeAndID("Person", "Person~Alice_Dupont")
+	// Récupérer par type et ID (sans double préfixage)
+	retrievedFact, exists := wm.GetFact("Person~Alice_Dupont")
 	if !exists {
 		t.Fatalf("❌ Fait non trouvé par type et ID")
 	}
@@ -260,9 +260,9 @@ func TestWorkingMemory_MultipleFactsDifferentTypes(t *testing.T) {
 
 	// Vérifier que tous les faits sont présents
 	expectedInternalIDs := []string{
-		"Person_Person~Alice",
-		"Order_Order~Order123",
-		"Product_Product~Laptop_15inch",
+		"Person~Alice",
+		"Order~Order123",
+		"Product~Laptop_15inch",
 	}
 
 	for i, internalID := range expectedInternalIDs {
@@ -332,7 +332,7 @@ func TestWorkingMemory_DuplicateIDSameType(t *testing.T) {
 	}
 
 	// Vérifier que seul le premier fait est présent
-	internalID := "Person_Person~Alice"
+	internalID := "Person~Alice"
 	storedFact, exists := wm.GetFact(internalID)
 	if !exists {
 		t.Fatalf("❌ Fait non trouvé")
@@ -346,10 +346,10 @@ func TestWorkingMemory_DuplicateIDSameType(t *testing.T) {
 	t.Log("✅ Test réussi: Doublon correctement rejeté")
 }
 
-// TestWorkingMemory_SameIDDifferentTypes teste que le même ID peut exister pour des types différents
+// TestWorkingMemory_SameIDDifferentTypes teste que le même ID pour des types différents échoue
 func TestWorkingMemory_SameIDDifferentTypes(t *testing.T) {
-	t.Log("🧪 TEST: Working Memory - Même ID pour types différents")
-	t.Log("=========================================================")
+	t.Log("🧪 TEST: Working Memory - Même ID pour types différents (doit échouer)")
+	t.Log("=======================================================================")
 
 	wm := &WorkingMemory{
 		NodeID: "test_node",
@@ -357,7 +357,7 @@ func TestWorkingMemory_SameIDDifferentTypes(t *testing.T) {
 		Tokens: make(map[string]*Token),
 	}
 
-	// Deux faits avec le même ID mais des types différents
+	// Premier fait avec ID "Entity~123"
 	fact1 := &Fact{
 		ID:   "Entity~123",
 		Type: "Person",
@@ -366,6 +366,7 @@ func TestWorkingMemory_SameIDDifferentTypes(t *testing.T) {
 		},
 	}
 
+	// Second fait avec le même ID mais type différent
 	fact2 := &Fact{
 		ID:   "Entity~123",
 		Type: "Company",
@@ -374,145 +375,27 @@ func TestWorkingMemory_SameIDDifferentTypes(t *testing.T) {
 		},
 	}
 
-	// Ajouter les deux faits
+	// Ajouter le premier fait
 	err := wm.AddFact(fact1)
 	if err != nil {
 		t.Fatalf("❌ Erreur lors de l'ajout du premier fait: %v", err)
 	}
 
+	// Tenter d'ajouter le second fait avec le même ID (doit échouer)
 	err = wm.AddFact(fact2)
-	if err != nil {
-		t.Fatalf("❌ Erreur lors de l'ajout du second fait: %v", err)
+	if err == nil {
+		t.Error("❌ L'ajout d'un second fait avec le même ID aurait dû échouer")
+	} else {
+		t.Logf("✅ Rejet attendu du second fait: %v", err)
 	}
 
-	// Vérifier que les deux faits sont présents avec des IDs internes différents
-	internalID1 := "Person_Entity~123"
-	internalID2 := "Company_Entity~123"
-
-	storedFact1, exists1 := wm.GetFact(internalID1)
-	if !exists1 {
-		t.Errorf("❌ Fait Person non trouvé")
-	} else if storedFact1.Type != "Person" {
-		t.Errorf("❌ Type attendu 'Person', reçu '%s'", storedFact1.Type)
+	// Vérifier que seul le premier fait est présent
+	storedFact, exists := wm.GetFact("Entity~123")
+	if !exists {
+		t.Error("❌ Le premier fait devrait être présent")
+	} else if storedFact.Type != "Person" {
+		t.Errorf("❌ Type attendu 'Person', reçu '%s'", storedFact.Type)
 	}
 
-	storedFact2, exists2 := wm.GetFact(internalID2)
-	if !exists2 {
-		t.Errorf("❌ Fait Company non trouvé")
-	} else if storedFact2.Type != "Company" {
-		t.Errorf("❌ Type attendu 'Company', reçu '%s'", storedFact2.Type)
-	}
-
-	t.Log("✅ Test réussi: Même ID accepté pour types différents")
-}
-
-// TestWorkingMemory_ParseInternalID teste la décomposition des IDs internes
-func TestWorkingMemory_ParseInternalID(t *testing.T) {
-	t.Log("🧪 TEST: Working Memory - Parse Internal ID")
-	t.Log("============================================")
-
-	tests := []struct {
-		name       string
-		internalID string
-		wantType   string
-		wantID     string
-		wantOK     bool
-	}{
-		{
-			name:       "ID simple",
-			internalID: "Person_Person~Alice",
-			wantType:   "Person",
-			wantID:     "Person~Alice",
-			wantOK:     true,
-		},
-		{
-			name:       "ID composite",
-			internalID: "Person_Person~Alice_Dupont",
-			wantType:   "Person",
-			wantID:     "Person~Alice_Dupont",
-			wantOK:     true,
-		},
-		{
-			name:       "ID hash",
-			internalID: "Event_Event~a1b2c3d4e5f6g7h8",
-			wantType:   "Event",
-			wantID:     "Event~a1b2c3d4e5f6g7h8",
-			wantOK:     true,
-		},
-		{
-			name:       "Format invalide",
-			internalID: "InvalidFormat",
-			wantType:   "",
-			wantID:     "",
-			wantOK:     false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotType, gotID, gotOK := ParseInternalID(tt.internalID)
-
-			if gotOK != tt.wantOK {
-				t.Errorf("❌ OK = %v, attendu %v", gotOK, tt.wantOK)
-			}
-
-			if gotType != tt.wantType {
-				t.Errorf("❌ Type = '%s', attendu '%s'", gotType, tt.wantType)
-			}
-
-			if gotID != tt.wantID {
-				t.Errorf("❌ ID = '%s', attendu '%s'", gotID, tt.wantID)
-			}
-
-			t.Log("✅ Test réussi")
-		})
-	}
-
-	t.Log("✅ Test complet: Parse Internal ID")
-}
-
-// TestWorkingMemory_MakeInternalID teste la construction des IDs internes
-func TestWorkingMemory_MakeInternalID(t *testing.T) {
-	t.Log("🧪 TEST: Working Memory - Make Internal ID")
-	t.Log("===========================================")
-
-	tests := []struct {
-		name     string
-		factType string
-		factID   string
-		want     string
-	}{
-		{
-			name:     "ID simple",
-			factType: "Person",
-			factID:   "Person~Alice",
-			want:     "Person_Person~Alice",
-		},
-		{
-			name:     "ID composite",
-			factType: "Person",
-			factID:   "Person~Alice_Dupont",
-			want:     "Person_Person~Alice_Dupont",
-		},
-		{
-			name:     "ID hash",
-			factType: "Event",
-			factID:   "Event~a1b2c3d4e5f6g7h8",
-			want:     "Event_Event~a1b2c3d4e5f6g7h8",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := MakeInternalID(tt.factType, tt.factID)
-
-			if got != tt.want {
-				t.Errorf("❌ MakeInternalID() = '%s', attendu '%s'", got, tt.want)
-			}
-
-			t.Log("✅ Test réussi")
-		})
-	}
-
-	t.Log("✅ Test complet: Make Internal ID")
+	t.Log("✅ Test réussi: Même ID pour types différents correctement rejeté")
 }

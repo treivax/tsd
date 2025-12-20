@@ -7,13 +7,14 @@ package constraint
 // Program represents the complete AST of a constraint program including types, actions, expressions, facts and resets.
 // It serves as the root structure for parsed constraint files.
 type Program struct {
-	Types        []TypeDefinition        `json:"types"`        // Type definitions declared in the program
-	Actions      []ActionDefinition      `json:"actions"`      // Action definitions with their signatures
-	XupleSpaces  []XupleSpaceDeclaration `json:"xupleSpaces"`  // Xuple-space declarations with their policies
-	Expressions  []Expression            `json:"expressions"`  // Constraint expressions/rules
-	Facts        []Fact                  `json:"facts"`        // Facts parsed from the program
-	Resets       []Reset                 `json:"resets"`       // Reset instructions to clear the system
-	RuleRemovals []RuleRemoval           `json:"ruleRemovals"` // Rule removal commands
+	Types           []TypeDefinition        `json:"types"`           // Type definitions declared in the program
+	Actions         []ActionDefinition      `json:"actions"`         // Action definitions with their signatures
+	XupleSpaces     []XupleSpaceDeclaration `json:"xupleSpaces"`     // Xuple-space declarations with their policies
+	Expressions     []Expression            `json:"expressions"`     // Constraint expressions/rules
+	Facts           []Fact                  `json:"facts"`           // Facts parsed from the program
+	FactAssignments []FactAssignment        `json:"factAssignments"` // Fact assignments (variable = Fact(...))
+	Resets          []Reset                 `json:"resets"`          // Reset instructions to clear the system
+	RuleRemovals    []RuleRemoval           `json:"ruleRemovals"`    // Rule removal commands
 }
 
 // TypeDefinition represents a user-defined type with its fields.
@@ -229,6 +230,14 @@ type Fact struct {
 	Fields   []FactField `json:"fields"`   // List of field assignments
 }
 
+// FactAssignment represents an assignment of a fact to a variable.
+// Example: alice = User("Alice", 30)
+type FactAssignment struct {
+	Type     string `json:"type"`     // Always "factAssignment"
+	Variable string `json:"variable"` // Variable name (e.g., "alice", "bob")
+	Fact     Fact   `json:"fact"`     // The fact being assigned
+}
+
 // BuildFieldMap creates a map of field values indexed by field name.
 // This is useful for efficient field lookup when validating or processing facts.
 func (f Fact) BuildFieldMap() map[string]FactValue {
@@ -248,9 +257,10 @@ type FactField struct {
 
 // FactValue represents a value assigned to a fact field.
 // It wraps the actual value with type information.
+// Type can be: "string", "number", "bool", "identifier", "variableReference"
 type FactValue struct {
-	Type  string      `json:"type"`  // Value type ("string", "number", "bool")
-	Value interface{} `json:"value"` // Actual value
+	Type  string      `json:"type"`  // Value type
+	Value interface{} `json:"value"` // Actual value (for variableReference, this is the variable name)
 }
 
 // Unwrap extracts the underlying value from a FactValue.

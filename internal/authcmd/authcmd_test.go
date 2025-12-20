@@ -640,11 +640,6 @@ func TestGenerateJWT_WithExpiration(t *testing.T) {
 	}
 }
 
-// TestGenerateJWT_InteractiveMode tests interactive mode for JWT generation
-func TestGenerateJWT_InteractiveMode(t *testing.T) {
-	t.Skip("Interactive mode is difficult to test properly - requires real stdin interaction")
-}
-
 // TestValidateToken_InteractiveMode tests validate in interactive mode
 func TestValidateToken_InteractiveMode(t *testing.T) {
 	// First generate a token

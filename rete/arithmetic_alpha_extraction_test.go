@@ -67,10 +67,9 @@ rule expensive : {c: Commande} / c.price * 1.2 > 1000
 		network.SubmitFact(failFirst)
 		// Check activations for high_quantity rule
 		if terminal, exists := network.TerminalNodes["high_quantity_terminal"]; exists {
-			tokens := terminal.GetMemory().Tokens
-			if len(tokens) != 1 {
-				t.Errorf("Expected 1 activation for high_quantity, got %d", len(tokens))
-				t.Logf("Tokens: %+v", tokens)
+			execCount := terminal.GetExecutionCount()
+			if execCount != 1 {
+				t.Errorf("Expected 1 activation for high_quantity, got %d", execCount)
 			}
 		} else {
 			t.Error("Terminal node 'high_quantity_terminal' not found")
@@ -126,9 +125,9 @@ rule complex_calc : {o: Order} / (o.quantity * o.price - o.discount) / 2 > 50
 	network.SubmitFact(failFact)
 	// Verify only one activation
 	if terminal, exists := network.TerminalNodes["complex_calc_terminal"]; exists {
-		tokens := terminal.GetMemory().Tokens
-		if len(tokens) != 1 {
-			t.Errorf("Expected 1 activation, got %d", len(tokens))
+		execCount := terminal.GetExecutionCount()
+		if execCount != 1 {
+			t.Errorf("Expected 1 activation, got %d", execCount)
 		}
 	}
 	t.Logf("✅ Complex nested arithmetic extraction working")
@@ -195,9 +194,9 @@ rule discount_calc : {p: Product, c: Customer, o: Order}
 	network.SubmitFact(order)
 	// 150 * (1 - 0.2) = 150 * 0.8 = 120 > 100 ✓
 	if terminal, exists := network.TerminalNodes["discount_calc_terminal"]; exists {
-		tokens := terminal.GetMemory().Tokens
-		if len(tokens) != 1 {
-			t.Errorf("Expected 1 activation, got %d", len(tokens))
+		execCount := terminal.GetExecutionCount()
+		if execCount != 1 {
+			t.Errorf("Expected 1 activation, got %d", execCount)
 		}
 	}
 	t.Logf("✅ Multi-variable arithmetic correctly in JoinNode")
@@ -269,12 +268,9 @@ rule valuable_heavy : {i: Item}
 	network.SubmitFact(goldLight)
 	// Only goldHeavyValuable should activate the rule
 	if terminal, exists := network.TerminalNodes["valuable_heavy_terminal"]; exists {
-		tokens := terminal.GetMemory().Tokens
-		if len(tokens) != 1 {
-			t.Errorf("Expected 1 activation, got %d", len(tokens))
-			for tokenID, tok := range tokens {
-				t.Logf("  Token %s: %+v", tokenID, tok.Facts)
-			}
+		execCount := terminal.GetExecutionCount()
+		if execCount != 1 {
+			t.Errorf("Expected 1 activation, got %d", execCount)
 		}
 	}
 	t.Logf("✅ Mixed conditions with arithmetic working correctly")
@@ -354,7 +350,7 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 			// Check if rule activated
 			var activated bool
 			for _, terminal := range network.TerminalNodes {
-				if len(terminal.GetMemory().Tokens) > 0 {
+				if terminal.GetExecutionCount() > 0 {
 					activated = true
 					break
 				}

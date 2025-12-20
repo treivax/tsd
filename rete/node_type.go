@@ -147,7 +147,11 @@ func (tn *TypeNode) isValidType(value interface{}, expectedType string) bool {
 		_, ok := value.(bool)
 		return ok
 	default:
-		return false
+		// Pour les types personnalisés (fact references), accepter les IDs (string)
+		// Quand un fait référence un autre fait (ex: Commande.produit -> Produit),
+		// la valeur est stockée comme l'ID (string) du fait référencé
+		_, ok := value.(string)
+		return ok
 	}
 }
 

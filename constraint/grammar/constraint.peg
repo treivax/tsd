@@ -14,12 +14,13 @@ import (
 }
 
 Start <- _ statements:StatementList _ EOF {
-    // Séparer types, actions, xupleSpaces, expressions, faits, retractions, ruleRemovals et reset
+    // Séparer types, actions, xupleSpaces, expressions, faits, factAssignments, retractions, ruleRemovals et reset
     types := []interface{}{}
     actions := []interface{}{}
     xupleSpaces := []interface{}{}
     expressions := []interface{}{}
     facts := []interface{}{}
+    factAssignments := []interface{}{}
     retractions := []interface{}{}
     ruleRemovals := []interface{}{}
     resets := []interface{}{}
@@ -37,6 +38,8 @@ Start <- _ statements:StatementList _ EOF {
                     expressions = append(expressions, stmt)
                 } else if stmtMap["type"] == "fact" {
                     facts = append(facts, stmt)
+                } else if stmtMap["type"] == "factAssignment" {
+                    factAssignments = append(factAssignments, stmt)
                 } else if stmtMap["type"] == "retraction" {
                     retractions = append(retractions, stmt)
                 } else if stmtMap["type"] == "ruleRemoval" {
@@ -54,6 +57,7 @@ Start <- _ statements:StatementList _ EOF {
         "xupleSpaces": xupleSpaces,
         "expressions": expressions,
         "facts": facts,
+        "factAssignments": factAssignments,
         "retractions": retractions,
         "ruleRemovals": ruleRemovals,
         "resets": resets,
@@ -70,7 +74,7 @@ StatementList <- statements:(Statement _)* {
     return result, nil
 }
 
-Statement <- TypeDefinition / ActionDefinition / XupleSpaceDeclaration / Expression / RemoveRule / RemoveFact / Fact / Reset
+Statement <- TypeDefinition / ActionDefinition / XupleSpaceDeclaration / Expression / RemoveRule / RemoveFact / FactAssignment / Fact / Reset
 
 Reset <- "reset" {
     return map[string]interface{}{
@@ -97,6 +101,12 @@ FieldList <- first:Field rest:(_ "," _ Field)* {
 }
 
 Field <- primaryKey:"#"? name:IdentName _ ":" _ fieldType:FieldType {
+    // Validation : interdire l'utilisation de _id_ comme nom de champ
+    nameStr := name.(string)
+    if nameStr == "_id_" {
+        return nil, fmt.Errorf("le champ '_id_' est réservé au système et ne peut pas être utilisé")
+    }
+
     result := map[string]interface{}{
         "name": name,
         "type": fieldType,
@@ -110,9 +120,15 @@ Field <- primaryKey:"#"? name:IdentName _ ":" _ fieldType:FieldType {
     return result, nil
 }
 
-FieldType <- "string" { return "string", nil } /
-             "number" { return "number", nil } /
-             "bool"   { return "bool", nil }
+FieldType <- PrimitiveType / UserDefinedType
+
+PrimitiveType <- "string" { return "string", nil } /
+                "number" { return "number", nil } /
+                "bool"   { return "bool", nil }
+
+UserDefinedType <- !ReservedWord name:IdentName {
+    return name, nil
+}
 
 ActionDefinition <- "action" _ name:IdentName _ "(" _ params:ParameterList? _ ")" {
     if params == nil {
@@ -813,8 +829,18 @@ FactID <- chars:([a-zA-Z0-9_-] / SpecialFactChar)+ {
     return string(c.text), nil
 }
 
+// FactAssignment permet d'assigner un fait à une variable : variable = Fact(...)
+FactAssignment <- variable:IdentName _ "=" _ fact:Fact {
+    return map[string]interface{}{
+        "type": "factAssignment",
+        "variable": variable,
+        "fact": fact,
+    }, nil
+}
+
 // Fact définit le parsing d'un fait avec le nouveau format TypeName(field:value, ...)
-Fact <- typeName:IdentName "(" _ fields:FactFieldList _ ")" {
+// S'assure de ne pas matcher si c'est une affectation (présence de =)
+Fact <- typeName:IdentName _ !("=" _) "(" _ fields:FactFieldList _ ")" {
     return map[string]interface{}{
         "type": "fact",
         "typeName": typeName,
@@ -833,17 +859,31 @@ FactFieldList <- first:FactField rest:(_ "," _ FactField)* {
 }
 
 FactField <- name:IdentName ":" _ value:FactValue {
+    // Validation : interdire l'utilisation de _id_ comme nom de champ
+    nameStr := name.(string)
+    if nameStr == "_id_" {
+        return nil, fmt.Errorf("le champ '_id_' est réservé au système et ne peut pas être assigné")
+    }
+
     return map[string]interface{}{
         "name": name,
         "value": value,
     }, nil
 }
 
-FactValue <- StringLiteral / Number / BooleanLiteral / ComplexIdentifier {
+FactValue <- StringLiteral / Number / BooleanLiteral / VariableReference / ComplexIdentifier {
     // ComplexIdentifier pour les valeurs non-quotées complexes comme des IDs
     return map[string]interface{}{
         "type": "identifier",
         "value": string(c.text),
+    }, nil
+}
+
+VariableReference <- !ReservedWord name:IdentName &(_ ("," / ")")) {
+    // La référence de variable doit être suivie de "," ou ")" pour la distinguer d'un identifiant
+    return map[string]interface{}{
+        "type": "variableReference",
+        "value": name,  // Mettre name directement dans value pour cohérence avec les autres types
     }, nil
 }
 
@@ -882,6 +922,14 @@ UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
                          [\u4E00-\u9FFF] / [\uAC00-\uD7AF] / [\uF900-\uFAFF]
 
 PunctuationChar <- [-_] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
+
+// ReservedWord définit les mots réservés qui ne peuvent pas être utilisés comme identifiants
+ReservedWord <- ("type" / "action" / "rule" / "when" / "then" / "remove" / "fact" / "reset" / 
+                "xuple-space" / "selection" / "consumption" / "retention" / "max-size" /
+                "AND" / "and" / "OR" / "or" / "NOT" / "not" / "EXISTS" / "exists" /
+                "true" / "false" / "IN" / "in" / "LIKE" / "like" / "CONTAINS" / "contains" /
+                "MATCHES" / "matches" / "AVG" / "avg" / "COUNT" / "count" / "SUM" / "sum" /
+                "MIN" / "min" / "MAX" / "max" / "_id_") !IdentContinue
 
 _ <- (Whitespace / Comment)*
 

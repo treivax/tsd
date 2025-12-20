@@ -428,11 +428,11 @@ func TestArithmeticDecomposition_WithJoin(t *testing.T) {
 		t.Fatalf("Error submitting Commande: %v", err)
 	}
 	t.Logf("After Commande submission - JoinNode RightMemory: %d tokens", len(joinNode.RightMemory.Tokens))
-	// Check terminal tokens
-	tokenCount := len(terminalNode.Memory.Tokens)
-	t.Logf("Terminal node has %d token(s)", tokenCount)
-	if tokenCount != 1 {
-		t.Errorf("Expected 1 token in terminal, got %d", tokenCount)
+	// Check terminal activations
+	execCount := terminalNode.GetExecutionCount()
+	t.Logf("Terminal node has %d activation(s)", execCount)
+	if execCount != 1 {
+		t.Errorf("Expected 1 activation in terminal, got %d", execCount)
 		t.Logf("JoinNode memory: %d left tokens, %d right tokens",
 			len(joinNode.LeftMemory.Tokens), len(joinNode.RightMemory.Tokens))
 		t.Logf("PassthroughP memory: %d facts", len(passthroughP.Memory.Facts))

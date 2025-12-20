@@ -53,10 +53,8 @@ func (tb *TypeBuilder) CreateTypeNodes(network *ReteNetwork, types []interface{}
 		typeNode := NewTypeNode(typeName, typeDef, storage)
 		network.TypeNodes[typeName] = typeNode
 
-		// Register the TypeNode in the LifecycleManager
-		if network.LifecycleManager != nil {
-			network.LifecycleManager.RegisterNode(typeNode.GetID(), "type")
-		}
+		// Register the TypeNode in the LifecycleManager (always initialized)
+		network.LifecycleManager.RegisterNode(typeNode.GetID(), "type")
 
 		// CRUCIAL: Connect the TypeNode to the RootNode to enable fact propagation
 		network.RootNode.AddChild(typeNode)

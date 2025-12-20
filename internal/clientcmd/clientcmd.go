@@ -640,7 +640,7 @@ func printText(config *Config, response *tsdio.ExecuteResponse, stdout, stderr i
 		if config.Verbose && len(activation.TriggeringFacts) > 0 {
 			fmt.Fprintf(stdout, "   Faits déclencheurs:\n")
 			for j, fact := range activation.TriggeringFacts {
-				fmt.Fprintf(stdout, "     [%d] %s (id: %s)\n", j, fact.Type, fact.ID)
+				fmt.Fprintf(stdout, "     [%d] %s (id: %s)\n", j, fact.Type, fact.GetInternalID())
 				if len(fact.Fields) > 0 {
 					for key, value := range fact.Fields {
 						fmt.Fprintf(stdout, "         %s: %v\n", key, value)

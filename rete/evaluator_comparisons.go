@@ -24,6 +24,22 @@ func (e *AlphaConditionEvaluator) compareValues(left interface{}, operator strin
 		return false, fmt.Errorf("opération arithmétique %s ne peut pas retourner un booléen", operator)
 	}
 
+	// Cas spécial: Comparaison de faits via IDs si les comparateurs avancés sont disponibles
+	// Détecte si on compare deux faits (ex: l.user == u)
+	leftFact, leftIsFact := left.(*Fact)
+	rightFact, rightIsFact := right.(*Fact)
+
+	if leftIsFact && rightIsFact && e.comparisonEvaluator != nil {
+		// Comparaison de deux faits via leurs IDs
+		return e.comparisonEvaluator.EvaluateComparison(
+			leftFact.ID,
+			rightFact.ID,
+			operator,
+			FieldTypeFact,
+			FieldTypeFact,
+		)
+	}
+
 	// Normaliser les valeurs numériques
 	leftVal := e.normalizeValue(left)
 	rightVal := e.normalizeValue(right)

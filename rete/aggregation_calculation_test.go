@@ -69,10 +69,9 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 	network.SubmitFact(&emp3)
 	// Expected average: (50000 + 60000 + 70000.5) / 3 = 60000.166...
 	// We just verify that activations occurred
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		activatedCount += len(memory.Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for AVG aggregation, got %d", activatedCount)
@@ -128,9 +127,9 @@ rule dept_total_salary : {d: Department, total_sal: SUM(e.salary)} / {e: Employe
 	network.SubmitFact(&emp1)
 	network.SubmitFact(&emp2)
 	// Expected sum: 30000 + 40000 = 70000
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for SUM aggregation, got %d", activatedCount)
@@ -179,9 +178,9 @@ rule dept_emp_count : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / 
 	}
 	network.SubmitFact(&dept)
 	// Expected count: 5
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for COUNT aggregation, got %d", activatedCount)
@@ -247,9 +246,9 @@ rule dept_min_salary : {d: Department, min_sal: MIN(e.salary)} / {e: Employee} /
 	network.SubmitFact(&emp2)
 	network.SubmitFact(&emp3)
 	// Expected min: 38000
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for MIN aggregation, got %d", activatedCount)
@@ -315,9 +314,9 @@ rule dept_max_salary : {d: Department, max_sal: MAX(e.salary)} / {e: Employee} /
 	network.SubmitFact(&emp2)
 	network.SubmitFact(&emp3)
 	// Expected max: 150000
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for MAX aggregation, got %d", activatedCount)
@@ -383,9 +382,9 @@ rule dept_stats : {d: Department, avg_sal: AVG(e.salary), max_sal: MAX(e.salary)
 	network.SubmitFact(&emp2)
 	network.SubmitFact(&emp3)
 	// Expected: avg=60000, max=65000, min=55000, count=3
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation for multiple aggregations, got %d", activatedCount)
@@ -433,9 +432,9 @@ rule dept_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp)
 	// Should still activate with aggregated value = 0 (no matches)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation even with empty set, got %d", activatedCount)

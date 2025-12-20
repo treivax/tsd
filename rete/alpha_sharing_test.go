@@ -172,12 +172,11 @@ rule r2 : {p: Person} / p.age > 18 ==> action2(p.id)
 	activatedTerminals := 0
 	totalTokens := 0
 	for _, terminal := range network.TerminalNodes {
-		terminalMemory := terminal.GetMemory()
-		tokenCount := len(terminalMemory.Tokens)
-		if tokenCount > 0 {
+		execCount := terminal.GetExecutionCount()
+		if execCount > 0 {
 			activatedTerminals++
-			totalTokens += tokenCount
-			t.Logf("TerminalNode %s: %d token(s)", terminal.GetID(), tokenCount)
+			totalTokens += int(execCount)
+			t.Logf("TerminalNode %s: %d activation(s)", terminal.GetID(), execCount)
 		}
 	}
 	t.Logf("\nRésultats:")

@@ -59,10 +59,6 @@ func (ctx *betaChainBuildContext) validateInputs() error {
 		return fmt.Errorf("impossible de construire une chaîne sans patterns")
 	}
 
-	if ctx.builder.network.LifecycleManager == nil {
-		return fmt.Errorf("LifecycleManager non initialisé dans le réseau")
-	}
-
 	return nil
 }
 
@@ -120,25 +116,17 @@ func (ctx *betaChainBuildContext) createOrReuseJoinNode(
 	var reused bool
 	var err error
 
-	if ctx.builder.betaSharingRegistry != nil {
-		joinNode, hash, reused, err = ctx.builder.betaSharingRegistry.GetOrCreateJoinNode(
-			pattern.Condition,
-			pattern.LeftVars,
-			pattern.RightVars,
-			pattern.AllVars,
-			pattern.VarTypes,
-			ctx.builder.storage,
-			patternIndex, // cascadeLevel: distinguishes joins at different cascade depths
-		)
-		if err != nil {
-			return nil, "", false, fmt.Errorf("erreur lors de la création/récupération du JoinNode %d: %w", patternIndex, err)
-		}
-	} else {
-		// Fallback if no registry: create directly
-		nodeID := fmt.Sprintf("%s_join_%d", ctx.ruleID, patternIndex)
-		joinNode = NewJoinNode(nodeID, pattern.Condition, pattern.LeftVars, pattern.RightVars, pattern.VarTypes, ctx.builder.storage)
-		hash = nodeID
-		reused = false
+	joinNode, hash, reused, err = ctx.builder.betaSharingRegistry.GetOrCreateJoinNode(
+		pattern.Condition,
+		pattern.LeftVars,
+		pattern.RightVars,
+		pattern.AllVars,
+		pattern.VarTypes,
+		ctx.builder.storage,
+		patternIndex, // cascadeLevel: distinguishes joins at different cascade depths
+	)
+	if err != nil {
+		return nil, "", false, fmt.Errorf("erreur lors de la création/récupération du JoinNode %d: %w", patternIndex, err)
 	}
 
 	return joinNode, hash, reused, nil
@@ -146,22 +134,17 @@ func (ctx *betaChainBuildContext) createOrReuseJoinNode(
 
 // registerJoinNodeWithManagers registers the join node with lifecycle and sharing managers
 func (ctx *betaChainBuildContext) registerJoinNodeWithManagers(joinNode *JoinNode, hash string) {
-	// Register with lifecycle manager
-	if ctx.builder.network != nil && ctx.builder.network.LifecycleManager != nil {
-		// Register the node if not already registered (for new nodes)
-		if _, exists := ctx.builder.network.LifecycleManager.GetNodeLifecycle(hash); !exists {
-			ctx.builder.network.LifecycleManager.RegisterNode(hash, "join")
-		}
-		// Add this rule's reference to the join node
-		ctx.builder.network.LifecycleManager.AddRuleToNode(hash, ctx.ruleID, ctx.ruleID)
+	// Register the node if not already registered (for new nodes)
+	if _, exists := ctx.builder.network.LifecycleManager.GetNodeLifecycle(hash); !exists {
+		ctx.builder.network.LifecycleManager.RegisterNode(hash, "join")
 	}
+	// Add this rule's reference to the join node
+	ctx.builder.network.LifecycleManager.AddRuleToNode(hash, ctx.ruleID, ctx.ruleID)
 
 	// Register rule with beta sharing registry for join node tracking
-	if ctx.builder.betaSharingRegistry != nil {
-		if err := ctx.builder.betaSharingRegistry.RegisterRuleForJoinNode(hash, ctx.ruleID); err != nil {
-			fmt.Printf("⚠️  [BetaChainBuilder] Warning: failed to register rule %s for join node %s: %v\n",
-				ctx.ruleID, hash, err)
-		}
+	if err := ctx.builder.betaSharingRegistry.RegisterRuleForJoinNode(hash, ctx.ruleID); err != nil {
+		fmt.Printf("⚠️  [BetaChainBuilder] Warning: failed to register rule %s for join node %s: %v\n",
+			ctx.ruleID, hash, err)
 	}
 }
 

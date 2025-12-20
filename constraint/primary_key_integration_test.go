@@ -113,7 +113,7 @@ User(id: "manual-id", login: "alice", name: "Alice")
 		err = ValidateConstraintProgram(result)
 		if err == nil {
 			t.Error("❌ Attendu une erreur de validation, reçu nil")
-		} else if !strings.Contains(err.Error(), "ne peut pas être défini manuellement") {
+		} else if !strings.Contains(err.Error(), "non défini dans le type") {
 			t.Errorf("❌ Erreur inattendue: %v", err)
 		} else {
 			t.Logf("✅ Erreur attendue: %v", err)

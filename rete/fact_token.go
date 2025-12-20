@@ -10,16 +10,19 @@ import (
 )
 
 // FieldNameID est le nom du champ spécial pour l'identifiant du fait.
-// Ce champ est accessible dans les expressions mais stocké dans Fact.ID, pas dans Fact.Fields.
-const FieldNameID = "id"
+// DEPRECATED: This field is now internal and hidden. Use FieldNameInternalID.
+// This constant is kept for backward compatibility in RETE engine internals only.
+// The field is stored as "_id_" but this legacy constant may still be referenced
+// in some parts of the RETE engine that haven't been fully migrated yet.
+const FieldNameID = "_id_"
 
 // Fact représente un fait dans le réseau RETE
 type Fact struct {
 	// ID est l'identifiant unique du fait.
 	// Il est soit généré à partir des clés primaires, soit calculé comme hash.
 	// Format: "TypeName~value1_value2..." ou "TypeName~<hash>"
-	// Accessible dans les expressions via le champ spécial 'id'.
-	ID         string                 `json:"id"`
+	// Ce champ est INTERNE et caché, jamais accessible dans les expressions TSD.
+	ID         string                 `json:"_id_"`
 	Type       string                 `json:"type"`
 	Fields     map[string]interface{} `json:"fields"`
 	Attributes map[string]interface{} `json:"attributes,omitempty"` // Alias pour Fields (compatibilité)
@@ -30,9 +33,10 @@ func (f *Fact) String() string {
 	return fmt.Sprintf("Fact{ID:%s, Type:%s, Fields:%v}", f.ID, f.Type, f.Fields)
 }
 
-// GetInternalID retourne l'identifiant interne unique (Type_ID)
+// GetInternalID retourne l'identifiant interne unique.
+// L'ID est déjà au format "Type~Value" donc on le retourne tel quel.
 func (f *Fact) GetInternalID() string {
-	return fmt.Sprintf("%s_%s", f.Type, f.ID)
+	return f.ID
 }
 
 // GetField retourne la valeur d'un champ

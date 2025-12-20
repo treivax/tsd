@@ -53,31 +53,23 @@ func (s *JoinRuleRemovalStrategy) RemoveRule(ruleID string, nodeIDs []string) (i
 
 	// Step 2: Remove join nodes with reference counting
 	for _, nodeID := range classification.JoinNodes {
-		// Remove rule reference from join node
-		if s.network.BetaSharingRegistry != nil {
-			canDelete, err := s.network.BetaSharingRegistry.RemoveRuleFromJoinNode(nodeID, ruleID)
-			if err != nil {
-				s.network.logger.Warn("   ⚠️  Error removing rule from join node %s: %v", nodeID, err)
-				continue
-			}
+		// Remove rule reference from join node (BetaSharingRegistry always initialized)
+		canDelete, err := s.network.BetaSharingRegistry.RemoveRuleFromJoinNode(nodeID, ruleID)
+		if err != nil {
+			s.network.logger.Warn("   ⚠️  Error removing rule from join node %s: %v", nodeID, err)
+			continue
+		}
 
-			if canDelete {
-				// No more rules reference this join node - safe to delete
-				if err := s.helpers.RemoveJoinNodeFromNetwork(nodeID); err == nil {
-					deletedCount++
-					s.network.logger.Debug("   🗑️  JoinNode %s removed (no more references)", nodeID)
-				}
-			} else {
-				// Join node is still shared by other rules
-				refCount := s.network.BetaSharingRegistry.GetJoinNodeRefCount(nodeID)
-				s.network.logger.Debug("   ✓ JoinNode %s preserved (%d rule(s) remaining)", nodeID, refCount)
+		if canDelete {
+			// No more rules reference this join node - safe to delete
+			if err := s.helpers.RemoveJoinNodeFromNetwork(nodeID); err == nil {
+				deletedCount++
+				s.network.logger.Debug("   🗑️  JoinNode %s removed (no more references)", nodeID)
 			}
 		} else {
-			// No sharing registry - use lifecycle manager
-			if err := s.helpers.RemoveNodeWithCheck(nodeID, ruleID); err == nil {
-				deletedCount++
-				s.network.logger.Debug("   🗑️  JoinNode %s removed", nodeID)
-			}
+			// Join node is still shared by other rules
+			refCount := s.network.BetaSharingRegistry.GetJoinNodeRefCount(nodeID)
+			s.network.logger.Debug("   ✓ JoinNode %s preserved (%d rule(s) remaining)", nodeID, refCount)
 		}
 	}
 

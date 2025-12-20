@@ -235,11 +235,11 @@ func TestValidateFactPrimaryKey(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "fait avec id manuel - invalide",
+			name: "fait avec _id_ manuel - invalide",
 			fact: Fact{
 				TypeName: "User",
 				Fields: []FactField{
-					{Name: FieldNameID, Value: FactValue{Type: ValueTypeString, Value: "manual-id"}},
+					{Name: FieldNameInternalID, Value: FactValue{Type: ValueTypeString, Value: "manual-id"}},
 					{Name: "login", Value: FactValue{Type: ValueTypeString, Value: "alice"}},
 				},
 			},
@@ -251,7 +251,7 @@ func TestValidateFactPrimaryKey(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "ne peut pas être défini manuellement",
+			errMsg:  "réservé au système",
 		},
 		{
 			name: "fait sans champ PK - invalide",

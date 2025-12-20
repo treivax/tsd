@@ -243,17 +243,39 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 
 	for i, factMap := range facts {
 		// 1. Convertir le map en Fact
-		factID := fmt.Sprintf("fact_%d", i)
-		if id, ok := factMap["id"].(string); ok {
+		var factID string
+		var factType string
+
+		// Utiliser _id_ qui contient l'ID interne complet (Type~Value)
+		if id, ok := factMap["_id_"].(string); ok {
 			factID = id
+		} else {
+			// Fallback: construire l'ID interne si _id_ n'existe pas
+			rawID := fmt.Sprintf("fact_%d", i)
+			if id, ok := factMap["id"].(string); ok {
+				rawID = id
+			}
+
+			factType = "unknown"
+			// Chercher "type" ou "reteType" (ConvertFactsToReteFormat utilise "reteType")
+			if typ, ok := factMap["type"].(string); ok {
+				factType = typ
+			} else if typ, ok := factMap["reteType"].(string); ok {
+				factType = typ
+			}
+
+			// Construire l'ID interne complet au format Type~Value
+			factID = fmt.Sprintf("%s~%s", factType, rawID)
 		}
 
-		factType := "unknown"
-		// Chercher "type" ou "reteType" (ConvertFactsToReteFormat utilise "reteType")
-		if typ, ok := factMap["type"].(string); ok {
-			factType = typ
-		} else if typ, ok := factMap["reteType"].(string); ok {
-			factType = typ
+		// Si factType n'a pas été défini ci-dessus, le récupérer maintenant
+		if factType == "" {
+			factType = "unknown"
+			if typ, ok := factMap["type"].(string); ok {
+				factType = typ
+			} else if typ, ok := factMap["reteType"].(string); ok {
+				factType = typ
+			}
 		}
 
 		fact := &Fact{
@@ -367,19 +389,11 @@ func (rn *ReteNetwork) Reset() {
 	rn.Types = make([]TypeDefinition, 0)
 	rn.BetaBuilder = nil
 
-	// Reset lifecycle manager
-	if rn.LifecycleManager != nil {
-		rn.LifecycleManager.Reset()
-	} else {
-		rn.LifecycleManager = NewLifecycleManager()
-	}
+	// Reset lifecycle manager (always initialized)
+	rn.LifecycleManager.Reset()
 
-	// Reset alpha sharing manager
-	if rn.AlphaSharingManager != nil {
-		rn.AlphaSharingManager.Reset()
-	} else {
-		rn.AlphaSharingManager = NewAlphaSharingRegistry()
-	}
+	// Reset alpha sharing manager (always initialized)
+	rn.AlphaSharingManager.Reset()
 
 	// Reset passthrough registry
 	rn.PassthroughRegistry = make(map[string]*AlphaNode)
@@ -437,13 +451,9 @@ func (rn *ReteNetwork) GarbageCollect() {
 		rn.ArithmeticResultCache.Clear()
 	}
 
-	if rn.BetaSharingRegistry != nil {
-		rn.BetaSharingRegistry.Clear()
-	}
-
-	if rn.AlphaSharingManager != nil {
-		rn.AlphaSharingManager.Clear()
-	}
+	// BetaSharingRegistry and AlphaSharingManager are always initialized
+	rn.BetaSharingRegistry.Clear()
+	rn.AlphaSharingManager.Clear()
 
 	// 2. Nettoyer les nœuds et supprimer les références
 	// TypeNodes

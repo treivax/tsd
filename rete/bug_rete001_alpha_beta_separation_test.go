@@ -227,10 +227,11 @@ func TestBugRETE001_VerifyFix(t *testing.T) {
 	}
 	t.Log("✅ VERIFIED: Alpha filter has proper condition")
 	// Verify results are correct (same actions triggered)
-	// Count triggered actions by checking terminal node memory
-	actionsTriggered := 0
+	// Count triggered actions by checking terminal node execution count
+	// (TerminalNodes execute immediately and don't store tokens)
+	var actionsTriggered int64
 	for _, terminal := range network.TerminalNodes {
-		actionsTriggered += len(terminal.Memory.Tokens)
+		actionsTriggered += terminal.GetExecutionCount()
 	}
 	t.Logf("   - Actions triggered: %d", actionsTriggered)
 	if actionsTriggered != 2 {

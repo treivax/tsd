@@ -512,11 +512,6 @@ func TestRunWithInvalidOutputFormat(t *testing.T) {
 }
 
 // TestParseInputFromStdin tests stdin input ("-")
-func TestParseInputFromStdin(t *testing.T) {
-	// Note: This test would require mocking stdin, which is complex
-	// For now, we test the stdin placeholder recognition
-	t.Skip("Stdin testing requires complex mocking - tested in integration tests")
-}
 
 // TestLoadConfigurationWithFile tests loading config from file
 func TestLoadConfigurationWithFile(t *testing.T) {

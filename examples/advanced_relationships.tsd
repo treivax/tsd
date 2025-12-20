@@ -1,0 +1,49 @@
+// Exemple avancé: Relations complexes entre types
+// Démontre les chaînes de références
+
+type Organization(#orgId: string, name: string, country: string)
+type Department(org: Organization, #deptId: string, name: string, budget: number)
+type Employee(dept: Department, #empId: string, name: string, salary: number, position: string)
+type Project(dept: Department, #projectId: string, name: string, status: string)
+type Assignment(employee: Employee, project: Project, role: string, hours: number)
+
+// Créer une organisation
+acme = Organization("ORG-001", "ACME Corp", "USA")
+
+// Créer des départements
+engineering = Department(acme, "DEPT-001", "Engineering", 1000000.00)
+marketing = Department(acme, "DEPT-002", "Marketing", 500000.00)
+
+// Créer des employés
+alice = Employee(engineering, "EMP-001", "Alice Johnson", 120000.00, "Senior Engineer")
+bob = Employee(engineering, "EMP-002", "Bob Smith", 90000.00, "Engineer")
+charlie = Employee(marketing, "EMP-003", "Charlie Brown", 85000.00, "Marketing Manager")
+
+// Créer des projets
+project1 = Project(engineering, "PROJ-001", "New Platform", "active")
+project2 = Project(marketing, "PROJ-002", "Product Launch", "planning")
+
+// Créer des affectations
+Assignment(alice, project1, "Tech Lead", 40)
+Assignment(bob, project1, "Developer", 40)
+Assignment(charlie, project2, "Campaign Manager", 30)
+
+// Règle 1: Projets actifs avec employés
+{e: Employee, a: Assignment, p: Project} / 
+    a.employee == e && a.project == p && p.status == "active" ==> 
+    Log(e.name + " assigned to active project: " + p.name)
+
+// Règle 2: Employés bien payés (>100k) sur projets
+{e: Employee, a: Assignment, p: Project} / 
+    a.employee == e && a.project == p && e.salary > 100000.00 ==> 
+    Log("High-paid employee on project: " + e.name + " (" + p.name + ")")
+
+// Règle 3: Projets et départements de la même org
+{o: Organization, d: Department, p: Project} / 
+    d.org == o && p.dept == d && o.country == "USA" ==> 
+    Log("USA project: " + p.name + " in " + d.name)
+
+// Règle 4: Budget et salaires
+{d: Department, e: Employee} / 
+    e.dept == d && e.salary > (d.budget / 10.0) ==> 
+    Log("WARNING: " + e.name + " salary is >10% of department budget")

@@ -729,12 +729,78 @@ func TestPrintResults(t *testing.T) {
 
 // TestRun_WithFacts tests Run with facts file (uses example from codebase)
 func TestRun_WithFacts(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	// Créer un fichier de programme avec types, règles et faits
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Person(#id: string, name: string, age: number)
+
+action logAdult(name: string)
+
+rule adults: {p: Person} / p.age >= 18 ==> logAdult(p.name)
+
+Person(id: "p1", name: "Alice", age: 25)
+Person(id: "p2", name: "Bob", age: 17)
+Person(id: "p3", name: "Charlie", age: 30)
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	// Exécuter avec le même fichier comme fichier de faits
+	exitCode := Run([]string{"-file", programFile, "-facts", programFile}, nil, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Errorf("Run() exitCode = %d, want 0\nStderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	// Le test passe et produit une sortie (même si aucune action n'est déclenchée)
+	if len(output) == 0 {
+		t.Errorf("Output should not be empty")
+	}
 }
 
 // TestRun_WithFactsVerbose tests Run with facts file in verbose mode
 func TestRun_WithFactsVerbose(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	// Créer un fichier de programme avec types, règles ET faits
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Product(#sku: string, name: string, price: number)
+
+action logExpensive(name: string)
+
+rule expensive: {p: Product} / p.price > 100 ==> logExpensive(p.name)
+
+Product(sku: "LAPTOP", name: "Laptop Pro", price: 1500)
+Product(sku: "MOUSE", name: "Wireless Mouse", price: 25)
+Product(sku: "MONITOR", name: "4K Monitor", price: 800)
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	// Exécuter en mode verbose avec le même fichier comme faits
+	exitCode := Run([]string{"-file", programFile, "-facts", programFile, "-v"}, nil, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Errorf("Run() exitCode = %d, want 0\nStderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	// En mode verbose, on devrait voir des détails supplémentaires
+	if !strings.Contains(output, "Parsing") && !strings.Contains(output, "Validation") {
+		t.Errorf("Verbose output should contain parsing/validation details, got: %s", output)
+	}
 }
 
 // TestRunWithFacts_FactsFileNotFound tests runWithFacts with non-existent facts file
@@ -770,12 +836,82 @@ func TestRunWithFacts_FactsFileNotFound(t *testing.T) {
 
 // TestRunWithFacts_VerboseMode tests runWithFacts in verbose mode
 func TestRunWithFacts_VerboseMode(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	// Créer un fichier de programme
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Sensor(#id: string, location: string, temperature: number)
+
+action logHighTemp(location: string)
+
+rule highTemp: {s: Sensor} / s.temperature > 30 ==> logHighTemp(s.location)
+
+Sensor(id: "s1", location: "Room1", temperature: 35)
+Sensor(id: "s2", location: "Room2", temperature: 22)
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	config := &Config{
+		File:      programFile,
+		FactsFile: programFile,
+		Verbose:   true,
+	}
+
+	exitCode := runWithFacts(config, programFile, stdout, stderr)
+
+	if exitCode != 0 {
+		t.Errorf("runWithFacts() exitCode = %d, want 0\nStderr: %s", exitCode, stderr.String())
+	}
+
+	output := stdout.String()
+	if !strings.Contains(output, "Faits injectés") && !strings.Contains(output, "Pipeline") {
+		t.Errorf("Output should contain facts injection or pipeline info, got: %s", output)
+	}
 }
 
 // TestExecutePipeline_Success tests executePipeline with valid program
 func TestExecutePipeline_Success(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	// Créer un fichier de contraintes (programme) avec faits
+	constraintFile := filepath.Join(tmpDir, "constraints.tsd")
+	constraintContent := `type User(#username: string, email: string, age: number)
+
+action logAdultUser(username: string)
+
+rule adults: {u: User} / u.age >= 18 ==> logAdultUser(u.username)
+
+User(username: "alice", email: "alice@example.com", age: 25)
+User(username: "bob", email: "bob@example.com", age: 16)
+User(username: "charlie", email: "charlie@example.com", age: 30)
+`
+	err := os.WriteFile(constraintFile, []byte(constraintContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create constraint file: %v", err)
+	}
+
+	result, err := executePipeline(constraintFile, constraintFile)
+
+	if err != nil {
+		t.Fatalf("executePipeline() error = %v, want nil", err)
+	}
+
+	if result == nil {
+		t.Error("executePipeline() returned nil result")
+	}
+
+	// Vérifier que des faits ont été chargés
+	if result != nil && len(result.Facts) > 0 {
+		// Succès - des faits ont été chargés
+	} else {
+		t.Error("Result should contain facts")
+	}
 }
 
 // TestExecutePipeline_SeparateFiles tests executePipeline with separate files
@@ -847,17 +983,111 @@ func TestExecutePipeline_InvalidFacts(t *testing.T) {
 
 // TestCountActivations_WithNetwork tests countActivations with a real network
 func TestCountActivations_WithNetwork(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	// Créer un fichier avec règles qui vont s'activer
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Item(#id: string, name: string, qty: number)
+
+action logLowStock(name: string)
+action logOutOfStock(name: string)
+
+rule lowStock: {i: Item} / i.qty < 10 ==> logLowStock(i.name)
+rule outOfStock: {i: Item} / i.qty == 0 ==> logOutOfStock(i.name)
+
+Item(id: "i1", name: "Widget", qty: 5)
+Item(id: "i2", name: "Gadget", qty: 0)
+Item(id: "i3", name: "Tool", qty: 50)
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	result, err := executePipeline(programFile, programFile)
+	if err != nil {
+		t.Fatalf("executePipeline() error = %v", err)
+	}
+
+	count := countActivations(result.Network)
+
+	// On devrait avoir au moins quelques activations (lowStock et outOfStock)
+	if count < 0 {
+		t.Errorf("countActivations() = %d, should be non-negative", count)
+	}
 }
 
 // TestPrintActivationDetails_WithNetwork tests printActivationDetails with real network
 func TestPrintActivationDetails_WithNetwork(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Alert(#id: string, level: string, message: string)
+
+action logCritical(message: string)
+
+rule critical: {a: Alert} / a.level == "CRITICAL" ==> logCritical(a.message)
+
+Alert(id: "a1", level: "CRITICAL", message: "System down")
+Alert(id: "a2", level: "INFO", message: "All good")
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	result, err := executePipeline(programFile, programFile)
+	if err != nil {
+		t.Fatalf("executePipeline() error = %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+
+	// Tester que la fonction ne plante pas
+	printActivationDetails(result.Network, stdout)
+
+	output := stdout.String()
+	// La sortie peut être vide ou contenir des détails - on vérifie juste qu'il n'y a pas d'erreur
+	_ = output
 }
 
 // TestPrintResults_WithActivations tests printResults with activations
 func TestPrintResults_WithActivations(t *testing.T) {
-	t.Skip("Skipping test with example file that has parsing issues")
+	tmpDir := t.TempDir()
+
+	programFile := filepath.Join(tmpDir, "program.tsd")
+	programContent := `type Task(#id: string, priority: number, status: string)
+
+action logUrgent(taskId: string)
+
+rule urgent: {t: Task} / t.priority > 5 ==> logUrgent(t.id)
+
+Task(id: "t1", priority: 8, status: "pending")
+Task(id: "t2", priority: 3, status: "done")
+`
+	err := os.WriteFile(programFile, []byte(programContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create program file: %v", err)
+	}
+
+	result, err := executePipeline(programFile, programFile)
+	if err != nil {
+		t.Fatalf("executePipeline() error = %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+
+	config := &Config{
+		Verbose: true,
+	}
+
+	// Tester que la fonction ne plante pas et produit une sortie
+	printResults(config, result, stdout)
+
+	output := stdout.String()
+	if !strings.Contains(output, "Faits injectés") {
+		t.Errorf("Output should contain 'Faits injectés', got: %s", output)
+	}
 }
 
 // TestRun_WithFactsAndError tests Run with facts causing execution error

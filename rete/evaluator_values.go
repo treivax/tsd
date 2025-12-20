@@ -99,8 +99,17 @@ func (e *AlphaConditionEvaluator) evaluateFieldAccessByName(object, field string
 		return nil, fmt.Errorf("variable non liée: %s (variables disponibles: %v)", object, availableVars)
 	}
 
-	// Cas spécial : le champ 'id' est stocké dans fact.ID, pas dans fact.Fields
+	// Cas spécial : le champ '_id_' est INTERDIT dans les expressions
+	// Ce check ne devrait jamais être atteint car la validation devrait rejeter
+	// l'accès à _id_ avant l'évaluation, mais on le garde par sécurité.
 	if field == FieldNameID {
+		return nil, fmt.Errorf(
+			"le champ '_id_' est interne et ne peut pas être accédé dans les expressions",
+		)
+	}
+
+	// Cas spécial : le champ 'id' retourne l'ID interne du fait
+	if field == "id" {
 		return fact.ID, nil
 	}
 

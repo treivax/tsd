@@ -30,6 +30,68 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 
 > **⚠️ Note Architecture:** TSD utilise exclusivement du **stockage en mémoire** avec garanties de cohérence forte. Toutes les données sont conservées en RAM pour des performances maximales (~10,000-50,000 faits/sec). La persistance se fait via export de fichiers `.tsd` et la réplication réseau via Raft est prévue pour les versions futures. Voir [docs/INMEMORY_ONLY_MIGRATION.md](docs/INMEMORY_ONLY_MIGRATION.md) pour plus de détails.
 
+---
+
+## 🆕 Nouveautés v2.0
+
+### 🎯 Affectations de Variables
+
+Nommez des faits pour les réutiliser dans d'autres définitions :
+
+```tsd
+alice = User("alice", "alice@example.com", 30)
+bob = User("bob", "bob@example.com", 25)
+
+Login(alice, "SES-001", 1704067200)
+Login(bob, "SES-002", 1704067260)
+```
+
+### 🔗 Comparaisons de Faits
+
+Comparez directement des faits dans les règles :
+
+```tsd
+type User(#username: string, email: string)
+type Order(customer: User, #orderNum: string, total: number)
+
+alice = User("alice", "alice@example.com")
+Order(alice, "ORD-001", 150.00)
+
+rule customerOrders : {u: User, o: Order} / o.customer == u ==> 
+    Log("Order for " + u.username)
+```
+
+### 📐 Types de Faits dans les Champs
+
+Les champs peuvent référencer d'autres types de faits :
+
+```tsd
+type Customer(#customerId: string, name: string)
+type Product(#sku: string, name: string, price: number)
+type Order(customer: Customer, #orderNumber: string, date: string)
+type OrderLine(order: Order, product: Product, quantity: number)
+```
+
+### 🔒 Identifiants Internes (`_id_`)
+
+Les identifiants sont maintenant **cachés et internes** :
+- ✅ Générés automatiquement (déterministes)
+- ❌ **Jamais accessibles** dans les expressions TSD
+- ✅ Utilisés en interne par le moteur RETE
+- ✅ Comparaisons de faits automatiques
+
+**⚠️ Breaking Change** : Le champ `id` est devenu `_id_` et n'est plus accessible. Voir [Guide de Migration](docs/migration/from-v1.x.md).
+
+### 📚 Documentation
+
+- [Guide de Migration v1.x → v2.0](docs/migration/from-v1.x.md) - **Obligatoire pour migrer**
+- [Identifiants Internes](docs/internal-ids.md) - Système `_id_` complet
+- [Affectations de Faits](docs/user-guide/fact-assignments.md) - Utiliser les variables
+- [Comparaisons de Faits](docs/user-guide/fact-comparisons.md) - Comparer les faits
+- [Système de Types](docs/user-guide/type-system.md) - Types dans les champs
+
+---
+
 ## 📝 Syntaxe des Règles
 
 ### Format Obligatoire (v2.0+)
@@ -66,7 +128,9 @@ bash scripts/add_rule_ids.sh
 
 ## 🆔 Clés Primaires et Génération d'IDs
 
-TSD génère automatiquement des identifiants uniques et déterministes pour tous les faits basés sur des clés primaires.
+TSD génère automatiquement des identifiants internes uniques et déterministes (`_id_`) pour tous les faits, basés sur des clés primaires.
+
+⚠️ **Important** : Le champ `_id_` est **caché et réservé au système**. Vous ne pouvez **jamais** y accéder dans vos expressions TSD.
 
 ### Définition de Clés Primaires
 
@@ -83,47 +147,64 @@ type Product(#category: string, #name: string, price: number)
 type LogEvent(timestamp: number, level: string, message: string)
 ```
 
-### Format des IDs Générés
+### Format des IDs Générés (Internes)
 
 **Clé simple** : `TypeName~valeur`
 ```tsd
-User(username: "alice", email: "alice@example.com", role: "admin")
-// ID généré: User~alice
+alice = User("alice", "alice@example.com", "admin")
+// ID interne (_id_): "User~alice"
 ```
 
 **Clé composite** : `TypeName~valeur1_valeur2`
 ```tsd
-Product(category: "Electronics", name: "Laptop", price: 1200)
-// ID généré: Product~Electronics_Laptop
+Product("Electronics", "Laptop", 1200.00)
+// ID interne (_id_): "Product~Electronics_Laptop"
 ```
 
 **Sans clé primaire** : `TypeName~<hash-16-chars>`
 ```tsd
-LogEvent(timestamp: 1704067200, level: "ERROR", message: "Connection failed")
-// ID généré: LogEvent~a1b2c3d4e5f6g7h8
+LogEvent(1704067200, "ERROR", "Connection failed")
+// ID interne (_id_): "LogEvent~a1b2c3d4e5f6g7h8"
 ```
 
 ### Utilisation dans les Règles
 
-Le champ `id` est toujours disponible :
+❌ **INTERDIT** - Accéder à `_id_` :
 
 ```tsd
-rule logAdmins : {u: User} / u.role == "admin"
-    ==> notify(u.id, u.username)
-    // u.id vaut "User~alice"
+// ❌ ERREUR : _id_ est réservé et inaccessible
+rule showId : {u: User} / u._id_ == "User~alice" ==> Log("Found")
+```
+
+✅ **CORRECT** - Utiliser les affectations et comparaisons :
+
+```tsd
+alice = User("alice", "alice@example.com")
+
+// Comparer sur les champs métier
+rule showUser : {u: User} / u.username == "alice" ==> Log("Found: " + u.username)
+
+// Comparer des faits directement
+type Order(customer: User, #orderNum: string, total: number)
+order1 = Order(alice, "ORD-001", 150.00)
+
+rule customerOrders : {u: User, o: Order} / o.customer == u ==> 
+    Log("Order for: " + u.username)
 ```
 
 ### Échappement des Caractères
 
-Les caractères spéciaux sont automatiquement échappés :
+Les caractères spéciaux sont automatiquement échappés en interne :
 - `~` → `%7E` (séparateur type/valeur)
 - `_` → `%5F` (séparateur composite)
 - `%` → `%25` (caractère d'échappement)
 - ` ` → `%20` (espace)
 
-**📖 Documentation complète :** [docs/MIGRATION_IDS.md](docs/MIGRATION_IDS.md)
+**📖 Documentation complète :** 
+- [Identifiants Internes](docs/internal-ids.md) - Système `_id_` complet
+- [Guide de Migration v1.x → v2.0](docs/migration/from-v1.x.md) - **Breaking changes**
 
-**🔍 Exemples :** Consultez `examples/pk_*.tsd` pour voir tous les cas d'usage
+**🔍 Exemples :** Consultez `examples/pk_*.tsd` et `examples/fact_*.tsd` pour tous les cas d'usage
 
 ## 🚀 Installation Rapide
 

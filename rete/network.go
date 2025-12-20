@@ -68,9 +68,6 @@ func (rn *ReteNetwork) GetChainMetrics() *ChainBuildMetrics {
 
 // GetBetaSharingStats retourne les statistiques de partage des JoinNodes
 func (rn *ReteNetwork) GetBetaSharingStats() *BetaSharingStats {
-	if rn.BetaSharingRegistry == nil {
-		return nil
-	}
 	return rn.BetaSharingRegistry.GetSharingStats()
 }
 

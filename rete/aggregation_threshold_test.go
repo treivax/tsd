@@ -47,9 +47,9 @@ rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 	}
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp1)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount != 0 {
 		t.Errorf("Expected 0 activations when avg (40000) <= threshold (50000), got %d", activatedCount)
@@ -65,9 +65,9 @@ rule high_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} /
 		},
 	}
 	network.SubmitFact(&emp2)
-	activatedCount = 0
+	activatedCount = int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation when avg (55000) > threshold (50000), got %d", activatedCount)
@@ -113,9 +113,9 @@ rule decent_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee}
 	}
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp1)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation when avg (50000) >= threshold (50000), got %d", activatedCount)
@@ -161,9 +161,9 @@ rule low_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 	}
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp1)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation when avg (35000) < threshold (40000), got %d", activatedCount)
@@ -209,9 +209,9 @@ rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e
 	}
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp1)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount != 0 {
 		t.Errorf("Expected 0 activations when avg (30000) is below range, got %d", activatedCount)
@@ -227,9 +227,9 @@ rule mid_range_avg : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / e
 		},
 	}
 	network.SubmitFact(&emp2)
-	activatedCount = 0
+	activatedCount = int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation when avg (45000) is in range (40000-60000), got %d", activatedCount)
@@ -277,9 +277,9 @@ rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.de
 		}
 		network.SubmitFact(&emp)
 	}
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount != 0 {
 		t.Errorf("Expected 0 activations when count (2) < threshold (3), got %d", activatedCount)
@@ -295,9 +295,9 @@ rule large_dept : {d: Department, emp_count: COUNT(e.id)} / {e: Employee} / e.de
 		},
 	}
 	network.SubmitFact(&emp3)
-	activatedCount = 0
+	activatedCount = int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation when count (3) >= threshold (3), got %d", activatedCount)
@@ -342,9 +342,9 @@ rule any_avg_salary : {d: Department, avg_sal: AVG(e.salary)} / {e: Employee} / 
 	}
 	network.SubmitFact(&dept)
 	network.SubmitFact(&emp)
-	activatedCount := 0
+	activatedCount := int64(0)
 	for _, terminalNode := range network.TerminalNodes {
-		activatedCount += len(terminalNode.GetMemory().Tokens)
+		activatedCount += terminalNode.GetExecutionCount()
 	}
 	if activatedCount < 1 {
 		t.Errorf("Expected at least 1 activation with no threshold condition, got %d", activatedCount)

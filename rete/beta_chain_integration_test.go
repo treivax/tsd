@@ -93,9 +93,7 @@ func TestBetaChain_ProgrammaticSharing(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
 	network := NewReteNetworkWithConfig(storage, config)
-	if network.BetaSharingRegistry == nil {
-		t.Fatal("BetaSharingRegistry should be initialized")
-	}
+
 	// Create identical join patterns for two rules
 	condition := map[string]interface{}{
 		"type": "comparison",
@@ -327,11 +325,7 @@ rule r2 : {p: Person, o: Order} / p.id == o.customer_id ==> print("Rule 2")
 		t.Errorf("Should start with 2 TerminalNodes, got %d", initialTerminals)
 	}
 	t.Logf("Initial BetaNodes: %d", initialBeta)
-	// Check if LifecycleManager is initialized before attempting removal
-	if network.LifecycleManager == nil {
-		t.Skip("LifecycleManager not initialized, skipping rule removal test")
-	}
-	// Attempt to remove one rule
+	// Attempt to remove the first rule
 	err = network.RemoveRule("r1")
 	if err != nil {
 		t.Logf("Rule removal not supported or failed: %v", err)
@@ -354,12 +348,7 @@ func TestBetaChain_Lifecycle_ReferenceCount(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
 	network := NewReteNetworkWithConfig(storage, config)
-	if network.LifecycleManager == nil {
-		t.Skip("LifecycleManager not initialized, skipping lifecycle test")
-	}
-	if network.BetaSharingRegistry == nil {
-		t.Skip("BetaSharingRegistry not initialized, skipping lifecycle test")
-	}
+
 	// Create shared join nodes
 	condition := map[string]interface{}{
 		"type": "comparison",
@@ -710,9 +699,7 @@ func TestBetaChain_HashConsistency(t *testing.T) {
 	storage := NewMemoryStorage()
 	config := DefaultChainPerformanceConfig()
 	network := NewReteNetworkWithConfig(storage, config)
-	if network.BetaSharingRegistry == nil {
-		t.Skip("BetaSharingRegistry not initialized")
-	}
+
 	condition := map[string]interface{}{
 		"type": "comparison",
 		"op":   "==",

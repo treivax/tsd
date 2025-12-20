@@ -204,6 +204,11 @@ func (cs *ConditionSplitter) extractVariablesRecursive(node interface{}, vars ma
 				if obj, ok := v["object"].(string); ok {
 					vars[obj] = true
 				}
+			} else if nodeType == "variable" {
+				// Extract standalone variable (e.g., {type: "variable", name: "p"})
+				if name, ok := v["name"].(string); ok {
+					vars[name] = true
+				}
 			}
 		}
 

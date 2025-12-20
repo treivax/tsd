@@ -106,11 +106,12 @@ func (ac *AlphaChain) ValidateChain() error {
 // CountSharedNodes retourne le nombre de nœuds partagés dans la chaîne
 // (nœuds avec plus d'une référence dans le LifecycleManager)
 func (acb *AlphaChainBuilder) CountSharedNodes(chain *AlphaChain) int {
-	if chain == nil || acb.network.LifecycleManager == nil {
+	if chain == nil {
 		return 0
 	}
 
 	sharedCount := 0
+	// LifecycleManager is always initialized
 	for _, node := range chain.Nodes {
 		if lifecycle, exists := acb.network.LifecycleManager.GetNodeLifecycle(node.ID); exists {
 			if lifecycle.GetRefCount() > 1 {
@@ -118,7 +119,6 @@ func (acb *AlphaChainBuilder) CountSharedNodes(chain *AlphaChain) int {
 			}
 		}
 	}
-
 	return sharedCount
 }
 

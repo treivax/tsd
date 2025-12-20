@@ -146,10 +146,8 @@ func (bsr *BetaSharingRegistryImpl) AddRuleToJoinNode(nodeID, ruleID string) err
 
 	bsr.joinNodeRules[nodeID][ruleID] = true
 
-	// Also register with lifecycle manager if available
-	if bsr.lifecycleManager != nil {
-		bsr.lifecycleManager.AddRuleToNode(nodeID, ruleID, ruleID)
-	}
+	// Also register with lifecycle manager (always initialized)
+	bsr.lifecycleManager.AddRuleToNode(nodeID, ruleID, ruleID)
 
 	return nil
 }
@@ -171,10 +169,8 @@ func (bsr *BetaSharingRegistryImpl) RemoveRuleFromJoinNode(nodeID, ruleID string
 
 	delete(rules, ruleID)
 
-	// Also update lifecycle manager if available
-	if bsr.lifecycleManager != nil {
-		bsr.lifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
-	}
+	// Also update lifecycle manager (always initialized)
+	bsr.lifecycleManager.RemoveRuleFromNode(nodeID, ruleID)
 
 	// If no more rules reference this node, it can be deleted
 	canDelete := len(rules) == 0
@@ -203,11 +199,8 @@ func (bsr *BetaSharingRegistryImpl) RegisterRuleForJoinNode(nodeID, ruleID strin
 	// Add the rule reference
 	bsr.joinNodeRules[nodeID][ruleID] = true
 
-	// Sync with lifecycle manager if available
-	if bsr.lifecycleManager != nil {
-		// Lifecycle manager already tracks this via AddRuleToNode in beta_chain_builder
-		// This is just for consistency check
-	}
+	// Lifecycle manager already tracks this via AddRuleToNode in beta_chain_builder
+	// This is just for consistency check
 
 	return nil
 }

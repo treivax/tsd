@@ -72,8 +72,7 @@ rule r2 : {p: Person} / p.name == 'toto' AND p.age > 18 ==> print("B")
 	// Vérifier que les 2 TerminalNodes ont été activés
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -147,8 +146,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	// Compter les activations
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -179,8 +177,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	}
 	activatedCount = 0
 	for _, terminalNode := range network2.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -211,8 +208,7 @@ rule r3 : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 1000 ==> 
 	}
 	activatedCount = 0
 	for _, terminalNode := range network3.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -270,9 +266,9 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 		terminalNode = tn
 		break
 	}
-	memory := terminalNode.GetMemory()
-	if len(memory.Tokens) != 1 {
-		t.Errorf("Le TerminalNode devrait avoir 1 token, got %d", len(memory.Tokens))
+	execCount := terminalNode.GetExecutionCount()
+	if execCount != 1 {
+		t.Errorf("Le TerminalNode devrait avoir 1 activation, got %d", execCount)
 	}
 	// Vérifier que tous les AlphaNodes de la chaîne ont le fait en mémoire
 	alphaNodesWithFact := 0
@@ -310,8 +306,7 @@ rule complete : {p: Person} / p.age > 18 AND p.name == 'toto' AND p.salary > 100
 	// Vérifier qu'aucun TerminalNode du nouveau réseau n'a été activé
 	activatedCount2 := 0
 	for _, tn := range network2.TerminalNodes {
-		memory := tn.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if tn.GetExecutionCount() > 0 {
 			activatedCount2++
 		}
 	}
@@ -367,17 +362,16 @@ rule r3 : {p: Person} / p.age > 18 ==> print("C")
 		t.Errorf("Devrait avoir 2 TerminalNodes après suppression, got %d", afterRemovalTerminalCount)
 	}
 	// Vérifier que le nœud p.age > 18 a toujours 2 références (r1 et r3)
-	if network.LifecycleManager != nil {
-		for nodeID := range network.AlphaNodes {
-			lifecycle, exists := network.LifecycleManager.GetNodeLifecycle(nodeID)
-			if !exists {
-				t.Errorf("Nœud %s non trouvé dans LifecycleManager", nodeID)
-				continue
-			}
-			refCount := lifecycle.GetRefCount()
-			if refCount != 2 {
-				t.Errorf("Le nœud partagé devrait avoir 2 références, got %d", refCount)
-			}
+	// LifecycleManager is always initialized
+	for nodeID := range network.AlphaNodes {
+		lifecycle, exists := network.LifecycleManager.GetNodeLifecycle(nodeID)
+		if !exists {
+			t.Errorf("Nœud %s non trouvé dans LifecycleManager", nodeID)
+			continue
+		}
+		refCount := lifecycle.GetRefCount()
+		if refCount != 2 {
+			t.Errorf("Le nœud partagé devrait avoir 2 références, got %d", refCount)
 		}
 	}
 	// Vérifier que le réseau fonctionne toujours
@@ -396,8 +390,7 @@ rule r3 : {p: Person} / p.age > 18 ==> print("C")
 	}
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -478,8 +471,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 	}
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -504,8 +496,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 	}
 	activatedCount = 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -530,8 +521,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 	}
 	activatedCount = 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -556,8 +546,7 @@ rule large : {t: Transaction} / t.amount > 1000 ==> print("LARGE")
 	}
 	activatedCount = 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}
@@ -615,9 +604,9 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 		terminalNode = tn
 		break
 	}
-	memory := terminalNode.GetMemory()
-	if len(memory.Tokens) != 1 {
-		t.Errorf("Le TerminalNode devrait être activé, got %d tokens", len(memory.Tokens))
+	execCount := terminalNode.GetExecutionCount()
+	if execCount != 1 {
+		t.Errorf("Le TerminalNode devrait être activé, got %d activations", execCount)
 	}
 	// Tester avec un fait qui satisfait la deuxième partie du OR
 	// Créer un nouveau réseau pour ce test
@@ -646,9 +635,9 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 		terminalNode2 = tn
 		break
 	}
-	memory = terminalNode2.GetMemory()
-	if len(memory.Tokens) != 1 {
-		t.Errorf("Le TerminalNode devrait être activé, got %d tokens", len(memory.Tokens))
+	execCount = terminalNode2.GetExecutionCount()
+	if execCount != 1 {
+		t.Errorf("Le TerminalNode devrait être activé, got %d activations", execCount)
 	}
 	// Tester avec un fait qui ne satisfait aucune partie
 	// Créer un nouveau réseau pour ce test
@@ -677,9 +666,9 @@ rule r1 : {p: Person} / p.age > 18 OR p.status == 'VIP' ==> print("A")
 		terminalNode3 = tn
 		break
 	}
-	memory = terminalNode3.GetMemory()
-	if len(memory.Tokens) != 0 {
-		t.Errorf("Le TerminalNode ne devrait pas être activé, got %d tokens", len(memory.Tokens))
+	execCount = terminalNode3.GetExecutionCount()
+	if execCount != 0 {
+		t.Errorf("Le TerminalNode ne devrait pas être activé, got %d activations", execCount)
 	}
 	t.Logf("✓ Expression OR non décomposée, traitée comme un seul nœud normalisé")
 }
@@ -867,8 +856,7 @@ rule chain3 : {p: Person} / p.salary > 1000 AND p.city == 'Paris' ==> print("C3"
 	// Toutes les 5 règles devraient être activées
 	activatedCount := 0
 	for _, terminalNode := range network.TerminalNodes {
-		memory := terminalNode.GetMemory()
-		if len(memory.Tokens) > 0 {
+		if terminalNode.GetExecutionCount() > 0 {
 			activatedCount++
 		}
 	}

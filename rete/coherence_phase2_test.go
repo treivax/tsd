@@ -29,11 +29,11 @@ func TestPhase2_BasicSynchronization(t *testing.T) {
 	for _, fm := range facts {
 		id := fm["id"].(string)
 		typ := fm["type"].(string)
-		internalID := typ + "_" + id
+		internalID := typ + "~" + id
 		fact := env.Storage.GetFact(internalID)
 		assert.NotNil(t, fact, "Fait %s doit être immédiatement visible", id)
 		if fact != nil {
-			assert.Equal(t, id, fact.ID, "ID du fait doit correspondre")
+			assert.Equal(t, internalID, fact.ID, "ID du fait doit correspondre")
 			assert.Equal(t, typ, fact.Type, "Type du fait doit correspondre")
 		}
 	}
@@ -63,7 +63,7 @@ func TestPhase2_SingleFact(t *testing.T) {
 	require.NoError(t, err)
 	assert.Less(t, duration, 1*time.Second, "Un seul fait devrait être rapide")
 	// Vérifier que le fait est visible
-	fact := env.Storage.GetFact("Product_single")
+	fact := env.Storage.GetFact("Product~single")
 	assert.NotNil(t, fact)
 }
 
@@ -149,7 +149,7 @@ func TestPhase2_ConcurrentReadsAfterWrite(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			fact := env.Storage.GetFact("Product_concurrent_fact")
+			fact := env.Storage.GetFact("Product~concurrent_fact")
 			if fact == nil {
 				errors <- fmt.Errorf("goroutine %d: fait non visible", idx)
 			}
@@ -183,7 +183,7 @@ func TestPhase2_MultipleFactsBatch(t *testing.T) {
 	t.Logf("Soumission de 50 faits en %v", duration)
 	// Vérifier que tous les faits sont visibles
 	for i := 0; i < 50; i++ {
-		internalID := fmt.Sprintf("Product_batch_fact_%d", i)
+		internalID := fmt.Sprintf("Product~batch_fact_%d", i)
 		fact := env.Storage.GetFact(internalID)
 		assert.NotNil(t, fact, "Fait %d doit être visible", i)
 	}
@@ -243,7 +243,7 @@ func TestPhase2_RaceConditionSafety(t *testing.T) {
 	}
 	// Vérifier que tous les faits sont présents
 	for i := 0; i < 5; i++ {
-		internalID := fmt.Sprintf("Product_race_fact_%d", i)
+		internalID := fmt.Sprintf("Product~race_fact_%d", i)
 		fact := env.Storage.GetFact(internalID)
 		assert.NotNil(t, fact, "Fait %d doit être visible", i)
 	}
@@ -350,9 +350,9 @@ func TestPhase2_IntegrationWithPhase1(t *testing.T) {
 	// Phase 1: Vérification de cohérence (compteurs)
 	// Phase 2: Synchronisation avec retry
 	// Le fait doit être immédiatement visible (garantie combinée)
-	fact := env.Storage.GetFact("Product_integration_fact")
+	fact := env.Storage.GetFact("Product~integration_fact")
 	require.NotNil(t, fact)
-	assert.Equal(t, "integration_fact", fact.ID)
+	assert.Equal(t, "Product~integration_fact", fact.ID)
 	assert.Equal(t, "Product", fact.Type)
 }
 
