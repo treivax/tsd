@@ -24,6 +24,15 @@ certs/
 *.pem
 *.csr
 
+# Exception: Allow test certificate generation scripts and documentation
+!tests/fixtures/certs/
+!tests/fixtures/certs/README.md
+!tests/fixtures/certs/generate_certs.sh
+# But still ignore the actual certificates
+tests/fixtures/certs/*.crt
+tests/fixtures/certs/*.key
+tests/fixtures/certs/*.pem
+
 # Binaries
 bin/
 *.exe

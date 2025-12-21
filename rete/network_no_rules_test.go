@@ -100,10 +100,7 @@ type Order(#id: string, personId: string, total:number)
 }
 
 // TestRETENetwork_IncrementalTypesAndFacts tests incremental loading of types and facts without rules
-// TODO: Fix incremental validation to properly merge type definitions with primary keys
-// Currently failing because incremental validation doesn't properly see primary key definitions from previous files
 func TestRETENetwork_IncrementalTypesAndFacts(t *testing.T) {
-	// t.Skip("TODO: Fix incremental validation to handle primary keys across files")
 
 	tempDir, err := os.MkdirTemp("", "rete_incremental_test")
 	if err != nil {
@@ -200,10 +197,7 @@ func TestRETENetwork_EmptyFile(t *testing.T) {
 }
 
 // TestRETENetwork_TypesAndFactsSeparateFiles tests types and facts in separate files
-// TODO: Fix incremental validation to properly merge type definitions with primary keys
-// Currently failing because incremental validation doesn't properly see primary key definitions from previous files
 func TestRETENetwork_TypesAndFactsSeparateFiles(t *testing.T) {
-	// t.Skip("TODO: Fix incremental validation to handle primary keys across files")
 
 	tempDir, err := os.MkdirTemp("", "rete_separate_files_test")
 	if err != nil {

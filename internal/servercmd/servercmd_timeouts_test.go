@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 )
@@ -504,27 +505,50 @@ func TestTimeoutsWithTLS(t *testing.T) {
 
 // createTestCertificates crée des certificats auto-signés pour les tests
 func createTestCertificates(t *testing.T) (certFile, keyFile string, skip bool) {
-	// TODO: Si nécessaire, implémenter la génération de certificats temporaires
-	// Pour l'instant, utiliser les certificats de test existants si disponibles
-
 	// Chercher des certificats de test existants
 	testCertDir := "../../tests/fixtures/certs"
 	certFile = testCertDir + "/test-server.crt"
 	keyFile = testCertDir + "/test-server.key"
 
-	// Vérifier si les certificats existent
+	// Vérifier si les certificats existent déjà
+	_, certExists := os.Stat(certFile)
+	_, keyExists := os.Stat(keyFile)
+
+	if certExists == nil && keyExists == nil {
+		t.Logf("📜 Utilisation certificats test existants: %s, %s", certFile, keyFile)
+		return certFile, keyFile, false
+	}
+
+	// Tenter de générer les certificats automatiquement
+	t.Logf("🔐 Génération automatique des certificats de test...")
+	generateScript := testCertDir + "/generate_certs.sh"
+
+	if _, err := os.Stat(generateScript); os.IsNotExist(err) {
+		t.Logf("⚠️  Script de génération non trouvé: %s", generateScript)
+		t.Logf("⚠️  Les tests TLS nécessitent des certificats. Voir tests/fixtures/certs/README.md")
+		return "", "", true
+	}
+
+	// Exécuter le script de génération
+	cmd := exec.Command("bash", generateScript)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("⚠️  Échec de la génération des certificats: %v", err)
+		t.Logf("Output: %s", string(output))
+		return "", "", true
+	}
+
+	// Vérifier que les certificats ont été créés
 	if _, err := os.Stat(certFile); os.IsNotExist(err) {
-		t.Logf("⚠️  Certificats de test non trouvés: %s", certFile)
+		t.Logf("⚠️  Certificat non créé après génération: %s", certFile)
 		return "", "", true
 	}
 	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
-		t.Logf("⚠️  Certificats de test non trouvés: %s", keyFile)
+		t.Logf("⚠️  Clé privée non créée après génération: %s", keyFile)
 		return "", "", true
 	}
 
-	// Note: Ces fichiers doivent exister ou être créés par le setup de test
-	t.Logf("📜 Utilisation certificats test: %s, %s", certFile, keyFile)
-
+	t.Logf("✅ Certificats de test générés avec succès")
 	return certFile, keyFile, false
 }
 
