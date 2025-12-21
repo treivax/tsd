@@ -2,9 +2,9 @@ name: 🔍 Go Conventions Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   conventions-validation:
@@ -12,125 +12,133 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📦 Checkout du code
-      uses: actions/checkout@v4
+      - name: 📦 Checkout du code
+        uses: actions/checkout@v4
 
-    - name: 🐹 Configuration Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
+      - name: 🐹 Configuration Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
 
-    - name: 📊 Cache des dépendances Go
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+      - name: 📊 Cache des dépendances Go
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: 🔍 Vérification du formatage
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "❌ Code mal formaté:"
-          gofmt -s -l .
-          exit 1
-        else
-          echo "✅ Code correctement formaté"
-        fi
+      - name: 🔍 Vérification du formatage
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "❌ Code mal formaté:"
+            gofmt -s -l .
+            exit 1
+          else
+            echo "✅ Code correctement formaté"
+          fi
 
-    - name: 🧪 Analyse statique (go vet)
-      run: go vet ./...
+      - name: 🧪 Analyse statique (go vet)
+        run: go vet ./...
 
-    - name: 🏗️ Test de compilation
-      run: go build ./...
+      - name: 🏗️ Test de compilation
+        run: go build ./...
 
-    - name: 🧪 Exécution des tests
-      run: go test -v ./...
+      - name: 🔐 Génération des certificats de test TLS
+        run: |
+          echo "🔐 Génération des certificats TLS pour les tests..."
+          cd tests/fixtures/certs
+          bash generate_certs.sh
+          cd ../../..
+          echo "✅ Certificats de test générés"
 
-    - name: 📊 Couverture de code
-      run: go test -coverprofile=coverage.out ./...
+      - name: 🧪 Exécution des tests
+        run: go test -v ./...
 
-    - name: 📈 Upload de la couverture
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
+      - name: 📊 Couverture de code
+        run: go test -coverprofile=coverage.out ./...
 
-    - name: 🎯 Validation conventions de nommage
-      run: |
-        chmod +x scripts/validate_conventions.sh
-        ./scripts/validate_conventions.sh
+      - name: 📈 Upload de la couverture
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
 
-    - name: 📋 Analyse détaillée du nommage
-      run: |
-        chmod +x scripts/analyze_naming.sh
-        ./scripts/analyze_naming.sh
+      - name: 🎯 Validation conventions de nommage
+        run: |
+          chmod +x scripts/validate_conventions.sh
+          ./scripts/validate_conventions.sh
 
-    - name: 🏁 Résumé de la validation
-      run: |
-        echo "✅ VALIDATION TERMINÉE"
-        echo "====================="
-        echo "✅ Formatage correct"
-        echo "✅ Analyse statique passée"
-        echo "✅ Compilation réussie"
-        echo "✅ Tests passants"
-        echo "✅ Conventions validées"
+      - name: 📋 Analyse détaillée du nommage
+        run: |
+          chmod +x scripts/analyze_naming.sh
+          ./scripts/analyze_naming.sh
+
+      - name: 🏁 Résumé de la validation
+        run: |
+          echo "✅ VALIDATION TERMINÉE"
+          echo "====================="
+          echo "✅ Formatage correct"
+          echo "✅ Analyse statique passée"
+          echo "✅ Compilation réussie"
+          echo "✅ Tests passants"
+          echo "✅ Conventions validées"
 
   security-scan:
     name: 🔒 Scan de Sécurité
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📦 Checkout du code
-      uses: actions/checkout@v4
+      - name: 📦 Checkout du code
+        uses: actions/checkout@v4
 
-    - name: 🐹 Configuration Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
+      - name: 🐹 Configuration Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
 
-    - name: 🛡️ Scan de sécurité Go (gosec)
-      uses: securecodewarrior/github-action-gosec@master
-      with:
-        args: './...'
+      - name: 🛡️ Scan de sécurité Go (gosec)
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: "./..."
 
-    - name: 🔍 Vulnerability Scan (govulncheck)
-      run: |
-        echo "📊 Installation de govulncheck..."
-        go install golang.org/x/vuln/cmd/govulncheck@latest
-        echo "🔍 Scan des vulnérabilités..."
-        govulncheck ./...
+      - name: 🔍 Vulnerability Scan (govulncheck)
+        run: |
+          echo "📊 Installation de govulncheck..."
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "🔍 Scan des vulnérabilités..."
+          govulncheck ./...
 
   dependency-check:
     name: 📦 Vérification des Dépendances
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📦 Checkout du code
-      uses: actions/checkout@v4
+      - name: 📦 Checkout du code
+        uses: actions/checkout@v4
 
-    - name: 🐹 Configuration Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
+      - name: 🐹 Configuration Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
 
-    - name: 🔍 Vérification des dépendances
-      run: |
-        go mod verify
-        go mod tidy
-        if [ -n "$(git status --porcelain go.mod go.sum)" ]; then
-          echo "❌ go.mod ou go.sum ne sont pas à jour"
-          git diff go.mod go.sum
-          exit 1
-        else
-          echo "✅ Dépendances à jour"
-        fi
+      - name: 🔍 Vérification des dépendances
+        run: |
+          go mod verify
+          go mod tidy
+          if [ -n "$(git status --porcelain go.mod go.sum)" ]; then
+            echo "❌ go.mod ou go.sum ne sont pas à jour"
+            git diff go.mod go.sum
+            exit 1
+          else
+            echo "✅ Dépendances à jour"
+          fi
 
   test-integration:
     name: 🔗 Tests d'Intégration
@@ -138,63 +146,79 @@ jobs:
     needs: [conventions-validation]
 
     steps:
-    - name: 📦 Checkout du code
-      uses: actions/checkout@v4
+      - name: 📦 Checkout du code
+        uses: actions/checkout@v4
 
-    - name: 🐹 Configuration Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
+      - name: 🐹 Configuration Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
 
-    - name: 📊 Cache des dépendances Go
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+      - name: 📊 Cache des dépendances Go
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-    - name: 📥 Téléchargement des dépendances
-      run: go mod download
+      - name: 📥 Téléchargement des dépendances
+        run: go mod download
 
-    - name: 🔗 Exécution des tests d'intégration
-      run: |
-        echo "🔗 Running integration tests..."
-        go test -v -tags=integration -timeout=10m ./tests/integration/...
-      timeout-minutes: 15
+      - name: 🔐 Génération des certificats de test TLS
+        run: |
+          echo "🔐 Génération des certificats TLS pour les tests..."
+          cd tests/fixtures/certs
+          bash generate_certs.sh
+          cd ../../..
+          echo "✅ Certificats de test générés"
 
-    - name: 📊 Upload des résultats de tests
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: integration-test-results
-        path: |
-          tests/integration/*.log
-        retention-days: 7
-        if-no-files-found: ignore
+      - name: 🔗 Exécution des tests d'intégration
+        run: |
+          echo "🔗 Running integration tests..."
+          go test -v -tags=integration -timeout=10m ./tests/integration/...
+        timeout-minutes: 15
+
+      - name: 📊 Upload des résultats de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            tests/integration/*.log
+          retention-days: 7
+          if-no-files-found: ignore
 
   performance-check:
     name: ⚡ Tests de Performance
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📦 Checkout du code
-      uses: actions/checkout@v4
+      - name: 📦 Checkout du code
+        uses: actions/checkout@v4
 
-    - name: 🐹 Configuration Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
-        cache: true
+      - name: 🐹 Configuration Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
 
-    - name: 🚀 Benchmarks
-      run: |
-        # Exécuter les benchmarks s'ils existent
-        if find . -name "*_test.go" -exec grep -l "func Benchmark" {} \; | grep -q .; then
-          go test -bench=. -benchmem ./...
-        else
-          echo "ℹ️ Aucun benchmark trouvé"
-        fi
+      - name: 🔐 Génération des certificats de test TLS
+        run: |
+          echo "🔐 Génération des certificats TLS pour les tests..."
+          cd tests/fixtures/certs
+          bash generate_certs.sh
+          cd ../../..
+          echo "✅ Certificats de test générés"
+
+      - name: 🚀 Benchmarks
+        run: |
+          # Exécuter les benchmarks s'ils existent
+          if find . -name "*_test.go" -exec grep -l "func Benchmark" {} \; | grep -q .; then
+            go test -bench=. -benchmem ./...
+          else
+            echo "ℹ️ Aucun benchmark trouvé"
+          fi

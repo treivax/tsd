@@ -13,6 +13,7 @@ Ce répertoire contient des certificats auto-signés pour les tests TLS uniqueme
 ## 📋 Fichiers
 
 - `generate_certs.sh` - Script de génération des certificats
+- `check_cert_expiry.sh` - Script de vérification d'expiration
 - `test-server.crt` - Certificat auto-signé (généré localement, ignoré par Git)
 - `test-server.key` - Clé privée (générée localement, ignorée par Git)
 
@@ -64,6 +65,33 @@ Cela peut être nécessaire si :
 - Les certificats ont expiré (après 365 jours)
 - Les fichiers ont été supprimés
 - Vous voulez changer les paramètres
+
+## 🔍 Monitoring d'Expiration
+
+Un script de monitoring est fourni pour vérifier la validité des certificats :
+
+```bash
+cd tests/fixtures/certs
+./check_cert_expiry.sh
+```
+
+**Comportement du script** :
+
+- ✅ Vérifie la date d'expiration du certificat
+- ⚠️ Avertit si expiration < 30 jours
+- ❌ Erreur si expiration < 7 jours
+- 🔄 Régénère automatiquement les certificats si expirés ou manquants
+
+**Usage en CI/CD** :
+
+Le script peut être utilisé dans les pipelines pour s'assurer que les certificats sont toujours valides :
+
+```yaml
+- name: 🔍 Vérifier validité certificats
+  run: bash tests/fixtures/certs/check_cert_expiry.sh
+```
+
+Le script régénère automatiquement les certificats si nécessaire, garantissant que les tests TLS fonctionnent toujours.
 
 ## 📝 Notes
 

@@ -872,6 +872,26 @@ TEST_PARALLEL=8 make test-parallel
 - [tests/README.md](tests/README.md) - Organisation générale
 - [tests/integration/README.md](tests/integration/README.md) - Guide des tests d'intégration
 
+### 🔐 Certificats de Test TLS
+
+Les tests TLS nécessitent des certificats auto-signés. Ces certificats sont générés automatiquement lors de l'exécution des tests, mais vous pouvez aussi les générer manuellement :
+
+```bash
+# Générer les certificats de test (une seule fois)
+cd tests/fixtures/certs
+./generate_certs.sh
+```
+
+**⚠️ IMPORTANT** : Ces certificats sont **uniquement pour les tests** et ne doivent **jamais** être utilisés en production.
+
+**Caractéristiques** :
+- Certificats auto-signés RSA 2048 bits avec SHA-256
+- Valides 365 jours pour localhost
+- Générés automatiquement si manquants lors des tests
+- Ignorés par Git (sécurité)
+
+📖 Voir [tests/fixtures/certs/README.md](tests/fixtures/certs/README.md) pour plus de détails.
+
 ## 📖 Documentation
 
 - [🗺️ **Index de Navigation**](DOCUMENTATION_INDEX.md) - **Guide complet pour naviguer dans la documentation**
