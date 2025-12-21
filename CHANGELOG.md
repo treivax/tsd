@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+### Added
+- 🎯 **Chargement Incrémental Multi-Fichiers** - Support complet pour répartir les programmes TSD sur plusieurs fichiers
+  - **Fonctionnalité** :
+    - Les types définis dans un fichier sont automatiquement disponibles dans les fichiers suivants
+    - Fusion intelligente des types du réseau avec ceux du programme courant
+    - Préservation des clés primaires (`#field`) lors de la fusion incrémentale
+    - Rollback automatique en cas d'erreur de chargement
+  - **Pattern Supporté** :
+    ```go
+    pipeline := api.NewPipeline()
+    pipeline.IngestFile("schema.tsd")  // Types
+    pipeline.IngestFile("rules.tsd")   // Règles
+    pipeline.IngestFile("data.tsd")    // Faits (types disponibles!)
+    ```
+  - **Documentation** :
+    - `docs/user-guide/multi-file-loading.md` - Guide complet du pattern
+    - `examples/multi-file/` - 3 exemples concrets et fonctionnels
+  - **Tests** :
+    - `rete/incremental_type_merge_test.go` - Tests unitaires et d'intégration
+    - Activation de 2 tests précédemment skippés
+    - ✅ 100% de couverture du nouveau code
+  - **Avantages** :
+    - ✅ Organisation modulaire des programmes (schéma / règles / données)
+    - ✅ Facilite la maintenance et les tests
+    - ✅ Pattern production : `schema.tsd` + `data-{env}.tsd`
+    - ✅ 100% rétrocompatible (aucun breaking change)
+  - **Fix Technique** :
+    - Correction du bug "type X non défini" en multi-fichiers
+    - Nouvelle fonction `enrichProgramWithNetworkTypes()` dans `rete/constraint_pipeline.go`
+    - Conversion explicite `rete.TypeDefinition` → `constraint.TypeDefinition`
+
 ### Removed
 - 🧹 **Pattern Factory Obsolète** - Suppression du pattern factory pour xuple-spaces
   - **Types supprimés** :

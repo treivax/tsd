@@ -1,0 +1,20 @@
+// Basic Example - Data File
+// This file contains facts that use the types defined in schema.tsd
+// The types are automatically available because schema.tsd is loaded first.
+
+// People
+Person(id: "P001", name: "Alice Dupont", age: 30, email: "alice.dupont@example.com")
+Person(id: "P002", name: "Bob Martin", age: 25, email: "bob.martin@example.com")
+Person(id: "P003", name: "Charlie Leblanc", age: 35, email: "charlie.leblanc@example.com")
+Person(id: "P004", name: "Diana Rousseau", age: 28, email: "diana.rousseau@example.com")
+
+// Companies
+Company(code: "TECH", name: "TechCorp Industries", employees: 250, industry: "Technology")
+Company(code: "FIN", name: "FinanceHub", employees: 150, industry: "Finance")
+Company(code: "HEALTH", name: "HealthCare Plus", employees: 300, industry: "Healthcare")
+
+// Employment relationships
+Employment(person_id: "P001", company_code: "TECH", position: "Senior Developer", salary: 85000)
+Employment(person_id: "P002", company_code: "TECH", position: "Junior Developer", salary: 55000)
+Employment(person_id: "P003", company_code: "FIN", position: "Financial Analyst", salary: 75000)
+Employment(person_id: "P004", company_code: "HEALTH", position: "Nurse Manager", salary: 68000)

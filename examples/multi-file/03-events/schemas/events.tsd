@@ -1,0 +1,17 @@
+// Event Management System - Schema Definitions
+// This file defines all the types used in the event management example.
+
+// Event type - represents a conference, workshop, or meetup
+type Event(#id: string, name: string, date: string, venue: string, capacity: number, category: string)
+
+// Attendee type - represents a person who can attend events
+type Attendee(#email: string, name: string, company: string, title: string, phone: string)
+
+// Registration type - links attendees to events with status tracking
+type Registration(#event_id: string, #attendee_email: string, status: string, registration_date: string, payment_status: string)
+
+// Speaker type - represents event speakers
+type Speaker(#id: string, name: string, bio: string, expertise: string, email: string)
+
+// Session type - represents individual sessions within an event
+type Session(#id: string, event_id: string, speaker_id: string, title: string, duration: number, room: string)

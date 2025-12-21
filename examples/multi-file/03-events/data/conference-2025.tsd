@@ -1,0 +1,81 @@
+// Event Management System - Sample Data
+// Conference 2025 - TSD & RETE Workshop Series
+
+// ============================================
+// EVENTS
+// ============================================
+
+Event(id: "E001", name: "TSD Conference 2025", date: "2025-06-15", venue: "Paris Convention Center", capacity: 200, category: "conference")
+Event(id: "E002", name: "RETE Workshop - Advanced Techniques", date: "2025-06-16", venue: "Paris Tech Hub", capacity: 30, category: "workshop")
+Event(id: "E003", name: "Rules Engine Meetup", date: "2025-06-17", venue: "Startup Incubator", capacity: 50, category: "meetup")
+Event(id: "E004", name: "TSD Certification Training", date: "2025-06-18", venue: "Paris Tech Hub", capacity: 25, category: "workshop")
+
+// ============================================
+// ATTENDEES
+// ============================================
+
+Attendee(email: "alice.dupont@techcorp.com", name: "Alice Dupont", company: "TechCorp Industries", title: "Senior Developer", phone: "+33-1-23-45-67-01")
+Attendee(email: "bob.martin@devstudio.io", name: "Bob Martin", company: "DevStudio", title: "Software Architect", phone: "+33-1-23-45-67-02")
+Attendee(email: "charlie.leblanc@fintech.fr", name: "Charlie Leblanc", company: "FinTech Solutions", title: "Lead Engineer", phone: "+33-1-23-45-67-03")
+Attendee(email: "diana.rousseau@ai-labs.com", name: "Diana Rousseau", company: "AI Labs", title: "Data Scientist", phone: "+33-1-23-45-67-04")
+Attendee(email: "eve.bernard@cloudify.fr", name: "Eve Bernard", company: "Cloudify", title: "DevOps Engineer", phone: "+33-1-23-45-67-05")
+Attendee(email: "frank.morel@startup.io", name: "Frank Morel", company: "StartupIO", title: "CTO", phone: "+33-1-23-45-67-06")
+Attendee(email: "grace.petit@consulting.fr", name: "Grace Petit", company: "Tech Consulting", title: "Consultant", phone: "+33-1-23-45-67-07")
+Attendee(email: "henri.dubois@enterprise.com", name: "Henri Dubois", company: "Enterprise Corp", title: "System Administrator", phone: "+33-1-23-45-67-08")
+
+// ============================================
+// REGISTRATIONS
+// ============================================
+
+// Conference registrations (confirmed and paid)
+Registration(event_id: "E001", attendee_email: "alice.dupont@techcorp.com", status: "confirmed", registration_date: "2025-05-01", payment_status: "paid")
+Registration(event_id: "E001", attendee_email: "bob.martin@devstudio.io", status: "confirmed", registration_date: "2025-05-02", payment_status: "paid")
+Registration(event_id: "E001", attendee_email: "charlie.leblanc@fintech.fr", status: "confirmed", registration_date: "2025-05-03", payment_status: "paid")
+Registration(event_id: "E001", attendee_email: "diana.rousseau@ai-labs.com", status: "confirmed", registration_date: "2025-05-04", payment_status: "pending")
+Registration(event_id: "E001", attendee_email: "eve.bernard@cloudify.fr", status: "confirmed", registration_date: "2025-05-05", payment_status: "paid")
+
+// Workshop registrations (Alice and Bob are VIPs - multiple events)
+Registration(event_id: "E002", attendee_email: "alice.dupont@techcorp.com", status: "confirmed", registration_date: "2025-05-06", payment_status: "paid")
+Registration(event_id: "E002", attendee_email: "bob.martin@devstudio.io", status: "confirmed", registration_date: "2025-05-07", payment_status: "paid")
+Registration(event_id: "E002", attendee_email: "frank.morel@startup.io", status: "confirmed", registration_date: "2025-05-08", payment_status: "paid")
+Registration(event_id: "E002", attendee_email: "grace.petit@consulting.fr", status: "confirmed", registration_date: "2025-05-09", payment_status: "pending")
+
+// Meetup registrations
+Registration(event_id: "E003", attendee_email: "charlie.leblanc@fintech.fr", status: "confirmed", registration_date: "2025-05-10", payment_status: "paid")
+Registration(event_id: "E003", attendee_email: "henri.dubois@enterprise.com", status: "confirmed", registration_date: "2025-05-11", payment_status: "paid")
+Registration(event_id: "E003", attendee_email: "alice.dupont@techcorp.com", status: "confirmed", registration_date: "2025-05-12", payment_status: "paid")
+
+// Certification training
+Registration(event_id: "E004", attendee_email: "bob.martin@devstudio.io", status: "confirmed", registration_date: "2025-05-13", payment_status: "paid")
+Registration(event_id: "E004", attendee_email: "eve.bernard@cloudify.fr", status: "confirmed", registration_date: "2025-05-14", payment_status: "pending")
+
+// ============================================
+// SPEAKERS
+// ============================================
+
+Speaker(id: "S001", name: "Dr. Marie Curie", bio: "Expert in distributed systems and rule engines with 15 years of experience", expertise: "RETE Algorithm", email: "marie.curie@expert.com")
+Speaker(id: "S002", name: "Prof. Alan Turing", bio: "Pioneer in artificial intelligence and constraint satisfaction", expertise: "AI & Constraints", email: "alan.turing@academic.edu")
+Speaker(id: "S003", name: "Ada Lovelace", bio: "Software architect specializing in high-performance computing", expertise: "System Architecture", email: "ada.lovelace@tech.io")
+Speaker(id: "S004", name: "Grace Hopper", bio: "Veteran developer and compiler expert", expertise: "Language Design", email: "grace.hopper@compiler.org")
+
+// ============================================
+// SESSIONS
+// ============================================
+
+// Conference sessions
+Session(id: "SES001", event_id: "E001", speaker_id: "S001", title: "Introduction to RETE Networks", duration: 60, room: "Main Hall")
+Session(id: "SES002", event_id: "E001", speaker_id: "S002", title: "Advanced Constraint Processing", duration: 90, room: "Main Hall")
+Session(id: "SES003", event_id: "E001", speaker_id: "S003", title: "Scaling TSD for Production", duration: 45, room: "Room A")
+Session(id: "SES004", event_id: "E001", speaker_id: "S004", title: "TSD Language Deep Dive", duration: 60, room: "Room B")
+
+// Workshop sessions
+Session(id: "SES005", event_id: "E002", speaker_id: "S001", title: "Hands-on RETE Network Design", duration: 180, room: "Workshop Lab")
+Session(id: "SES006", event_id: "E002", speaker_id: "S003", title: "Performance Optimization Techniques", duration: 120, room: "Workshop Lab")
+
+// Meetup session
+Session(id: "SES007", event_id: "E003", speaker_id: "S002", title: "Q&A: Real-world TSD Use Cases", duration: 90, room: "Community Space")
+
+// Certification training sessions
+Session(id: "SES008", event_id: "E004", speaker_id: "S001", title: "TSD Fundamentals - Part 1", duration: 120, room: "Training Room")
+Session(id: "SES009", event_id: "E004", speaker_id: "S004", title: "TSD Fundamentals - Part 2", duration: 120, room: "Training Room")
+Session(id: "SES010", event_id: "E004", speaker_id: "S003", title: "Certification Exam Preparation", duration: 90, room: "Training Room")

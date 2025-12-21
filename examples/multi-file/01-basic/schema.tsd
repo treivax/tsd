@@ -1,0 +1,11 @@
+// Basic Example - Schema Definition
+// This file defines the types used in the basic multi-file example.
+
+// Person type with primary key on id
+type Person(#id: string, name: string, age: number, email: string)
+
+// Company type with primary key on code
+type Company(#code: string, name: string, employees: number, industry: string)
+
+// Employment relationship with composite primary key
+type Employment(#person_id: string, #company_code: string, position: string, salary: number)

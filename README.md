@@ -17,6 +17,7 @@ TSD est un système de règles métier moderne qui permet l'évaluation efficace
 - 🔍 **Opérateurs avancés** - `CONTAINS`, `LIKE`, `MATCHES`, `IN`, fonctions `LENGTH()`, `ABS()`, `UPPER()`
 - 📊 **Types fortement typés** - Système de types robuste avec validation
 - 🆔 **Génération automatique d'IDs** - Clés primaires et IDs déterministes basés sur les données métier
+- 📁 **Chargement multi-fichiers** - Organisation modulaire (schéma/règles/données) avec fusion incrémentale
 - 🎯 **81.2% de couverture** - 100% des modules de production >80%, tests robustes et maintenables
 - ⚡ **Performance** - <1ms par règle, optimisé pour le traitement en temps réel
 - 🏷️ **Identifiants de règles** - Gestion fine des règles avec identifiants obligatoires
