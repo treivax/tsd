@@ -2,9 +2,19 @@
 // This file defines the business logic for event management.
 
 // Declare xuple-spaces to store generated xuples
-xuple-space event_alerts(max-size: 100)
-xuple-space registrations_summary(max-size: 50)
-xuple-space speaker_sessions(max-size: 200)
+xuple-space event_alerts {
+    max-size: 100
+    selection: fifo
+}
+
+xuple-space registrations_summary {
+    max-size: 50
+    selection: lifo
+}
+
+// Define types for xuples
+type EventAlert(event_id: string, event_name: string, alert_type: string)
+type RegistrationSummary(attendee_email: string, attendee_name: string, status: string)
 
 // Action: Mark an event as full when capacity is reached
 action mark_event_full(event_id: string, event_name: string)
@@ -12,36 +22,22 @@ action mark_event_full(event_id: string, event_name: string)
 // Action: Send confirmation email to attendee
 action send_confirmation(attendee_email: string, event_name: string)
 
-// Action: Create speaker profile summary
-action create_speaker_profile(speaker_name: string, session_count: number)
-
-// Rule 1: Detect when an event is approaching capacity (90% full)
-// For this example, we'll use a simplified version without aggregations
-rule high_registration : {e: Event, r: Registration}
-    / r.event_id == e.id && r.status == "confirmed"
-    ==> event_alerts ! (event_id: e.id, event_name: e.name, alert_type: "high_capacity")
-
-// Rule 2: Send confirmation for new confirmed registrations
+// Rule 1: Detect confirmed registrations and send confirmations
 rule send_confirmation_email : {r: Registration, a: Attendee, e: Event}
     / r.attendee_email == a.email && r.event_id == e.id && r.status == "confirmed" && r.payment_status == "paid"
     ==> send_confirmation(a.email, e.name)
 
-// Rule 3: Track pending registrations that need follow-up
-rule pending_payment : {r: Registration, a: Attendee}
-    / r.attendee_email == a.email && r.status == "confirmed" && r.payment_status == "pending"
-    ==> event_alerts ! (attendee_email: a.email, attendee_name: a.name, alert_type: "payment_reminder")
+// Rule 2: Create alerts for pending payments
+rule pending_payment_alert : {r: Registration, a: Attendee, e: Event}
+    / r.attendee_email == a.email && r.event_id == e.id && r.status == "confirmed" && r.payment_status == "pending"
+    ==> Xuple("event_alerts", EventAlert(event_id: e.id, event_name: e.name, alert_type: "payment_reminder"))
 
-// Rule 4: Create session summaries for speakers
-rule speaker_session_summary : {s: Speaker, sess: Session}
-    / sess.speaker_id == s.id
-    ==> speaker_sessions ! (speaker_id: s.id, speaker_name: s.name, session_title: sess.title, session_duration: sess.duration)
-
-// Rule 5: Identify VIP attendees (multiple confirmed registrations)
-rule vip_attendee : {a: Attendee, r1: Registration, r2: Registration}
+// Rule 3: Track VIP attendees with multiple registrations
+rule vip_attendee_tracking : {a: Attendee, r1: Registration, r2: Registration}
     / r1.attendee_email == a.email && r2.attendee_email == a.email && r1.event_id != r2.event_id && r1.status == "confirmed" && r2.status == "confirmed"
-    ==> registrations_summary ! (attendee_email: a.email, attendee_name: a.name, company: a.company, vip_status: "active")
+    ==> Xuple("registrations_summary", RegistrationSummary(attendee_email: a.email, attendee_name: a.name, status: "VIP"))
 
-// Rule 6: Track workshop events (smaller capacity, more specialized)
-rule workshop_tracking : {e: Event, sess: Session}
-    / e.id == sess.event_id && e.category == "workshop" && e.capacity < 50
-    ==> event_alerts ! (event_id: e.id, event_name: e.name, alert_type: "workshop_small_capacity")
+// Rule 4: Alert for workshop events
+rule workshop_alert : {e: Event}
+    / e.category == "workshop"
+    ==> Xuple("event_alerts", EventAlert(event_id: e.id, event_name: e.name, alert_type: "workshop_event"))
