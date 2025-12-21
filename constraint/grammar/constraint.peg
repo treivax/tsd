@@ -186,14 +186,14 @@ XupleSpaceDeclaration <- "xuple-space" _ name:IdentName _ "{" _ props:XupleSpace
 
 XupleSpaceProperties <- first:XupleSpaceProperty rest:(_ XupleSpaceProperty)* {
     result := make(map[string]interface{})
-    
+
     // Ajouter première propriété
     if firstMap, ok := first.(map[string]interface{}); ok {
         for k, v := range firstMap {
             result[k] = v
         }
     }
-    
+
     // Ajouter propriétés suivantes
     if rest != nil {
         for _, item := range rest.([]interface{}) {
@@ -203,7 +203,7 @@ XupleSpaceProperties <- first:XupleSpaceProperty rest:(_ XupleSpaceProperty)* {
             }
         }
     }
-    
+
     return result, nil
 }
 
@@ -267,17 +267,17 @@ RetentionValue <- "unlimited" {
 Duration <- value:Integer unit:TimeUnit {
     val := value.(int)
     unitStr := unit.(string)
-    
+
     if val <= 0 {
         return nil, fmt.Errorf("duration must be positive, got %d", val)
     }
-    
+
     const (
         SecondsPerMinute = 60
         SecondsPerHour   = 3600
         SecondsPerDay    = 86400
     )
-    
+
     var seconds int
     switch unitStr {
     case "s":
@@ -291,7 +291,7 @@ Duration <- value:Integer unit:TimeUnit {
     default:
         return nil, fmt.Errorf("invalid time unit '%s', expected s, m, h or d", unitStr)
     }
-    
+
     return seconds, nil
 }
 
@@ -522,7 +522,7 @@ ArithmeticExpr <- first:Term rest:(_ ("+" / "-") _ Term)* {
     return result, nil
 }
 
-Term <- first:Factor rest:(_ ("*" / "/") _ Factor)* {
+Term <- first:Factor rest:(_ ("*" / "/" / "%") _ Factor)* {
     if rest == nil || len(rest.([]interface{})) == 0 {
         return first, nil
     }
@@ -924,7 +924,7 @@ UnicodeLetterContinue <- [\u00C0-\u00D6] / [\u00D8-\u00F6] / [\u00F8-\u017F] /
 PunctuationChar <- [-_] / ['] / [\u2010-\u2015] / [\u2032-\u2037]
 
 // ReservedWord définit les mots réservés qui ne peuvent pas être utilisés comme identifiants
-ReservedWord <- ("type" / "action" / "rule" / "when" / "then" / "remove" / "fact" / "reset" / 
+ReservedWord <- ("type" / "action" / "rule" / "when" / "then" / "remove" / "fact" / "reset" /
                 "xuple-space" / "selection" / "consumption" / "retention" / "max-size" /
                 "AND" / "and" / "OR" / "or" / "NOT" / "not" / "EXISTS" / "exists" /
                 "true" / "false" / "IN" / "in" / "LIKE" / "like" / "CONTAINS" / "contains" /

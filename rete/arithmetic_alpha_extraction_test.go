@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -309,19 +310,18 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 			shouldMatch: true,
 			description: "-150 * -1 = 150 > 100",
 		},
-		// TODO: Enable when parser supports % operator
-		// {
-		// 	name: "modulo operation",
-		// 	tsdContent: `type Number(#id: string, value: number)
-		// action check(msg: string)
-		// rule even : {n: Number} / n.value % 2 == 0 ==> check("Even")`,
-		// 	factFields: map[string]interface{}{
-		// 		"id":    "n1",
-		// 		"value": 42.0,
-		// 	},
-		// 	shouldMatch: true,
-		// 	description: "42 % 2 = 0 (even)",
-		// },
+		{
+			name: "modulo operation",
+			tsdContent: `type Number(#id: string, value: number)
+action check(msg: string)
+rule even : {n: Number} / n.value % 2 == 0 ==> check("Even")`,
+			factFields: map[string]interface{}{
+				"id":    "n1",
+				"value": 42.0,
+			},
+			shouldMatch: true,
+			description: "42 % 2 = 0 (even)",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -336,10 +336,15 @@ rule negative : {a: Account} / a.balance * -1 > 100 ==> warn("Large debt")`,
 			if err != nil {
 				t.Fatalf("Failed to build network: %v", err)
 			}
-			// Extract the type name from fact fields
-			factType := "Data"
-			if _, ok := tt.factFields["balance"]; ok {
+			// Extract the type name from TSD content
+			// Parse the type definition to get the actual type name
+			factType := "Data" // default
+			if strings.Contains(tt.tsdContent, "type Account") {
 				factType = "Account"
+			} else if strings.Contains(tt.tsdContent, "type Number") {
+				factType = "Number"
+			} else if strings.Contains(tt.tsdContent, "type Data") {
+				factType = "Data"
 			}
 			fact := &Fact{
 				ID:     "F1",
