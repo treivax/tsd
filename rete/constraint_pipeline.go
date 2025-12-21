@@ -87,6 +87,44 @@ func (cp *ConstraintPipeline) IngestFile(filename string, network *ReteNetwork, 
 	return ctx.network, ctx.metrics.Finalize(), nil
 }
 
+// enrichProgramWithNetworkTypes merges types from the network into the program
+// This is crucial for incremental validation when facts reference types defined in previous files
+func (cp *ConstraintPipeline) enrichProgramWithNetworkTypes(program *constraint.Program, network *ReteNetwork) constraint.Program {
+	// Create a copy of the program to avoid modifying the original
+	enrichedProgram := *program
+
+	// Build a map of types already in the program
+	existingTypes := make(map[string]bool)
+	for _, typeDef := range program.Types {
+		existingTypes[typeDef.Name] = true
+	}
+
+	// Add types from the network that aren't already in the program
+	for _, networkType := range network.Types {
+		if !existingTypes[networkType.Name] {
+			// Convert rete.TypeDefinition to constraint.TypeDefinition
+			constraintType := constraint.TypeDefinition{
+				Type:   networkType.Type,
+				Name:   networkType.Name,
+				Fields: make([]constraint.Field, len(networkType.Fields)),
+			}
+
+			// Convert fields
+			for i, field := range networkType.Fields {
+				constraintType.Fields[i] = constraint.Field{
+					Name:         field.Name,
+					Type:         field.Type,
+					IsPrimaryKey: field.IsPrimaryKey,
+				}
+			}
+
+			enrichedProgram.Types = append(enrichedProgram.Types, constraintType)
+		}
+	}
+
+	return enrichedProgram
+}
+
 // executePipeline exécute toutes les étapes du pipeline d'ingestion
 func (cp *ConstraintPipeline) executePipeline(ctx *ingestionContext) error {
 	// Phase 1: Préparation
@@ -388,7 +426,12 @@ func (cp *ConstraintPipeline) propagateToNewRules(ctx *ingestionContext) error {
 // submitNewFacts soumet les nouveaux faits au réseau
 func (cp *ConstraintPipeline) submitNewFacts(ctx *ingestionContext) error {
 	if len(ctx.program.Facts) > 0 {
-		factsForRete, err := constraint.ConvertFactsToReteFormat(*ctx.program)
+		// CRUCIAL: Merge network types into program for incremental validation
+		// When loading facts from a separate file, the program only contains types
+		// defined in that file. We need to merge in types from previous files.
+		programWithAllTypes := cp.enrichProgramWithNetworkTypes(ctx.program, ctx.network)
+
+		factsForRete, err := constraint.ConvertFactsToReteFormat(programWithAllTypes)
 		if err != nil {
 			return fmt.Errorf("❌ Erreur conversion faits: %w", err)
 		}
