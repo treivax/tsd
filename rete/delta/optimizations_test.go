@@ -233,7 +233,7 @@ func BenchmarkBatchNodeReferences(b *testing.B) {
 		for _, node := range nodes {
 			batch.Add(node)
 		}
-		batch.ProcessInOrder(func(ref NodeReference) error {
+		_ = batch.ProcessInOrder(func(ref NodeReference) error {
 			return nil
 		})
 	}

@@ -4,98 +4,15 @@
 
 package delta
 
-import (
-	"math"
-	"reflect"
-)
-
-// OptimizedValuesEqual est une version optimisée de ValuesEqual.
+// OptimizedValuesEqual est un alias vers ValuesEqual pour rétrocompatibilité.
 //
-// Optimisations :
-// - Short-circuit pour types simples
-// - Évite reflect.DeepEqual quand possible
-// - Inline hints pour compiler
+// Note: Cette fonction est maintenant identique à ValuesEqual car celle-ci
+// intègre déjà toutes les optimisations (fast paths, inline, etc.).
+//
+// Utiliser ValuesEqual directement est préférable.
+//
+// Deprecated: Utiliser ValuesEqual qui intègre déjà les optimisations.
 func OptimizedValuesEqual(a, b interface{}, epsilon float64) bool {
-	// Fast path : nil handling first
-	if a == nil || b == nil {
-		return a == b
-	}
-
-	// Fast path : types simples (inlined par compiler)
-	switch va := a.(type) {
-	case string:
-		vb, ok := b.(string)
-		return ok && va == vb
-
-	case int:
-		vb, ok := b.(int)
-		return ok && va == vb
-
-	case int64:
-		vb, ok := b.(int64)
-		return ok && va == vb
-
-	case int32:
-		vb, ok := b.(int32)
-		return ok && va == vb
-
-	case int16:
-		vb, ok := b.(int16)
-		return ok && va == vb
-
-	case int8:
-		vb, ok := b.(int8)
-		return ok && va == vb
-
-	case uint:
-		vb, ok := b.(uint)
-		return ok && va == vb
-
-	case uint64:
-		vb, ok := b.(uint64)
-		return ok && va == vb
-
-	case uint32:
-		vb, ok := b.(uint32)
-		return ok && va == vb
-
-	case uint16:
-		vb, ok := b.(uint16)
-		return ok && va == vb
-
-	case uint8:
-		vb, ok := b.(uint8)
-		return ok && va == vb
-
-	case bool:
-		vb, ok := b.(bool)
-		return ok && va == vb
-
-	case float64:
-		vb, ok := b.(float64)
-		if !ok {
-			return false
-		}
-		// Comparaison float optimisée
-		diff := va - vb
-		if diff < 0 {
-			diff = -diff
-		}
-		return diff <= epsilon
-
-	case float32:
-		vb, ok := b.(float32)
-		if !ok {
-			return false
-		}
-		diff := va - vb
-		if diff < 0 {
-			diff = -diff
-		}
-		return float64(diff) <= epsilon
-	}
-
-	// Slow path : comparaison générique
 	return ValuesEqual(a, b, epsilon)
 }
 
@@ -212,96 +129,4 @@ func (b *BatchNodeReferences) ProcessInOrder(processor func(NodeReference) error
 // Count retourne le nombre total de nœuds.
 func (b *BatchNodeReferences) Count() int {
 	return len(b.alpha) + len(b.beta) + len(b.terminal)
-}
-
-// quickTypeCheck effectue une vérification rapide de type sans reflection.
-//
-// Retourne true si les types sont différents (optimisation early-exit).
-func quickTypeCheck(a, b interface{}) bool {
-	// Utiliser type switch pour éviter reflect
-	switch a.(type) {
-	case string:
-		_, ok := b.(string)
-		return !ok
-	case int, int8, int16, int32, int64:
-		switch b.(type) {
-		case int, int8, int16, int32, int64:
-			return false
-		default:
-			return true
-		}
-	case uint, uint8, uint16, uint32, uint64:
-		switch b.(type) {
-		case uint, uint8, uint16, uint32, uint64:
-			return false
-		default:
-			return true
-		}
-	case float32, float64:
-		switch b.(type) {
-		case float32, float64:
-			return false
-		default:
-			return true
-		}
-	case bool:
-		_, ok := b.(bool)
-		return !ok
-	case nil:
-		return b != nil
-	}
-
-	// Fallback: utiliser reflect uniquement si nécessaire
-	return reflect.TypeOf(a) != reflect.TypeOf(b)
-}
-
-// InlinedAbsFloat64 calcule la valeur absolue (inlined).
-func inlinedAbsFloat64(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-// InlinedAbsFloat32 calcule la valeur absolue (inlined).
-func inlinedAbsFloat32(x float32) float32 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-// CompareFloatsFast compare deux floats avec epsilon (optimisé inline).
-func compareFloatsFast(a, b, epsilon float64) bool {
-	diff := a - b
-	if diff < 0 {
-		diff = -diff
-	}
-	return diff <= epsilon
-}
-
-// FloatEqualityCheck optimisé sans math.Abs.
-func floatEqualityCheck(a, b float64, epsilon float64) bool {
-	// Cas spéciaux
-	if a == b {
-		return true
-	}
-
-	// NaN check
-	if a != a || b != b {
-		return false
-	}
-
-	// Infinity check
-	if math.IsInf(a, 0) || math.IsInf(b, 0) {
-		return a == b
-	}
-
-	// Différence absolue
-	diff := a - b
-	if diff < 0 {
-		diff = -diff
-	}
-
-	return diff <= epsilon
 }

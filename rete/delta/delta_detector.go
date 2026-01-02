@@ -81,68 +81,107 @@ func (dd *DeltaDetector) DetectDelta(
 	dd.incrementComparisons()
 
 	// Vérifier cache si activé
-	if dd.config.CacheComparisons {
-		cacheKey := dd.buildCacheKey(oldFact, newFact, factID)
-		if cached := dd.getFromCache(cacheKey); cached != nil {
-			dd.incrementCacheHits()
-			return cached, nil
-		}
-		dd.incrementCacheMisses()
+	if cached := dd.checkCache(oldFact, newFact, factID); cached != nil {
+		return cached, nil
 	}
 
-	// Acquérir depuis le pool au lieu de NewFactDelta
+	// Construire le delta
+	delta := dd.buildDelta(oldFact, newFact, factID, factType)
+
+	// Ajouter au cache si activé et pas vide
+	dd.cacheIfNeeded(delta, oldFact, newFact, factID)
+
+	return delta, nil
+}
+
+// checkCache vérifie si un delta est en cache et le retourne si trouvé.
+func (dd *DeltaDetector) checkCache(oldFact, newFact map[string]interface{}, factID string) *FactDelta {
+	if !dd.config.CacheComparisons {
+		return nil
+	}
+
+	cacheKey := dd.buildCacheKey(oldFact, newFact, factID)
+	if cached := dd.getFromCache(cacheKey); cached != nil {
+		dd.incrementCacheHits()
+		return cached
+	}
+
+	dd.incrementCacheMisses()
+	return nil
+}
+
+// buildDelta construit le FactDelta en comparant oldFact et newFact.
+func (dd *DeltaDetector) buildDelta(
+	oldFact, newFact map[string]interface{},
+	factID, factType string,
+) *FactDelta {
 	delta := AcquireFactDelta(factID, factType)
 	delta.FieldCount = len(newFact)
 
 	// Collecter tous les noms de champs (union des deux faits)
-	allFields := make(map[string]bool)
+	allFields := dd.collectAllFields(oldFact, newFact)
+
+	// Détecter changements pour chaque champ
+	for fieldName := range allFields {
+		if dd.config.ShouldIgnoreField(fieldName) {
+			continue
+		}
+
+		dd.detectAndAddFieldChange(delta, fieldName, oldFact, newFact)
+	}
+
+	return delta
+}
+
+// collectAllFields retourne l'union de tous les champs des deux faits.
+func (dd *DeltaDetector) collectAllFields(oldFact, newFact map[string]interface{}) map[string]bool {
+	allFields := make(map[string]bool, len(oldFact)+len(newFact))
 	for field := range oldFact {
 		allFields[field] = true
 	}
 	for field := range newFact {
 		allFields[field] = true
 	}
+	return allFields
+}
 
-	// Comparer chaque champ
-	for fieldName := range allFields {
-		// Ignorer si configuré
-		if dd.config.ShouldIgnoreField(fieldName) {
-			continue
-		}
+// detectAndAddFieldChange détecte un changement de champ et l'ajoute au delta si nécessaire.
+func (dd *DeltaDetector) detectAndAddFieldChange(
+	delta *FactDelta,
+	fieldName string,
+	oldFact, newFact map[string]interface{},
+) {
+	oldValue, oldExists := oldFact[fieldName]
+	newValue, newExists := newFact[fieldName]
 
-		oldValue, oldExists := oldFact[fieldName]
-		newValue, newExists := newFact[fieldName]
-
-		// Cas 1 : Champ ajouté
-		if !oldExists && newExists {
-			delta.AddFieldChange(fieldName, nil, newValue)
-			continue
-		}
-
-		// Cas 2 : Champ supprimé
-		if oldExists && !newExists {
-			delta.AddFieldChange(fieldName, oldValue, nil)
-			continue
-		}
-
-		// Cas 3 : Champ modifié (existe dans les deux)
-		if oldExists && newExists {
-			if !dd.valuesEqual(oldValue, newValue, 0) {
-				delta.AddFieldChange(fieldName, oldValue, newValue)
-			}
-		}
+	// Cas 1 : Champ ajouté
+	if !oldExists && newExists {
+		delta.AddFieldChange(fieldName, nil, newValue)
+		return
 	}
 
-	// Ajouter au cache si activé et pas vide
+	// Cas 2 : Champ supprimé
+	if oldExists && !newExists {
+		delta.AddFieldChange(fieldName, oldValue, nil)
+		return
+	}
+
+	// Cas 3 : Champ modifié (existe dans les deux)
+	if oldExists && newExists && !dd.valuesEqual(oldValue, newValue, 0) {
+		delta.AddFieldChange(fieldName, oldValue, newValue)
+	}
+}
+
+// cacheIfNeeded ajoute le delta au cache si les conditions sont remplies.
+func (dd *DeltaDetector) cacheIfNeeded(
+	delta *FactDelta,
+	oldFact, newFact map[string]interface{},
+	factID string,
+) {
 	if dd.config.CacheComparisons && !delta.IsEmpty() {
 		cacheKey := dd.buildCacheKey(oldFact, newFact, factID)
 		dd.addToCache(cacheKey, delta)
 	}
-
-	// Note: L'appelant doit appeler ReleaseFactDelta(delta) quand fini
-	// SAUF si le delta est mis en cache ou stocké ailleurs
-
-	return delta, nil
 }
 
 // DetectDeltaQuick est une version optimisée qui ne crée pas de FactDelta

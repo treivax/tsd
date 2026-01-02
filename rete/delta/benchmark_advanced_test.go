@@ -110,7 +110,7 @@ func BenchmarkBatchProcessing(b *testing.B) {
 			for _, node := range nodes {
 				batch.Add(node)
 			}
-			batch.ProcessInOrder(process)
+			_ = batch.ProcessInOrder(process)
 		}
 	})
 
@@ -118,7 +118,7 @@ func BenchmarkBatchProcessing(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			for _, node := range nodes {
-				process(node)
+				_ = process(node)
 			}
 		}
 	})
