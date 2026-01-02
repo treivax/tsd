@@ -59,9 +59,9 @@ func TestLoadDefaultActions_Signatures(t *testing.T) {
 	}{
 		"Print":   {1, map[string]string{"message": "string"}},
 		"Log":     {1, map[string]string{"message": "string"}},
-		"Update":  {1, map[string]string{"fact": "any"}},
+		"Update":  {2, map[string]string{"variable": "any", "modifications": "any"}},
 		"Insert":  {1, map[string]string{"fact": "any"}},
-		"Retract": {1, map[string]string{"id": "string"}},
+		"Retract": {1, map[string]string{"fact": "any"}},
 		"Xuple":   {2, map[string]string{"xuplespace": "string", "fact": "any"}},
 	}
 

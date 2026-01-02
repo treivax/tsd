@@ -25,12 +25,19 @@ action Print(message: string)
 action Log(message: string)
 
 // Update modifie un fait existant et met à jour les tokens liés dans RETE
+// Syntaxe: Update(variable, {champ: valeur, champ: valeur, ...})
 // Paramètres:
-//   - fact: le fait à modifier (doit exister dans le réseau)
+//   - variable: la variable de règle référençant le fait à modifier
+//   - modifications: objet littéral contenant les champs à modifier
 // Notes:
+//   - L'ID du fait original est préservé (pas de nouveau fait créé)
+//   - Seuls les champs spécifiés sont modifiés, les autres sont préservés
 //   - Déclenche la propagation des mises à jour dans le réseau RETE
-//   - Le fait doit avoir le même type qu'un fait existant
-action Update(fact: any)
+// Exemple:
+//   rule mettre_en_couple : {p: Personne, r: Relation} /
+//       p.nom == r.personne1 AND r.lien == "mariage" ==>
+//       Update(p, {statut: "en couple"})
+action Update(variable: any, modifications: any)
 
 // Insert crée un nouveau fait et l'insère dans le réseau RETE
 // Paramètres:
@@ -42,11 +49,14 @@ action Insert(fact: any)
 
 // Retract supprime un fait du réseau RETE ainsi que tous les tokens liés
 // Paramètres:
-//   - id: l'identifiant du fait à supprimer
+//   - fact: le fait à supprimer (variable ou expression de règle)
 // Notes:
 //   - Tous les tokens dépendant de ce fait sont invalidés
 //   - La suppression se propage dans tout le réseau
-action Retract(id: string)
+// Exemples:
+//   - Retract(p) : supprime le fait référencé par la variable p
+//   - Retract(p.fils) : supprime le fait référencé par p.fils
+action Retract(fact: any)
 
 // Xuple crée un xuple dans le xuple-space spécifié
 // Paramètres:

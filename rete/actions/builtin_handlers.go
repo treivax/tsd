@@ -103,8 +103,8 @@ func (h *RetractActionHandler) Validate(args []interface{}) error {
 		return NewValidationError(ActionRetract, ArgsCountRetract, len(args))
 	}
 
-	if _, ok := args[0].(string); !ok {
-		return NewTypeError(ActionRetract, 0, "string", args[0])
+	if _, ok := args[0].(*rete.Fact); !ok {
+		return NewTypeError(ActionRetract, 0, "*rete.Fact", args[0])
 	}
 
 	return nil

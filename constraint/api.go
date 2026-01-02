@@ -162,7 +162,7 @@ action Print(message: string)
 action Log(message: string)
 action Update(fact: any)
 action Insert(fact: any)
-action Retract(id: string)
+action Retract(fact: any)
 action Xuple(xuplespace: string, fact: any)
 `
 

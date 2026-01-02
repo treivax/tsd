@@ -155,7 +155,7 @@ func TestBuiltinActions_Retract_Integration(t *testing.T) {
 type Task(#id: string, title: string, status: string)
 
 rule remove_completed : {t: Task} / t.status == "completed" ==>
-    Retract(t.id)
+    Retract(t)
 
 Task(id: "t1", title: "Task 1", status: "pending")
 Task(id: "t2", title: "Task 2", status: "completed")
@@ -181,7 +181,7 @@ func TestBuiltinActions_Retract_ByID(t *testing.T) {
 type User(#id: string, name: string, active: bool)
 
 rule remove_inactive : {u: User} / u.active == false ==>
-    Retract(u.id)
+    Retract(u)
 
 User(id: "u1", name: "Alice", active: true)
 User(id: "u2", name: "Bob", active: false)
@@ -211,7 +211,7 @@ rule check_stock : {i: Item} / i.quantity < 5 AND i.status == "active" ==>
     Insert(LowStockAlert(id: "alert_low", itemId: i.id, quantity: i.quantity))
 
 rule remove_zero_stock : {i: Item} / i.quantity == 0 ==>
-    Retract(i.id)
+    Retract(i)
 
 Item(id: "item1", name: "Widget", quantity: 3, status: "active")
 Item(id: "item2", name: "Gadget", quantity: 0, status: "active")

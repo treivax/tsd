@@ -219,30 +219,39 @@ func (e *BuiltinActionExecutor) executeInsert(args []interface{}) error {
 	return e.network.InsertFact(fact)
 }
 
-// executeRetract implémente l'action Retract(id: string).
+// executeRetract implémente l'action Retract(fact: Fact).
 // Supprime un fait du réseau RETE ainsi que tous les tokens liés.
 //
 // Cette action utilise la méthode RetractFact du réseau RETE qui :
-// 1. Valide l'ID du fait
+// 1. Extrait l'ID interne du fait (basé sur la clé primaire)
 // 2. Vérifie que le fait existe
 // 3. Le supprime du storage
 // 4. Propage la rétraction dans le réseau RETE
+//
+// Important: L'argument doit être le fait entier (ex: Retract(p)),
+// pas un champ du fait (ex: Retract(p.id) est incorrect).
 func (e *BuiltinActionExecutor) executeRetract(args []interface{}) error {
 	if len(args) != ArgsCountRetract {
 		return fmt.Errorf("action Retract expects %d argument, got %d", ArgsCountRetract, len(args))
 	}
 
-	id, ok := args[0].(string)
+	fact, ok := args[0].(*rete.Fact)
 	if !ok {
-		return fmt.Errorf("action Retract expects string argument, got %T", args[0])
+		return fmt.Errorf("action Retract expects Fact argument, got %T (hint: use Retract(fact), not Retract(fact.id))", args[0])
 	}
 
-	if id == "" {
-		return fmt.Errorf("action Retract: id is empty")
+	if fact == nil {
+		return fmt.Errorf("action Retract: fact is nil")
+	}
+
+	// Extraire l'ID interne du fait (Type~clé_primaire)
+	internalID := fact.GetInternalID()
+	if internalID == "" {
+		return fmt.Errorf("action Retract: fact has empty internal ID")
 	}
 
 	// Déléguer au réseau RETE
-	return e.network.RetractFact(id)
+	return e.network.RetractFact(internalID)
 }
 
 // executeXuple implémente l'action Xuple(xuplespace: string, fact: any).
