@@ -62,6 +62,33 @@ rule customerOrders : {u: User, o: Order} / o.customer == u ==>
     Log("Order for " + u.username)
 ```
 
+### 🔄 Actions CRUD Dynamiques
+
+TSD supporte des actions natives pour modifier les faits en cours d'exécution :
+
+```tsd
+type Product(#id: string, name: string, stock: number, status: string)
+
+// Mettre à jour un ou plusieurs champs
+rule mark_low_stock : {p: Product} / p.stock < 10 AND p.status == "available" ==>
+    Update(p, {status: "low_stock"})
+
+// Créer de nouveaux faits dynamiquement
+rule create_alert : {p: Product} / p.stock == 0 ==>
+    Insert(Alert(id: p.id, level: "critical", message: "Stock épuisé"))
+
+// Supprimer des faits du réseau RETE
+rule remove_obsolete : {p: Product} / p.status == "obsolete" ==>
+    Retract(p)
+```
+
+**Actions disponibles :**
+- **Update(fact, {field: value, ...})** - Modifier un ou plusieurs champs d'un fait existant
+- **Insert(Type(...))** - Créer un nouveau fait et l'insérer dans le réseau RETE
+- **Retract(fact)** - Supprimer un fait du réseau RETE
+
+Voir [docs/actions/README.md](docs/actions/README.md) pour la documentation complète des actions.
+
 ### 📐 Types de Faits dans les Champs
 
 Les champs peuvent référencer d'autres types de faits :

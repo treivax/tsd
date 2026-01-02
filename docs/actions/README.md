@@ -53,9 +53,9 @@ Le système TSD propose **6 actions prédéfinies** automatiquement disponibles 
 |--------|-----------|-------------|----------------|-------|
 | **Print** | `Print(message: string)` | Affiche sur stdout | ✅ Complète | ✅ 100% |
 | **Log** | `Log(message: string)` | Trace dans le logging | ✅ Complète | ✅ 100% |
-| **Update** | `Update(fact: any)` | Modifie un fait existant | ✅ Complète | ✅ 100% |
-| **Insert** | `Insert(fact: any)` | Insère un nouveau fait | ✅ Complète | ✅ 100% |
-| **Retract** | `Retract(id: string)` | Supprime un fait | ✅ Complète | ✅ 100% |
+| **Update** | `Update(fact, {field: value, ...})` | Modifie un ou plusieurs champs d'un fait | ✅ Complète | ✅ 100% |
+| **Insert** | `Insert(Type(...))` | Insère un nouveau fait | ✅ Complète | ✅ 100% |
+| **Retract** | `Retract(fact)` | Supprime un fait | ✅ Complète | ✅ 100% |
 | **Xuple** | `Xuple(xuplespace: string, fact: any)` | Crée un xuple | ✅ Complète | ✅ 100% |
 
 ### Légende
@@ -97,10 +97,25 @@ return nil  // Pas d'erreur
 
 **Résultat** : Log uniquement, exécution continue.
 
-#### Cas 2 : Action déclarée mais implémentation incomplète (Update, Insert, Retract)
-#### Actions dynamiques (Update, Insert, Retract) - ✅ Implémentées
+#### Cas 2 : Actions CRUD (Update, Insert, Retract) - ✅ Complètement Implémentées
 
-Ces actions SONT déclarées dans `defaults.tsd` et ont un handler complet dans `builtin.go` :
+Ces actions SONT déclarées dans `defaults.tsd` et ont un handler complet dans `builtin.go`.
+
+**✨ Nouvelle syntaxe v2.0 :**
+
+```tsd
+// Update : Nouvelle syntaxe avec objet de modifications
+rule update_status : {p: Product} / p.stock < 10 ==>
+    Update(p, {status: "low_stock"})
+
+// Insert : Création de fait inline
+rule create_alert : {p: Product} / p.stock == 0 ==>
+    Insert(Alert(id: p.id, level: "critical", message: "Stock épuisé"))
+
+// Retract : Suppression par référence de fait
+rule remove_obsolete : {p: Product} / p.status == "obsolete" ==>
+    Retract(p)
+```
 
 **Dans rete/actions/builtin.go**
 
@@ -125,9 +140,9 @@ func (e *BuiltinActionExecutor) executeUpdate(args []interface{}) error {
 | `Print` | ✅ Oui | ✅ Oui | ✅ Complète | Affiche le message |
 | `Log` | ✅ Oui | ✅ Oui | ✅ Complète | Log le message |
 | `Xuple` | ✅ Oui | ✅ Oui | ✅ Complète | Crée le xuple |
-| `Update` | ✅ Oui | ✅ Oui | ✅ Complète | Met à jour le fait |
-| `Insert` | ✅ Oui | ✅ Oui | ✅ Complète | Insère le fait |
-| `Retract` | ✅ Oui | ✅ Oui | ✅ Complète | Supprime le fait |
+| `Update` | ✅ Oui | ✅ Oui | ✅ Complète | Met à jour les champs spécifiés |
+| `Insert` | ✅ Oui | ✅ Oui | ✅ Complète | Insère un nouveau fait inline |
+| `Retract` | ✅ Oui | ✅ Oui | ✅ Complète | Supprime le fait du réseau RETE |
 | `MyCustom` | ❌ Non | ❌ Non | ❌ Aucune | Log "ACTION NON DÉFINIE" |
 
 ---
@@ -324,80 +339,95 @@ func (e *BuiltinActionExecutor) executeXuple(args []interface{}, token *rete.Tok
 }
 ```
 
-### Actions Stub ⚠️
+### Actions CRUD Complètes ✅
 
-#### 4. Update (✅ Implémentée)
+#### 4. Update (✅ Complètement Implémentée)
 
-**Fichier:** `rete/actions/builtin.go:170-194`
+**Fichier:** `rete/actions/builtin.go`
 
+**Nouvelle syntaxe v2.0:**
+```tsd
+// Update avec objet de modifications
+rule update_status : {p: Product} / p.stock < 10 ==>
+    Update(p, {status: "low_stock", lastUpdate: "2025-01-02"})
+```
+
+**Implémentation:**
 ```go
 func (e *BuiltinActionExecutor) executeUpdate(args []interface{}) error {
-    // Validation des arguments
-    if len(args) != ArgsCountUpdate { ... }
+    // Validation et évaluation des modifications
     fact, ok := args[0].(*rete.Fact)
-    if !ok || fact == nil { ... }
+    if !ok || fact == nil { return error }
     
-    // Déléguer au réseau RETE
+    // Mise à jour et propagation dans le réseau RETE
     return e.network.UpdateFact(fact)
 }
 ```
 
-**Implémentation RETE:** `rete/network_manager.go:90-124`
+**Fonctionnement:**
+1. Parse l'objet de modifications `{field: value, ...}`
+2. Applique les modifications au fait existant
+3. Détecte si les valeurs ont réellement changé (évite boucles infinies)
+4. Propage via Retract + Insert si modification effective
+5. Protection contre les boucles avec depth guard (max 100 updates)
 
-**Stratégie (Retract + Insert) :**
-1. Vérifie que le fait existe
-2. Rétracte l'ancien fait (propage la suppression)
-3. Insère le fait mis à jour (propage l'ajout)
-4. Garantit la cohérence du réseau RETE
+#### 5. Insert (✅ Complètement Implémentée)
 
-#### 5. Insert (✅ Implémentée)
+**Fichier:** `rete/actions/builtin.go`
 
-**Fichier:** `rete/actions/builtin.go:196-220`
+**Nouvelle syntaxe v2.0:**
+```tsd
+// Insert avec fait inline
+rule create_alert : {p: Product} / p.stock == 0 ==>
+    Insert(Alert(id: p.id, level: "critical", message: "Stock épuisé"))
+```
 
+**Implémentation:**
 ```go
 func (e *BuiltinActionExecutor) executeInsert(args []interface{}) error {
-    // Validation des arguments
-    if len(args) != ArgsCountInsert { ... }
     fact, ok := args[0].(*rete.Fact)
-    if !ok || fact == nil { ... }
+    if !ok || fact == nil { return error }
     
-    // Déléguer au réseau RETE
+    // Insertion dans le réseau RETE
     return e.network.InsertFact(fact)
 }
 ```
 
-**Implémentation RETE:** `rete/network_manager.go:51-81`
+**Fonctionnement:**
+1. Évalue le fait inline `Type(field: value, ...)`
+2. Génère l'ID interne basé sur les clés primaires ou auto-génération
+3. Valide l'unicité (erreur si ID existe déjà)
+4. Insère via `SubmitFact()` qui gère storage et propagation
+5. Déclenche les règles matchant le nouveau fait
 
-**Fonctionnement :**
-1. Valide le fait (type, ID non vides)
-2. Vérifie qu'il n'existe pas déjà
-3. Utilise `SubmitFact()` qui gère storage et propagation
-4. Le fait est inséré et propagé dans le réseau
+#### 6. Retract (✅ Complètement Implémentée)
 
-#### 6. Retract (✅ Implémentée)
+**Fichier:** `rete/actions/builtin.go`
 
-**Fichier:** `rete/actions/builtin.go:222-247`
+**Nouvelle syntaxe v2.0:**
+```tsd
+// Retract par référence de fait
+rule remove_obsolete : {p: Product} / p.status == "obsolete" ==>
+    Retract(p)
+```
 
+**Implémentation:**
 ```go
 func (e *BuiltinActionExecutor) executeRetract(args []interface{}) error {
-    // Validation des arguments
-    if len(args) != ArgsCountRetract { ... }
-    id, ok := args[0].(string)
-    if !ok || id == "" { ... }
+    fact, ok := args[0].(*rete.Fact)
+    if !ok || fact == nil { return error }
     
-    // Déléguer au réseau RETE
-    return e.network.RetractFact(id)
+    // Suppression du réseau RETE
+    return e.network.RetractFact(fact.ID)
 }
 ```
 
-**Implémentation RETE:** `rete/network_manager.go:336-367`
-
-**Fonctionnement :**
-1. Valide l'ID du fait
-2. Vérifie que le fait existe
+**Fonctionnement:**
+1. Extrait l'ID interne du fait
+2. Vérifie que le fait existe dans le storage
 3. Supprime du storage via `RemoveFact()`
 4. Propage la rétraction via `RootNode.ActivateRetract()`
-5. Nettoie les références et tokens associés
+5. Nettoie tous les tokens et références associés dans le réseau
 
 ---
 
@@ -420,11 +450,11 @@ func (e *BuiltinActionExecutor) executeRetract(args []interface{}) error {
 | Print | ✅ Complète | ✅ 100% | Production ready |
 | Log | ✅ Complète | ✅ 100% | Production ready |
 | Xuple | ✅ Complète | ✅ 100% | Production ready |
-| Update | ⚠️ Stub validé | ✅ 100% | Bloqué (RETE) |
-| Insert | ⚠️ Stub validé | ✅ 100% | Bloqué (RETE) |
-| Retract | ⚠️ Stub validé | ✅ 100% | Bloqué (RETE) |
+| Update | ✅ Complète | ✅ 100% | Production ready |
+| Insert | ✅ Complète | ✅ 100% | Production ready |
+| Retract | ✅ Complète | ✅ 100% | Production ready |
 
-**Note importante :** Les actions Update, Insert et Retract ont des **stubs complets et testés**. Le blocage n'est pas au niveau des actions elles-mêmes, mais au niveau du réseau RETE qui ne fournit pas encore les méthodes nécessaires.
+**✅ Toutes les actions sont complètement implémentées et testées !** La v2.0 inclut l'intégration complète des actions CRUD avec la nouvelle syntaxe.
 
 ---
 
@@ -475,8 +505,8 @@ Si une action n'est ni dans `defaults.tsd` ni déclarée par l'utilisateur :
 
 ✅ **Module `rete/actions`** : 14 tests exhaustifs (couverture 91.5%)
 - Actions fonctionnelles : Print, Log, Xuple
-- Actions stub : Update, Insert, Retract
-- Validation des arguments, cas d'erreur, configuration
+- Actions CRUD complètes : Update, Insert, Retract
+- Validation des arguments, protection boucles infinies, gestion erreurs
 
 ✅ **Module `rete`** : Tests d'intégration ActionExecutor
 - Comportement avec action non définie
@@ -977,7 +1007,9 @@ Ce document détaille l'implémentation complète des actions CRUD (Create, Read
 
 ### Besoin Initial
 
-Les actions `Update`, `Insert`, et `Retract` étaient **déclarées** dans `internal/defaultactions/defaults.tsd` mais **non implémentées**. Leur utilisation retournait l'erreur :
+**[OBSOLÈTE - v1.x]** Les actions `Update`, `Insert`, et `Retract` étaient déclarées mais non implémentées. **Depuis v2.0, elles sont complètement implémentées et fonctionnelles.**
+
+Ancien comportement (v1.x) :
 
 ```
 action Update not yet implemented in RETE network - see package documentation
@@ -1337,12 +1369,12 @@ if tx != nil && tx.IsActive {
    - Implémentation de `executeInsert()`
    - Implémentation de `executeRetract()`
 
-3. **`rete/actions/README.md`**
-   - Mise à jour statuts : ⚠️ Stub → ✅ Implémenté
-   - Ajout exemples d'utilisation
-   - Documentation du fonctionnement
+3. **`docs/actions/README.md`** (ce fichier)
+   - ✅ Mise à jour statuts : ⚠️ Stub → ✅ Complètement Implémenté
+   - ✅ Ajout exemples d'utilisation avec nouvelle syntaxe v2.0
+   - ✅ Documentation du fonctionnement complet
 
-4. **`docs/ACTIONS_PAR_DEFAUT_SYNTHESE.md`**
+4. **Migration et Tests**
    - Mise à jour tableau des actions
    - Correction des comportements
    - Mise à jour de la feuille de route
