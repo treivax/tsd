@@ -106,8 +106,36 @@ goimports -w .
 # Nettoyer builds
 go clean -cache -testcache -modcache
 
-# Supprimer fichiers générés
+# Supprimer fichiers générés (profiling, coverage, tests)
 rm -f *.prof *.out *.test
+find . -name "*.log" -type f ! -path "./.git/*" ! -path "*/vendor/*" -delete
+find . -name "*.tmp" -type f ! -path "./.git/*" ! -path "*/vendor/*" -delete
+
+# Archiver fichiers temporaires de session
+mkdir -p ARCHIVES/cleanup-$(date +%Y%m%d)
+mv *.txt ARCHIVES/cleanup-$(date +%Y%m%d)/ 2>/dev/null || true
+mv *.log ARCHIVES/cleanup-$(date +%Y%m%d)/ 2>/dev/null || true
+
+# Configurer .gitignore pour fichiers temporaires
+cat >> .gitignore << 'EOF'
+# Fichiers temporaires
+*.log
+*.out
+*.prof
+*.test
+*.tmp
+*.temp
+coverage*.html
+coverage*.txt
+build.log
+test*.log
+validation*.log
+DEPLOIEMENT*.txt
+VALIDATION*.txt
+TEST_SUMMARY*.txt
+FICHIERS_*.txt
+COMMIT_*.txt
+EOF
 ```
 
 **Documentation Obsolète** :
@@ -135,6 +163,13 @@ go list -m all | nancy sleuth
 - [ ] Fonctions trop longues décomposées
 - [ ] Complexité réduite
 - [ ] Nommage amélioré
+
+**Fichiers Logs et Texte** :
+- [ ] Fichiers .log archivés ou supprimés
+- [ ] Fichiers .txt temporaires archivés
+- [ ] Fichiers .out (coverage, profiling) supprimés
+- [ ] Fichiers .prof (profiling) supprimés
+- [ ] .gitignore mis à jour pour ignorer fichiers temporaires
 
 ### 4. Vérification Licence
 

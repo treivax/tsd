@@ -442,6 +442,19 @@ func (cp *ConstraintPipeline) submitNewFacts(ctx *ingestionContext) error {
 			return fmt.Errorf("❌ Erreur soumission faits: %w", err)
 		}
 		cp.logger.Info("✅ Nouveaux faits soumis")
+
+		// Capturer les faits rétractés pendant la soumission
+		ctx.network.submissionMutex.RLock()
+		if ctx.network.currentSubmission != nil {
+			ctx.retractedFactsIDs = make(map[string]bool)
+			for factID, wasRetracted := range ctx.network.currentSubmission.factsRetracted {
+				if wasRetracted {
+					ctx.retractedFactsIDs[factID] = true
+					cp.logger.Debug("ℹ️  Fait %s rétracté pendant la soumission", factID)
+				}
+			}
+		}
+		ctx.network.submissionMutex.RUnlock()
 		ctx.metrics.RecordFactSubmissionDuration(time.Since(submissionStart))
 		ctx.metrics.SetFactsSubmitted(len(ctx.factsForRete))
 	}
@@ -576,8 +589,15 @@ func (cp *ConstraintPipeline) verifyAndCommit(ctx *ingestionContext) error {
 				internalID = fmt.Sprintf("%s~%s", factType, factID)
 			}
 
+			// Vérifier si le fait existe dans le storage OU a été rétracté pendant la soumission
+			wasRetracted := ctx.retractedFactsIDs != nil && ctx.retractedFactsIDs[internalID]
+
 			if ctx.storage.GetFact(internalID) != nil {
 				actualFactCount++
+			} else if wasRetracted {
+				// Fait rétracté pendant la propagation : OK, compter comme traité
+				actualFactCount++
+				cp.logger.Info("ℹ️  Fait %s rétracté pendant la propagation, compté comme traité", internalID)
 			} else {
 				missingFacts = append(missingFacts, internalID)
 			}
@@ -591,7 +611,7 @@ func (cp *ConstraintPipeline) verifyAndCommit(ctx *ingestionContext) error {
 				expectedFactCount, actualFactCount)
 		}
 
-		cp.logger.Info("✅ Cohérence vérifiée: %d/%d faits présents", actualFactCount, expectedFactCount)
+		cp.logger.Info("✅ Cohérence vérifiée: %d/%d faits traités (persistés ou rétractés)", actualFactCount, expectedFactCount)
 
 		// Synchroniser le storage
 		cp.logger.Info("💾 Synchronisation du storage...")
@@ -608,6 +628,9 @@ func (cp *ConstraintPipeline) verifyAndCommit(ctx *ingestionContext) error {
 		}
 		cp.logger.Info("✅ Transaction committée: %d changements", ctx.tx.GetCommandCount())
 	}
+
+	// Nettoyer le contexte de soumission après le commit
+	ctx.network.ClearSubmissionContext()
 
 	return nil
 }

@@ -8,6 +8,38 @@
 
 ---
 
+## 🔧 GRAMMAIRE PEG ET PARSER
+
+### Règles Critiques de Génération du Parser
+
+**EMPLACEMENT DES FICHIERS** :
+- Fichier source PEG : `constraint/grammar/constraint.peg`
+- Parser généré : `constraint/parser.go` (à la racine du package constraint)
+- ⚠️ **JAMAIS** dans `constraint/grammar/parser.go`
+
+**Commande de génération** :
+```bash
+cd constraint/grammar
+pigeon -o ../parser.go constraint.peg
+```
+
+**IMPORTANT** :
+- Le parser DOIT être généré à la racine du package `constraint`
+- Le fichier `.peg` reste dans `constraint/grammar/` pour l'organisation
+- Tous les autres fichiers Go du package `constraint` sont à la racine
+- Ne JAMAIS créer `constraint/grammar/parser.go`
+
+**Vérification** :
+```bash
+# Bon emplacement
+ls -l constraint/parser.go
+
+# Mauvais emplacement (à supprimer si existe)
+ls -l constraint/grammar/parser.go
+```
+
+---
+
 ## 🔒 LICENCE ET COPYRIGHT
 
 ### Vérification de Compatibilité
@@ -50,6 +82,90 @@ for file in $(find . -name "*.go" -type f ! -path "./.git/*"); do
         echo "⚠️  EN-TÊTE MANQUANT: $file"
     fi
 done
+```
+
+---
+
+## 🔑 IDENTIFIANTS DE FAITS (RETE)
+
+### Principe Fondamental
+
+**Il n'existe qu'UN SEUL identifiant pour un fait : l'ID interne.**
+
+#### ID Interne (Identifiant Réel)
+
+L'**ID interne** est l'identifiant unique et réel d'un fait dans le réseau RETE :
+
+- **Format** : `Type~valeur` ou `Type~val1_val2_...` pour clés composites
+- **Génération automatique** :
+  - Si le type a des **clés primaires** définies → `Type~<valeurs_clés_primaires>`
+  - Si le type n'a **pas de clés primaires** → `Type_<compteur>` (auto-incrémenté)
+- **Accès** : Via `Fact.ID` (champ système)
+- **Utilisation** : Indexation, recherche, rétraction dans le réseau RETE
+
+**Exemple** :
+```go
+type Product(#id: string, name: string, price: number)
+// Fait : Product(id: "prod_123", name: "Laptop", price: 999.99)
+// ID interne : "Product~prod_123"
+
+type Alert(level: string, message: string)  // Pas de clé primaire
+// Fait : Alert(level: "HIGH", message: "Temperature warning")
+// ID interne : "Alert_1" (auto-généré)
+```
+
+#### Attributs 'id' (Champs Ordinaires)
+
+Les attributs nommés `id` (ou `ID`, `Id`, etc.) **n'ont RIEN de particulier** :
+
+- Ce sont des **champs ordinaires** comme n'importe quel autre attribut
+- Ils **ne sont PAS des identifiants** au sens système
+- Ils peuvent être des **clés primaires** (avec `#id`) ou de simples attributs
+- **Accès** : Via `Fact.Fields["id"]` (valeur d'attribut)
+
+**Exemple** :
+```go
+type Person(#id: string, name: string, age: number)
+
+person := &Fact{
+    ID:     "Person~p1",           // ← ID INTERNE (identifiant réel)
+    Type:   "Person",
+    Fields: map[string]interface{}{
+        "id":   "p1",              // ← Attribut 'id' (simple valeur de champ)
+        "name": "Alice",
+        "age":  30,
+    },
+}
+
+// ✅ CORRECT : Accès à l'ID interne
+internalID := person.ID  // "Person~p1"
+
+// ✅ CORRECT : Accès à l'attribut 'id'
+idField := person.Fields["id"]  // "p1"
+
+// ❌ INCORRECT : Confondre les deux
+// L'attribut 'id' n'est PAS l'identifiant du fait !
+```
+
+#### Règles Importantes
+
+1. **Ne JAMAIS confondre** `Fact.ID` (identifiant interne) et `Fields["id"]` (attribut)
+2. **Toujours utiliser** `Fact.ID` pour les opérations système (recherche, rétraction)
+3. **Les clés primaires** (`#id`) servent à générer l'ID interne, mais ne sont pas l'ID interne
+4. **Un type sans clé primaire** aura quand même un ID interne (auto-généré)
+
+#### Dans les Tests
+
+```go
+// ✅ BON - Test de l'ID interne
+assert.Equal(t, "Product~prod_123", fact.ID)
+assert.Contains(t, fact.ID, "Product~")
+
+// ✅ BON - Test de l'attribut 'id' (clé primaire)
+assert.Equal(t, "prod_123", fact.Fields["id"])
+
+// ❌ MAUVAIS - Confusion entre ID interne et attribut
+// assert.Equal(t, fact.Fields["id"], fact.ID)  // FAUX !
 ```
 
 ---
@@ -99,7 +215,7 @@ func ProcessOrder(id string, timeout time.Duration, rule DiscountRule) error {
 ```
 
 #### Code généré - OBLIGATOIRE
-Ne modifie jamais le code généré par un outil tiers (typiquement parser.go dans tsd).
+Ne modifie jamais le code généré par un outil tiers (typiquement `constraint/parser.go` généré par pigeon).
 
 #### 2. TESTS Fonctionnels RÉELS
 

@@ -70,6 +70,20 @@ func (av *ActionValidator) ValidateActionCall(jobCall *JobCall, ruleVariables ma
 	totalParams := len(actionDef.Parameters)
 	argCount := len(jobCall.Args)
 
+	// Cas spécial pour Update avec updateWithModifications
+	// Le parser transforme Update(var, {...}) en un seul argument de type updateWithModifications
+	// mais cela représente sémantiquement 2 arguments
+	if jobCall.Name == "Update" && argCount == 1 {
+		if len(jobCall.Args) > 0 {
+			if argMap, ok := jobCall.Args[0].(map[string]interface{}); ok {
+				if argMap["type"] == "updateWithModifications" {
+					// Cet argument unique représente 2 arguments : variable + modifications
+					argCount = 2
+				}
+			}
+		}
+	}
+
 	// Check argument count
 	if argCount < requiredCount {
 		return fmt.Errorf("action '%s' requires at least %d arguments, got %d",
@@ -140,6 +154,10 @@ func (av *ActionValidator) inferComplexType(argType string, argMap map[string]in
 		return av.inferFunctionCallType(argMap)
 	case "inlineFact":
 		return av.inferInlineFactType(argMap)
+	case "updateWithModifications":
+		// Type spécial pour Update(variable, {...}) transformé par le parser
+		// Retourne "any" car c'est une structure complexe avec variable + modifications
+		return "any", nil
 	default:
 		return "", fmt.Errorf("unknown argument type: %s", sanitizeForLog(argType, 50))
 	}

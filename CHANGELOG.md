@@ -2,6 +2,62 @@
 
 ## [Unreleased]
 
+### Fixed
+- 🐛 **Phase 2 : Gestion des Rétractations Pendant Soumission**
+  - **Problème** : Timeout/erreur incohérence lorsqu'un fait soumis est rétracté par une règle pendant la propagation
+  - **Solution** : 
+    - Ajout du `SubmissionContext` pour tracker les faits soumis et rétractés dans la même transaction
+    - Mise à jour de la vérification de cohérence du pipeline pour ignorer les faits rétractés
+  - **Impact** : Les patterns de transformation (Insert → Retract → Insert) fonctionnent maintenant sans erreur
+  - **Fichiers modifiés** :
+    - `rete/network.go` - Structure `SubmissionContext` thread-safe
+    - `rete/network_manager.go` - Phase 2 avec tracking des rétractations + `ClearSubmissionContext()`
+    - `rete/constraint_pipeline.go` - Vérification cohérence avec prise en compte des rétractations
+    - `rete/constraint_pipeline_orchestration.go` - Champ `retractedFactsIDs` dans contexte
+    - `rete/coherence_phase2_test.go` - 3 nouveaux tests de validation
+  - **Tests** :
+    - ✅ `TestPhase2_RetractDuringSubmission` - Comportement correct avec rétractations
+    - ✅ `TestPhase2_SubmissionContextTracking` - API du contexte
+    - ✅ `TestPhase2_ConcurrentSubmissionContext` - Thread-safety
+    - ✅ `TestBuiltinActions_Retract_ByID` - Test d'intégration end-to-end
+
+- 🔧 **Correction Tests Actions Builtin**
+  - **Problème** : Tests utilisant l'ancienne signature `Retract(string)` au lieu de `Retract(*Fact)`
+  - **Fichiers corrigés** :
+    - `rete/actions/builtin_integration_test.go` - Récupération du fait avant rétractation
+    - `rete/actions/builtin_test.go` - Tests unitaires mis à jour
+  - **Impact** : Tous les tests des actions builtin passent maintenant
+
+### Changed
+- 🔧 **Élimination Duplication `defaults.tsd`**
+  - **Problème** : Deux versions des définitions d'actions par défaut (violation DRY et `develop.md`)
+    - Version 1 : `internal/defaultactions/defaults.tsd` (fichier source)
+    - Version 2 : `constraint/api.go` (string hardcodé)
+  - **Solution** : Création du package intermédiaire `internal/actiondefs`
+  - **Structure** :
+    - `internal/actiondefs/defaults.tsd` - Source unique des 6 actions système
+    - `internal/actiondefs/embed.go` - Embedding via `go:embed` + utilitaires
+  - **Bénéfices** :
+    - ✅ Une seule source de vérité (conformité `develop.md`)
+    - ✅ Pas de dépendances circulaires
+    - ✅ Maintenance simplifiée
+  - **Fichiers modifiés** :
+    - `internal/actiondefs/` - **NOUVEAU** package intermédiaire
+    - `internal/defaultactions/loader.go` - Utilise `actiondefs`, suppression alias compatibilité
+    - `internal/defaultactions/loader_test.go` - Imports mis à jour
+    - `constraint/api.go` - Supprime string hardcodé, utilise `actiondefs`
+    - `internal/defaultactions/defaults.tsd` - **SUPPRIMÉ** (déplacé vers `actiondefs`)
+  - **Tests** : ✅ Tous les tests passent
+
+### Removed
+- 🧹 **Nettoyage Conformité `maintain.md`**
+  - Suppression alias de compatibilité `IsDefaultAction()` dans `internal/defaultactions/loader.go`
+  - Suppression documents de migration temporaires :
+    - `MIGRATION_DEFAULTS_PHASE2.md`
+    - `RESUME_ACTIONS_REALISEES.md`
+    - `ACTIONS_SUMMARY.txt`
+  - Mise à jour `.gitignore` pour ignorer futurs fichiers temporaires de migration
+
 ### Security
 - 🔒 **Migration Go 1.24.11** - Correction de 9 vulnérabilités critiques de la stdlib
   - **Version précédente** : Go 1.24.4

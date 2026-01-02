@@ -65,6 +65,9 @@ REVIEW_*.md
 AMELIORATION_*.md
 MODIFICATIONS_*.md
 INDEX_*.md
+MIGRATION_*.md
+RESUME_*.md
+ACTIONS_SUMMARY.txt
 
 # Backup files
 *.backup
@@ -125,3 +128,26 @@ scripts/review/.env
 scripts/review-*/
 scripts/status
 diagnostic_*.log
+
+# Fichiers temporaires (ajouté par cleanup 2026-01-02)
+*.log
+*.out
+*.prof
+*.test
+*_test
+coverage*.html
+coverage*.txt
+*.tmp
+*.temp
+
+# Fichiers de build temporaires
+build.log
+test*.log
+validation*.log
+
+# Rapports temporaires
+DEPLOIEMENT*.txt
+VALIDATION*.txt
+TEST_SUMMARY*.txt
+FICHIERS_*.txt
+COMMIT_*.txt

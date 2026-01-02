@@ -35,6 +35,8 @@ Documentation centralisée du projet TSD - Moteur de règles RETE avec système 
 | **[Comparaisons de Faits](user-guide/fact-comparisons.md)** | Comparer des faits directement avec `==` |
 | **[Système de Types](user-guide/type-system.md)** | Types primitifs et types de faits dans les champs |
 | **[Clés Primaires](primary-keys.md)** | Génération automatique d'IDs avec `#` |
+| **[Actions](actions/README.md)** | Actions par défaut et personnalisées |
+| **[Changements de Syntaxe](syntax-changes.md)** | Évolution de la syntaxe du langage |
 
 ### Référence Technique
 
@@ -171,12 +173,19 @@ Documentation centralisée du projet TSD - Moteur de règles RETE avec système 
 | **tsdio** | [tsdio/README.md](../tsdio/README.md) | I/O et structures |
 | **xuples** | [xuples/README.md](../xuples/README.md) | Espace de tuples |
 
+### Modules Spécialisés
+
+| Module | Documentation |
+|--------|---------------|
+| **[Actions](actions/)** | Actions CRUD et Xuple |
+
 ### Archives
 
 Les anciennes documentations sont archivées dans :
 - [docs/archive/](archive/) - Documentation pré-v2.0
 - [docs/archive/constraint/](archive/constraint/) - Anciennes docs constraint
 - [docs/archive/rete/](archive/rete/) - Anciennes docs RETE
+- [ARCHIVES/cleanup-20260102/](../ARCHIVES/cleanup-20260102/) - Fichiers nettoyés (2025-01-02)
 
 ---
 
@@ -248,6 +257,8 @@ Les anciennes documentations sont archivées dans :
 - **Installer TSD** → [Installation](installation.md)
 - **Apprendre la syntaxe** → [Guides](guides.md)
 - **Utiliser les clés primaires** → [Clés Primaires](primary-keys.md)
+- **Utiliser les actions** → [Actions](actions/README.md)
+- **Comprendre les changements de syntaxe** → [Changements de Syntaxe](syntax-changes.md)
 - **Migrer vers les clés primaires** → [Migration Guide](MIGRATION_IDS.md)
 - **Configurer le système** → [Configuration](configuration.md)
 - **Intégrer dans mon app Go** → [API](api.md)

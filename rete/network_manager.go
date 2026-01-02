@@ -6,7 +6,16 @@ package rete
 
 import (
 	"fmt"
+	"sync"
 	"time"
+)
+
+// Protection contre les boucles infinies dans les Update en chaîne
+const maxUpdateDepth = 100
+
+var (
+	updateDepthMutex sync.Mutex
+	updateDepthCount int
 )
 
 // SubmitFact soumet un nouveau fait au réseau RETE
@@ -106,7 +115,30 @@ func (rn *ReteNetwork) UpdateFact(fact *Fact) error {
 		return fmt.Errorf("fact with ID '%s' and type '%s' not found", fact.ID, fact.Type)
 	}
 
-	rn.logger.Debug("🔄 Mise à jour du fait: %s", internalID)
+	// Vérifier si le fait a réellement changé
+	// Si toutes les valeurs sont identiques, ne rien faire pour éviter les boucles infinies
+	if areFactsEqual(existingFact, fact) {
+		rn.logger.Debug("🔄 Update ignoré: le fait %s n'a pas changé", internalID)
+		return nil
+	}
+
+	// Protection contre les boucles infinies (règles qui se déclenchent en chaîne)
+	updateDepthMutex.Lock()
+	updateDepthCount++
+	currentDepth := updateDepthCount
+	updateDepthMutex.Unlock()
+
+	defer func() {
+		updateDepthMutex.Lock()
+		updateDepthCount--
+		updateDepthMutex.Unlock()
+	}()
+
+	if currentDepth > maxUpdateDepth {
+		return fmt.Errorf("maximum update depth exceeded (%d) - possible infinite loop in chained rules", maxUpdateDepth)
+	}
+
+	rn.logger.Debug("🔄 Mise à jour du fait: %s (depth: %d)", internalID, currentDepth)
 
 	// Stratégie: Retract puis Insert pour garantir la cohérence
 	// Cela propage correctement la suppression puis l'ajout dans le réseau
@@ -122,6 +154,77 @@ func (rn *ReteNetwork) UpdateFact(fact *Fact) error {
 	}
 
 	return nil
+}
+
+// areFactsEqual compare deux faits pour vérifier s'ils ont les mêmes valeurs
+// Retourne true si tous les champs ont des valeurs identiques
+func areFactsEqual(a, b *Fact) bool {
+	if a == nil || b == nil {
+		return false
+	}
+
+	if a.Type != b.Type || a.ID != b.ID {
+		return false
+	}
+
+	// Vérifier que les deux faits ont le même nombre de champs
+	if len(a.Fields) != len(b.Fields) {
+		return false
+	}
+
+	// Comparer chaque champ
+	for key, aValue := range a.Fields {
+		bValue, exists := b.Fields[key]
+		if !exists {
+			return false
+		}
+
+		// Comparaison des valeurs avec gestion des types numériques
+		if !areValuesEqualForFacts(aValue, bValue) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// areValuesEqualForFacts compare deux valeurs de champs de faits
+// Gère les conversions de types numériques (int, int64, float64)
+func areValuesEqualForFacts(a, b interface{}) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	// Comparaison directe pour les types identiques
+	if a == b {
+		return true
+	}
+
+	// Comparaison spéciale pour les nombres (int, int64, float64)
+	aNum, aIsNum := toFloat64ForFacts(a)
+	bNum, bIsNum := toFloat64ForFacts(b)
+	if aIsNum && bIsNum {
+		return aNum == bNum
+	}
+
+	return false
+}
+
+// toFloat64ForFacts convertit un nombre en float64 si possible
+func toFloat64ForFacts(v interface{}) (float64, bool) {
+	switch val := v.(type) {
+	case float64:
+		return val, true
+	case int:
+		return float64(val), true
+	case int64:
+		return float64(val), true
+	default:
+		return 0, false
+	}
 }
 
 // RepropagateExistingFact propage un fait déjà existant dans le réseau vers les nouveaux nœuds
@@ -221,6 +324,15 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 		debugLogger.LogNetworkStructure(rn)
 	}
 
+	// Créer un contexte de soumission pour tracker les rétractations
+	ctx := NewSubmissionContext()
+	rn.submissionMutex.Lock()
+	rn.currentSubmission = ctx
+	rn.submissionMutex.Unlock()
+	// Note: currentSubmission n'est PAS nettoyé ici pour permettre au pipeline
+	// de vérifier les rétractations après la soumission.
+	// Il sera nettoyé manuellement après utilisation.
+
 	// Démarrer la phase de soumission si collecteur disponible
 	if metricsCollector != nil {
 		metricsCollector.StartPhase("fact_submission")
@@ -239,6 +351,7 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 	// Compteurs pour garantir la cohérence
 	factsSubmitted := 0
 	factsPersisted := 0
+	factsRetractedDuringSubmission := 0
 	startTime := time.Now()
 
 	for i, factMap := range facts {
@@ -291,7 +404,10 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 			}
 		}
 
-		// 2. Soumettre le fait au réseau RETE
+		// 2. Marquer le fait comme soumis dans le contexte
+		ctx.MarkSubmitted(fact.ID)
+
+		// 3. Soumettre le fait au réseau RETE
 		if metricsCollector != nil {
 			metricsCollector.RecordFactSubmitted()
 		}
@@ -304,27 +420,39 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 		}
 		factsSubmitted++
 
-		// 3. Barrière de synchronisation Phase 2 : attendre la persistance avec retry
-		waitStart := time.Now()
-		err := rn.waitForFactPersistenceWithMetrics(fact, timeoutPerFact, metricsCollector)
-		waitDuration := time.Since(waitStart)
-
-		if metricsCollector != nil {
-			metricsCollector.RecordWaitTime(waitDuration)
-		}
-
-		if err != nil {
+		// 4. Barrière de synchronisation Phase 2 : attendre la persistance avec retry
+		// SAUF si le fait a été rétracté pendant la propagation (comportement valide)
+		if ctx.WasRetracted(fact.ID) {
+			// Fait rétracté pendant la propagation : OK, ne pas vérifier
+			rn.logger.Info("ℹ️  Fait %s rétracté pendant la propagation, vérification Phase 2 ignorée", fact.ID)
+			factsRetractedDuringSubmission++
 			if metricsCollector != nil {
-				metricsCollector.RecordTimeout()
-				metricsCollector.RecordFactFailed()
+				// Le fait a été "persisté" puis immédiatement rétracté, c'est une opération réussie
+				metricsCollector.RecordFactPersisted()
 			}
-			return fmt.Errorf("échec synchronisation fait %s: %w", fact.ID, err)
-		}
+		} else {
+			// Fait non rétracté : attendre la persistance
+			waitStart := time.Now()
+			err := rn.waitForFactPersistenceWithMetrics(fact, timeoutPerFact, metricsCollector)
+			waitDuration := time.Since(waitStart)
 
-		if metricsCollector != nil {
-			metricsCollector.RecordFactPersisted()
+			if metricsCollector != nil {
+				metricsCollector.RecordWaitTime(waitDuration)
+			}
+
+			if err != nil {
+				if metricsCollector != nil {
+					metricsCollector.RecordTimeout()
+					metricsCollector.RecordFactFailed()
+				}
+				return fmt.Errorf("échec synchronisation fait %s: %w", fact.ID, err)
+			}
+
+			if metricsCollector != nil {
+				metricsCollector.RecordFactPersisted()
+			}
+			factsPersisted++
 		}
-		factsPersisted++
 	}
 
 	duration := time.Since(startTime)
@@ -333,15 +461,31 @@ func (rn *ReteNetwork) submitFactsFromGrammarWithMetrics(facts []map[string]inte
 		metricsCollector.RecordSubmissionTime(duration)
 	}
 
-	// 4. Vérification finale de cohérence
-	if factsSubmitted != factsPersisted {
-		return fmt.Errorf("incohérence détectée: %d faits soumis mais seulement %d persistés dans le storage",
-			factsSubmitted, factsPersisted)
+	// 5. Vérification finale de cohérence
+	// Les faits rétractés pendant la propagation sont comptés comme traités avec succès
+	totalProcessed := factsPersisted + factsRetractedDuringSubmission
+	if factsSubmitted != totalProcessed {
+		return fmt.Errorf("incohérence détectée: %d faits soumis mais seulement %d traités (%d persistés, %d rétractés)",
+			factsSubmitted, totalProcessed, factsPersisted, factsRetractedDuringSubmission)
 	}
 
-	rn.logger.Info("✅ Phase 2 - Synchronisation complète: %d/%d faits persistés en %v", factsPersisted, factsSubmitted, duration)
+	if factsRetractedDuringSubmission > 0 {
+		rn.logger.Info("✅ Phase 2 - Synchronisation complète: %d/%d faits traités (%d persistés, %d rétractés) en %v",
+			totalProcessed, factsSubmitted, factsPersisted, factsRetractedDuringSubmission, duration)
+	} else {
+		rn.logger.Info("✅ Phase 2 - Synchronisation complète: %d/%d faits persistés en %v", factsPersisted, factsSubmitted, duration)
+	}
 
 	return nil
+}
+
+// ClearSubmissionContext nettoie le contexte de soumission actuel.
+// Cette fonction doit être appelée après avoir vérifié les rétractations
+// dans le pipeline, pour libérer la mémoire.
+func (rn *ReteNetwork) ClearSubmissionContext() {
+	rn.submissionMutex.Lock()
+	rn.currentSubmission = nil
+	rn.submissionMutex.Unlock()
 }
 
 // RetractFact supprime dynamiquement un fait du réseau RETE.
@@ -365,6 +509,14 @@ func (rn *ReteNetwork) RetractFact(factID string) error {
 	if existingFact == nil {
 		return fmt.Errorf("fact with ID '%s' not found", factID)
 	}
+
+	// Marquer le fait comme rétracté dans le contexte de soumission s'il y en a un actif
+	rn.submissionMutex.RLock()
+	if rn.currentSubmission != nil && rn.currentSubmission.WasSubmitted(factID) {
+		rn.currentSubmission.MarkRetracted(factID)
+		rn.logger.Debug("🔄 Fait %s marqué comme rétracté dans le contexte de soumission actif", factID)
+	}
+	rn.submissionMutex.RUnlock()
 
 	// Utiliser RemoveFact qui gère le storage et les transactions
 	if err := rn.RemoveFact(factID); err != nil {

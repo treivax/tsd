@@ -6,11 +6,13 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/treivax/tsd/rete"
+	"github.com/treivax/tsd/rete/actions"
 	"github.com/treivax/tsd/xuples"
 )
 
@@ -43,14 +45,43 @@ func NewPipelineWithConfig(config *Config) *Pipeline {
 	network := rete.NewReteNetwork(storage)
 	xupleManager := xuples.NewXupleManager()
 
-	// Configurer le handler pour l'action Xuple
+	// Créer le BuiltinActionExecutor pour les actions natives
+	logger := createLogger(config.LogLevel)
+	builtinExecutor := actions.NewBuiltinActionExecutor(
+		network,
+		xupleManager,
+		os.Stdout,
+		log.New(os.Stdout, "[TSD] ", log.LstdFlags),
+	)
+
+	// Enregistrer toutes les actions builtin dans l'ActionExecutor du réseau
+	actionRegistry := network.ActionExecutor.GetRegistry()
+	if err := actionRegistry.Register(actions.NewUpdateActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Update: %v", err))
+	}
+	if err := actionRegistry.Register(actions.NewInsertActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Insert: %v", err))
+	}
+	if err := actionRegistry.Register(actions.NewRetractActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Retract: %v", err))
+	}
+	if err := actionRegistry.Register(actions.NewPrintActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Print: %v", err))
+	}
+	if err := actionRegistry.Register(actions.NewLogActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Log: %v", err))
+	}
+	if err := actionRegistry.Register(actions.NewXupleActionHandler(builtinExecutor)); err != nil {
+		panic(fmt.Sprintf("erreur enregistrement action Xuple: %v", err))
+	}
+
+	// Configurer le handler pour l'action Xuple (rétrocompatibilité)
 	network.SetXupleManager(xupleManager)
 	network.SetXupleHandler(func(xuplespace string, fact *rete.Fact, triggeringFacts []*rete.Fact) error {
 		return xupleManager.CreateXuple(xuplespace, fact, triggeringFacts)
 	})
 
 	retePipeline := rete.NewConstraintPipeline()
-	logger := createLogger(config.LogLevel)
 	retePipeline.SetLogger(logger)
 
 	// Créer le pipeline

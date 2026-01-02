@@ -1,0 +1,5 @@
+// Étape 2: Ajout de trois personnes avec statut vierge
+
+Personne(nom: "Alain", statut: "")
+Personne(nom: "Catherine", statut: "")
+Personne(nom: "Chantal", statut: "")

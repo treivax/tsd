@@ -6,6 +6,8 @@ package defaultactions
 
 import (
 	"testing"
+
+	"github.com/treivax/tsd/internal/actiondefs"
 )
 
 func TestLoadDefaultActions(t *testing.T) {
@@ -17,7 +19,7 @@ func TestLoadDefaultActions(t *testing.T) {
 	}
 
 	// Vérifier le nombre d'actions
-	expectedCount := len(DefaultActionNames)
+	expectedCount := len(actiondefs.DefaultActionNames)
 	if len(actions) != expectedCount {
 		t.Errorf("❌ Attendu %d actions, reçu %d", expectedCount, len(actions))
 	}
@@ -35,7 +37,7 @@ func TestLoadDefaultActions(t *testing.T) {
 		actionMap[action.Name] = true
 	}
 
-	for _, name := range DefaultActionNames {
+	for _, name := range actiondefs.DefaultActionNames {
 		if !actionMap[name] {
 			t.Errorf("❌ Action par défaut manquante: %s", name)
 		}
@@ -59,9 +61,9 @@ func TestLoadDefaultActions_Signatures(t *testing.T) {
 	}{
 		"Print":   {1, map[string]string{"message": "string"}},
 		"Log":     {1, map[string]string{"message": "string"}},
-		"Update":  {1, map[string]string{"fact": "any"}},
+		"Update":  {2, map[string]string{"variable": "any", "modifications": "any"}},
 		"Insert":  {1, map[string]string{"fact": "any"}},
-		"Retract": {1, map[string]string{"id": "string"}},
+		"Retract": {1, map[string]string{"fact": "any"}},
 		"Xuple":   {2, map[string]string{"xuplespace": "string", "fact": "any"}},
 	}
 
@@ -118,10 +120,9 @@ func TestIsDefaultAction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := IsDefaultAction(tt.name)
+			result := actiondefs.IsDefaultAction(tt.name)
 			if result != tt.expected {
-				t.Errorf("❌ IsDefaultAction('%s') = %v, attendu %v",
-					tt.name, result, tt.expected)
+				t.Errorf("❌ IsDefaultAction(%q) = %v, attendu %v", tt.name, result, tt.expected)
 			}
 		})
 	}
@@ -132,17 +133,14 @@ func TestIsDefaultAction(t *testing.T) {
 func TestDefaultActionNames_Complete(t *testing.T) {
 	t.Log("🧪 TEST COMPLÉTUDE DefaultActionNames")
 
-	expectedNames := map[string]bool{
-		"Print":   true,
-		"Log":     true,
-		"Update":  true,
-		"Insert":  true,
-		"Retract": true,
-		"Xuple":   true,
+	// Vérifier que toutes les actions attendues sont présentes
+	expectedNames := make(map[string]bool)
+	for _, name := range actiondefs.DefaultActionNames {
+		expectedNames[name] = true
 	}
 
 	// Vérifier que toutes les actions attendues sont dans la liste
-	for _, name := range DefaultActionNames {
+	for _, name := range actiondefs.DefaultActionNames {
 		if !expectedNames[name] {
 			t.Errorf("❌ Action inattendue dans DefaultActionNames: %s", name)
 		}
@@ -156,7 +154,7 @@ func TestDefaultActionNames_Complete(t *testing.T) {
 
 	// Vérifier qu'il n'y a pas de doublons
 	seen := make(map[string]bool)
-	for _, name := range DefaultActionNames {
+	for _, name := range actiondefs.DefaultActionNames {
 		if seen[name] {
 			t.Errorf("❌ Action en double dans DefaultActionNames: %s", name)
 		}

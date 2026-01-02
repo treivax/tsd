@@ -1,0 +1,21 @@
+// Étape 1: Définition des types et règles pour le test de relations
+
+// Type Personne avec une clé primaire sur nom et un champ statut
+type Personne(#nom: string, statut: string)
+
+// Type Relation pour mettre en relation deux personnes
+type Relation(personne1: string, personne2: string, lien: string)
+
+// Règle: Si une personne est liée via une relation de type 'pacs', 'mariage' ou 'union-libre',
+// son statut doit être mis à 'en couple'
+rule mettre_en_couple_personne1 : {p: Personne, r: Relation} /
+    p.nom == r.personne1 AND
+    (r.lien == "pacs" OR r.lien == "mariage" OR r.lien == "union-libre") AND
+    p.statut != "en couple" ==>
+    Update(p, {statut: "en couple"})
+
+rule mettre_en_couple_personne2 : {p: Personne, r: Relation} /
+    p.nom == r.personne2 AND
+    (r.lien == "pacs" OR r.lien == "mariage" OR r.lien == "union-libre") AND
+    p.statut != "en couple" ==>
+    Update(p, {statut: "en couple"})

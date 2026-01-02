@@ -1,0 +1,3 @@
+// Étape 3: Ajout d'une relation de couple entre Alain et Chantal
+
+Relation(personne1: "Alain", personne2: "Chantal", lien: "mariage")

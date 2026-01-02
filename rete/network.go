@@ -45,6 +45,10 @@ type ReteNetwork struct {
 	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
 	VerifyRetryDelay  time.Duration `json:"-"` // Délai entre tentatives de vérification
 	MaxVerifyRetries  int           `json:"-"` // Nombre max de tentatives de vérification
+
+	// Contexte de soumission en cours (pour tracking des rétractations)
+	currentSubmission *SubmissionContext `json:"-"` // Contexte de la soumission active (nil si aucune)
+	submissionMutex   sync.RWMutex       `json:"-"` // Mutex pour accès au contexte de soumission
 }
 
 // Valeurs par défaut pour la synchronisation Phase 2
@@ -53,6 +57,50 @@ const (
 	DefaultVerifyRetryDelay  = 10 * time.Millisecond
 	DefaultMaxVerifyRetries  = 10
 )
+
+// SubmissionContext représente le contexte d'une soumission de faits en cours.
+// Il permet de tracker quels faits ont été soumis et rétractés pendant la même transaction.
+type SubmissionContext struct {
+	factsSubmitted map[string]bool // Faits soumis dans cette soumission
+	factsRetracted map[string]bool // Faits rétractés pendant la propagation
+	mutex          sync.RWMutex    // Mutex pour accès concurrent
+}
+
+// NewSubmissionContext crée un nouveau contexte de soumission
+func NewSubmissionContext() *SubmissionContext {
+	return &SubmissionContext{
+		factsSubmitted: make(map[string]bool),
+		factsRetracted: make(map[string]bool),
+	}
+}
+
+// MarkSubmitted marque un fait comme soumis
+func (sc *SubmissionContext) MarkSubmitted(factID string) {
+	sc.mutex.Lock()
+	defer sc.mutex.Unlock()
+	sc.factsSubmitted[factID] = true
+}
+
+// MarkRetracted marque un fait comme rétracté pendant la propagation
+func (sc *SubmissionContext) MarkRetracted(factID string) {
+	sc.mutex.Lock()
+	defer sc.mutex.Unlock()
+	sc.factsRetracted[factID] = true
+}
+
+// WasRetracted vérifie si un fait a été rétracté pendant cette soumission
+func (sc *SubmissionContext) WasRetracted(factID string) bool {
+	sc.mutex.RLock()
+	defer sc.mutex.RUnlock()
+	return sc.factsRetracted[factID]
+}
+
+// WasSubmitted vérifie si un fait a été soumis dans cette soumission
+func (sc *SubmissionContext) WasSubmitted(factID string) bool {
+	sc.mutex.RLock()
+	defer sc.mutex.RUnlock()
+	return sc.factsSubmitted[factID]
+}
 
 // XupleHandlerFunc est une fonction qui gère la création d'un xuple.
 // Elle est appelée par l'action Xuple() dans les règles TSD.

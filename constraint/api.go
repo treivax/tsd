@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/treivax/tsd/internal/actiondefs"
 )
 
 // ReadFileContent reads the entire content of a file as a string
@@ -150,23 +152,11 @@ func ValidateActionCalls(program *Program) error {
 }
 
 // loadDefaultActionsInternal charge les actions par défaut.
-// Cette fonction interne évite une dépendance circulaire avec internal/defaultactions.
+// Utilise le package actiondefs qui contient le fichier defaults.tsd embarqué
+// pour éviter les dépendances circulaires.
 func loadDefaultActionsInternal() ([]ActionDefinition, error) {
-	// Parser le fichier defaults.tsd embarqué
-	// Note: Cette duplication est nécessaire pour éviter l'import circulaire
-	defaultActionsTSD := `// Copyright (c) 2025 TSD Contributors
-// Licensed under the MIT License
-// See LICENSE file in the project root for full license text
-
-action Print(message: string)
-action Log(message: string)
-action Update(fact: any)
-action Insert(fact: any)
-action Retract(id: string)
-action Xuple(xuplespace: string, fact: any)
-`
-
-	result, err := ParseConstraint("defaults.tsd", []byte(defaultActionsTSD))
+	// Parser le fichier defaults.tsd embarqué depuis actiondefs
+	result, err := ParseConstraint("defaults.tsd", []byte(actiondefs.DefaultActionsTSD))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse default actions: %w", err)
 	}

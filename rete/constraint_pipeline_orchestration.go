@@ -32,6 +32,7 @@ type ingestionContext struct {
 	xupleManager          interface{}                                                 // Gestionnaire de xuples (créé si des xuple-spaces sont déclarés)
 	xupleSpaces           []interface{}                                               // Liste des xuple-spaces parsés depuis l'AST
 	onXupleSpacesDetected func(network *ReteNetwork, definitions []interface{}) error // Callback appelé après détection des xuple-spaces
+	retractedFactsIDs     map[string]bool                                             // IDs des faits rétractés pendant la soumission
 }
 
 // beginIngestionTransaction démarre une transaction pour l'ingestion

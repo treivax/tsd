@@ -541,7 +541,8 @@ Term <- first:Factor rest:(_ ("*" / "/" / "%") _ Factor)* {
     return result, nil
 }
 
-Factor <- "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
+Factor <- ObjectLiteral /
+          "(" _ expr:ArithmeticExpr _ ")" { return expr, nil } /
           CastExpression /
           InlineFact /
           FunctionCall /
@@ -624,6 +625,33 @@ ArrayElementList <- first:ArithmeticExpr rest:(_ "," _ ArithmeticExpr)* {
     return elements, nil
 }
 
+ObjectLiteral <- "{" _ fields:ObjectFieldList? _ "}" {
+    if fields == nil {
+        fields = []interface{}{}
+    }
+    return map[string]interface{}{
+        "type": "objectLiteral",
+        "fields": fields,
+    }, nil
+}
+
+ObjectFieldList <- first:ObjectField rest:(_ "," _ ObjectField)* {
+    fields := []interface{}{first}
+    if rest != nil {
+        for _, item := range rest.([]interface{}) {
+            fields = append(fields, item.([]interface{})[3])
+        }
+    }
+    return fields, nil
+}
+
+ObjectField <- name:IdentName _ ":" _ value:ArithmeticExpr {
+    return map[string]interface{}{
+        "name": name,
+        "value": value,
+    }, nil
+}
+
 FunctionCall <- name:FunctionName _ "(" _ args:FunctionArgList? _ ")" {
     if args == nil {
         args = []interface{}{}
@@ -672,6 +700,47 @@ JobCall <- name:IdentName _ "(" _ args:ArgumentList? _ ")" {
     if args == nil {
         args = []interface{}{}
     }
+
+    nameStr := name.(string)
+
+    // Cas spécial pour Update: si on a 2 arguments et que le second est un objectLiteral,
+    // transformer en updateWithModifications
+    if nameStr == "Update" {
+        argsList, ok := args.([]interface{})
+        if ok && len(argsList) == 2 {
+            // Vérifier si le second argument est un objectLiteral
+            if secondArg, isMap := argsList[1].(map[string]interface{}); isMap {
+                if secondArg["type"] == "objectLiteral" {
+                    // C'est la nouvelle syntaxe Update(variable, {field: value, ...})
+                    variable := argsList[0]
+                    modifications := make(map[string]interface{})
+
+                    // Extraire les champs de l'objectLiteral
+                    if fields, hasFields := secondArg["fields"].([]interface{}); hasFields {
+                        for _, field := range fields {
+                            fieldMap := field.(map[string]interface{})
+                            fieldName := fieldMap["name"].(string)
+                            fieldValue := fieldMap["value"]
+                            modifications[fieldName] = fieldValue
+                        }
+                    }
+
+                    return map[string]interface{}{
+                        "type": "jobCall",
+                        "name": name,
+                        "args": []interface{}{
+                            map[string]interface{}{
+                                "type":          "updateWithModifications",
+                                "variable":      variable,
+                                "modifications": modifications,
+                            },
+                        },
+                    }, nil
+                }
+            }
+        }
+    }
+
     return map[string]interface{}{
         "type": "jobCall",
         "name": name,
@@ -871,7 +940,7 @@ FactField <- name:IdentName ":" _ value:FactValue {
     }, nil
 }
 
-FactValue <- StringLiteral / Number / BooleanLiteral / VariableReference / ComplexIdentifier {
+FactValue <- StringLiteral / Number / BooleanLiteral / ObjectLiteral / ArrayLiteral / VariableReference / ComplexIdentifier {
     // ComplexIdentifier pour les valeurs non-quotées complexes comme des IDs
     return map[string]interface{}{
         "type": "identifier",
