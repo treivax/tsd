@@ -5,6 +5,7 @@ REPORTS/*
 !REPORTS/.gitkeep
 !REPORTS/DEEP_CLEAN_*.md
 !REPORTS/DEAD_CODE_*.md
+!REPORTS/MIGRATION_*.md
 
 # Temporary report files (must be in REPORTS/ or deleted)
 COMMIT_MESSAGE_*.md

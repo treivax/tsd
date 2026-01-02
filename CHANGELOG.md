@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+### Security
+- 🔒 **Migration Go 1.24.11** - Correction de 9 vulnérabilités critiques de la stdlib
+  - **Version précédente** : Go 1.24.4
+  - **Version actuelle** : Go 1.24.11
+  - **Vulnérabilités corrigées** :
+    - GO-2025-4175 : crypto/x509 - Application incorrecte des contraintes DNS lors de la vérification de noms wildcard
+    - GO-2025-4155 : crypto/x509 - Consommation excessive de ressources lors de l'affichage d'erreurs de validation
+    - GO-2025-4013 : crypto/x509 - Panic lors de la validation de certificats avec clés publiques DSA
+    - GO-2025-4012 : net/http - Épuisement mémoire lors du parsing de cookies sans limite
+    - GO-2025-4011 : encoding/asn1 - Épuisement mémoire lors du parsing de payload DER
+    - GO-2025-4010 : net/url - Validation insuffisante des hostnames IPv6 entre crochets
+    - GO-2025-4009 : encoding/pem - Complexité quadratique lors du parsing d'entrées invalides
+    - GO-2025-4008 : crypto/tls - Erreur de négociation ALPN contenant des informations contrôlées par l'attaquant
+    - GO-2025-4007 : crypto/x509 - Complexité quadratique lors de la vérification des contraintes de nom
+  - **Validation** :
+    - ✅ `govulncheck ./...` : Aucune vulnérabilité détectée
+    - ✅ Tous les tests passent (`go test ./... -short`)
+    - ✅ Build réussi (`go build ./...`)
+  - **Impact** : CRITIQUE - Requis pour merge en production
+  - **Documentation** : Voir `TODO_VULNERABILITIES.md` pour détails complets
+
 ### Added
 - 🎯 **Chargement Incrémental Multi-Fichiers** - Support complet pour répartir les programmes TSD sur plusieurs fichiers
   - **Fonctionnalité** :
