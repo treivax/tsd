@@ -1,0 +1,6 @@
+// Test simple de la nouvelle syntaxe Update
+
+type Personne(#nom: string, statut: string)
+
+rule test_update : {p: Personne} / p.statut != "actif" ==>
+    Update(p, {statut: "actif"})
