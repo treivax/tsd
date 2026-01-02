@@ -48,7 +48,7 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 	}
 
 	switch argType {
-	case "string", "number", "bool":
+	case "string", "number", "bool", "boolean":
 		// Valeur littérale typée
 		if value, ok := argMap["value"]; ok {
 			return value, nil
@@ -122,6 +122,10 @@ func (ae *ActionExecutor) evaluateArgument(arg interface{}, ctx *ExecutionContex
 	case "inlineFact":
 		// Cas 6: Fait inline (dans action)
 		return ae.evaluateInlineFact(argMap, ctx)
+
+	case "updateWithModifications":
+		// Cas 7: Mise à jour avec modifications de champs (nouvelle syntaxe Update)
+		return ae.evaluateUpdateWithModifications(argMap, ctx)
 
 	case "arithmetic":
 		// Expression arithmétique (format legacy)
