@@ -113,7 +113,12 @@ func TestBuiltinActions_EndToEnd_DynamicFactOperations(t *testing.T) {
 	t.Log("✅ Opération loggée avec succès")
 
 	t.Log("📝 Étape 5 : Suppression de l'utilisateur (Retract)")
-	err = executor.Execute("Retract", []interface{}{"User~user001"}, &rete.Token{})
+	// Récupérer le fait avant de le rétracter
+	userToRetract := storage.GetFact("User~user001")
+	if userToRetract == nil {
+		t.Fatal("❌ User not found before retract")
+	}
+	err = executor.Execute("Retract", []interface{}{userToRetract}, &rete.Token{})
 	if err != nil {
 		t.Fatalf("❌ Retract failed: %v", err)
 	}
@@ -237,7 +242,12 @@ func TestBuiltinActions_EndToEnd_ComplexScenario(t *testing.T) {
 	t.Log("✅ Confirmation affichée")
 
 	t.Log("📝 Étape 5 : Annulation d'un item")
-	err = executor.Execute("Retract", []interface{}{"OrderItem~item002"}, &rete.Token{})
+	// Récupérer le fait avant de le rétracter
+	itemToRetract := storage.GetFact("OrderItem~item002")
+	if itemToRetract == nil {
+		t.Fatal("❌ Item not found before retract")
+	}
+	err = executor.Execute("Retract", []interface{}{itemToRetract}, &rete.Token{})
 	if err != nil {
 		t.Fatalf("❌ Retract item failed: %v", err)
 	}

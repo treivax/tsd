@@ -305,7 +305,7 @@ func TestExecuteRetract_Implemented(t *testing.T) {
 	storage.AddFact(fact)
 
 	// Test: rétractation réussie
-	err := executor.executeRetract([]interface{}{"TestType~test"})
+	err := executor.executeRetract([]interface{}{fact})
 	if err != nil {
 		t.Errorf("❌ Retract should succeed, got error: %v", err)
 	}
@@ -322,11 +322,15 @@ func TestExecuteRetract_Implemented(t *testing.T) {
 	}
 
 	if err := executor.executeRetract([]interface{}{123}); err == nil {
-		t.Error("❌ Should fail with wrong type")
+		t.Error("❌ Should fail with wrong type (integer)")
 	}
 
-	if err := executor.executeRetract([]interface{}{""}); err == nil {
-		t.Error("❌ Should fail with empty ID")
+	if err := executor.executeRetract([]interface{}{"invalid"}); err == nil {
+		t.Error("❌ Should fail with wrong type (string)")
+	}
+
+	if err := executor.executeRetract([]interface{}{nil}); err == nil {
+		t.Error("❌ Should fail with nil fact")
 	}
 
 	t.Log("✅ Retract validation OK")

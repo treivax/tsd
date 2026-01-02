@@ -375,3 +375,117 @@ func TestPhase2_MinimumTimeoutPerFact(t *testing.T) {
 	err := env.Network.SubmitFactsFromGrammar(facts)
 	require.NoError(t, err, "Devrait réussir même avec timeout court")
 }
+
+// TestPhase2_RetractDuringSubmission vérifie que Phase 2 gère les rétractations pendant propagation
+func TestPhase2_RetractDuringSubmission(t *testing.T) {
+	t.Parallel()
+	env := NewTestEnvironment(t)
+	defer env.Cleanup()
+
+	// Soumettre des faits
+	facts := []map[string]interface{}{
+		{"id": "prod1", "type": "Product", "name": "Item1", "price": 50.0},
+		{"id": "prod2", "type": "Product", "name": "Item2", "price": 150.0},
+		{"id": "prod3", "type": "Product", "name": "Item3", "price": 75.0},
+	}
+
+	err := env.Network.SubmitFactsFromGrammar(facts)
+	require.NoError(t, err, "La soumission doit réussir")
+
+	// Vérifier que tous les faits sont persistés
+	fact1 := env.Storage.GetFact("Product~prod1")
+	assert.NotNil(t, fact1, "prod1 doit être persisté")
+
+	fact2 := env.Storage.GetFact("Product~prod2")
+	assert.NotNil(t, fact2, "prod2 doit être persisté")
+
+	fact3 := env.Storage.GetFact("Product~prod3")
+	assert.NotNil(t, fact3, "prod3 doit être persisté")
+
+	// Simuler une rétractation pendant la propagation en créant un contexte de soumission
+	ctx := NewSubmissionContext()
+	ctx.MarkSubmitted("Product~prod2")
+
+	env.Network.submissionMutex.Lock()
+	env.Network.currentSubmission = ctx
+	env.Network.submissionMutex.Unlock()
+
+	// Rétracter un fait pendant que le contexte est actif
+	err = env.Network.RetractFact("Product~prod2")
+	require.NoError(t, err, "La rétractation doit réussir")
+
+	env.Network.submissionMutex.Lock()
+	env.Network.currentSubmission = nil
+	env.Network.submissionMutex.Unlock()
+
+	// Vérifier que le fait a été marqué comme rétracté
+	assert.True(t, ctx.WasRetracted("Product~prod2"), "Le fait doit être marqué comme rétracté")
+
+	// Vérifier que le fait a été supprimé du storage
+	fact2After := env.Storage.GetFact("Product~prod2")
+	assert.Nil(t, fact2After, "prod2 doit être supprimé du storage")
+
+	t.Log("✅ Phase 2 gère correctement les rétractations pendant la soumission")
+}
+
+// TestPhase2_SubmissionContextTracking vérifie le tracking des faits soumis et rétractés
+func TestPhase2_SubmissionContextTracking(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewSubmissionContext()
+
+	// Marquer des faits comme soumis
+	ctx.MarkSubmitted("fact1")
+	ctx.MarkSubmitted("fact2")
+	ctx.MarkSubmitted("fact3")
+
+	// Vérifier qu'ils sont marqués comme soumis
+	assert.True(t, ctx.WasSubmitted("fact1"))
+	assert.True(t, ctx.WasSubmitted("fact2"))
+	assert.True(t, ctx.WasSubmitted("fact3"))
+	assert.False(t, ctx.WasSubmitted("fact4"))
+
+	// Marquer un fait comme rétracté
+	ctx.MarkRetracted("fact2")
+
+	// Vérifier qu'il est marqué comme rétracté
+	assert.True(t, ctx.WasRetracted("fact2"))
+	assert.False(t, ctx.WasRetracted("fact1"))
+	assert.False(t, ctx.WasRetracted("fact3"))
+
+	t.Log("✅ SubmissionContext track correctement les soumissions et rétractations")
+}
+
+// TestPhase2_ConcurrentSubmissionContext vérifie la thread-safety du SubmissionContext
+func TestPhase2_ConcurrentSubmissionContext(t *testing.T) {
+	t.Parallel()
+
+	ctx := NewSubmissionContext()
+	var wg sync.WaitGroup
+
+	// Lancer plusieurs goroutines qui marquent des faits
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			factID := fmt.Sprintf("fact_%d", idx)
+			ctx.MarkSubmitted(factID)
+			if idx%2 == 0 {
+				ctx.MarkRetracted(factID)
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Vérifier que tous les faits pairs sont rétractés
+	for i := 0; i < 10; i++ {
+		factID := fmt.Sprintf("fact_%d", i)
+		assert.True(t, ctx.WasSubmitted(factID), "fact_%d doit être marqué comme soumis", i)
+		if i%2 == 0 {
+			assert.True(t, ctx.WasRetracted(factID), "fact_%d doit être marqué comme rétracté", i)
+		}
+	}
+
+	t.Log("✅ SubmissionContext est thread-safe")
+}
