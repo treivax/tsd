@@ -7,6 +7,8 @@ package rete
 import (
 	"log"
 	"os"
+
+	"github.com/treivax/tsd/rete/delta"
 )
 
 // NewReteNetwork crée un nouveau réseau RETE avec la configuration par défaut
@@ -77,6 +79,30 @@ func NewReteNetworkWithConfig(storage Storage, config *ChainPerformanceConfig) *
 	betaChainBuilder.SetOptimizationEnabled(true)
 	betaChainBuilder.SetPrefixSharingEnabled(true)
 	network.BetaChainBuilder = betaChainBuilder
+
+	// Initialize delta propagation components
+	deltaIndex := delta.NewDependencyIndex()
+	deltaDetector := delta.NewDeltaDetector()
+	deltaPropagator, err := delta.NewDeltaPropagatorBuilder().
+		WithIndex(deltaIndex).
+		WithDetector(deltaDetector).
+		Build()
+	if err != nil {
+		// Log warning but continue - delta is optional optimization
+		network.logger.Warn("Failed to initialize delta propagator: %v", err)
+	} else {
+		// Create callbacks for delta to interact with network
+		callbacks := newReteNetworkCallbacks(network)
+
+		// Create integration helper with all required components
+		integrationHelper := delta.NewIntegrationHelper(deltaPropagator, deltaIndex, callbacks)
+		integrationHelper.SetNetwork(network)
+
+		network.DeltaPropagator = deltaPropagator
+		network.DependencyIndex = deltaIndex
+		network.EnableDeltaPropagation = true
+		network.IntegrationHelper = integrationHelper
+	}
 
 	return network
 }
