@@ -208,12 +208,14 @@ func (a *XupleAction) extractTriggeringFacts(ctx *ExecutionContext) []*Fact {
 		return []*Fact{}
 	}
 
-	// Accéder au token via le champ (privé, donc on doit utiliser une approche indirecte)
-	// Pour l'instant, on retourne une liste vide
-	// TODO: Ajouter une méthode GetToken() ou GetFacts() dans ExecutionContext
+	// Récupérer le token via la méthode GetToken()
+	token := ctx.GetToken()
+	if token == nil {
+		return []*Fact{}
+	}
 
-	// Approche temporaire: essayer d'obtenir les bindings
-	bindings := ctx.GetBindings()
+	// Parcourir la chaîne de bindings pour extraire tous les faits
+	bindings := token.Bindings
 	if bindings == nil {
 		return []*Fact{}
 	}

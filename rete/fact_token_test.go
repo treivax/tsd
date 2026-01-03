@@ -40,16 +40,49 @@ func TestWorkingMemory_GetFactsByVariable(t *testing.T) {
 		Facts:  make(map[string]*Fact),
 		Tokens: make(map[string]*Token),
 	}
+
 	// Add some facts
 	fact1 := &Fact{ID: "fact1", Type: "Person", Fields: map[string]interface{}{"name": "Alice"}}
 	fact2 := &Fact{ID: "fact2", Type: "Order", Fields: map[string]interface{}{"id": "123"}}
+	fact3 := &Fact{ID: "fact3", Type: "Product", Fields: map[string]interface{}{"sku": "ABC"}}
 	wm.Facts["fact1"] = fact1
 	wm.Facts["fact2"] = fact2
-	// Get facts by variable (current implementation returns all facts)
+	wm.Facts["fact3"] = fact3
+
+	// Create tokens with bindings
+	bindings1 := NewBindingChain().Add("p", fact1)
+	token1 := &Token{ID: "token1", Bindings: bindings1}
+	wm.Tokens["token1"] = token1
+
+	bindings2 := NewBindingChain().Add("o", fact2)
+	token2 := &Token{ID: "token2", Bindings: bindings2}
+	wm.Tokens["token2"] = token2
+
+	bindings3 := NewBindingChain().Add("prod", fact3)
+	token3 := &Token{ID: "token3", Bindings: bindings3}
+	wm.Tokens["token3"] = token3
+
+	// Test 1: Get facts by specific variables
 	facts := wm.GetFactsByVariable([]string{"p", "o"})
-	assert.Len(t, facts, 2, "Should return all facts")
-	assert.Contains(t, facts, fact1, "Should contain fact1")
-	assert.Contains(t, facts, fact2, "Should contain fact2")
+	assert.Len(t, facts, 2, "Should return facts for variables p and o")
+	assert.Contains(t, facts, fact1, "Should contain fact1 (variable p)")
+	assert.Contains(t, facts, fact2, "Should contain fact2 (variable o)")
+
+	// Test 2: Get facts by single variable
+	factsP := wm.GetFactsByVariable([]string{"p"})
+	assert.Len(t, factsP, 1, "Should return only fact for variable p")
+	assert.Contains(t, factsP, fact1, "Should contain fact1")
+
+	// Test 3: Get facts by non-existent variable
+	factsNone := wm.GetFactsByVariable([]string{"nonexistent"})
+	assert.Len(t, factsNone, 0, "Should return empty slice for non-existent variable")
+
+	// Test 4: Get all facts (empty variable list)
+	allFacts := wm.GetFactsByVariable([]string{})
+	assert.Len(t, allFacts, 3, "Should return all facts when no variables specified")
+	assert.Contains(t, allFacts, fact1, "Should contain fact1")
+	assert.Contains(t, allFacts, fact2, "Should contain fact2")
+	assert.Contains(t, allFacts, fact3, "Should contain fact3")
 }
 
 // TestWorkingMemory_GetTokensByVariable tests getting tokens by variable

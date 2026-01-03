@@ -75,14 +75,15 @@ func (cs *ConditionSplitter) SplitConditions(
 
 	if len(vars) == 1 {
 		// Alpha condition (single variable)
-		// Check if this is a SIMPLE condition that AlphaNode can evaluate
+		// AlphaConditionEvaluator can handle simple comparisons and arithmetic expressions
+		// with a single variable (e.g., c.qte > 5, c.qte * 23 - 10 > 0)
 		if cs.isSimpleAlphaCondition(condition) {
 			splitCond.Type = ConditionTypeAlpha
 			splitCond.Variable = vars[0]
 			alphaConditions = append(alphaConditions, splitCond)
 		} else {
-			// Complex arithmetic expression - keep in beta for now
-			// TODO: Enhance AlphaConditionEvaluator to handle arithmetic
+			// Edge case: single-variable condition that cannot be evaluated in alpha
+			// (should be rare given current implementation of isSimpleAlphaCondition)
 			splitCond.Type = ConditionTypeBeta
 			betaConditions = append(betaConditions, splitCond)
 		}

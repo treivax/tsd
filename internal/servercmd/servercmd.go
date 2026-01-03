@@ -787,11 +787,26 @@ func buildRetentionPolicy(conf constraint.XupleRetentionPolicyConf) (xuples.Rete
 	}
 }
 
-// collectActivations collecte toutes les activations du réseau
-// DEPRECATED: Utiliser ExecutionStatsCollector avec observer pattern à la place.
-// Cette méthode est conservée temporairement pour compatibilité avec les tests existants.
+// collectActivations collecte toutes les activations du réseau.
 //
-// TODO(xuples): Supprimer cette méthode une fois tous les tests migrés vers observer pattern.
+// DEPRECATED: Cette méthode est obsolète et conservée uniquement pour compatibilité
+// avec les tests existants. Utilisez ExecutionStatsCollector avec l'observer pattern
+// à la place pour une meilleure performance et une architecture découplée.
+//
+// Migration recommandée:
+//   - Remplacer: activations := server.collectActivations(network)
+//   - Par:       collector := servercmd.NewExecutionStatsCollector()
+//     network.RegisterObserver(collector)
+//     // ... exécuter le réseau ...
+//     stats := collector.GetStatistics()
+//
+// Cette fonction sera supprimée dans une version future une fois tous les tests migrés.
+//
+// Voir ExecutionStatsCollector pour l'approche recommandée qui offre:
+//   - Découplage via observer pattern
+//   - Collecte incrémentale en temps réel
+//   - Meilleures performances (pas de traversée complète du réseau)
+//   - Statistiques détaillées (temps d'exécution, counts, etc.)
 func (s *Server) collectActivations(network *rete.ReteNetwork) []tsdio.Activation {
 	if network == nil {
 		return []tsdio.Activation{}

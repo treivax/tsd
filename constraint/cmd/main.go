@@ -243,8 +243,20 @@ func PrintHelp(w io.Writer) {
 	fmt.Fprintf(w, "  %s=true %s constraints.tsd\n", config.EnvDebug, AppName)
 }
 
-// ParseFile wrapper pour compatibilité avec tests existants
-// TODO: Les tests doivent être migrés pour utiliser ParseInput au lieu de ParseFile
+// ParseFile parse un fichier de contraintes et retourne l'AST.
+//
+// Cette fonction est un wrapper maintenu pour compatibilité avec les tests existants.
+// Elle délègue directement à ParseInput qui est l'API recommandée.
+//
+// Deprecated: Utilisez ParseInput directement. Cette fonction sera supprimée dans une
+// version future une fois tous les tests migrés.
+//
+// Migration recommandée:
+//   - Remplacer: result, err := ParseFile(path)
+//   - Par:       result, err := ParseInput(path)
+//
+// ParseInput offre la même fonctionnalité avec un nom plus descriptif qui reflète
+// qu'elle peut aussi accepter stdin via le placeholder "-".
 func ParseFile(inputFile string) (interface{}, error) {
 	return ParseInput(inputFile)
 }

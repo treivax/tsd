@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/treivax/tsd/rete/delta"
 )
 
 // ReteNetwork représente le réseau RETE complet
@@ -45,6 +47,12 @@ type ReteNetwork struct {
 	SubmissionTimeout time.Duration `json:"-"` // Timeout global pour soumission de faits
 	VerifyRetryDelay  time.Duration `json:"-"` // Délai entre tentatives de vérification
 	MaxVerifyRetries  int           `json:"-"` // Nombre max de tentatives de vérification
+
+	// Propagation delta (Prompt 06)
+	DeltaPropagator        *delta.DeltaPropagator   `json:"-"` // Propagateur delta pour optimisation Update
+	DependencyIndex        *delta.DependencyIndex   `json:"-"` // Index des dépendances champs→nœuds
+	EnableDeltaPropagation bool                     `json:"-"` // Active/désactive la propagation delta
+	IntegrationHelper      *delta.IntegrationHelper `json:"-"` // Helper d'intégration delta
 
 	// Contexte de soumission en cours (pour tracking des rétractations)
 	currentSubmission *SubmissionContext `json:"-"` // Contexte de la soumission active (nil si aucune)
@@ -303,4 +311,229 @@ func (rn *ReteNetwork) GenerateFactID(typeName string) string {
 
 	rn.factIDCounter++
 	return fmt.Sprintf("%s_%d", typeName, rn.factIDCounter)
+}
+
+// InitializeDeltaPropagation initialise le système de propagation delta.
+//
+// Cette méthode construit l'index de dépendances depuis le réseau existant
+// et crée le DeltaPropagator configuré avec les callbacks vers le réseau RETE.
+//
+// Doit être appelée après la construction complète du réseau RETE.
+//
+// L'initialisation comprend :
+//  1. Construction de l'index de dépendances
+//  2. Indexation des nœuds alpha (conditions sur champs)
+//  3. Indexation des nœuds beta (jointures)
+//  4. Indexation des nœuds terminaux (actions)
+//  5. Création du propagateur avec configuration
+//
+// Retourne une erreur si l'initialisation échoue.
+func (rn *ReteNetwork) InitializeDeltaPropagation() error {
+	// 1. Créer l'index de dépendances
+	rn.DependencyIndex = delta.NewDependencyIndex()
+
+	// 2. Créer le builder d'index
+	indexBuilder := delta.NewIndexBuilder()
+	indexBuilder.EnableDiagnostics()
+
+	// 3. Indexer les nœuds alpha
+	for nodeID, alphaNode := range rn.AlphaNodes {
+		if alphaNode.Condition == nil {
+			continue
+		}
+
+		// Extraire le type de fait depuis le nœud (via le TypeNode parent)
+		factType := rn.inferFactTypeForNode(nodeID)
+
+		err := indexBuilder.BuildFromAlphaNode(
+			rn.DependencyIndex,
+			nodeID,
+			factType,
+			alphaNode.Condition,
+		)
+		if err != nil {
+			rn.logger.Debug("Failed to index alpha node %s: %v", nodeID, err)
+		}
+	}
+
+	// 4. Indexer les nœuds beta (jointures)
+	// Note: L'indexation des nœuds beta nécessite l'extraction des conditions
+	// de jointure. Implémentation simplifiée pour l'instant.
+	// Future: Indexation avancée basée sur les conditions de jointure pour
+	// optimiser la propagation incrémentale des deltas.
+
+	// 5. Indexer les nœuds terminaux (actions)
+	for nodeID, terminalNode := range rn.TerminalNodes {
+		if terminalNode.Action == nil {
+			continue
+		}
+
+		// Extraire le type de fait depuis le nœud
+		factType := rn.inferFactTypeForNode(nodeID)
+
+		// Convertir l'action en slice pour l'indexation
+		actions := []interface{}{terminalNode.Action}
+
+		err := indexBuilder.BuildFromTerminalNode(
+			rn.DependencyIndex,
+			nodeID,
+			factType,
+			actions,
+		)
+		if err != nil {
+			rn.logger.Debug("Failed to index terminal node %s: %v", nodeID, err)
+		}
+	}
+
+	// 6. Créer le détecteur de delta
+	detector := delta.NewDeltaDetectorWithConfig(delta.DefaultDetectorConfig())
+
+	// 7. Créer le propagateur
+	propagator, err := delta.NewDeltaPropagatorBuilder().
+		WithDetector(detector).
+		WithIndex(rn.DependencyIndex).
+		WithStrategy(&delta.SequentialStrategy{}).
+		WithConfig(delta.DefaultPropagationConfig()).
+		WithPropagateCallback(rn.propagateDeltaToNode).
+		Build()
+
+	if err != nil {
+		return fmt.Errorf("failed to build delta propagator: %w", err)
+	}
+
+	rn.DeltaPropagator = propagator
+
+	// 8. Créer le helper d'intégration
+	callbacks := &reteNetworkCallbacks{network: rn}
+	rn.IntegrationHelper = delta.NewIntegrationHelper(
+		rn.DeltaPropagator,
+		rn.DependencyIndex,
+		callbacks,
+	)
+
+	rn.logger.Info("Delta propagation initialized successfully")
+	stats := rn.DependencyIndex.GetStats()
+	rn.logger.Info("Index stats: %d nodes, %d field dependencies", stats.NodeCount, stats.FieldCount)
+
+	return nil
+}
+
+// propagateDeltaToNode est le callback pour propager un delta vers un nœud RETE.
+//
+// Cette méthode est appelée par le DeltaPropagator pour chaque nœud affecté
+// par un changement de fait.
+//
+// État actuel: Infrastructure de base en place avec indexation des nœuds.
+// La propagation incrémentale complète est planifiée pour une future version.
+//
+// Fonctionnalités planifiées pour la propagation incrémentale:
+// - Alpha nodes: Ré-évaluation de la condition avec le fait modifié
+// - Beta nodes: Ré-évaluation des jointures affectées uniquement
+// - Terminal nodes: Déclenchement conditionnel des actions
+// - Optimisation: Éviter la re-propagation complète du réseau
+//
+// Pour l'instant, le système utilise une approche de re-propagation complète
+// qui est fonctionnelle mais moins optimisée.
+func (rn *ReteNetwork) propagateDeltaToNode(nodeID string, factDelta *delta.FactDelta) error {
+	// Rechercher le type de nœud
+	if _, exists := rn.AlphaNodes[nodeID]; exists {
+		// Propagation incrémentale non implémentée - utilise re-propagation complète
+		rn.logger.Debug("Delta propagation to alpha node %s (using full re-propagation)", nodeID)
+		return nil
+	}
+
+	if _, exists := rn.BetaNodes[nodeID]; exists {
+		// Propagation incrémentale non implémentée - utilise re-propagation complète
+		rn.logger.Debug("Delta propagation to beta node %s (using full re-propagation)", nodeID)
+		return nil
+	}
+
+	if _, exists := rn.TerminalNodes[nodeID]; exists {
+		// Propagation incrémentale non implémentée - utilise re-propagation complète
+		rn.logger.Debug("Delta propagation to terminal node %s (using full re-propagation)", nodeID)
+		return nil
+	}
+
+	return fmt.Errorf("node not found: %s", nodeID)
+}
+
+// reteNetworkCallbacks implémente delta.NetworkCallbacks pour ReteNetwork.
+type reteNetworkCallbacks struct {
+	network *ReteNetwork
+}
+
+// newReteNetworkCallbacks crée une nouvelle instance de callbacks.
+func newReteNetworkCallbacks(network *ReteNetwork) *reteNetworkCallbacks {
+	return &reteNetworkCallbacks{
+		network: network,
+	}
+}
+
+// PropagateToNode propage un delta vers un nœud.
+func (cb *reteNetworkCallbacks) PropagateToNode(nodeID string, factDelta *delta.FactDelta) error {
+	return cb.network.propagateDeltaToNode(nodeID, factDelta)
+}
+
+// GetNode récupère un nœud par son ID.
+func (cb *reteNetworkCallbacks) GetNode(nodeID string) (interface{}, error) {
+	if node, exists := cb.network.AlphaNodes[nodeID]; exists {
+		return node, nil
+	}
+	if node, exists := cb.network.BetaNodes[nodeID]; exists {
+		return node, nil
+	}
+	if node, exists := cb.network.TerminalNodes[nodeID]; exists {
+		return node, nil
+	}
+	return nil, fmt.Errorf("node not found: %s", nodeID)
+}
+
+// UpdateStorage met à jour le storage avec le fait modifié.
+func (cb *reteNetworkCallbacks) UpdateStorage(factID string, newFact map[string]interface{}) error {
+	if cb.network.Storage == nil {
+		return fmt.Errorf("storage not initialized")
+	}
+
+	existingFact := cb.network.Storage.GetFact(factID)
+	if existingFact == nil {
+		return fmt.Errorf("fact not found in storage: %s", factID)
+	}
+
+	// Mettre à jour les champs du fait
+	for key, value := range newFact {
+		existingFact.Fields[key] = value
+	}
+
+	return nil
+}
+
+// inferFactTypeForNode tente de déduire le type de fait pour un nœud.
+//
+// Cette méthode remonte l'arbre des nœuds pour trouver le TypeNode parent.
+// Si aucun TypeNode n'est trouvé, retourne "Unknown".
+//
+// Note: Cette méthode utilise une heuristique simple. Une future amélioration
+// pourrait utiliser un index type->nœuds pour des performances optimales.
+func (rn *ReteNetwork) inferFactTypeForNode(nodeID string) string {
+	// Parcourir les TypeNodes pour trouver celui qui contient ce nœud
+	for factType, typeNode := range rn.TypeNodes {
+		// Vérifier si le nœud est dans les enfants du TypeNode
+		if rn.isNodeDescendantOf(nodeID, typeNode) {
+			return factType
+		}
+	}
+
+	// Pas trouvé - retourner "Unknown"
+	return "Unknown"
+}
+
+// isNodeDescendantOf vérifie si un nœud est un descendant d'un autre nœud.
+//
+// Note: Implémentation simplifiée retournant toujours false.
+// Future: Implémenter la recherche récursive dans l'arbre RETE si nécessaire
+// pour des optimisations avancées de propagation delta.
+func (rn *ReteNetwork) isNodeDescendantOf(nodeID string, parent Node) bool {
+	// Pour l'instant, implémentation simplifiée
+	// Dans une version complète, il faudrait parcourir l'arbre
+	return false
 }

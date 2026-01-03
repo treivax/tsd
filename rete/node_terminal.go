@@ -169,16 +169,23 @@ func (tn *TerminalNode) executeAction(token *Token) error {
 		return fmt.Errorf("aucune action définie pour le nœud %s", tn.ID)
 	}
 
-	// TODO(xuples): Publier vers XupleSpace si configuré
-	// Exemple d'intégration future :
+	// Future feature: Intégration avec XupleSpace
 	//
-	// network := tn.BaseNode.GetNetwork()
-	// if network != nil && network.XuplePublisher != nil {
-	//     if err := network.XuplePublisher.Publish(tn.Action, token, token.Facts); err != nil {
-	//         // Log l'erreur mais ne bloque pas l'exécution
-	//         network.Logger.Printf("⚠️  Erreur publication xuple: %v", err)
-	//     }
-	// }
+	// XupleSpace est un composant avancé pour la gestion distribuée des xuples (facts).
+	// L'intégration permettra de publier automatiquement les activations vers XupleSpace
+	// pour le partage entre instances ou la persistence.
+	//
+	// Exemple d'implémentation future :
+	//
+	//   network := tn.BaseNode.GetNetwork()
+	//   if network != nil && network.XuplePublisher != nil {
+	//       if err := network.XuplePublisher.Publish(tn.Action, token, token.Facts); err != nil {
+	//           // Log l'erreur mais ne bloque pas l'exécution locale
+	//           network.Logger.Printf("⚠️  Erreur publication xuple: %v", err)
+	//       }
+	//   }
+	//
+	// Pour l'instant, les actions sont exécutées localement uniquement.
 
 	// Exécuter réellement l'action avec l'ActionExecutor
 	network := tn.BaseNode.GetNetwork()

@@ -78,8 +78,7 @@ func ingestAndDisplay(t *testing.T, pipeline *api.Pipeline, filepath string, ste
 // 2. Que les règles se déclenchent au bon moment (visible dans les logs)
 // 3. Que les faits sont correctement gérés à travers les 3 étapes
 //
-// TODO: Une fois les actions Update/Insert/Retract intégrées dans le pipeline API,
-// activer les assertions de vérification des modifications de statut.
+
 func TestRelationshipStatusE2E_ThreeSteps(t *testing.T) {
 	shared.LogTestSection(t, "🧪 TEST E2E: Modification de Statut via Relations - 3 Étapes Itératives")
 
@@ -221,12 +220,6 @@ func TestRelationshipStatusE2E_ThreeSteps(t *testing.T) {
 		"Le statut de Chantal doit être mis à jour à 'en couple' par la règle")
 	require.Equal(t, "", catherine.Fields["statut"],
 		"Le statut de Catherine doit rester vide (elle n'est pas dans une relation)")
-
-	// TODO: Une fois les actions Update intégrées, activer ces assertions :
-	// require.Equal(t, "en couple", alain.Fields["statut"],
-	//     "Le statut d'Alain doit avoir été modifié à 'en couple' par la règle")
-	// require.Equal(t, "en couple", chantal.Fields["statut"],
-	//     "Le statut de Chantal doit avoir été modifié à 'en couple' par la règle")
 
 	// ═══════════════════════════════════════════════════════════════
 	// RÉSUMÉ FINAL

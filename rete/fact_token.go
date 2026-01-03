@@ -187,23 +187,58 @@ func (wm *WorkingMemory) GetTokens() []*Token {
 // GetFactsByVariable retourne les faits associés aux variables spécifiées.
 // Si variables est vide ou nil, retourne tous les faits.
 //
-// Note: Cette implémentation retourne tous les faits car WorkingMemory ne maintient
-// pas d'index par variable. L'appelant doit filtrer lui-même si nécessaire en utilisant
-// les bindings des tokens.
+// Cette méthode utilise GetTokensByVariable pour trouver les tokens contenant
+// les variables spécifiées, puis extrait les faits uniques de ces tokens.
+//
+// Complexité: O(t*v + f) où t = nombre de tokens, v = nombre de variables,
+// f = nombre de faits trouvés.
+//
+// Paramètres:
+//   - variables: liste des noms de variables à rechercher
+//
+// Retourne:
+//   - []*Fact: liste des faits associés aux variables (sans doublons)
 func (wm *WorkingMemory) GetFactsByVariable(variables []string) []*Fact {
 	// Si pas de filtre, retourner tous les faits
 	if len(variables) == 0 {
 		return wm.GetFacts()
 	}
 
-	// TODO: Implémentation complète nécessiterait:
-	// 1. Soit maintenir un index variable->fait dans WorkingMemory
-	// 2. Soit parcourir les tokens et extraire les faits liés aux variables
-	//
-	// Pour l'instant, retourne tous les faits car WorkingMemory ne contient
-	// pas suffisamment d'information pour filtrer par variable.
-	// L'appelant devra filtrer lui-même si nécessaire.
-	return wm.GetFacts()
+	// Obtenir les tokens contenant au moins une des variables
+	tokens := wm.GetTokensByVariable(variables)
+	if len(tokens) == 0 {
+		return []*Fact{}
+	}
+
+	// Extraire les faits uniques de ces tokens
+	// Utiliser une map pour éviter les doublons
+	factMap := make(map[string]*Fact)
+	for _, token := range tokens {
+		if token.Bindings == nil {
+			continue
+		}
+
+		// Parcourir les bindings pour trouver les faits des variables demandées
+		current := token.Bindings
+		for current != nil {
+			// Vérifier si le binding correspond à une des variables demandées
+			for _, varName := range variables {
+				if current.Variable == varName && current.Fact != nil {
+					factMap[current.Fact.ID] = current.Fact
+					break
+				}
+			}
+			current = current.Parent
+		}
+	}
+
+	// Convertir la map en slice
+	result := make([]*Fact, 0, len(factMap))
+	for _, fact := range factMap {
+		result = append(result, fact)
+	}
+
+	return result
 }
 
 // GetTokensByVariable retourne les tokens contenant au moins une des variables spécifiées.

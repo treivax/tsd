@@ -6,6 +6,8 @@ package rete
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 )
 
 // generateFactID génère un ID unique pour un nouveau fait.
@@ -325,18 +327,33 @@ func (ae *ActionExecutor) generateInternalIDFromFields(typeDef *TypeDefinition, 
 	return fmt.Sprintf("%s~%s", typeDef.Name, joinKeys(keyValues)), nil
 }
 
-// joinKeys joint les valeurs de clés avec underscores, en gérant l'encodage URL si nécessaire.
+// joinKeys joint les valeurs de clés avec underscores, en encodant les caractères spéciaux.
+//
+// Cette fonction encode chaque valeur de clé pour éviter les conflits si les valeurs
+// contiennent des caractères réservés comme underscore, tilde, ou autres.
+//
+// Exemple:
+//   - ["user", "123"] -> "user_123"
+//   - ["user_admin", "123"] -> "user%5Fadmin_123" (underscore encodé)
+//   - ["org~dept", "456"] -> "org%7Edept_456" (tilde encodé)
+//
+// Le séparateur underscore est choisi car il est courant et lisible, tout en
+// étant encodé s'il apparaît dans les valeurs elles-mêmes.
 func joinKeys(keys []string) string {
-	// Pour l'instant, simple join avec underscore
-	// TODO: gérer l'encodage URL si les valeurs contiennent des caractères spéciaux
-	result := ""
-	for i, key := range keys {
-		if i > 0 {
-			result += "_"
-		}
-		result += key
+	if len(keys) == 0 {
+		return ""
 	}
-	return result
+
+	// Encoder chaque clé pour gérer les caractères spéciaux
+	encodedKeys := make([]string, len(keys))
+	for i, key := range keys {
+		// url.PathEscape encode les caractères spéciaux tout en gardant la lisibilité
+		// Il encode notamment: espace, %, &, +, /, =, ?, #, ainsi que _
+		encodedKeys[i] = url.PathEscape(key)
+	}
+
+	// Joindre avec underscore (qui sera lui-même encodé s'il apparaît dans les valeurs)
+	return strings.Join(encodedKeys, "_")
 }
 
 // evaluateUpdateWithModifications évalue une mise à jour de fait avec modifications de champs.

@@ -57,6 +57,20 @@ func (rb *RuleBuilder) CreateRuleNodes(network *ReteNetwork, expressions []inter
 		fmt.Printf("   ✓ Règle créée: %s\n", ruleID)
 	}
 
+	// Rebuild delta index after all rules are created
+	if network.IntegrationHelper != nil {
+		if err := network.IntegrationHelper.RebuildIndex(); err != nil {
+			// Log warning but don't fail - delta is optional optimization
+			if network.logger != nil {
+				network.logger.Warn("Failed to rebuild delta index: %v", err)
+			}
+		} else {
+			if network.logger != nil {
+				network.logger.Debug("Delta index rebuilt successfully after adding rules")
+			}
+		}
+	}
+
 	return nil
 }
 
