@@ -4,8 +4,6 @@
 
 package delta
 
-import "time"
-
 // ChangeType représente le type de changement sur un champ
 type ChangeType int
 
@@ -88,12 +86,3 @@ func inferValueType(value interface{}) ValueType {
 		return ValueTypeUnknown
 	}
 }
-
-// Configuration par défaut
-const (
-	// DefaultFloatEpsilon est la tolérance par défaut pour comparaison de floats
-	DefaultFloatEpsilon = 1e-9
-
-	// DefaultMaxDeltaAge est l'âge maximum d'un delta avant expiration (pour cache)
-	DefaultMaxDeltaAge = 5 * time.Minute
-)
