@@ -459,9 +459,52 @@ func CanShareJoinNodes(sig1, sig2 *JoinNodeSignature) bool {
 		return false
 	}
 
-	// TODO: Deep comparison of normalized conditions
+	// Deep comparison of normalized conditions
+	if !equalConditions(sig1.Condition, sig2.Condition) {
+		return false
+	}
 
 	return true
+}
+
+// equalConditions compares two conditions for deep equality.
+// Uses JSON serialization for consistent comparison.
+func equalConditions(cond1, cond2 interface{}) bool {
+	// Handle nil cases
+	if cond1 == nil && cond2 == nil {
+		return true
+	}
+	if cond1 == nil || cond2 == nil {
+		return false
+	}
+
+	// Normalize both conditions using the default normalizer
+	config := DefaultBetaSharingConfig()
+	config.NormalizeOrder = true
+	normalizer := NewDefaultJoinNodeNormalizer(config)
+
+	normalized1, err1 := normalizer.NormalizeCondition(cond1)
+	if err1 != nil {
+		return false
+	}
+
+	normalized2, err2 := normalizer.NormalizeCondition(cond2)
+	if err2 != nil {
+		return false
+	}
+
+	// Compare normalized conditions via JSON serialization
+	json1, err1 := json.Marshal(normalized1)
+	if err1 != nil {
+		return false
+	}
+
+	json2, err2 := json.Marshal(normalized2)
+	if err2 != nil {
+		return false
+	}
+
+	return string(json1) == string(json2)
 }
 
 // equalStringSlices compares two string slices for equality (order matters).

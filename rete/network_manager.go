@@ -91,6 +91,13 @@ func (rn *ReteNetwork) InsertFact(fact *Fact) error {
 // UpdateFact met à jour dynamiquement un fait existant dans le réseau RETE.
 // Cette méthode remplace les champs du fait existant et propage les changements.
 //
+// Stratégie de mise à jour :
+//   - Si la propagation delta est activée et applicable, utilise la propagation sélective
+//   - Sinon, fallback sur la stratégie classique (Retract + Insert)
+//
+// La propagation delta est plus efficace car elle ne propage que les changements
+// vers les nœuds réellement affectés, au lieu de ré-évaluer tout le réseau.
+//
 // Paramètres:
 //   - fact: le fait avec les nouvelles valeurs
 //
@@ -140,7 +147,28 @@ func (rn *ReteNetwork) UpdateFact(fact *Fact) error {
 
 	rn.logger.Debug("🔄 Mise à jour du fait: %s (depth: %d)", internalID, currentDepth)
 
-	// Stratégie: Retract puis Insert pour garantir la cohérence
+	// Tenter la propagation delta si activée
+	if rn.EnableDeltaPropagation && rn.IntegrationHelper != nil {
+		rn.logger.Debug("🔀 Tentative propagation delta pour %s", internalID)
+
+		err := rn.IntegrationHelper.ProcessUpdate(
+			existingFact.Fields,
+			fact.Fields,
+			internalID,
+			fact.Type,
+		)
+
+		if err == nil {
+			// Propagation delta réussie
+			rn.logger.Debug("✅ Propagation delta réussie pour %s", internalID)
+			return nil
+		}
+
+		// Échec de la propagation delta - fallback vers méthode classique
+		rn.logger.Debug("⚠️  Propagation delta échouée pour %s: %v - fallback classique", internalID, err)
+	}
+
+	// Stratégie classique: Retract puis Insert pour garantir la cohérence
 	// Cela propage correctement la suppression puis l'ajout dans le réseau
 
 	// 1. Rétracter l'ancien fait (propage la suppression)
