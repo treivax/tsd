@@ -5,6 +5,7 @@
 package delta
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -228,4 +229,185 @@ func TestFactDelta_String(t *testing.T) {
 			t.Errorf("String() too short: %v", str)
 		}
 	})
+}
+
+// Test avec valeurs nil
+func TestFieldDelta_NilValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		oldValue interface{}
+		newValue interface{}
+		wantType ChangeType
+	}{
+		{"nil → value", nil, "test", ChangeTypeAdded},
+		{"value → nil", "test", nil, ChangeTypeRemoved},
+		{"nil → nil", nil, nil, ChangeTypeModified},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			delta := NewFieldDelta("field", tt.oldValue, tt.newValue)
+			if delta.ChangeType != tt.wantType {
+				t.Errorf("❌ Expected %v, got %v", tt.wantType, delta.ChangeType)
+			}
+		})
+	}
+}
+
+// Test avec unicode et caractères spéciaux
+func TestFieldDelta_UnicodeFields(t *testing.T) {
+	tests := []struct {
+		name      string
+		fieldName string
+		oldValue  interface{}
+		newValue  interface{}
+	}{
+		{"japonais", "名前", "古い値", "新しい値"},
+		{"emoji", "emoji", "😀", "😎"},
+		{"français", "texte", "Voilà un café", "Zürich est belle"},
+		{"cyrillique", "текст", "Привет", "Пока"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			delta := NewFieldDelta(tt.fieldName, tt.oldValue, tt.newValue)
+
+			if delta.FieldName != tt.fieldName {
+				t.Errorf("❌ FieldName = %v, want %v", delta.FieldName, tt.fieldName)
+			}
+
+			if delta.OldValue != tt.oldValue {
+				t.Errorf("❌ OldValue = %v, want %v", delta.OldValue, tt.oldValue)
+			}
+
+			if delta.NewValue != tt.newValue {
+				t.Errorf("❌ NewValue = %v, want %v", delta.NewValue, tt.newValue)
+			}
+		})
+	}
+}
+
+// Test changement de type
+func TestFieldDelta_TypeChange(t *testing.T) {
+	tests := []struct {
+		name     string
+		oldValue interface{}
+		newValue interface{}
+		oldType  ValueType
+		newType  ValueType
+	}{
+		{"number → string", 42, "42", ValueTypeNumber, ValueTypeString},
+		{"string → number", "100", 100.0, ValueTypeString, ValueTypeNumber},
+		{"bool → string", true, "true", ValueTypeBool, ValueTypeString},
+		{"array → object", []interface{}{1, 2}, map[string]interface{}{"a": 1}, ValueTypeArray, ValueTypeObject},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			delta := NewFieldDelta("field", tt.oldValue, tt.newValue)
+
+			// Vérifier que le changement est détecté comme modification
+			if delta.ChangeType != ChangeTypeModified {
+				t.Errorf("❌ Expected ChangeTypeModified, got %v", delta.ChangeType)
+			}
+
+			// La valeur peut être soit l'ancien soit le nouveau type selon l'implémentation
+			// On vérifie juste que c'est cohérent
+			if delta.ValueType != tt.oldType && delta.ValueType != tt.newType {
+				t.Errorf("❌ ValueType = %v, expected %v or %v", delta.ValueType, tt.oldType, tt.newType)
+			}
+		})
+	}
+}
+
+// Test avec structures complexes
+func TestFieldDelta_ComplexStructures(t *testing.T) {
+	t.Run("nested objects", func(t *testing.T) {
+		oldValue := map[string]interface{}{
+			"level1": map[string]interface{}{
+				"level2": "value",
+			},
+		}
+		newValue := map[string]interface{}{
+			"level1": map[string]interface{}{
+				"level2": "changed",
+			},
+		}
+
+		delta := NewFieldDelta("nested", oldValue, newValue)
+		if delta.ChangeType != ChangeTypeModified {
+			t.Errorf("❌ Expected modification detected")
+		}
+	})
+
+	t.Run("arrays with different content", func(t *testing.T) {
+		oldValue := []interface{}{1, 2, 3}
+		newValue := []interface{}{1, 2, 4}
+
+		delta := NewFieldDelta("array", oldValue, newValue)
+		if delta.ChangeType != ChangeTypeModified {
+			t.Errorf("❌ Expected modification detected")
+		}
+	})
+
+	t.Run("empty arrays", func(t *testing.T) {
+		oldValue := []interface{}{}
+		newValue := []interface{}{1}
+
+		delta := NewFieldDelta("array", oldValue, newValue)
+		if delta.ChangeType != ChangeTypeModified {
+			t.Errorf("❌ Expected modification detected")
+		}
+	})
+}
+
+// Test FactDelta avec beaucoup de champs
+func TestFactDelta_ManyFields(t *testing.T) {
+	delta := NewFactDelta("Test~1", "Test")
+	delta.FieldCount = TestFieldCount
+
+	// Ajouter 50 changements
+	const changedFields = 50
+	for i := 0; i < changedFields; i++ {
+		fieldName := fmt.Sprintf("field_%d", i)
+		delta.AddFieldChange(fieldName, i, i+1)
+	}
+
+	if len(delta.Fields) != changedFields {
+		t.Errorf("❌ Expected %d fields, got %d", changedFields, len(delta.Fields))
+	}
+
+	ratio := delta.ChangeRatio()
+	expectedRatio := float64(changedFields) / float64(TestFieldCount)
+	if ratio != expectedRatio {
+		t.Errorf("❌ Expected ratio %v, got %v", expectedRatio, ratio)
+	}
+}
+
+// Test FieldsChanged avec ordre
+func TestFactDelta_FieldsChangedConsistency(t *testing.T) {
+	delta := NewFactDelta("Test~1", "Test")
+	delta.AddFieldChange("alpha", 1, 2)
+	delta.AddFieldChange("beta", 3, 4)
+	delta.AddFieldChange("gamma", 5, 6)
+
+	// Appeler plusieurs fois pour vérifier cohérence
+	fields1 := delta.FieldsChanged()
+	fields2 := delta.FieldsChanged()
+
+	if len(fields1) != len(fields2) {
+		t.Errorf("❌ FieldsChanged() should return consistent results")
+	}
+
+	// Vérifier que les mêmes champs sont présents
+	map1 := make(map[string]bool)
+	for _, f := range fields1 {
+		map1[f] = true
+	}
+
+	for _, f := range fields2 {
+		if !map1[f] {
+			t.Errorf("❌ Field %s not consistent", f)
+		}
+	}
 }

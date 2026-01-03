@@ -6,6 +6,112 @@ package delta
 
 import "testing"
 
+// TestCompareSignedIntegers teste la fonction compareSignedIntegers avec tous les types signés
+func TestCompareSignedIntegers(t *testing.T) {
+	tests := []struct {
+		name   string
+		a      interface{}
+		b      interface{}
+		wantEq bool
+		wantOk bool
+	}{
+		// int
+		{"int égaux", int(42), int(42), true, true},
+		{"int différents", int(42), int(43), false, true},
+		{"int vs mauvais type", int(42), "42", false, true},
+
+		// int64
+		{"int64 égaux", int64(1000), int64(1000), true, true},
+		{"int64 différents", int64(1000), int64(2000), false, true},
+		{"int64 vs int", int64(42), int(42), false, true},
+
+		// int32
+		{"int32 égaux", int32(100), int32(100), true, true},
+		{"int32 différents", int32(100), int32(200), false, true},
+		{"int32 vs int64", int32(100), int64(100), false, true},
+
+		// int16
+		{"int16 égaux", int16(10), int16(10), true, true},
+		{"int16 différents", int16(10), int16(20), false, true},
+		{"int16 vs int32", int16(10), int32(10), false, true},
+
+		// int8
+		{"int8 égaux", int8(5), int8(5), true, true},
+		{"int8 différents", int8(5), int8(6), false, true},
+		{"int8 vs int16", int8(5), int16(5), false, true},
+
+		// Type non-signé (non géré)
+		{"uint non géré", uint(42), uint(42), false, false},
+		{"string non géré", "hello", "hello", false, false},
+		{"float64 non géré", 1.5, 1.5, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotEq, gotOk := compareSignedIntegers(tt.a, tt.b)
+			if gotEq != tt.wantEq {
+				t.Errorf("compareSignedIntegers() gotEq = %v, want %v", gotEq, tt.wantEq)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("compareSignedIntegers() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
+	}
+}
+
+// TestCompareUnsignedIntegers teste la fonction compareUnsignedIntegers avec tous les types non-signés
+func TestCompareUnsignedIntegers(t *testing.T) {
+	tests := []struct {
+		name   string
+		a      interface{}
+		b      interface{}
+		wantEq bool
+		wantOk bool
+	}{
+		// uint
+		{"uint égaux", uint(42), uint(42), true, true},
+		{"uint différents", uint(42), uint(43), false, true},
+		{"uint vs mauvais type", uint(42), "42", false, true},
+
+		// uint64
+		{"uint64 égaux", uint64(1000), uint64(1000), true, true},
+		{"uint64 différents", uint64(1000), uint64(2000), false, true},
+		{"uint64 vs uint", uint64(42), uint(42), false, true},
+
+		// uint32
+		{"uint32 égaux", uint32(100), uint32(100), true, true},
+		{"uint32 différents", uint32(100), uint32(200), false, true},
+		{"uint32 vs uint64", uint32(100), uint64(100), false, true},
+
+		// uint16
+		{"uint16 égaux", uint16(10), uint16(10), true, true},
+		{"uint16 différents", uint16(10), uint16(20), false, true},
+		{"uint16 vs uint32", uint16(10), uint32(10), false, true},
+
+		// uint8
+		{"uint8 égaux", uint8(5), uint8(5), true, true},
+		{"uint8 différents", uint8(5), uint8(6), false, true},
+		{"uint8 vs uint16", uint8(5), uint16(5), false, true},
+
+		// Type signé (non géré)
+		{"int non géré", int(42), int(42), false, false},
+		{"string non géré", "hello", "hello", false, false},
+		{"float64 non géré", 1.5, 1.5, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotEq, gotOk := compareUnsignedIntegers(tt.a, tt.b)
+			if gotEq != tt.wantEq {
+				t.Errorf("compareUnsignedIntegers() gotEq = %v, want %v", gotEq, tt.wantEq)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("compareUnsignedIntegers() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
+	}
+}
+
 func TestValuesEqual(t *testing.T) {
 	tests := []struct {
 		name    string

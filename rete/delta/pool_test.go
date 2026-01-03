@@ -220,6 +220,8 @@ func BenchmarkPool_NodeReferenceSlice(b *testing.B) {
 			slice := make([]NodeReference, 0, 16)
 			slice = append(slice, NodeReference{NodeID: "node1"})
 			slice = append(slice, NodeReference{NodeID: "node2"})
+			// Utilisation intentionnelle pour éviter warning SA4010
+			_ = slice
 			// Pas de release - garbage collected
 		}
 	})
