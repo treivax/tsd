@@ -145,3 +145,115 @@ const (
 	maxPooledBuilderCapacity = 4096
 	maxPooledMapSize         = 128
 )
+
+// WithFactDelta exécute une fonction avec un FactDelta acquis depuis le pool.
+//
+// Le FactDelta est automatiquement retourné au pool à la fin de l'exécution,
+// même en cas d'erreur ou de panic. Ce pattern garantit qu'aucune fuite
+// mémoire ne se produira.
+//
+// Utilisation recommandée pour tout code utilisant le pool :
+//
+//	err := WithFactDelta(factID, factType, func(delta *FactDelta) error {
+//	    // Remplir le delta
+//	    delta.Fields["name"] = FieldDelta{...}
+//
+//	    // Propager le delta
+//	    return propagator.Propagate(context.Background(), oldFact, newFact)
+//	})
+//
+// Paramètres :
+//   - factID : identifiant du fait
+//   - factType : type du fait
+//   - fn : fonction à exécuter avec le delta acquis
+//
+// Retourne :
+//   - error : erreur retournée par fn, ou nil
+func WithFactDelta(factID, factType string, fn func(*FactDelta) error) error {
+	delta := AcquireFactDelta(factID, factType)
+	defer ReleaseFactDelta(delta)
+	return fn(delta)
+}
+
+// WithNodeReferenceSlice exécute une fonction avec une slice acquise depuis le pool.
+//
+// La slice est automatiquement retournée au pool à la fin de l'exécution.
+//
+// Utilisation :
+//
+//	err := WithNodeReferenceSlice(func(nodes *[]NodeReference) error {
+//	    *nodes = append(*nodes, NodeReference{NodeID: "n1"})
+//	    return processNodes(*nodes)
+//	})
+//
+// Paramètres :
+//   - fn : fonction à exécuter avec la slice acquise
+//
+// Retourne :
+//   - error : erreur retournée par fn, ou nil
+func WithNodeReferenceSlice(fn func(*[]NodeReference) error) error {
+	slice := AcquireNodeReferenceSlice()
+	defer ReleaseNodeReferenceSlice(slice)
+	return fn(slice)
+}
+
+// WithStringBuilder exécute une fonction avec un StringBuilder acquis depuis le pool.
+//
+// Le builder est automatiquement retourné au pool à la fin de l'exécution.
+//
+// Utilisation :
+//
+//	result, err := WithStringBuilderResult(func(sb *strings.Builder) (string, error) {
+//	    sb.WriteString("Hello")
+//	    sb.WriteString(" World")
+//	    return sb.String(), nil
+//	})
+//
+// Paramètres :
+//   - fn : fonction à exécuter avec le builder acquis
+//
+// Retourne :
+//   - error : erreur retournée par fn, ou nil
+func WithStringBuilder(fn func(*strings.Builder) error) error {
+	sb := AcquireStringBuilder()
+	defer ReleaseStringBuilder(sb)
+	return fn(sb)
+}
+
+// WithStringBuilderResult exécute une fonction avec un StringBuilder et retourne un résultat.
+//
+// Le builder est automatiquement retourné au pool à la fin de l'exécution.
+//
+// Paramètres :
+//   - fn : fonction à exécuter avec le builder acquis
+//
+// Retourne :
+//   - T : résultat retourné par fn
+//   - error : erreur retournée par fn, ou nil
+func WithStringBuilderResult[T any](fn func(*strings.Builder) (T, error)) (T, error) {
+	sb := AcquireStringBuilder()
+	defer ReleaseStringBuilder(sb)
+	return fn(sb)
+}
+
+// WithMap exécute une fonction avec une map acquise depuis le pool.
+//
+// La map est automatiquement retournée au pool à la fin de l'exécution.
+//
+// Utilisation :
+//
+//	err := WithMap(func(m *map[string]interface{}) error {
+//	    (*m)["key"] = "value"
+//	    return processMap(*m)
+//	})
+//
+// Paramètres :
+//   - fn : fonction à exécuter avec la map acquise
+//
+// Retourne :
+//   - error : erreur retournée par fn, ou nil
+func WithMap(fn func(*map[string]interface{}) error) error {
+	m := AcquireMap()
+	defer ReleaseMap(m)
+	return fn(m)
+}
