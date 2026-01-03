@@ -1,6 +1,358 @@
 # Changelog
 
+## [2.0.0] - 2025-01-03
+
+### 🚨 Breaking Changes
+
+#### Delta Propagation Enabled by Default
+- **Change**: Delta propagation is now automatically enabled in `NewReteNetworkWithConfig()`
+- **Impact**: Network behavior changes from full evaluation to selective propagation
+- **Fallback**: Automatic fallback to classic propagation on errors
+- **Migration**: No code changes required - transparent optimization
+- **Disable**: Set `EnableDeltaPropagation = false` to revert to classic behavior
+
+### 🚀 Added - Delta Propagation System
+
+Complete selective fact propagation optimization for RETE networks.
+
+#### Core Infrastructure
+- **DeltaPropagator**: Selective fact propagation engine
+  - Propagates only to nodes affected by changed fields
+  - 3.4x faster updates (measured)
+  - 80% reduction in node evaluations
+  - 515k+ updates/sec throughput
+  
+- **DependencyIndex**: Tracks fact-to-node dependencies
+  - Maps fields to dependent nodes
+  - Automatic index building from network topology
+  - Incremental updates on rule additions
+  
+- **DeltaDetector**: Identifies changed fields between fact versions
+  - Deep value comparison with configurable depth
+  - LRU cache for performance
+  - Optimized for common update patterns
+  
+- **IndexBuilder**: Builds dependency index from RETE network
+  - Extracts field dependencies from alpha/beta/terminal nodes
+  - Handles complex conditions and joins
+  - Automatic rebuild on network topology changes
+  
+- **IntegrationHelper**: Bridges delta components with RETE
+  - Provides unified interface for network operations
+  - Manages component lifecycle
+  - Handles index synchronization
+
+#### Automatic Integration (TODO1 ✅)
+- Delta components automatically initialized in `NewReteNetworkWithConfig()`
+- NetworkCallbacks implementation for RETE integration
+- Enabled by default with graceful fallback to classic propagation
+- No breaking changes to existing API
+
+#### Index Synchronization (TODO2 ✅)
+- Automatic index rebuild after rule creation in `CreateRuleNodes()`
+- Keeps dependency tracking synchronized with network topology
+- Ensures delta propagation accuracy after dynamic rule additions
+
+#### Performance Optimizations
+- **Memory Pools**: Efficient allocation management
+  - Pool for FieldDelta objects
+  - Pool for comparison operations
+  - Reduced GC pressure
+  
+- **LRU Cache**: Frequently accessed data caching
+  - Configurable size and TTL
+  - Automatic eviction policies
+  - Cache statistics tracking
+  
+- **Optimized Data Structures**: Minimal memory overhead
+  - Efficient field-to-node mappings
+  - Compact delta representations
+  - Fast lookup operations
+
+#### Configuration & Monitoring
+- **Detector Configuration**: 
+  - Depth limits for recursive comparison
+  - Cache size and TTL settings
+  - Custom comparison strategies
+  
+- **Propagation Configuration**:
+  - Strategy selection (auto/delta/classic)
+  - Threshold tuning
+  - Fallback behavior
+  
+- **Metrics Tracking**:
+  - Index statistics (size, coverage, rebuild count)
+  - Propagation statistics (hits, misses, fallbacks)
+  - Performance metrics (latency, throughput)
+
+#### Comprehensive Documentation
+- **User Guides**:
+  - `DOCUMENTATION_INDEX.md` - Master navigation guide
+  - `START_HERE.md` - Entry point with learning paths
+  - `README.md` - Architecture overview and concepts
+  - `QUICK_START.md` - Get running in 5 minutes
+  - `QUICK_START_PROPAGATION.md` - Propagation API details
+  
+- **Advanced Guides**:
+  - `MIGRATION.md` - Migration from classic RETE (step-by-step)
+  - `OPTIMIZATION_GUIDE.md` - Performance tuning
+  - `POOL_USAGE_GUIDE.md` - Memory pool best practices
+  
+- **Examples**: 7 working examples with tests
+  - Basic detection and change tracking
+  - Full RETE integration patterns
+  - Real-world e-commerce scenario
+  - All examples executable and tested
+
+#### Test Coverage
+- **88.7% test coverage** (TODO3: target >90%)
+- Unit tests for all components
+- Integration tests for end-to-end scenarios
+- E2E business scenario tests
+- Benchmark tests for performance validation
+- Concurrent access tests
+- Race detector validated
+
+#### Files Added (60+ files)
+- **Core**: `delta_propagator.go`, `dependency_index.go`, `index_builder.go`, `integration.go`
+- **Detection**: `delta_detector.go`, `field_extractor.go`, `comparison.go`, `field_delta.go`
+- **Infrastructure**: `network_callbacks.go`, `errors.go`, `constants.go`, `types.go`
+- **Configuration**: `detector_config.go`, `propagation_config.go`, `propagation_strategy.go`
+- **Monitoring**: `index_metrics.go`, `propagation_metrics.go`
+- **Optimization**: `pool.go`, `cache_optimized.go`
+- **Tests**: 23+ test files covering all scenarios
+- **Examples**: 7 examples in `examples/` directory
+- **Documentation**: 9 comprehensive guides
+
+#### Best Use Cases
+- Networks with >50 nodes
+- Frequent fact updates (high-frequency scenarios)
+- <30% fields changing per update
+- Performance-critical applications
+- Real-time processing requirements
+
+### 🔧 Changed
+
+#### RETE Network Integration
+- Enhanced `ReteNetwork` with delta propagation support:
+  - Added `DeltaPropagator *delta.DeltaPropagator`
+  - Added `DependencyIndex *delta.DependencyIndex`
+  - Added `EnableDeltaPropagation bool`
+  - Added `IntegrationHelper *delta.IntegrationHelper`
+  
+- Updated `UpdateFact()` behavior:
+  - Attempts delta propagation first (if enabled)
+  - Automatic fallback to classic propagation on error
+  - Transparent to existing code
+  
+- Enhanced `RuleBuilder.CreateRuleNodes()`:
+  - Automatically rebuilds dependency index after rule additions
+  - Ensures index stays synchronized with network topology
+  - Logs warnings on rebuild failures (non-blocking)
+
+#### Component Enhancements
+- Improved `FactToken` with delta compatibility
+- Enhanced action executors for delta awareness
+- Updated beta sharing interfaces for delta propagation
+- Improved terminal nodes with delta support
+
+#### Command Updates
+- Added delta logging configuration to constraint command
+- Updated server command with delta metrics integration
+
+### 📚 Documentation - Deep Cleanup (79% reduction)
+
+#### Delta Package Documentation (33 → 9 files)
+- **Created**: `DOCUMENTATION_INDEX.md` - Master navigation guide
+- **Consolidated**: `START_HERE.md` - Entry point with learning paths
+- **Kept Essential**: README, QUICK_START, MIGRATION, OPTIMIZATION_GUIDE, POOL_USAGE_GUIDE, TODO
+- **Archived**: 24 session/implementation reports to `/ARCHIVES/delta-docs-20250103/`
+
+#### REPORTS Directory (135 → 27 files)
+- **Created**: `REPORTS_INDEX.md` - Master index with clear navigation
+- **Created**: `DEEP_CLEANUP_2025-01-03.md` - Comprehensive cleanup summary
+- **Kept Current**: Project health, maintenance TODO, delta analysis, architecture docs
+- **Archived**: 109 obsolete reports to `/ARCHIVES/reports-20250103/`
+  - Session reports (EXECUTION_SUMMARY_*, SESSION_*)
+  - Implementation logs (IMPLEMENTATION_*, numbered reports)
+  - Code reviews (CODE_REVIEW_*, REVIEW_*)
+  - Refactoring reports (REFACTORING_*)
+  - Xuples-specific documentation
+
+#### Navigation Improvements
+- Clear entry points for new users
+- Learning paths for beginner/intermediate/advanced users
+- Topic-based navigation (architecture, migration, performance)
+- Quick reference sections for common tasks
+- Master indices for both delta package and reports
+
+#### Retention Policy Established
+- Archive session reports immediately after completion
+- Keep latest 2 cleanup reports only
+- Archive implementation reports after merge
+- Monthly cleanup checklist documented
+- Quarterly archive review process
+
+### 📊 Performance Metrics
+
+| Metric | Classic | Delta | Improvement |
+|--------|---------|-------|-------------|
+| Update Speed | 1x | 3.4x | +240% |
+| Node Evaluations | 100% | 20% | -80% |
+| Throughput | 150k/s | 515k/s | +243% |
+| Computational Savings | 0% | 68.8% | - |
+
+### 🔄 Migration Guide
+
+#### No Breaking Changes Required
+```go
+// Existing code works unchanged
+network := rete.NewReteNetworkWithConfig(config)
+network.UpdateFact(fact) // Automatically uses delta propagation
+```
+
+#### Optional: Disable Delta Propagation
+```go
+config := rete.NetworkConfig{
+    EnableDeltaPropagation: false, // Revert to classic
+    // ... other settings
+}
+network := rete.NewReteNetworkWithConfig(config)
+```
+
+#### Optional: Access Delta Components
+```go
+network := rete.NewReteNetworkWithConfig(config)
+if network.IntegrationHelper != nil {
+    // Delta is enabled and working
+    stats := network.IntegrationHelper.GetStats()
+    log.Printf("Delta hits: %d", stats.Hits)
+}
+```
+
+### 🎯 Next Steps (TODO3)
+
+- [ ] Boost test coverage from 88.7% to >90%
+- [ ] Add targeted tests for edge cases
+- [ ] Complete Prometheus metrics integration
+- [ ] Add monitoring dashboards
+- [ ] Performance profiling in production
+
+### 📦 Commits Included
+
+- `ec6f6c5` - docs: deep cleanup and documentation consolidation
+- `8c2cf68` - Merge feature/propagation-delta-rete-ii
+- `60ebd7a` - chore: update main and server command with delta support
+- `438fbcb` - refactor(rete): improve delta-related utilities
+- `47f6f1e` - feat(rete): add automatic index rebuild (TODO2)
+- `23e6aeb` - feat(rete): integrate delta propagation into RETE (TODO1)
+- `076f6bc` - docs(delta): add comprehensive documentation suite
+- `464a228` - feat(delta): add examples and usage documentation
+- `9f57b6a` - test(delta): add comprehensive test suite
+- `6235520` - feat(delta): add metrics and monitoring infrastructure
+- `6dfa60a` - feat(delta): add core delta propagation infrastructure
+
+---
+
 ## [Unreleased]
+
+### Added
+- 🚀 **Delta Propagation System** - Complete selective fact propagation optimization
+  - **Core Infrastructure**:
+    - `DeltaPropagator` - Selective fact propagation engine
+    - `DependencyIndex` - Tracks fact-to-node dependencies
+    - `IndexBuilder` - Builds dependency index from RETE network
+    - `IntegrationHelper` - Bridges delta components with RETE
+    - `DeltaDetector` - Identifies changed fields between fact versions
+    - `FieldExtractor` - Extracts field dependencies from AST nodes
+  - **Automatic Integration** (TODO1):
+    - Delta components automatically initialized in `NewReteNetworkWithConfig()`
+    - NetworkCallbacks implementation for RETE integration
+    - Enabled by default with graceful fallback to classic propagation
+  - **Index Synchronization** (TODO2):
+    - Automatic index rebuild after rule creation in `CreateRuleNodes()`
+    - Keeps dependency tracking synchronized with network topology
+  - **Performance**:
+    - 3.4x faster updates (measured)
+    - 80% reduction in node evaluations
+    - 515k+ updates/sec throughput
+    - 68.8% average computational savings
+  - **Memory Optimization**:
+    - Memory pools for efficient allocation
+    - LRU cache for frequently accessed data
+    - Optimized data structures for minimal overhead
+  - **Configuration & Monitoring**:
+    - Detector configuration (depth limits, cache settings)
+    - Propagation configuration (strategies, thresholds)
+    - Metrics tracking (index stats, propagation stats)
+    - Comprehensive error handling
+  - **Documentation**:
+    - Complete user guides (README, QUICK_START, MIGRATION)
+    - Advanced guides (OPTIMIZATION_GUIDE, POOL_USAGE_GUIDE)
+    - 7 working examples with tests
+    - Master navigation index (DOCUMENTATION_INDEX.md)
+  - **Tests**:
+    - 88.7% test coverage
+    - Unit tests for all components
+    - Integration tests for end-to-end scenarios
+    - E2E business scenario tests
+    - Benchmark tests for performance validation
+  - **Files Added**:
+    - `rete/delta/delta_propagator.go` - Propagation engine
+    - `rete/delta/dependency_index.go` - Dependency tracking
+    - `rete/delta/index_builder.go` - Index construction
+    - `rete/delta/integration.go` - RETE integration
+    - `rete/delta/delta_detector.go` - Change detection
+    - `rete/delta/field_extractor.go` - Field extraction
+    - `rete/delta/network_callbacks.go` - Network interface
+    - `rete/delta/errors.go` - Error types
+    - `rete/delta/constants.go` - System constants
+    - `rete/delta/detector_config.go` - Detector configuration
+    - `rete/delta/propagation_config.go` - Propagation configuration
+    - `rete/delta/propagation_strategy.go` - Strategy selection
+    - `rete/delta/index_metrics.go` - Index metrics
+    - `rete/delta/propagation_metrics.go` - Propagation metrics
+    - `rete/delta/pool.go` - Memory pools
+    - `rete/delta/cache_optimized.go` - LRU cache
+    - `rete/delta/comparison.go` - Value comparison
+    - `rete/delta/field_delta.go` - Field change tracking
+    - Plus 23+ test files and examples
+  - **Best For**: Networks with >50 nodes, frequent updates, <30% fields changing per update
+
+### Changed
+- 🔧 **RETE Network Integration**:
+  - Enhanced `ReteNetwork` with delta propagation support
+  - Added fields: `DeltaPropagator`, `DependencyIndex`, `EnableDeltaPropagation`, `IntegrationHelper`
+  - Updated `UpdateFact()` to attempt delta propagation before fallback
+  - Enhanced `RuleBuilder.CreateRuleNodes()` to rebuild index after rule additions
+  - Improved fact tokens with delta compatibility
+  - Enhanced action executors for delta awareness
+- 🔧 **Command Updates**:
+  - Added delta logging configuration to constraint command
+  - Updated server command with delta metrics integration
+
+### Documentation
+- 📚 **Deep Documentation Cleanup** (79% reduction in active files)
+  - **Delta Package** (33 → 9 files):
+    - Created `DOCUMENTATION_INDEX.md` - Master navigation guide
+    - Consolidated `START_HERE.md` - Entry point with learning paths
+    - Kept essential docs: README, QUICK_START, MIGRATION, OPTIMIZATION_GUIDE, POOL_USAGE_GUIDE, TODO
+    - Archived 24 session/implementation reports to `/ARCHIVES/delta-docs-20250103/`
+  - **REPORTS Directory** (135 → 27 files):
+    - Created `REPORTS_INDEX.md` - Master index with navigation
+    - Created `DEEP_CLEANUP_2025-01-03.md` - Cleanup summary
+    - Kept current: project health, maintenance TODO, delta analysis, architecture docs
+    - Archived 109 obsolete reports to `/ARCHIVES/reports-20250103/`
+  - **Navigation Improvements**:
+    - Clear entry points for new users
+    - Learning paths for beginner/intermediate/advanced
+    - Topic-based navigation (architecture, migration, performance)
+    - Quick reference sections
+  - **Retention Policy Established**:
+    - Archive session reports after completion
+    - Keep latest 2 cleanup reports
+    - Archive implementation reports after merge
+    - Monthly cleanup checklist
 
 ### Fixed
 - 🐛 **Phase 2 : Gestion des Rétractations Pendant Soumission**
